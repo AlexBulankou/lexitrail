@@ -1,0 +1,96 @@
+/* Reset and base styling */
+body, html {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: Arial, sans-serif;
+  background-color: #f0f0f0;
+  box-sizing: border-box;
+}
+
+/* General container for the game */
+.container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  height: 100%;
+  width: 100%;
+  max-width: 1200px; /* Increased max-width to ensure space for columns */
+  padding: 20px;
+  box-sizing: border-box;
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  border: 2px solid #d3d3d3;
+}
+
+/* Container for the word cards */
+.cards-container {
+  display: grid;
+  gap: 20px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 20px;
+  box-sizing: border-box;
+  grid-auto-flow: column; /* Prevents wrapping to a new row */
+}
+
+/* Layout for displaying 1 card */
+.cards-container.layout1 {
+  grid-template-columns: repeat(1, minmax(0, 1fr));
+}
+
+/* Layout for displaying 2 cards in 2 columns */
+.cards-container.layout2 {
+  grid-template-columns: repeat(2, minmax(0, 1fr)); /* Two flexible columns */
+}
+
+/* Layout for displaying 3 cards in 3 columns */
+.cards-container.layout3 {
+  grid-template-columns: repeat(3, minmax(0, 1fr)); /* Three flexible columns */
+}
+
+/* Layout for displaying 4 cards in a 2x2 grid */
+.cards-container.layout4 {
+  grid-template-columns: repeat(2, minmax(0, 1fr)); /* Two columns */
+  grid-template-rows: repeat(2, minmax(0, auto));  /* Two rows */
+}
+
+/* Layout for displaying 6 cards in a 3x2 grid */
+.cards-container.layout5 {
+  grid-template-columns: repeat(3, minmax(0, 1fr)); /* Three columns */
+  grid-template-rows: repeat(2, minmax(0, auto));  /* Two rows */
+}
+
+/* Responsive behavior for small screens */
+@media (max-width: 600px) {
+  .cards-container {
+    grid-template-columns: 1fr; /* Single column for small screens */
+  }
+}
+
+@media (min-width: 601px) and (max-width: 900px) {
+  .cards-container.layout1, 
+  .cards-container.layout2 {
+    grid-template-columns: 1fr; /* Single column for small screens */
+  }
+  .cards-container.layout3, 
+  .cards-container.layout4 {
+    grid-template-columns: repeat(2, 1fr); /* Two columns */
+  }
+  .cards-container.layout5 {
+    grid-template-columns: repeat(3, 1fr); /* Three columns */
+  }
+}
+
+/* Ensure each card takes full width of its grid cell */
+.word-card {
+  width: 100%;
+  height: auto;
+  box-sizing: border-box;
+}
