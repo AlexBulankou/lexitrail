@@ -5,6 +5,7 @@ import words from './words';
 import './styles/Global.css';
 import './styles/App.css';
 
+//test
 const App = () => {
   const [toShow, setToShow] = useState(words);
   const [firstTimeCorrect, setFirstTimeCorrect] = useState([]);

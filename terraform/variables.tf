@@ -22,3 +22,8 @@ variable "container_name" {
   type    = string
   default = "lexitrail-ui"
 }
+
+variable "repository_id" {
+  type = string
+  default = "lexitrail-repo"
+}
