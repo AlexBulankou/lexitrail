@@ -42,7 +42,7 @@ resource "google_project_iam_member" "cloudbuild_roles" {
     "roles/storage.admin",
     "roles/logging.logWriter",
     "roles/artifactregistry.admin",
-    "roles/viewer",
+    "roles/reader",
     "roles/storage.objectCreator",
     "roles/serviceusage.serviceUsageConsumer",
     "roles/cloudbuild.builds.editor"
@@ -58,7 +58,7 @@ resource "google_project_iam_member" "compute_roles" {
     "roles/storage.admin",
     "roles/logging.logWriter",
     "roles/artifactregistry.admin",
-    "roles/viewer",
+    "roles/reader",
     "roles/storage.objectCreator",
     "roles/serviceusage.serviceUsageConsumer",
     "roles/cloudbuild.builds.editor"
@@ -112,6 +112,8 @@ resource "kubectl_manifest" "lexitrail_ui_deployment" {
   yaml_body = templatefile("${path.module}/deploy-deployment.yaml.tpl", {
     project_id     = var.project_id,
     container_name = var.container_name
+    repo_name = var.repository_id
+    region = var.region
   })
 }
 

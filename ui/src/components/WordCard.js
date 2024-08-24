@@ -37,7 +37,14 @@ const WordCard = ({ word, handleMemorized, handleNotMemorized, incorrectAttempts
           {word.word}
         </div>
         <div className="word-card-back">
-          {word.meaning}
+          <p>
+            {word.meaning.split('\n').map((line, index) => (
+              <React.Fragment key={index}>
+                {line}
+                <br />
+              </React.Fragment>
+            ))}
+          </p>
         </div>
       </div>
       <div className="buttons" onClick={stopPropagation}>

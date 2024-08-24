@@ -18,7 +18,7 @@ body, html {
   justify-content: space-between; /* Adjust to space elements appropriately */
   height: 100%;
   width: 100%;
-  max-width: 600px; /* Set a max-width for better content alignment */
+  max-width: 1200px; /* Set a max-width for better content alignment */
   padding: 20px;
   box-sizing: border-box;
   background-color: white;

@@ -14,6 +14,7 @@ spec:
     spec:
       containers:
       - name: lexitrail-ui
-        image: gcr.io/${project_id}/${container_name}:latest
+        image: ${region}-docker.pkg.dev/${project_id}/${repo_name}/${container_name}:latest
+        imagePullPolicy: Always
         ports:
         - containerPort: 3000

@@ -28,8 +28,8 @@ const Game = ({
     const width = window.innerWidth;
     const height = window.innerHeight;
 
-    const cardWidth = 150; // Estimated width of each card in pixels
-    const cardHeight = 200; // Estimated height of each card in pixels
+    const cardWidth = 250; // Estimated width of each card in pixels
+    const cardHeight = 300; // Estimated height of each card in pixels
 
     // Determine layout based on both width and height
     if (width <= cardWidth * 2) {
@@ -60,9 +60,9 @@ const Game = ({
 
     
     if (isCorrect) {
-      handleMemorized(index); // Mark the word as memorized
+      handleMemorized(index, maxCardsToShow); // Mark the word as memorized
     } else {
-      handleNotMemorized(index); // Mark the word as not memorized
+      handleNotMemorized(index, maxCardsToShow); // Mark the word as not memorized
     }
   };
 
@@ -90,7 +90,7 @@ const Game = ({
           <div className="progress" style={{ width: `${(correctlyMemorizedCount / totalWords) * 100}%` }}></div>
         </div>
         <div className="progress-info">
-          word {correctlyMemorizedCount} out of {totalWords}
+          recalled {correctlyMemorizedCount} out of {totalWords}
         </div>
       </div>
       <div className="progress-stats">
