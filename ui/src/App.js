@@ -6,7 +6,6 @@ import Profile from './components/Profile.js';
 import PrivateRoute from './components/PrivateRoute.js';
 import { getWords } from './words.js';
 import { googleLogout, useGoogleLogin, } from '@react-oauth/google';
-import { useGoogleOneTapLogin } from '@react-oauth/google';
 
 import './styles/Global.css';
 import './styles/App.css';
