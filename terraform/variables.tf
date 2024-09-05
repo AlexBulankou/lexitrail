@@ -27,3 +27,27 @@ variable "repository_id" {
   type = string
   default = "lexitrail-repo"
 }
+
+variable "sql_namespace" {
+  description = "Kubernetes namespace to deploy the resources"
+  type        = string
+  default     = "mysql"
+}
+
+variable "db_root_password" {
+  description = "Root password for the MySQL database"
+  type        = string
+  sensitive   = true
+}
+
+variable "wordsets_csv_path" {
+  description = "Path to the CSV file containing wordsets data"
+  type        = string
+  default     = "csv/wordsets.csv"
+}
+
+variable "words_csv_path" {
+  description = "Path to the CSV file containing words data"
+  type        = string
+  default     = "csv/words.csv"
+}

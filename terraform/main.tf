@@ -1,7 +1,7 @@
 terraform {
   required_providers {
     google = {
-      source = "hashicorp/google-beta"
+      source  = "hashicorp/google-beta"
       version = "~> 5.42.0"
     }
     kubectl = {
@@ -9,6 +9,10 @@ terraform {
       version = "~> 2.0.0"
     }
   }
+}
+
+provider "dotenv" {
+  path = "../.env"
 }
 
 provider "google" {
@@ -33,6 +37,15 @@ data "google_client_config" "default" {}
 
 data "google_project" "default" {
   project_id = var.project_id
+}
+
+data "dotenv" "env" {}
+
+variable "db_root_password" {
+  description = "Root password for the MySQL database"
+  type        = string
+  sensitive   = true
+  default     = data.dotenv.env.vars["DB_ROOT_PASSWORD"]
 }
 
 
@@ -72,11 +85,11 @@ resource "google_project_iam_member" "compute_roles" {
 # Artifact Registry
 
 resource "google_artifact_registry_repository" "my_repo" {
-  provider          = google
-  location          = var.region
-  repository_id     = var.repository_id
-  description       = "Lexitrail registry"
-  format            = "DOCKER"
+  provider      = google
+  location      = var.region
+  repository_id = var.repository_id
+  description   = "Lexitrail registry"
+  format        = "DOCKER"
 }
 
 # GKE Autopilot Cluster
@@ -87,7 +100,7 @@ resource "google_container_cluster" "autopilot_cluster" {
   enable_autopilot = true
 
   ip_allocation_policy {
-    
+
   }
 }
 
@@ -95,7 +108,7 @@ resource "google_container_cluster" "autopilot_cluster" {
 
 resource "null_resource" "cloud_build" {
   triggers = {
-    files_hash    = sha1(join("", [for f in fileset(path.root, "../ui/**") : filesha1(f)]))
+    files_hash = sha1(join("", [for f in fileset(path.root, "../ui/**") : filesha1(f)]))
   }
 
   provisioner "local-exec" {
@@ -107,18 +120,61 @@ resource "null_resource" "cloud_build" {
   }
 }
 
+# UI manifests
 
 resource "kubectl_manifest" "lexitrail_ui_deployment" {
-  yaml_body = templatefile("${path.module}/deploy-deployment.yaml.tpl", {
+  yaml_body = templatefile("${path.module}/k8s_templates/deploy-deployment.yaml.tpl", {
     project_id     = var.project_id,
     container_name = var.container_name
-    repo_name = var.repository_id
-    region = var.region
+    repo_name      = var.repository_id
+    region         = var.region
   })
 }
 
 resource "kubectl_manifest" "lexitrail_ui_service" {
-  yaml_body = templatefile("${path.module}/deploy-service.yaml.tpl", {
+  yaml_body = templatefile("${path.module}/k8s_templates/deploy-service.yaml.tpl", {
   })
 }
+
+# SQL deployment
+resource "kubectl_manifest" "mysql_namespace" {
+  yaml_body = templatefile("${path.module}/k8s_templates/mysql-namespace.yaml.tpl", {
+    sql_namespace = var.sql_namespace
+  })
+}
+
+resource "kubectl_manifest" "mysql_pvc" {
+  yaml_body = templatefile("${path.module}/k8s_templates/mysql-pvc.yaml.tpl", {
+    sql_namespace = var.sql_namespace
+  })
+  depends_on = [kubectl_manifest.mysql_namespace]
+}
+
+resource "kubectl_manifest" "mysql_service" {
+  yaml_body = templatefile("${path.module}/k8s_templates/mysql-service.yaml.tpl", {
+    sql_namespace = var.sql_namespace
+  })
+  depends_on = [kubectl_manifest.mysql_namespace]
+}
+
+
+resource "kubectl_manifest" "mysql_deployment" {
+  yaml_body = templatefile("${path.module}/k8s_templates/mysql-deployment.yaml.tpl", {
+    sql_namespace         = var.sql_namespace,
+    db_root_password      = var.db_root_password,
+  })
+  depends_on = [kubectl_manifest.mysql_pvc, kubectl_manifest.mysql_service]
+}
+
+
+resource "kubectl_manifest" "mysql_schema_and_data_job" {
+  yaml_body = templatefile("${path.module}/k8s_templates/mysql-schema-and-data-job.yaml.tpl", {
+    sql_namespace         = var.sql_namespace,
+    db_root_password      = var.db_root_password,
+    sql_script_path       = "${path.module}/schema.sql",  # Static SQL file
+    csv_files_path        = "${path.module}/csv"          # Mount CSV directory
+  })
+  depends_on = [kubectl_manifest.mysql_deployment]
+}
+
 
