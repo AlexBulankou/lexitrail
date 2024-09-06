@@ -8,11 +8,14 @@ terraform {
       source  = "alekc/kubectl"
       version = "~> 2.0.0"
     }
+    dotenv = {
+      source  = "germanbrew/dotenv"  # Correct provider namespace
+      version = "~> 1.0"
+    }
   }
 }
 
 provider "dotenv" {
-  path = "../.env"
 }
 
 provider "google" {
@@ -39,13 +42,12 @@ data "google_project" "default" {
   project_id = var.project_id
 }
 
-data "dotenv" "env" {}
+data "dotenv" "env" {
+  filename = "./../.env"
+}
 
-variable "db_root_password" {
-  description = "Root password for the MySQL database"
-  type        = string
-  sensitive   = true
-  default     = data.dotenv.env.vars["DB_ROOT_PASSWORD"]
+locals {
+  db_root_password = data.dotenv.env.entries.db_root_password
 }
 
 
@@ -99,10 +101,19 @@ resource "google_container_cluster" "autopilot_cluster" {
   project          = var.project_id
   enable_autopilot = true
 
+  # Disable deletion protection
+  deletion_protection = false
+
   ip_allocation_policy {
 
   }
 }
+
+resource "google_service_account" "lexitrail_storage_sa" {
+  account_id   = "lexitrail-storage-sa"  # Valid account_id format
+  display_name = "Lexitrail Storage Service Account"
+}
+
 
 # Cloud Build Execution
 
@@ -139,9 +150,11 @@ resource "kubectl_manifest" "lexitrail_ui_service" {
 # SQL deployment
 resource "kubectl_manifest" "mysql_namespace" {
   yaml_body = templatefile("${path.module}/k8s_templates/mysql-namespace.yaml.tpl", {
-    sql_namespace = var.sql_namespace
+    sql_namespace = var.sql_namespace,
+    gsa_email     = google_service_account.lexitrail_storage_sa.email
   })
 }
+
 
 resource "kubectl_manifest" "mysql_pvc" {
   yaml_body = templatefile("${path.module}/k8s_templates/mysql-pvc.yaml.tpl", {
@@ -161,20 +174,78 @@ resource "kubectl_manifest" "mysql_service" {
 resource "kubectl_manifest" "mysql_deployment" {
   yaml_body = templatefile("${path.module}/k8s_templates/mysql-deployment.yaml.tpl", {
     sql_namespace         = var.sql_namespace,
-    db_root_password      = var.db_root_password,
+    db_root_password      = local.db_root_password,
   })
   depends_on = [kubectl_manifest.mysql_pvc, kubectl_manifest.mysql_service]
+}
+
+# Create a Google Cloud Storage bucket
+
+resource "google_storage_bucket" "mysql_files_bucket" {
+  name     = "${var.project_id}-lexitrail-mysql-files"
+  location = var.region
+
+  # Enable uniform bucket-level access
+  uniform_bucket_level_access = true
+}
+
+# Grant the GSA permission to read from the storage bucket
+resource "google_storage_bucket_iam_member" "bucket_access" {
+  bucket = google_storage_bucket.mysql_files_bucket.name
+  role   = "roles/storage.admin"
+  member = "serviceAccount:${google_service_account.lexitrail_storage_sa.email}"
+}
+
+
+# Use google_project_iam_member for binding instead of google_iam_policy
+resource "google_project_iam_member" "lexitrail_workload_identity_binding" {
+  project = var.project_id
+  role    = "roles/iam.workloadIdentityUser"
+  member  = "serviceAccount:${var.project_id}.svc.id.goog[mysql/default]"
+}
+
+# Upload schema.sql to the bucket
+resource "google_storage_bucket_object" "schema_sql" {
+  name   = "schema.sql"
+  bucket = google_storage_bucket.mysql_files_bucket.name
+  source = "${path.module}/schema.sql"  # Path to local schema.sql
+}
+
+# Upload wordsets.csv to the bucket
+resource "google_storage_bucket_object" "wordsets_csv" {
+  name   = "csv/wordsets.csv"
+  bucket = google_storage_bucket.mysql_files_bucket.name
+  source = "${path.module}/csv/wordsets.csv"  # Path to local wordsets.csv
+}
+
+# Upload words.csv to the bucket
+resource "google_storage_bucket_object" "words_csv" {
+  name   = "csv/words.csv"
+  bucket = google_storage_bucket.mysql_files_bucket.name
+  source = "${path.module}/csv/words.csv"  # Path to local words.csv
+}
+
+# Output the bucket name for the Kubernetes job to use
+output "mysql_files_bucket_name" {
+  value = google_storage_bucket.mysql_files_bucket.name
 }
 
 
 resource "kubectl_manifest" "mysql_schema_and_data_job" {
   yaml_body = templatefile("${path.module}/k8s_templates/mysql-schema-and-data-job.yaml.tpl", {
     sql_namespace         = var.sql_namespace,
-    db_root_password      = var.db_root_password,
-    sql_script_path       = "${path.module}/schema.sql",  # Static SQL file
-    csv_files_path        = "${path.module}/csv"          # Mount CSV directory
+    db_root_password      = local.db_root_password,
+    mysql_files_bucket    = google_storage_bucket.mysql_files_bucket.name  # Pass bucket name
   })
-  depends_on = [kubectl_manifest.mysql_deployment]
+  depends_on = [
+    kubectl_manifest.mysql_deployment,
+    google_storage_bucket_object.schema_sql,
+    google_storage_bucket_object.wordsets_csv,
+    google_storage_bucket_object.words_csv,
+    google_storage_bucket_iam_member.bucket_access
+  ]
 }
+
+
 
 

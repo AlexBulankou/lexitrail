@@ -34,12 +34,6 @@ variable "sql_namespace" {
   default     = "mysql"
 }
 
-variable "db_root_password" {
-  description = "Root password for the MySQL database"
-  type        = string
-  sensitive   = true
-}
-
 variable "wordsets_csv_path" {
   description = "Path to the CSV file containing wordsets data"
   type        = string

@@ -2,11 +2,10 @@ apiVersion: batch/v1
 kind: Job
 metadata:
   name: mysql-schema-and-data-job
-  namespace: ${sql_namespace}
+  namespace: mysql
 spec:
   template:
     spec:
-      serviceAccountName: default # Add this line! Replace 'default' if needed
       containers:
       - name: mysql-schema-and-data
         image: google/cloud-sdk:slim  # This image includes gsutil
@@ -14,11 +13,11 @@ spec:
         args:
           - |
             echo "Downloading SQL and CSV files from GCS...";
-            gsutil cp gs://${mysql_files_bucket}/schema.sql /mnt/sql/schema.sql;
-            gsutil cp gs://${mysql_files_bucket}/csv/wordsets.csv /mnt/csv/wordsets.csv;
-            gsutil cp gs://${mysql_files_bucket}/csv/words.csv /mnt/csv/words.csv;
+            gsutil cp gs://alexbu-gke-dev-d-lexitrail-mysql-files/schema.sql /mnt/sql/schema.sql;
+            gsutil cp gs://alexbu-gke-dev-d-lexitrail-mysql-files/csv/wordsets.csv /mnt/csv/wordsets.csv;
+            gsutil cp gs://alexbu-gke-dev-d-lexitrail-mysql-files/csv/words.csv /mnt/csv/words.csv;
             echo "Running MySQL script...";
-            mysql -h mysql -u root -p${db_root_password} < /mnt/sql/schema.sql;
+            mysql -h mysql -u root -p????????? < /mnt/sql/schema.sql;
         volumeMounts:
         - name: sql-volume
           mountPath: /mnt/sql
