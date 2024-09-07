@@ -91,3 +91,28 @@ Here is your updated schema with improved descriptions where necessary:
 
 These descriptions should help clarify the purpose of each column in the schema, making your README more informative and easier to understand.
 
+
+# Validate
+
+```bash
+PROJECT_ID=alexbu-gke-dev-d
+gcloud container clusters get-credentials lexitrail-cluster --location=us-central1
+gcloud iam service-accounts get-iam-policy lexitrail-storage-sa@alexbu-gke-dev-d.iam.gserviceaccount.com
+gcloud projects get-iam-policy alexbu-gke-dev-d --flatten="bindings[].members" --filter="bindings.members:serviceAccount:lexitrail-storage-sa@alexbu-gke-dev-d.iam.gserviceaccount.com"
+
+kubectl run -it --rm   debug-gcs1   --namespace=mysql   --image=google/cloud-sdk:slim   --restart=Never --timeout=5m   --overrides='{
+    "spec": {
+      "serviceAccountName": "default"
+    }
+  }'   -- sh
+
+```
+
+Then after getting in:
+```bash
+gsutil ls gs://alexbu-gke-dev-d-lexitrail-mysql-files
+```
+
+
+
+

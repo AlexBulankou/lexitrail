@@ -68,6 +68,7 @@ resource "google_project_iam_member" "cloudbuild_roles" {
   role    = each.value
 }
 
+/*
 resource "google_project_iam_member" "compute_roles" {
   for_each = toset([
     "roles/storage.admin",
@@ -83,6 +84,7 @@ resource "google_project_iam_member" "compute_roles" {
   member  = "serviceAccount:${data.google_project.default.number}-compute@developer.gserviceaccount.com"
   role    = each.value
 }
+*/
 
 # Artifact Registry
 
@@ -155,6 +157,13 @@ resource "kubectl_manifest" "mysql_namespace" {
   })
 }
 
+resource "kubectl_manifest" "default_sa_annotation" {
+  yaml_body = templatefile("${path.module}/k8s_templates/mysql-default-service-account.yaml.tpl", {
+    sql_namespace = var.sql_namespace,
+    gsa_email     = google_service_account.lexitrail_storage_sa.email
+  })
+}
+
 
 resource "kubectl_manifest" "mysql_pvc" {
   yaml_body = templatefile("${path.module}/k8s_templates/mysql-pvc.yaml.tpl", {
@@ -190,16 +199,16 @@ resource "google_storage_bucket" "mysql_files_bucket" {
 }
 
 # Grant the GSA permission to read from the storage bucket
-resource "google_storage_bucket_iam_member" "bucket_access" {
-  bucket = google_storage_bucket.mysql_files_bucket.name
+resource "google_project_iam_member" "bucket_access" {
+  project = var.project_id
   role   = "roles/storage.admin"
   member = "serviceAccount:${google_service_account.lexitrail_storage_sa.email}"
 }
 
 
 # Use google_project_iam_member for binding instead of google_iam_policy
-resource "google_project_iam_member" "lexitrail_workload_identity_binding" {
-  project = var.project_id
+resource "google_service_account_iam_member" "lexitrail_workload_identity_binding" {
+  service_account_id = google_service_account.lexitrail_storage_sa.name
   role    = "roles/iam.workloadIdentityUser"
   member  = "serviceAccount:${var.project_id}.svc.id.goog[mysql/default]"
 }
@@ -242,7 +251,8 @@ resource "kubectl_manifest" "mysql_schema_and_data_job" {
     google_storage_bucket_object.schema_sql,
     google_storage_bucket_object.wordsets_csv,
     google_storage_bucket_object.words_csv,
-    google_storage_bucket_iam_member.bucket_access
+    google_service_account_iam_member.lexitrail_workload_identity_binding,
+    google_project_iam_member.bucket_access
   ]
 }
 

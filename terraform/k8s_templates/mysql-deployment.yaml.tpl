@@ -23,6 +23,8 @@ spec:
         ports:
         - containerPort: 3306
           name: mysql
+        args:  # Add this to pass arguments to the MySQL server
+        - "--local-infile=1"  # Enable local_infile on the server side
         volumeMounts:
         - name: mysql-persistent-storage
           mountPath: /var/lib/mysql

@@ -47,13 +47,13 @@ CREATE TABLE IF NOT EXISTS recall_history (
     FOREIGN KEY (word_id) REFERENCES words(word_id)
 );
 
-LOAD DATA LOCAL INFILE 'csv/wordsets.csv'
+LOAD DATA LOCAL INFILE '/mnt/csv/wordsets.csv'
 INTO TABLE wordsets
 FIELDS TERMINATED BY ',' 
 LINES TERMINATED BY '\n'
 IGNORE 1 ROWS;
 
-LOAD DATA LOCAL INFILE 'csv/words.csv'
+LOAD DATA LOCAL INFILE '/mnt/csv/words.csv'
 INTO TABLE words
 FIELDS TERMINATED BY ',' 
 LINES TERMINATED BY '\n'

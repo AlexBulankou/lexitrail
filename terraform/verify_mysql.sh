@@ -44,6 +44,6 @@ kubectl exec -n "$NAMESPACE" "$MYSQL_POD" -- mysql -u root -p"$db_root_password"
 
 # Verify that data exists in the wordsets table
 echo "Checking data in wordsets table in $DBNAME..."
-kubectl exec -n "$NAMESPACE" "$MYSQL_POD" -- mysql -u root -p"$db_root_password" -e "USE $DBNAME; SELECT * FROM wordsets LIMIT 5;"
+kubectl exec -n "$NAMESPACE" "$MYSQL_POD" -- mysql -u root -p"$db_root_password" -e "USE $DBNAME; SELECT * FROM words LIMIT 55;"
 
 echo "Verification completed!"
