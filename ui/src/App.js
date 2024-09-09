@@ -4,14 +4,16 @@ import Game from './components/Game';
 import Completed from './components/Completed';
 import Profile from './components/Profile.js';
 import PrivateRoute from './components/PrivateRoute.js';
-import { getWords } from './words.js';
-import { googleLogout, useGoogleLogin, } from '@react-oauth/google';
+import NavBar from './components/NavBar.js';  // Import NavBar component
+import { useAuth } from './hooks/useAuth';  // Custom Hook
+import { fetchWords } from './services/wordsService';
 
 import './styles/Global.css';
 import './styles/App.css';
 import './styles/NavBar.css';  // Import the CSS file
 
 const App = () => {
+  const { user, login, logOut } = useAuth();
   const [toShow, setToShow] = useState([]);
   const [firstTimeCorrect, setFirstTimeCorrect] = useState([]);
   const [incorrectAttempts, setIncorrectAttempts] = useState({});
@@ -19,53 +21,13 @@ const App = () => {
   const [timeElapsed, setTimeElapsed] = useState(0);
   const [loading, setLoading] = useState(true);
 
-  const [user, setUser] = useState(null);
-
-  const initUser = {
-    onSuccess: (tokenResponse) => {
-      fetch(`https://www.googleapis.com/oauth2/v3/userinfo?access_token=${tokenResponse.access_token}`, {
-        method: 'GET',
-        headers: {
-          Authorization: `Bearer ${tokenResponse.access_token}`,
-          Accept: 'application/json'
-        }
-      })
-        .then((response) => {
-          if (!response.ok) {
-            throw new Error('Network response was not ok');
-          }
-          return response.json();
-        })
-        .then((data) => {
-          setUser(data);
-          console.log(data);
-        })
-        .catch((error) => {
-          console.log(error);
-        });
-    },
-    onError: (error) => console.log('Login Failed:', error)
-  };
-
-  const login = useGoogleLogin(initUser);
-
-  const logOut = () => {
-    console.log("logout");
-    googleLogout();
-    setUser(null);
-  };
-
-
   useEffect(() => {
-    getWords()
+    fetchWords()
       .then((loadedWords) => {
-        setLoading(false); // Mark loading as complete
+        setLoading(false);
         setToShow(loadedWords);
       })
-      .catch((error) => {
-        console.error('Failed to load words:', error);
-        setLoading(false); // Ensure loading state is updated even if there's an error
-      });
+      .catch(() => setLoading(false));
   }, []);
 
   useEffect(() => {
@@ -74,7 +36,7 @@ const App = () => {
       if (toShow.length === 0) {
         clearInterval(timer);
       }
-      return () => clearInterval(timer); // Cleanup on component unmount
+      return () => clearInterval(timer);
     }
   }, [toShow.length, loading]);
 
@@ -153,74 +115,36 @@ const App = () => {
   };
 
   return (
-    <>
-      <Router>
-        <div>
-          <nav className="navbar">
-            <ul className="nav-list">
-              <li className="nav-item">
-                <Link to="/" className="nav-link">Home</Link>
-              </li>
-              <li className="nav-item">
-                <Link to="/game" className="nav-link">Game</Link>
-              </li>
-              {user ? (
-                <li className="user-section">
-                  <div className="nav-user-info">
-                    <img src={user.picture} alt={user.name} className='nav-profile-avatar' />
-                    <span>{user.name}</span>
-                  </div>
-                  <button onClick={logOut} className="logout-button">Logout</button>
-                </li>
-              ) : (
-                <li className="user-section">
-                  <button onClick={() => login()} className="login-button">Login with Google</button>
-                </li>
-              )}
-            </ul>
-          </nav>
-          <Routes>
-            <Route path="/" element={
-              <Profile profileDetails={user} login={login} logout={logOut} />
-            } />
-
-            <Route path="/game" element={
-              <PrivateRoute profileDetails={user} login={login} logOut={logOut}>
-                <div>
-                  {
-                    !loading && toShow.length === 0 ?
-                      (
-                        <Completed
-                          timeElapsed={timeElapsed}
-                          firstTimeCorrect={firstTimeCorrect}
-                          incorrectAttempts={incorrectAttempts}
-                          resetGame={resetGame}
-                        />
-                      ) :
-                      (
-                        <Game
-                          timeElapsed={timeElapsed}
-                          displayWords={toShow} // Pass the current list of words to Game.js
-                          handleMemorized={handleMemorized}
-                          handleNotMemorized={handleNotMemorized}
-                          firstTimeCorrectCount={firstTimeCorrect.length}
-                          totalWords={toShow.length}
-                          correctlyMemorizedCount={correctlyMemorized.size}
-                          incorrectAttempts={incorrectAttempts}
-                        />
-                      )
-                  }
-                </div>
-              </PrivateRoute>
-
-            } />
-          </Routes>
-        </div>
-      </Router>
-    </>
+    <Router>
+      <NavBar user={user} login={login} logOut={logOut} />
+      <Routes>
+        <Route path="/" element={<Profile profileDetails={user} login={login} logout={logOut} />} />
+        <Route path="/game" element={
+          <PrivateRoute profileDetails={user} login={login} logOut={logOut}>
+            {!loading && toShow.length === 0 ? (
+              <Completed
+                timeElapsed={timeElapsed}
+                firstTimeCorrect={firstTimeCorrect}
+                incorrectAttempts={incorrectAttempts}
+                resetGame={resetGame}
+              />
+            ) : (
+              <Game
+                timeElapsed={timeElapsed}
+                displayWords={toShow}
+                handleMemorized={handleMemorized}
+                handleNotMemorized={handleNotMemorized}
+                firstTimeCorrectCount={firstTimeCorrect.length}
+                totalWords={toShow.length}
+                correctlyMemorizedCount={correctlyMemorized.size}
+                incorrectAttempts={incorrectAttempts}
+              />
+            )}
+          </PrivateRoute>
+        } />
+      </Routes>
+    </Router>
   );
-
 };
 
 export default App;
-

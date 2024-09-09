@@ -111,6 +111,8 @@ kubectl run -it --rm   debug-gcs1   --namespace=mysql   --image=google/cloud-sdk
 Then after getting in:
 ```bash
 gsutil ls gs://alexbu-gke-dev-d-lexitrail-mysql-files
+gcloud auth list
+
 ```
 
 
