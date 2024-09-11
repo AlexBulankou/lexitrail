@@ -34,3 +34,36 @@ This Flask API provides CRUD functionality for users, wordsets, words, and userw
 | `/userwords/query`                   | GET        | Retrieve userwords for a user and wordset                       | `/userwords/query?user_id=user&wordset_id=1` | N/A                                                    | `[{"user_id": "user", "word_id": 1, "recall_state": 2}]`                                        |
 | `/userwords/<user_id>/<word_id>/recall` | PUT     | Update recall state for a userword                              | `/userwords/user/1/recall`                | `{ "recall_state": 3 }`                                   | `{ "message": "Recall state updated successfully" }`                                            |
 
+
+
+
+### Running Backend Unit Tests
+
+1. **Create and Activate a Virtual Environment**  
+   Create a virtual environment and activate it:
+
+   ```bash
+   python3 -m venv venv
+   source venv/bin/activate
+   ```
+
+2. **Install Dependencies**  
+   Install the required dependencies:
+
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+3. **Run Unit Tests**  
+   With the `.env` file already set up at the root level, run the tests:
+
+   ```bash
+   python -m unittest discover -s tests
+   ```
+
+4. **Deactivate the Virtual Environment**  
+   Once finished, deactivate the virtual environment:
+
+   ```bash
+   deactivate
+   ```

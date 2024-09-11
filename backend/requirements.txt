@@ -1,4 +1,10 @@
-Flask==2.0.3
-Flask-SQLAlchemy==2.5.1
+Flask==2.2.5
+Flask-SQLAlchemy==3.0.2  # Use the latest version of Flask-SQLAlchemy
 mysqlclient==2.0.3
 python-dotenv==0.19.2
+SQLAlchemy==2.0.21  # Use SQLAlchemy 2.x version
+
+
+# Testing and coverage
+pytest==6.2.5
+coverage==6.3

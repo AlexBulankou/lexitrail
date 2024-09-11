@@ -1,6 +1,6 @@
 from flask import Flask
 from .config import Config
-from .database import init_db
+from .database import init_db, db  # Add db import
 from .routes import register_routes
 
 def create_app():
@@ -14,3 +14,6 @@ def create_app():
     register_routes(app)
 
     return app
+
+# Expose db so it can be imported from app
+__all__ = ['create_app', 'db']
