@@ -5,12 +5,12 @@ class UserTests(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.client, cls.app = TestUtils.setup_test_app()
+        cls.client, cls.app, _ = TestUtils.setup_test_app()  # Ignore temp_db_name
 
     @classmethod
     def tearDownClass(cls):
         TestUtils.teardown_test_db(cls.app)
-
+        
     def test_create_user(self):
         response = self.client.post('/users', json={'email': 'test@example.com'})
         self.assertEqual(response.status_code, 201)

@@ -18,6 +18,8 @@ class Word(db.Model):
     wordset_id = db.Column(db.Integer, db.ForeignKey('wordsets.wordset_id'), nullable=False)
     def1 = db.Column(db.String(1024), nullable=False)
     def2 = db.Column(db.String(1024), nullable=False)
+
+    # Relationships
     userwords = db.relationship('UserWord', backref='word', lazy=True)
     recall_histories = db.relationship('RecallHistory', backref='word', lazy=True)
 
@@ -29,7 +31,15 @@ class UserWord(db.Model):
     recall_state = db.Column(db.Integer, nullable=False)
     last_recall = db.Column(db.DateTime, nullable=True)
     last_recall_time = db.Column(db.DateTime, nullable=True)
-    recall_histories = db.relationship('RecallHistory', backref='userword', lazy=True)
+
+    # Relationship to RecallHistory
+    recall_histories = db.relationship(
+        'RecallHistory',
+        backref='userword',
+        lazy=True,
+        primaryjoin="and_(UserWord.user_id==RecallHistory.user_id, UserWord.word_id==RecallHistory.word_id)",
+        foreign_keys="[RecallHistory.user_id, RecallHistory.word_id]"
+    )
 
 class RecallHistory(db.Model):
     __tablename__ = 'recall_history'

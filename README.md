@@ -116,5 +116,21 @@ gcloud auth list
 ```
 
 
+# Running the tests
+```bash
+SQL_NAMESPACE=mysql
+CLUSTER_NAME=lexitrail-cluster
+REGION=us-central1
+gcloud container clusters get-credentials $CLUSTER_NAME --location=$REGION
+kubectl port-forward svc/mysql 3306:3306 -n ${SQL_NAMESPACE}
+
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+pytest
+```
+
+
+
 
 

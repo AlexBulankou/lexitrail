@@ -15,12 +15,21 @@ spec:
           - |
             echo "Installing MariaDB client (compatible with MySQL)...";
             apt-get update && apt-get install -y mariadb-client;
+            
             echo "Downloading SQL and CSV files from GCS...";
-            gsutil cp gs://${mysql_files_bucket}/schema.sql /mnt/sql/schema.sql;
+            gsutil cp gs://${mysql_files_bucket}/schema-tables.sql /mnt/sql/schema-tables.sql;
+            gsutil cp gs://${mysql_files_bucket}/schema-data.sql /mnt/sql/schema-data.sql;
             gsutil cp gs://${mysql_files_bucket}/csv/wordsets.csv /mnt/csv/wordsets.csv;
             gsutil cp gs://${mysql_files_bucket}/csv/words.csv /mnt/csv/words.csv;
-            echo "Running MySQL script...";
-            mysql --local-infile=1 -h mysql -u root -p${db_root_password} < /mnt/sql/schema.sql;
+
+            echo "Creating database if not exists...";
+            mysql -h mysql -u root -p${db_root_password} -e "CREATE DATABASE IF NOT EXISTS ${db_name}; USE ${db_name};"
+
+            echo "Running table creation script...";
+            mysql -h mysql -u root -p${db_root_password} ${db_name} < /mnt/sql/schema-tables.sql;
+
+            echo "Uploading initial data (if necessary)...";
+            mysql --local-infile=1 -h mysql -u root -p${db_root_password} ${db_name} < /mnt/sql/schema-data.sql;
         volumeMounts:
         - name: sql-volume
           mountPath: /mnt/sql

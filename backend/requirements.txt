@@ -1,8 +1,10 @@
 Flask==2.2.5
 Flask-SQLAlchemy==3.0.2  # Use the latest version of Flask-SQLAlchemy
-mysqlclient==2.0.3
+pymysql==1.0.3  # MySQL driver for SQLAlchemy
 python-dotenv==0.19.2
 SQLAlchemy==2.0.21  # Use SQLAlchemy 2.x version
+google-cloud-storage==2.10.0  # Required for downloading schema from GCP storage
+cryptography==3.4.8  # Or the latest compatible version
 
 
 # Testing and coverage

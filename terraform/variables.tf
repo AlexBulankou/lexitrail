@@ -45,3 +45,9 @@ variable "words_csv_path" {
   type        = string
   default     = "csv/words.csv"
 }
+
+variable "db_name" {
+  description = "DB name"
+  type        = string
+  default     = "lexitraildb"
+}

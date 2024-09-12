@@ -5,7 +5,7 @@ class WordsetTests(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.client, cls.app = TestUtils.setup_test_app()
+        cls.client, cls.app, _ = TestUtils.setup_test_app()  # Ignore temp_db_name
 
     @classmethod
     def tearDownClass(cls):

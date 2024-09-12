@@ -1,7 +1,3 @@
-CREATE DATABASE IF NOT EXISTS lexitraildb;
-
-USE lexitraildb;
-
 CREATE TABLE IF NOT EXISTS users (
     email VARCHAR(320) NOT NULL PRIMARY KEY
 );
@@ -18,7 +14,7 @@ CREATE TABLE IF NOT EXISTS words (
     def1 VARCHAR(1024) NOT NULL,
     def2 VARCHAR(1024) NOT NULL,
     UNIQUE(word, wordset_id),
-    FOREIGN KEY (wordset_id) REFERENCES wordsets(wordset_id)
+    FOREIGN KEY (wordset_id) REFERENCES wordsets(wordset_id) ON DELETE CASCADE ON UPDATE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS userwords (
@@ -31,8 +27,8 @@ CREATE TABLE IF NOT EXISTS userwords (
     recall_state INT NOT NULL,
     hint_img BLOB,
     PRIMARY KEY(user_id, word_id),
-    FOREIGN KEY (user_id) REFERENCES users(email),
-    FOREIGN KEY (word_id) REFERENCES words(word_id)
+    FOREIGN KEY (user_id) REFERENCES users(email) ON DELETE CASCADE ON UPDATE CASCADE,
+    FOREIGN KEY (word_id) REFERENCES words(word_id) ON DELETE CASCADE ON UPDATE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS recall_history (
@@ -43,24 +39,6 @@ CREATE TABLE IF NOT EXISTS recall_history (
     recall_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     old_recall_state INT NOT NULL,
     new_recall_state INT NOT NULL,
-    FOREIGN KEY (user_id) REFERENCES users(email),
-    FOREIGN KEY (word_id) REFERENCES words(word_id)
+    FOREIGN KEY (user_id) REFERENCES users(email) ON DELETE CASCADE ON UPDATE CASCADE,
+    FOREIGN KEY (word_id) REFERENCES words(word_id) ON DELETE CASCADE ON UPDATE CASCADE
 );
-
--- Load data into wordsets only if the table is empty
-IF (SELECT COUNT(*) FROM wordsets) = 0 THEN
-    LOAD DATA LOCAL INFILE '/mnt/csv/wordsets.csv'
-    INTO TABLE wordsets
-    FIELDS TERMINATED BY ',' 
-    LINES TERMINATED BY '\n'
-    IGNORE 1 ROWS;
-END IF;
-
--- Load data into words only if the table is empty
-IF (SELECT COUNT(*) FROM words) = 0 THEN
-    LOAD DATA LOCAL INFILE '/mnt/csv/words.csv'
-    INTO TABLE words
-    FIELDS TERMINATED BY ',' 
-    LINES TERMINATED BY '\n'
-    IGNORE 1 ROWS;
-END IF;
