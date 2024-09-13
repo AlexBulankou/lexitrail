@@ -20,7 +20,7 @@ else
 fi
 
 # Check if db_root_password is set
-if [ -z "$db_root_password" ]; then
+if [ -z "$DB_ROOT_PASSWORD" ]; then
     echo "Error: db_root_password not set in the .env file!"
     exit 1
 fi
@@ -36,14 +36,14 @@ echo "Found MySQL pod: $MYSQL_POD"
 
 # Verify that the database exists
 echo "Checking for databases..."
-kubectl exec -n "$NAMESPACE" "$MYSQL_POD" -- mysql -u root -p"$db_root_password" -e "SHOW DATABASES;"
+kubectl exec -n "$NAMESPACE" "$MYSQL_POD" -- mysql -u root -p"$DB_ROOT_PASSWORD" -e "SHOW DATABASES;"
 
 # Verify tables in the database
 echo "Checking for tables in $DBNAME..."
-kubectl exec -n "$NAMESPACE" "$MYSQL_POD" -- mysql -u root -p"$db_root_password" -e "USE $DBNAME; SHOW TABLES;"
+kubectl exec -n "$NAMESPACE" "$MYSQL_POD" -- mysql -u root -p"$DB_ROOT_PASSWORD" -e "USE $DBNAME; SHOW TABLES;"
 
 # Verify that data exists in the wordsets table
 echo "Checking data in wordsets table in $DBNAME..."
-kubectl exec -n "$NAMESPACE" "$MYSQL_POD" -- mysql -u root -p"$db_root_password" -e "USE $DBNAME; SELECT * FROM words LIMIT 55;"
+kubectl exec -n "$NAMESPACE" "$MYSQL_POD" -- mysql -u root -p"$DB_ROOT_PASSWORD" -e "USE $DBNAME; SELECT * FROM words LIMIT 55;"
 
 echo "Verification completed!"

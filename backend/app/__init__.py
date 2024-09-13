@@ -3,9 +3,9 @@ from .config import Config
 from .database import init_db, db  # Add db import
 from .routes import register_routes
 
-def create_app():
+def create_app(config_class=Config):
     app = Flask(__name__)
-    app.config.from_object(Config)
+    app.config.from_object(config_class)
     
     # Initialize the database
     init_db(app)

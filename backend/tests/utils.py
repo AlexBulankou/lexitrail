@@ -16,6 +16,12 @@ load_dotenv(dotenv_path=env_path)
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
+
+class TestConfig:
+    TESTING = True
+    SQLALCHEMY_TRACK_MODIFICATIONS = False
+    SQLALCHEMY_DATABASE_URI = ''  # Will be set dynamically in TestUtils
+
 class TestUtils:
     @staticmethod
     def generate_temp_db_name():
@@ -84,22 +90,20 @@ class TestUtils:
     def setup_test_app():
         """
         Creates and configures the Flask app and initializes the MySQL database for testing.
-        Returns the Flask test client and the app instance.
+        Returns the Flask test client, the app instance, and the temporary database name.
         """
-        app = create_app()
-        app.config['TESTING'] = True
-
         # Generate a temporary test database name
         temp_db_name = TestUtils.generate_temp_db_name()
 
-        # Hardcoded MySQL database URL with the dynamic database name
-        app.config['SQLALCHEMY_DATABASE_URI'] = f'mysql+pymysql://root:{os.getenv("DB_ROOT_PASSWORD")}@127.0.0.1:3306/{temp_db_name}'
-        app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+        # Define the MySQL database URL with the dynamic database name
+        TestConfig.SQLALCHEMY_DATABASE_URI = f'mysql+pymysql://root:{os.getenv("DB_ROOT_PASSWORD")}@127.0.0.1:3306/{temp_db_name}'
+        
+        # Pass the test configuration when creating the app
+        app = create_app(config_class=TestConfig)
         client = app.test_client()
 
         # Log the SQLAlchemy database URI
         logger.debug(f"Database URI used for testing: {app.config['SQLALCHEMY_DATABASE_URI']}")
-
 
 
         # Initialize the database
@@ -114,21 +118,21 @@ class TestUtils:
 
     @staticmethod
     def teardown_test_db(app, temp_db_name):
-        """
-        Drops the temporary database after tests are finished.
-        """
-        logger.debug(f"Dropping temporary database: {temp_db_name}")
-        connection = pymysql.connect(
-            host='127.0.0.1',  # Localhost as it's port-forwarded
-            port=3306,  # MySQL default port
-            user='root',
-            password=os.getenv('DB_ROOT_PASSWORD'),
-            charset='utf8mb4',
-            cursorclass=pymysql.cursors.DictCursor
-        )
-        with connection.cursor() as cursor:
-            cursor.execute(f"DROP DATABASE IF EXISTS {temp_db_name};")
-            connection.commit()
+            """
+            Drops the temporary database after tests are finished.
+            """
+            logger.debug(f"Dropping temporary database: {temp_db_name}")
+            connection = pymysql.connect(
+                host='127.0.0.1',  # Localhost as it's port-forwarded
+                port=3306,  # MySQL default port
+                user='root',
+                password=os.getenv('DB_ROOT_PASSWORD'),
+                charset='utf8mb4',
+                cursorclass=pymysql.cursors.DictCursor
+            )
+            with connection.cursor() as cursor:
+                cursor.execute(f"DROP DATABASE IF EXISTS {temp_db_name};")
+                connection.commit()
 
-        connection.close()
-        logger.debug(f"Temporary database {temp_db_name} dropped successfully.")
+            connection.close()
+            logger.debug(f"Temporary database {temp_db_name} dropped successfully.")

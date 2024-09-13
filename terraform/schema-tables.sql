@@ -18,6 +18,7 @@ CREATE TABLE IF NOT EXISTS words (
 );
 
 CREATE TABLE IF NOT EXISTS userwords (
+    id INT AUTO_INCREMENT PRIMARY KEY,  -- New ID field for testability
     user_id VARCHAR(320) NOT NULL,
     word_id INT NOT NULL,
     is_included BOOLEAN NOT NULL,
@@ -26,12 +27,13 @@ CREATE TABLE IF NOT EXISTS userwords (
     last_recall_time TIMESTAMP DEFAULT NULL,
     recall_state INT NOT NULL,
     hint_img BLOB,
-    PRIMARY KEY(user_id, word_id),
+    UNIQUE(user_id, word_id),
     FOREIGN KEY (user_id) REFERENCES users(email) ON DELETE CASCADE ON UPDATE CASCADE,
     FOREIGN KEY (word_id) REFERENCES words(word_id) ON DELETE CASCADE ON UPDATE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS recall_history (
+    id INT AUTO_INCREMENT PRIMARY KEY,  -- Added ID field to recall_history
     user_id VARCHAR(320) NOT NULL,
     word_id INT NOT NULL,
     is_included BOOLEAN NOT NULL,

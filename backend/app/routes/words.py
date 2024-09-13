@@ -7,7 +7,7 @@ bp = Blueprint('words', __name__, url_prefix='/wordsets/<int:wordset_id>/words')
 @bp.route('', methods=['GET'])
 def get_words_by_wordset(wordset_id):
     try:
-        wordset = Wordset.query.get(wordset_id)
+        wordset = db.session.get(Wordset, wordset_id)
         if not wordset:
             return not_found_response("Wordset not found")
         words = Word.query.filter_by(wordset_id=wordset_id).all()
