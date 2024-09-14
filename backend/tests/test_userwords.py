@@ -9,70 +9,90 @@ class UserWordTests(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        # Set up the test application and temporary database
+        """Set up the test application and temporary database."""
         cls.client, cls.app, cls.temp_db_name = TestUtils.setup_test_app()
 
     @classmethod
     def tearDownClass(cls):
-        # Tear down the temporary database after all tests
+        """Tear down the temporary database after all tests."""
         TestUtils.teardown_test_db(cls.app, cls.temp_db_name)
+
+    def setUp(self):
+        """Clean up the database before each test."""
+        with self.app.app_context():
+            TestUtils.clear_database(db)
 
     def test_get_userwords(self):
         """Test fetching userwords by user and wordset."""
         with self.app.app_context():
-            # Create a user, wordset, and word
-            user = User(email='test@example.com')
-            wordset = Wordset(description='Test Wordset')
-            db.session.add(wordset)
-            db.session.commit()
+            # Create test userword
+            user, wordset, word, _ = TestUtils.create_test_userword(db)
 
-            word = Word(word='Test Word', wordset_id=wordset.wordset_id, def1='Definition 1', def2='Definition 2')
-            db.session.add_all([user, word])
-            db.session.commit()
+            # Query userwords for the created user and wordset
+            response = self.client.get(f'/userwords/query?user_id={user.email}&wordset_id={wordset.wordset_id}')
+            self.assertEqual(response.status_code, 200)
 
-        # Query userwords for the created user and wordset
-        response = self.client.get('/userwords/query?user_id=test@example.com&wordset_id=1')
-        self.assertEqual(response.status_code, 200)
+            # Get the JSON response and extract the 'data' field
+            response_data = response.get_json()
+            userword_data = response_data.get('data')
 
-    def test_update_recall_state(self):
-        """Test updating the recall state of a userword."""
+            # Assert that the data is a list and contains expected data
+            self.assertIsInstance(userword_data, list)
+            self.assertGreater(len(userword_data), 0)
+
+
+
+    def test_update_recall_state_existing_userword(self):
+        """Test updating the recall state of an existing userword."""
         with self.app.app_context():
-            # Clean up existing data to avoid conflicts
-            db.session.query(UserWord).delete()
-            db.session.query(Word).delete()
-            db.session.query(Wordset).delete()
-            db.session.query(User).delete()
-            db.session.commit()
-
-            # Create unique user, wordset, and word
-            user = User(email='user@example.com')
-            wordset = Wordset(description='Test Wordset')
-            db.session.add(wordset)
-            db.session.commit()  # Commit wordset to get wordset_id
-
-            word = Word(
-                word=f'Test Word {datetime.utcnow().timestamp()}',
-                wordset_id=wordset.wordset_id,
-                def1='Definition 1',
-                def2='Definition 2'
-            )
-            db.session.add(word)
-            db.session.commit()  # Commit word to get word_id
-
-            # Create UserWord with the populated word_id
-            userword = UserWord(user_id=user.email, word_id=word.word_id, is_included=True, recall_state=1)
-            db.session.add_all([user, userword])
-            db.session.commit()
+            # Create test data
+            user, _, word, userword = TestUtils.create_test_userword(db)
 
             # Perform update recall state test
-            response = self.client.put(f'/userwords/{userword.id}/recall', json={'recall_state': 2})
+            response = self.client.put(
+                f'/userwords/{user.email}/{word.word_id}/recall',
+                json={'recall_state': 2, 'recall': True, 'is_included': True}
+            )
             self.assertEqual(response.status_code, 200)
+
+            # Verify that the UserWord was updated
+            updated_userword = db.session.query(UserWord).filter_by(user_id=user.email, word_id=word.word_id).first()
+            self.assertIsNotNone(updated_userword)
+            self.assertEqual(updated_userword.recall_state, 2)
+            self.assertEqual(updated_userword.is_included, True)
 
             # Verify that RecallHistory was updated
             recall_history = db.session.query(RecallHistory).filter_by(user_id=user.email, word_id=word.word_id).first()
             self.assertIsNotNone(recall_history)
             self.assertEqual(recall_history.new_recall_state, 2)
             self.assertEqual(recall_history.old_recall_state, 1)
+
+    def test_update_recall_state_new_userword(self):
+        """Test creating a new userword entry and updating recall state."""
+        with self.app.app_context():
+            # Use TestUtils to create the test user, wordset, and word
+            user, wordset, word = TestUtils.create_test_word(db)
+
+            # Perform update recall state test for a new userword entry
+            response = self.client.put(
+                f'/userwords/{user.email}/{word.word_id}/recall',
+                json={'recall_state': 2, 'recall': True, 'is_included': True}
+            )
+            self.assertEqual(response.status_code, 200)
+
+            # Verify the new userword was created
+            userword = db.session.query(UserWord).filter_by(user_id=user.email, word_id=word.word_id).first()
+            self.assertIsNotNone(userword)
+            self.assertEqual(userword.recall_state, 2)
+            self.assertEqual(userword.is_included, True)
+
+            # Verify that RecallHistory was updated
+            recall_history = db.session.query(RecallHistory).filter_by(user_id=user.email, word_id=word.word_id).first()
+            self.assertIsNotNone(recall_history)
+            self.assertEqual(recall_history.new_recall_state, 2)
+            self.assertEqual(recall_history.old_recall_state, None)  # No old recall state for new entry
+            self.assertEqual(recall_history.recall, True)
+
 
 
 if __name__ == '__main__':

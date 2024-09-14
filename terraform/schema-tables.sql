@@ -39,7 +39,7 @@ CREATE TABLE IF NOT EXISTS recall_history (
     is_included BOOLEAN NOT NULL,
     recall BOOLEAN NOT NULL,
     recall_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    old_recall_state INT NOT NULL,
+    old_recall_state INT NULL,
     new_recall_state INT NOT NULL,
     FOREIGN KEY (user_id) REFERENCES users(email) ON DELETE CASCADE ON UPDATE CASCADE,
     FOREIGN KEY (word_id) REFERENCES words(word_id) ON DELETE CASCADE ON UPDATE CASCADE

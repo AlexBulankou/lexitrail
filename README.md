@@ -160,61 +160,66 @@ This Flask API provides CRUD functionality for users, wordsets, words, and userw
 1. **Create and Activate a Virtual Environment**  
    Create a virtual environment and activate it:
 
-   ```bash
-   python3 -m venv venv
-   source venv/bin/activate
-   ```
+```bash
+cd backend
+python3 -m venv venv
+source venv/bin/activate
+```
 
 2. **Install Dependencies**  
    Install the required dependencies:
 
-   ```bash
-   pip install -r requirements.txt
-   ```
+```bash
+pip install -r requirements.txt
+```
 
 3. **Port-forward to connect to mysql db**
 
 ```bash
+gcloud auth login
+gcloud container clusters get-credentials lexitrail-cluster --location=us-central1
 kubectl port-forward svc/mysql 3306:3306 -n mysql
 ```
 
 4. **Ensure connection to db**
 
-   ```bash
-   # Load environment variables from the parent directory's .env file
-   if [ -f ../.env ]; then
-      echo "Loading environment variables from ../.env file..."
-      export $(grep -v '^#' ../.env | xargs)
-   else
-      echo "Error: .env file not found in the parent directory!"
-      exit 1
-   fi
+```bash
+# Load environment variables from the parent directory's .env file
+if [ -f ../.env ]; then
+   echo "Loading environment variables from ../.env file..."
+   export $(grep -v '^#' ../.env | xargs)
+else
+   echo "Error: .env file not found in the parent directory!"
+   exit 1
+fi
 
-   # Check if db_root_password is set
-   if [ -z "$DB_ROOT_PASSWORD" ]; then
-      echo "Error: db_root_password not set in the .env file!"
-      exit 1
-   fi
-   mysql -u root -p"$DB_ROOT_PASSWORD" -h 127.0.0.1 -P 3306 -e "SHOW DATABASES;"
-   ```
+# Check if db_root_password is set
+if [ -z "$DB_ROOT_PASSWORD" ]; then
+   echo "Error: db_root_password not set in the .env file!"
+   exit 1
+fi
+mysql -u root -p"$DB_ROOT_PASSWORD" -h 127.0.0.1 -P 3306 -e "SHOW DATABASES;"
+```
 
 3. **Run Unit Tests**  
    With the `.env` file already set up at the root level, run the tests:
 
-   ```bash
-   pytest
-   # or 
-   python -m unittest discover -s tests
-   # or
-   pytest tests/test_users.py::UserTests::test_create_user
-   ```
+```bash
+pytest
+# or other examples:
+pytest tests/test_users.py::UserTests::test_create_user
+pytest tests/test_userwords.py::UserWordTests
+pytest tests/test_words.py::WordTests
+pytest tests/test_wordsets.py::WordSetTests
+
+```
 
 4. **Deactivate the Virtual Environment**  
    Once finished, deactivate the virtual environment:
 
-   ```bash
-   deactivate
-   ```
+```bash
+deactivate
+```
 
 
 
