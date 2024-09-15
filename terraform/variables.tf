@@ -51,3 +51,13 @@ variable "db_name" {
   type        = string
   default     = "lexitraildb"
 }
+
+variable "backend_namespace" {
+  type    = string
+  default = "backend"
+}
+
+variable "backend_container_name" {
+  type    = string
+  default = "lexitrail-backend"
+}

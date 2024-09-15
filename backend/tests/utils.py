@@ -9,7 +9,6 @@ from pathlib import Path
 from sqlalchemy import text
 from datetime import datetime  # For timestamp generation
 import time
-from flask.testing import FlaskClient
 import werkzeug
 
 
@@ -20,12 +19,6 @@ load_dotenv(dotenv_path=env_path)
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
-
-
-class CustomFlaskClient(FlaskClient):
-    def open(self, *args, **kwargs):
-        kwargs.setdefault('headers', {})['User-Agent'] = 'Custom-Client/1.0'
-        return super().open(*args, **kwargs)
 
 class TestConfig:
     TESTING = True
@@ -120,7 +113,6 @@ class TestUtils:
 
         # Create the Flask app with the test configuration
         app = create_app(config_class=TestConfig)
-        app.test_client_class = CustomFlaskClient  # Use custom client to suppress Werkzeug version warning
         client = app.test_client()
 
         # Disable object expiration after commit

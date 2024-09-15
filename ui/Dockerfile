@@ -1,6 +1,9 @@
 # Use an official Node.js runtime as a parent image
 FROM node:16-alpine
 
+# Install curl using the Alpine package manager
+RUN apk add --no-cache curl
+
 # Set the working directory to /app
 WORKDIR /app
 

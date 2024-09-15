@@ -277,5 +277,89 @@ resource "kubectl_manifest" "mysql_schema_and_data_job" {
 }
 
 
+# Python backend
+
+# Cloud Build Execution for Backend Flask service
+
+resource "null_resource" "backend_cloud_build" {
+  triggers = {
+    files_hash = sha1(join("", [for f in fileset(path.root, "../backend/**") : filesha1(f)]))
+  }
+
+  provisioner "local-exec" {
+    command = <<EOT
+      gcloud builds submit --project ${var.project_id} \
+                           --tag ${var.region}-docker.pkg.dev/${var.project_id}/${var.repository_id}/${var.backend_container_name}:latest \
+                           ../backend/
+    EOT
+  }
+  depends_on = [
+    google_project_iam_member.compute_roles,
+    google_project_iam_member.cloudbuild_roles,
+    google_artifact_registry_repository.my_repo  # Ensure artifact registry is available
+  ]
+}
+
+# Backend Namespace in GKE
+resource "kubectl_manifest" "backend_namespace" {
+  yaml_body = templatefile("${path.module}/k8s_templates/backend-namespace.yaml.tpl", {
+    backend_namespace = var.backend_namespace
+  })
+  depends_on = [
+    google_container_cluster.autopilot_cluster  # Ensure GKE cluster is created
+  ]
+}
+
+# Backend Deployment in GKE
+resource "kubectl_manifest" "backend_deployment" {
+  yaml_body = templatefile("${path.module}/k8s_templates/backend-deployment.yaml.tpl", {
+    project_id        = var.project_id,
+    container_name    = var.backend_container_name,
+    repo_name         = var.repository_id,
+    region            = var.region,
+    backend_namespace = var.backend_namespace
+  })
+  depends_on = [
+    kubectl_manifest.backend_namespace,        # Ensure backend namespace exists
+    null_resource.backend_cloud_build          # Ensure backend image is built and pushed
+  ]
+}
+
+# Backend Service in GKE
+resource "kubectl_manifest" "backend_service" {
+  yaml_body = templatefile("${path.module}/k8s_templates/backend-service.yaml.tpl", {
+    backend_namespace = var.backend_namespace
+  })
+  depends_on = [
+    kubectl_manifest.backend_namespace,        # Ensure backend namespace exists
+    kubectl_manifest.backend_deployment        # Ensure backend deployment exists
+  ]
+}
+
+# Backend ConfigMap in GKE
+resource "kubectl_manifest" "backend_configmap" {
+  yaml_body = templatefile("${path.module}/k8s_templates/backend-configmap.yaml.tpl", {
+    backend_namespace = var.backend_namespace,
+    mysql_files_bucket = google_storage_bucket.mysql_files_bucket.name,
+    sql_namespace = var.sql_namespace,
+    database_name = var.db_name
+  })
+  depends_on = [
+    kubectl_manifest.backend_namespace,        # Ensure backend namespace exists
+    google_storage_bucket.mysql_files_bucket   # Ensure the storage bucket is created
+  ]
+}
+
+# Backend Secret in GKE
+resource "kubectl_manifest" "backend_secret" {
+  yaml_body = templatefile("${path.module}/k8s_templates/backend-secret.yaml.tpl", {
+    backend_namespace = var.backend_namespace,
+    db_root_password  = base64encode(local.db_root_password)  # Perform the base64 encoding here
+  })
+  depends_on = [kubectl_manifest.backend_namespace]
+}
+
+
+
 
 
