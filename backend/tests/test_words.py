@@ -13,7 +13,7 @@ class WordsTests(unittest.TestCase):
     @classmethod
     def tearDownClass(cls):
         """Tear down the temporary database after all tests."""
-        TestUtils.teardown_test_db(cls.app, cls.temp_db_name)
+        TestUtils.teardown_test_db(cls.temp_db_name)
 
     def setUp(self):
         """Clean up the database before each test."""

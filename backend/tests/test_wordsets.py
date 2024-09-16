@@ -10,7 +10,7 @@ class WordsetTests(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
-        TestUtils.teardown_test_db(cls.app, cls.temp_db_name)
+        TestUtils.teardown_test_db(cls.temp_db_name)
 
     def test_get_wordsets(self):
         response = self.client.get('/wordsets')

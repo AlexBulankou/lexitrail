@@ -1,0 +1,35 @@
+/* src/styles/Wordsets.css */
+
+.wordsets-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    background-color: #f9f9f9;
+  }
+  
+  .wordsets-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 20px;
+    width: 80%;
+  }
+  
+  .wordset-tile {
+    background-color: #007bff;
+    color: white;
+    padding: 20px;
+    border-radius: 8px;
+    text-align: center;
+    cursor: pointer;
+    transition: transform 0.3s ease;
+  }
+  
+  .wordset-tile:hover {
+    transform: scale(1.05);
+  }
+  
+  .wordset-tile h3 {
+    margin: 0;
+  }
+  

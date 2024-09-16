@@ -17,7 +17,7 @@ spec:
       - name: lexitrail-backend
         image: ${region}-docker.pkg.dev/${project_id}/${repo_name}/${container_name}:latest
         ports:
-        - containerPort: 5000
+        - containerPort: 5001
         env:
         - name: MYSQL_FILES_BUCKET
           valueFrom:

@@ -8,6 +8,6 @@ spec:
     app: lexitrail-backend
   ports:
     - protocol: TCP
-      port: 5000
-      targetPort: 5000
-  type: ClusterIP  # Internal service type
+      port: 5001
+      targetPort: 5001
+  type: LoadBalancer  # Expose service externally

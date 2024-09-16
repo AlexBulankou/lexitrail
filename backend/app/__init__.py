@@ -2,6 +2,7 @@ from flask import Flask
 from .config import Config
 from .database import init_db, db  # Add db import
 from .routes import register_routes
+from flask_cors import CORS  # Import CORS
 
 def create_app(config_class=Config):
     app = Flask(__name__)
@@ -12,6 +13,9 @@ def create_app(config_class=Config):
     
     # Register routes
     register_routes(app)
+    
+    # Enable CORS for all origins
+    CORS(app, resources={r"/*": {"origins": "*"}})
 
     return app
 

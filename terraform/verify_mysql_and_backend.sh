@@ -11,7 +11,7 @@ BACKEND_NAMESPACE=backend
 UI_NAMESPACE=default  # Assuming UI is in the default namespace
 DBNAME=lexitraildb
 BACKEND_SERVICE_NAME=lexitrail-backend-service
-BACKEND_PORT=5000  # The port your Flask app listens on
+BACKEND_PORT=5000
 BACKEND_ROUTE=/wordsets
 UI_SERVICE_NAME=lexitrail-ui-service
 UI_ROUTE=/
@@ -54,23 +54,21 @@ kubectl exec -n "$MYSQL_NAMESPACE" "$MYSQL_POD" -- mysql -u root -p"$DB_ROOT_PAS
 echo "Checking data in words table in $DBNAME from MySQL pod..."
 kubectl exec -n "$MYSQL_NAMESPACE" "$MYSQL_POD" -- mysql -u root -p"$DB_ROOT_PASSWORD" -e "USE $DBNAME; SELECT * FROM words LIMIT 55;"
 
-# ========== Flask Backend Verification using Local Port Forwarding ==========
+# ========== Flask Backend Verification via External LoadBalancer ==========
 
-echo "Setting up port forwarding for the Flask backend service..."
+# Get the external IP of the backend service
+BACKEND_IP=$(kubectl get svc -n "$BACKEND_NAMESPACE" "$BACKEND_SERVICE_NAME" -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
 
-# Start kubectl port-forward in the background
-kubectl port-forward svc/$BACKEND_SERVICE_NAME $BACKEND_PORT:$BACKEND_PORT -n $BACKEND_NAMESPACE &
-PORT_FORWARD_PID=$!
+if [ -z "$BACKEND_IP" ]; then
+    echo "Error: Unable to get external IP for the Flask backend service!"
+    exit 1
+fi
 
-# Wait a few seconds to ensure port forwarding is active
-sleep 5
-
-# Define the local URL for verification
-BACKEND_URL="http://localhost:$BACKEND_PORT$BACKEND_ROUTE"
+BACKEND_URL="http://$BACKEND_IP:$BACKEND_PORT$BACKEND_ROUTE"
 
 echo "Verifying the /wordsets route at $BACKEND_URL..."
 
-# Make the request to the Flask backend service via localhost and capture the response
+# Make the request to the Flask backend service and capture the response
 HTTP_RESPONSE=$(curl --write-out "%{http_code}" --silent --output /tmp/wordsets_response.json "$BACKEND_URL")
 RESPONSE_BODY=$(cat /tmp/wordsets_response.json)
 
@@ -83,13 +81,8 @@ else
     echo "Error: Failed to verify Flask backend /wordsets route! HTTP response code: $HTTP_RESPONSE"
     echo "Response body:"
     echo "$RESPONSE_BODY"
-    # Stop the port forwarding before exiting
-    kill $PORT_FORWARD_PID
     exit 1
 fi
-
-# Stop the port forwarding
-kill $PORT_FORWARD_PID
 
 # ========== UI Verification using LoadBalancer IP ==========
 

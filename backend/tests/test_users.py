@@ -11,7 +11,7 @@ class UserTests(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
-        TestUtils.teardown_test_db(cls.app, cls.temp_db_name)
+        TestUtils.teardown_test_db(cls.temp_db_name)
         
     def test_create_user(self):
         response = self.client.post('/users', json={'email': 'test@example.com'})

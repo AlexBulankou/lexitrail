@@ -4,26 +4,15 @@ import pymysql
 from app import create_app, db
 from app.models import User, Wordset, Word, UserWord, RecallHistory  # Importing necessary models
 from google.cloud import storage
-from dotenv import load_dotenv
-from pathlib import Path
+from app.config import TestConfig  # Import TestConfig for testing
 from sqlalchemy import text
-from datetime import datetime  # For timestamp generation
+from datetime import datetime
 import time
 import werkzeug
-
-
-# Load environment variables from the parent directory's .env file
-env_path = Path('..') / '.env'
-load_dotenv(dotenv_path=env_path)
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
-
-class TestConfig:
-    TESTING = True
-    SQLALCHEMY_TRACK_MODIFICATIONS = False
-    SQLALCHEMY_DATABASE_URI = ''  # Dynamically set in TestUtils
 
 class TestUtils:
 
@@ -64,11 +53,12 @@ class TestUtils:
         """
         logger.debug(f"Executing SQL script for database: {db_name}")
         
+        # Use the DB connection details from TestConfig
         connection = pymysql.connect(
             host='127.0.0.1',
             port=3306,
             user='root',
-            password=os.getenv('DB_ROOT_PASSWORD'),
+            password=TestConfig.DB_ROOT_PASSWORD,  # Use TestConfig
             charset='utf8mb4',
             cursorclass=pymysql.cursors.DictCursor,
             autocommit=True
@@ -108,15 +98,12 @@ class TestUtils:
 
         temp_db_name = TestUtils.generate_temp_db_name()
 
-        # Set the dynamic MySQL database URL
-        TestConfig.SQLALCHEMY_DATABASE_URI = f'mysql+pymysql://root:{os.getenv("DB_ROOT_PASSWORD")}@127.0.0.1:3306/{temp_db_name}'
+        # Set the dynamic MySQL database URL for testing
+        TestConfig.SQLALCHEMY_DATABASE_URI = f'mysql+pymysql://root:{TestConfig.DB_ROOT_PASSWORD}@127.0.0.1:3306/{temp_db_name}'
 
         # Create the Flask app with the test configuration
         app = create_app(config_class=TestConfig)
         client = app.test_client()
-
-        # Disable object expiration after commit
-        # db.session.configure(expire_on_commit=False)
 
         logger.debug(f"Database URI for testing: {TestConfig.SQLALCHEMY_DATABASE_URI}")
 
@@ -129,7 +116,7 @@ class TestUtils:
         return client, app, temp_db_name
 
     @staticmethod
-    def teardown_test_db(app, temp_db_name):
+    def teardown_test_db(temp_db_name):
         """
         Drops the temporary database after the tests are finished.
         """
@@ -138,7 +125,7 @@ class TestUtils:
             host='127.0.0.1',
             port=3306,
             user='root',
-            password=os.getenv('DB_ROOT_PASSWORD'),
+            password=TestConfig.DB_ROOT_PASSWORD,  # Use TestConfig
             charset='utf8mb4',
             cursorclass=pymysql.cursors.DictCursor
         )
@@ -182,7 +169,6 @@ class TestUtils:
         db.session.add(user)
         db.session.commit()
 
-        
         wordset = Wordset(description=word_description)
         db.session.add(wordset)
         db.session.commit()
@@ -191,7 +177,6 @@ class TestUtils:
         wordset = db.session.query(Wordset).filter_by(description=word_description).first()
         if wordset is None:
             raise ValueError(f"Failed to retrieve wordset with description: {word_description}")
-
 
         # Create and add word
         if word_name is None:
@@ -221,7 +206,6 @@ class TestUtils:
 
         return user, wordset, word
 
-
     @staticmethod
     def create_test_userword(db, user_email='test@example.com', word_description='Test Wordset', word_name=None):
         """
@@ -239,6 +223,3 @@ class TestUtils:
         userword = db.session.query(UserWord).filter_by(user_id=user.email, word_id=word.word_id).first()
 
         return user, wordset, word, userword
-
-
-

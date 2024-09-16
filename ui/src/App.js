@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Route, Routes, Link } from "react-router-dom";
+import { BrowserRouter as Router, Route, Routes, Navigate } from "react-router-dom";
 import Game from './components/Game';
 import Completed from './components/Completed';
 import Profile from './components/Profile.js';
 import PrivateRoute from './components/PrivateRoute.js';
 import NavBar from './components/NavBar.js';  // Import NavBar component
 import { useAuth } from './hooks/useAuth';  // Custom Hook
-import { fetchWords } from './services/wordsService';
+import Wordsets from './components/Wordsets'; // Import Wordsets component
+import { getWordsByWordset } from './services/wordsService'; // New function to fetch words for a wordset
+
 
 import './styles/Global.css';
 import './styles/App.css';
@@ -21,14 +23,15 @@ const App = () => {
   const [timeElapsed, setTimeElapsed] = useState(0);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    fetchWords()
+  const loadWordsForWordset = (wordsetId) => {
+    setLoading(true);
+    getWordsByWordset(wordsetId)
       .then((loadedWords) => {
-        setLoading(false);
         setToShow(loadedWords);
+        setLoading(false);
       })
       .catch(() => setLoading(false));
-  }, []);
+  };
 
   useEffect(() => {
     if (!loading) {
@@ -119,7 +122,8 @@ const App = () => {
       <NavBar user={user} login={login} logOut={logOut} />
       <Routes>
         <Route path="/" element={<Profile profileDetails={user} login={login} logout={logOut} />} />
-        <Route path="/game" element={
+        <Route path="/wordsets" element={<Wordsets />} />
+        <Route path="/game/:wordsetId" element={
           <PrivateRoute profileDetails={user} login={login} logOut={logOut}>
             {!loading && toShow.length === 0 ? (
               <Completed
@@ -142,6 +146,8 @@ const App = () => {
             )}
           </PrivateRoute>
         } />
+        {/* This will handle the base /game route by redirecting to /wordsets */}
+        <Route path="/game" element={<Navigate to="/wordsets" />} />
       </Routes>
     </Router>
   );
