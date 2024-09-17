@@ -246,7 +246,7 @@ curl -v http://localhost:5001/wordsets
 
 ```bash
 cd UI
-npm test
+npm start
 
 # validate
 curl -v http://localhost:5001/wordsets

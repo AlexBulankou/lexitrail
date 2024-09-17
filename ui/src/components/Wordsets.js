@@ -34,6 +34,7 @@ const Wordsets = () => {
     navigate(`/game/${wordsetId}`);
   };
 
+  /*
   if (loading) {
     return <p>Loading wordsets...</p>;
   }
@@ -41,6 +42,7 @@ const Wordsets = () => {
   if (error) {
     return <p>{error}</p>;
   }
+    */
 
   return (
     <div className="wordsets-container">

@@ -1,19 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import WordCard from './WordCard';
-import '../styles/Game.css'; // Importing styles for the Game component
+import Completed from './Completed';  // Import Completed component
+import { useParams } from 'react-router-dom';  
+import { useWordsetLoader } from '../hooks/useWordsetLoader';
+import '../styles/Game.css';  
 
-const Game = ({
-  timeElapsed,
-  displayWords, // Receive the list of words directly from App.js
-  handleMemorized,
-  handleNotMemorized,
-  firstTimeCorrectCount,
-  totalWords,
-  correctlyMemorizedCount,
-  incorrectAttempts
-}) => {
+const Game = () => {
+  const { wordsetId } = useParams();
+  const { toShow: displayWords, loading, timeElapsed, handleMemorized, handleNotMemorized, firstTimeCorrect, correctlyMemorized, incorrectAttempts, resetGame } = useWordsetLoader(wordsetId);  
+
   const [layoutClass, setLayoutClass] = useState('layout1');
-  const [maxCardsToShow, setMaxCardsToShow] = useState(1); // State to track max cards based on layout
+  const [maxCardsToShow, setMaxCardsToShow] = useState(1);  
 
   useEffect(() => {
     updateLayout();
@@ -28,46 +25,57 @@ const Game = ({
     const width = window.innerWidth;
     const height = window.innerHeight;
 
-    const cardWidth = 250; // Estimated width of each card in pixels
-    const cardHeight = 300; // Estimated height of each card in pixels
+    const cardWidth = 250; 
+    const cardHeight = 300;  
 
-    // Determine layout based on both width and height
     if (width <= cardWidth * 2) {
       setLayoutClass('layout1');
-      setMaxCardsToShow(1); // Layout1 allows 1 card
+      setMaxCardsToShow(1);  
     } else if (width <= cardWidth * 3) {
       if (height <= cardHeight * 2) {
         setLayoutClass('layout2');
-        setMaxCardsToShow(2); // Layout2 allows 2 cards
+        setMaxCardsToShow(2);  
       } else {
         setLayoutClass('layout4');
-        setMaxCardsToShow(4); // Layout2 allows 4 cards
+        setMaxCardsToShow(4);  
       }
     } else {
       if (height <= cardHeight * 2) {
         setLayoutClass('layout3');
-        setMaxCardsToShow(3); // Layout3 allows 3 cards
+        setMaxCardsToShow(3);  
       } else {
         setLayoutClass('layout5');
-        setMaxCardsToShow(6); // Layout5 allows 6 cards
+        setMaxCardsToShow(6);  
       }
-    } 
+    }
   };
 
   const handleCardGuessed = (index, isCorrect) => {
     const word = displayWords[index];
-    console.log(`handleCardGuessed: Guessing word at index ${index}: ${word.word}, isCorrect: ${isCorrect}`);
-
-    
     if (isCorrect) {
-      handleMemorized(index, maxCardsToShow); // Mark the word as memorized
+      handleMemorized(index, maxCardsToShow);  
     } else {
-      handleNotMemorized(index, maxCardsToShow); // Mark the word as not memorized
+      handleNotMemorized(index, maxCardsToShow);  
     }
   };
 
-  // Slice displayWords to respect the layout rules
   const wordsToRender = displayWords.slice(0, maxCardsToShow);
+
+  if (loading) {
+    return <div>Loading...</div>;
+  }
+
+  // If there are no words left to show, display the Completed component
+  if (displayWords.length === 0) {
+    return (
+      <Completed
+        timeElapsed={timeElapsed}
+        firstTimeCorrect={firstTimeCorrect}
+        incorrectAttempts={incorrectAttempts}
+        resetGame={resetGame}  // Provide a way to reset the game
+      />
+    );
+  }
 
   return (
     <div className="container">
@@ -87,15 +95,15 @@ const Game = ({
       </div>
       <div className="progress-bar-container">
         <div className="progress-bar">
-          <div className="progress" style={{ width: `${(correctlyMemorizedCount / totalWords) * 100}%` }}></div>
+          <div className="progress" style={{ width: `${(correctlyMemorized.size / displayWords.length) * 100}%` }}></div>
         </div>
         <div className="progress-info">
-          recalled {correctlyMemorizedCount} out of {totalWords}
+          recalled {correctlyMemorized.size} out of {displayWords.length}
         </div>
       </div>
       <div className="progress-stats">
         <div className="not-memorized">❌ {Object.keys(incorrectAttempts).length}</div>
-        <div className="memorized">✔️ {correctlyMemorizedCount}</div>
+        <div className="memorized">✔️ {correctlyMemorized.size}</div>
       </div>
     </div>
   );
