@@ -9,6 +9,7 @@ from sqlalchemy import text
 from datetime import datetime
 import time
 import werkzeug
+from app.auth import default_mock_user
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
@@ -101,6 +102,9 @@ class TestUtils:
         # Set the dynamic MySQL database URL for testing
         TestConfig.SQLALCHEMY_DATABASE_URI = f'mysql+pymysql://root:{TestConfig.DB_ROOT_PASSWORD}@127.0.0.1:3306/{temp_db_name}'
 
+        # Set the testing environment variable
+        os.environ['TESTING'] = 'True'
+        
         # Create the Flask app with the test configuration
         app = create_app(config_class=TestConfig)
         client = app.test_client()
@@ -160,7 +164,7 @@ class TestUtils:
             raise
 
     @staticmethod
-    def create_test_word(db, user_email='test@example.com', word_description='Test Wordset', word_name=None):
+    def create_test_word(db, user_email=default_mock_user, word_description='Test Wordset', word_name=None):
         """
         Create a test user, wordset, and word entry.
         """
@@ -207,7 +211,7 @@ class TestUtils:
         return user, wordset, word
 
     @staticmethod
-    def create_test_userword(db, user_email='test@example.com', word_description='Test Wordset', word_name=None):
+    def create_test_userword(db, user_email=default_mock_user, word_description='Test Wordset', word_name=None):
         """
         Create a test user, wordset, word, and userword entry.
         """
@@ -223,3 +227,23 @@ class TestUtils:
         userword = db.session.query(UserWord).filter_by(user_id=user.email, word_id=word.word_id).first()
 
         return user, wordset, word, userword
+    
+
+    @staticmethod
+    def mock_auth_header(headers, email=default_mock_user):
+        """
+        Helper function to mock the Authorization header for a specific user.
+        Merges the Authorization header with any other existing headers.
+        """
+        headers['Authorization'] = f'Bearer {email}'
+        return headers
+
+    @staticmethod
+    def authenticate_and_create_user(client, user_email=default_mock_user):
+        """
+        Helper function to mock the creation of a user and authenticate with Authorization header.
+        """
+        headers = {}
+        TestUtils.mock_auth_header(headers, email=user_email)
+        response = client.post('/users', json={'email': user_email}, headers=headers)
+        return response

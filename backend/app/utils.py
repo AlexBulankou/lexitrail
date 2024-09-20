@@ -1,4 +1,4 @@
-from flask import jsonify
+from flask import request, jsonify
 
 def to_dict(model_instance):
     """
@@ -27,3 +27,16 @@ def error_response(message="An error occurred", status_code=400):
     """
     response = {"error": message}
     return jsonify(response), status_code
+
+def validate_user_access(email):
+    authenticated_email = request.user['email']
+
+    # Print debug information for authenticated user
+    print(f"Authenticated user: {request.user['email']} accessing user: {email}")
+
+    # Check if the authenticated user is trying to access their own data
+    if authenticated_email != email:
+        return jsonify({"message": "Unauthorized: You can only access your own data"}), 403
+
+    # If the user is authorized, return None to allow the request to proceed
+    return None

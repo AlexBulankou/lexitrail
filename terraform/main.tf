@@ -48,6 +48,7 @@ data "dotenv" "env" {
 
 locals {
   db_root_password = data.dotenv.env.entries.DB_ROOT_PASSWORD
+  google_client_id = data.dotenv.env.entries.GOOGLE_CLIENT_ID
 }
 
 

@@ -1,7 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
 import { getWordsByWordset } from '../services/wordsService';
+import { getUserWordsByWordset, updateUserWordRecall } from '../services/userService';
+import { formatDistanceToNow } from 'date-fns'; // Importing the date formatting function
 
-export const useWordsetLoader = (wordsetId) => {
+export const useWordsetLoader = (wordsetId, userId) => { // Make sure you pass userId in the component using this hook
   const [toShow, setToShow] = useState([]);
   const [loading, setLoading] = useState(true);
   const [firstTimeCorrect, setFirstTimeCorrect] = useState([]);
@@ -9,28 +11,62 @@ export const useWordsetLoader = (wordsetId) => {
   const [correctlyMemorized, setCorrectlyMemorized] = useState(new Set());
   const [timeElapsed, setTimeElapsed] = useState(0);
   
-  const loadWordsForWordset = useCallback(() => {
+  const formatRecallTime = (recallTime) => {
+    const recallDate = new Date(recallTime);
+    return formatDistanceToNow(recallDate, { addSuffix: true });
+  };
+
+  const loadWordsForWordset = useCallback(async () => {
     setLoading(true);
-    getWordsByWordset(wordsetId)
-      .then((response) => {
-        const loadedWords = response.data;  // Assuming your API response includes { data: [...] }
-        const convertedWords = loadedWords.map((word) => ({
+    try {
+      const response = await getWordsByWordset(wordsetId);
+      const loadedWords = response.data;
+
+      // Fetch userword metadata (recall history, exclusion state) for each word
+      const userwordsResponse = await getUserWordsByWordset(userId, wordsetId);
+      const userWordsMetadata = userwordsResponse.data;
+
+      const convertedWords = loadedWords.map((word) => {
+        const userWord = userWordsMetadata.find(uw => uw.word_id === word.word_id);
+        return {
           word: word.word,
-          meaning: `${word.def1}\n${word.def2}`,  // Combine def1 and def2 as meaning
+          meaning: `${word.def1}\n${word.def2}`,
           word_id: word.word_id,
           wordset_id: word.wordset_id,
-        }));
-        setToShow(convertedWords);
-        setLoading(false);
-      })
-      .catch(() => setLoading(false));
-  }, [wordsetId]);
+          is_included: userWord ? userWord.is_included : true,
+          recall_history: userWord 
+            ? userWord.recall_histories.map((recall) => ({
+                ...recall,
+                relative_recall_time: formatRecallTime(recall.recall_time) // Format recall time
+              }))
+            : [],
+        };
+      });
 
-  useEffect(() => {
-    if (wordsetId) {
-      loadWordsForWordset();
+      setToShow(convertedWords);
+      setLoading(false);
+    } catch (error) {
+      setLoading(false);
+      console.error('Error loading words or userword metadata:', error);
     }
-  }, [loadWordsForWordset, wordsetId]);
+  }, [wordsetId, userId]);
+  
+
+
+  // Handle exclusion/inclusion
+  const toggleExclusion = async (index) => {
+    const currentWord = toShow[index];
+    const newInclusionState = !currentWord.is_included;
+
+    // Update the inclusion state in the backend
+    await updateUserWordRecall(userId, currentWord.word_id, 0, false, newInclusionState);
+    
+    // Update the local state
+    const updatedWords = [...toShow];
+    updatedWords[index].is_included = newInclusionState;
+    setToShow(updatedWords);
+  };
+
 
   const handleMemorized = (index, maxWordsToShow) => {
     const currentWord = toShow[index];
@@ -92,6 +128,7 @@ export const useWordsetLoader = (wordsetId) => {
     correctlyMemorized,
     timeElapsed,
     loadWordsForWordset,
+    toggleExclusion,
     handleMemorized,
     handleNotMemorized,
   };

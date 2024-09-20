@@ -10,6 +10,7 @@ class Config:
     
     DB_ROOT_PASSWORD = os.getenv('DB_ROOT_PASSWORD', 'default_password')  # Default for testing
     DATABASE_NAME = os.getenv('DATABASE_NAME', 'test_db')  # Default for testing
+    GOOGLE_CLIENT_ID = os.getenv('GOOGLE_CLIENT_ID', 'default-client-id')  # Default value if not provided
     
     # Database URI for the actual app (used in production or Kubernetes)
     if os.getenv('KUBERNETES_SERVICE_HOST'):
@@ -33,3 +34,4 @@ class TestConfig(Config):
     TESTING = True
     # Database URI dynamically set for each test
     SQLALCHEMY_DATABASE_URI = ''  # To be set dynamically in test utils
+    GOOGLE_CLIENT_ID = 'test-client-id'  # Set a dummy client ID for testing

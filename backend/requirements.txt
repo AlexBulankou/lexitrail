@@ -13,3 +13,6 @@ flask-cors==3.0.10  # Add this for enabling CORS
 # Testing and coverage
 pytest==6.2.5
 coverage==6.3
+
+# Google Authentication
+google-auth==2.21.0  # Version for Google authentication

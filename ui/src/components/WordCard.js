@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import '../styles/WordCard.css';
 
-const WordCard = ({ word, handleMemorized, handleNotMemorized, incorrectAttempts }) => {
+const WordCard = ({ word, handleMemorized, handleNotMemorized, incorrectAttempts, toggleExclusion }) => {
   const [isFlipped, setIsFlipped] = useState(false);
 
   const handleCardClick = () => {
@@ -18,16 +18,21 @@ const WordCard = ({ word, handleMemorized, handleNotMemorized, incorrectAttempts
 
   const onMemorized = () => {
     if (isFlipped) {
-      flipCard(); // Flip back to front first
+      flipCard();
     }
-    handleMemorized(); // Then proceed with memorizing
+    handleMemorized();
   };
 
   const onNotMemorized = () => {
     if (isFlipped) {
-      flipCard(); // Flip back to front first
+      flipCard();
     }
-    handleNotMemorized(); // Then proceed with not memorizing
+    handleNotMemorized();
+  };
+
+  const handleExcludeToggle = (e) => {
+    e.stopPropagation();
+    toggleExclusion();
   };
 
   return (
@@ -47,13 +52,30 @@ const WordCard = ({ word, handleMemorized, handleNotMemorized, incorrectAttempts
           </p>
         </div>
       </div>
+
       <div className="buttons" onClick={stopPropagation}>
         <button onClick={onNotMemorized}>❌</button>
         <button onClick={onMemorized}>✔️</button>
       </div>
+
+      {/* Exclude/Include Button */}
+      <button
+        onClick={handleExcludeToggle}
+        style={{ backgroundColor: word.is_included ? 'red' : 'green' }}
+      >
+        {word.is_included ? 'Exclude' : 'Include'}
+      </button>
+
+      {/* Recall History */}
+      <div className="recall-history">
+        {word.recall_history.slice(-3).map((attempt, index) => (
+          <span key={index}>
+            {attempt.recall ? '✔️' : '❌'} {attempt.timestamp}
+          </span>
+        ))}
+      </div>
     </div>
   );
 };
-
 
 export default WordCard;
