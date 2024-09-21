@@ -1,13 +1,30 @@
 import React, { useState, useEffect } from 'react';
 import WordCard from './WordCard';
-import Completed from './Completed';  // Import Completed component
+import Completed from './Completed';  
 import { useParams } from 'react-router-dom';  
 import { useWordsetLoader } from '../hooks/useWordsetLoader';
+import { useAuth } from '../hooks/useAuth';  
 import '../styles/Game.css';  
 
 const Game = () => {
   const { wordsetId } = useParams();
-  const { toShow: displayWords, loading, timeElapsed, handleMemorized, handleNotMemorized, firstTimeCorrect, correctlyMemorized, incorrectAttempts, resetGame } = useWordsetLoader(wordsetId);  
+  const { user } = useAuth();  
+
+  if (!user) {
+    return <div>Please log in to play the game</div>;  
+  }
+
+  const {
+    toShow: displayWords,
+    loading,
+    timeElapsed,
+    handleMemorized,
+    handleNotMemorized,
+    firstTimeCorrect,
+    correctlyMemorized,
+    incorrectAttempts,
+    resetGame
+  } = useWordsetLoader(wordsetId, user.email);  // Pass user.email to useWordsetLoader
 
   const [layoutClass, setLayoutClass] = useState('layout1');
   const [maxCardsToShow, setMaxCardsToShow] = useState(1);  
@@ -65,14 +82,13 @@ const Game = () => {
     return <div>Loading...</div>;
   }
 
-  // If there are no words left to show, display the Completed component
   if (displayWords.length === 0) {
     return (
       <Completed
         timeElapsed={timeElapsed}
         firstTimeCorrect={firstTimeCorrect}
         incorrectAttempts={incorrectAttempts}
-        resetGame={resetGame}  // Provide a way to reset the game
+        resetGame={resetGame}  
       />
     );
   }
@@ -95,7 +111,7 @@ const Game = () => {
       </div>
       <div className="progress-bar-container">
         <div className="progress-bar">
-          <div className="progress" style={{ width: `${(correctlyMemorized.size / displayWords.length) * 100}%` }}></div>
+          <div className="progress" style={{ width: displayWords.length ? `${(correctlyMemorized.size / displayWords.length) * 100}%` : '0%' }}></div>
         </div>
         <div className="progress-info">
           recalled {correctlyMemorized.size} out of {displayWords.length}

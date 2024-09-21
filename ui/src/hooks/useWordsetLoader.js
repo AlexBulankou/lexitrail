@@ -1,20 +1,26 @@
 import { useState, useEffect, useCallback } from 'react';
 import { getWordsByWordset } from '../services/wordsService';
 import { getUserWordsByWordset, updateUserWordRecall } from '../services/userService';
-import { formatDistanceToNow } from 'date-fns'; // Importing the date formatting function
+import { formatDistanceToNow } from 'date-fns';
 
-export const useWordsetLoader = (wordsetId, userId) => { // Make sure you pass userId in the component using this hook
+// Function to abstract recall state logic
+const updateRecallState = (currentRecallState, isCorrect) => {
+  if (isCorrect) {
+    // Decrement recall state if correct, but never below 0
+    return Math.max(0, currentRecallState - 1);
+  } else {
+    // Increment recall state if incorrect
+    return currentRecallState + 1;
+  }
+};
+
+export const useWordsetLoader = (wordsetId, userId) => {
   const [toShow, setToShow] = useState([]);
   const [loading, setLoading] = useState(true);
   const [firstTimeCorrect, setFirstTimeCorrect] = useState([]);
   const [incorrectAttempts, setIncorrectAttempts] = useState({});
   const [correctlyMemorized, setCorrectlyMemorized] = useState(new Set());
   const [timeElapsed, setTimeElapsed] = useState(0);
-  
-  const formatRecallTime = (recallTime) => {
-    const recallDate = new Date(recallTime);
-    return formatDistanceToNow(recallDate, { addSuffix: true });
-  };
 
   const loadWordsForWordset = useCallback(async () => {
     setLoading(true);
@@ -34,12 +40,11 @@ export const useWordsetLoader = (wordsetId, userId) => { // Make sure you pass u
           word_id: word.word_id,
           wordset_id: word.wordset_id,
           is_included: userWord ? userWord.is_included : true,
-          recall_history: userWord 
-            ? userWord.recall_histories.map((recall) => ({
-                ...recall,
-                relative_recall_time: formatRecallTime(recall.recall_time) // Format recall time
-              }))
-            : [],
+          recall_state: userWord ? userWord.recall_state : 0,
+          recall_history: userWord ? userWord.recall_histories.map(hist => ({
+            ...hist,
+            recall_time: formatDistanceToNow(new Date(hist.recall_time), { addSuffix: true })
+          })) : [],
         };
       });
 
@@ -50,8 +55,13 @@ export const useWordsetLoader = (wordsetId, userId) => { // Make sure you pass u
       console.error('Error loading words or userword metadata:', error);
     }
   }, [wordsetId, userId]);
-  
 
+  // Call loadWordsForWordset when wordsetId or userId changes
+  useEffect(() => {
+    if (wordsetId && userId) {
+      loadWordsForWordset();
+    }
+  }, [wordsetId, userId, loadWordsForWordset]);
 
   // Handle exclusion/inclusion
   const toggleExclusion = async (index) => {
@@ -59,25 +69,33 @@ export const useWordsetLoader = (wordsetId, userId) => { // Make sure you pass u
     const newInclusionState = !currentWord.is_included;
 
     // Update the inclusion state in the backend
-    await updateUserWordRecall(userId, currentWord.word_id, 0, false, newInclusionState);
-    
+    await updateUserWordRecall(userId, currentWord.word_id, currentWord.recall_state, false, newInclusionState);
+
     // Update the local state
     const updatedWords = [...toShow];
     updatedWords[index].is_included = newInclusionState;
     setToShow(updatedWords);
   };
 
-
-  const handleMemorized = (index, maxWordsToShow) => {
+  // Handle correct memorization
+  const handleMemorized = async (index, maxWordsToShow) => {
     const currentWord = toShow[index];
-    
+    const newRecallState = updateRecallState(currentWord.recall_state, true);
+
     if (!incorrectAttempts[currentWord.word]) {
       setFirstTimeCorrect([...firstTimeCorrect, currentWord]);
     }
 
     setCorrectlyMemorized(prevSet => new Set(prevSet.add(currentWord.word)));
-    const filteredToShow = toShow.filter((_, i) => i !== index);
-    
+
+    // Call backend to update recall state
+    await updateUserWordRecall(userId, currentWord.word_id, newRecallState, true, currentWord.is_included);
+
+    // Update local state
+    const updatedWords = [...toShow];
+    updatedWords[index].recall_state = newRecallState;
+    const filteredToShow = updatedWords.filter((_, i) => i !== index);
+
     const availableIndexes = filteredToShow.length > maxWordsToShow ?
       filteredToShow.slice(maxWordsToShow) : filteredToShow;
     const randomWordIndex = availableIndexes.length > 0 ?
@@ -91,13 +109,22 @@ export const useWordsetLoader = (wordsetId, userId) => { // Make sure you pass u
     setToShow(filteredToShow);
   };
 
-  const handleNotMemorized = (index, maxWordsToShow) => {
+  // Handle incorrect memorization
+  const handleNotMemorized = async (index, maxWordsToShow) => {
     const currentWord = toShow[index];
-    
+    const newRecallState = updateRecallState(currentWord.recall_state, false);
+
     setIncorrectAttempts(prev => ({
       ...prev,
       [currentWord.word]: (prev[currentWord.word] || 0) + 1,
     }));
+
+    // Call backend to update recall state
+    await updateUserWordRecall(userId, currentWord.word_id, newRecallState, false, currentWord.is_included);
+
+    // Update local state
+    const updatedWords = [...toShow];
+    updatedWords[index].recall_state = newRecallState;
 
     const availableIndexes = toShow.length > maxWordsToShow ?
       toShow.slice(maxWordsToShow) : toShow;
@@ -106,7 +133,7 @@ export const useWordsetLoader = (wordsetId, userId) => { // Make sure you pass u
 
     const newToShow = [...toShow];
     [newToShow[index], newToShow[randomIndex]] = [newToShow[randomIndex], newToShow[index]];
-    
+
     setToShow(newToShow);
   };
 

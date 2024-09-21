@@ -226,46 +226,96 @@ resource "google_service_account_iam_member" "lexitrail_workload_identity_bindin
   member  = "serviceAccount:${var.project_id}.svc.id.goog[mysql/default]"
 }
 
-# Upload schema.sql to the bucket
+# Create a null resource for schema-tables.sql to trigger changes when the file content changes
+resource "null_resource" "schema_tables_sql_trigger" {
+  triggers = {
+    file_hash = filesha1("${path.module}/schema-tables.sql")
+  }
+
+  # Re-upload the object when the file content changes
+  provisioner "local-exec" {
+    command = "echo Triggered re-upload of schema-tables.sql"
+  }
+}
+
+# Upload schema.sql to the bucket, dependent on the trigger
 resource "google_storage_bucket_object" "schema_tables_sql" {
   name   = "schema-tables.sql"
   bucket = google_storage_bucket.mysql_files_bucket.name
-  source = "${path.module}/schema-tables.sql"  # Path to local schema.sql
+  source = "${path.module}/schema-tables.sql"
+
+  depends_on = [null_resource.schema_tables_sql_trigger]
 }
 
+# Create a null resource for schema-data.sql
+resource "null_resource" "schema_data_sql_trigger" {
+  triggers = {
+    file_hash = filesha1("${path.module}/schema-data.sql")
+  }
+
+  provisioner "local-exec" {
+    command = "echo Triggered re-upload of schema-data.sql"
+  }
+}
+
+# Upload schema-data.sql to the bucket
 resource "google_storage_bucket_object" "schema_data_sql" {
   name   = "schema-data.sql"
   bucket = google_storage_bucket.mysql_files_bucket.name
-  source = "${path.module}/schema-data.sql"  # Path to local schema.sql
+  source = "${path.module}/schema-data.sql"
+
+  depends_on = [null_resource.schema_data_sql_trigger]
 }
 
-# Upload wordsets.csv to the bucket
+# Create a null resource for wordsets.csv and words.csv to handle changes in the csv directory
+resource "null_resource" "csv_files_trigger" {
+  triggers = {
+    files_hash = sha1(join("", [for f in fileset("${path.module}/csv", "**/*") : filesha1("${path.module}/csv/${f}")]))
+  }
+
+  provisioner "local-exec" {
+    command = "echo Triggered re-upload of CSV files"
+  }
+}
+
+# Upload wordsets.csv to the bucket, dependent on csv_files_trigger
 resource "google_storage_bucket_object" "wordsets_csv" {
   name   = "csv/wordsets.csv"
   bucket = google_storage_bucket.mysql_files_bucket.name
-  source = "${path.module}/csv/wordsets.csv"  # Path to local wordsets.csv
+  source = "${path.module}/csv/wordsets.csv"
+
+  depends_on = [null_resource.csv_files_trigger]
 }
 
-# Upload words.csv to the bucket
+# Upload words.csv to the bucket, dependent on csv_files_trigger
 resource "google_storage_bucket_object" "words_csv" {
   name   = "csv/words.csv"
   bucket = google_storage_bucket.mysql_files_bucket.name
-  source = "${path.module}/csv/words.csv"  # Path to local words.csv
+  source = "${path.module}/csv/words.csv"
+
+  depends_on = [null_resource.csv_files_trigger]
 }
+
+
 
 # Output the bucket name for the Kubernetes job to use
 output "mysql_files_bucket_name" {
   value = google_storage_bucket.mysql_files_bucket.name
 }
 
-
 resource "kubectl_manifest" "mysql_schema_and_data_job" {
   yaml_body = templatefile("${path.module}/k8s_templates/mysql-schema-and-data-job.yaml.tpl", {
     sql_namespace         = var.sql_namespace,
     db_root_password      = local.db_root_password,
-    mysql_files_bucket    = google_storage_bucket.mysql_files_bucket.name  # Pass bucket name
-    db_name               = var.db_name
+    mysql_files_bucket    = google_storage_bucket.mysql_files_bucket.name,  # Pass bucket name
+    db_name               = var.db_name,
+    files_hash            = sha1(join("", [
+                              filesha1("${path.module}/schema-tables.sql"),
+                              filesha1("${path.module}/schema-data.sql"),
+                              sha1(join("", [for f in fileset("${path.module}/csv", "**/*") : filesha1("${path.module}/csv/${f}")]))
+                          ]))
   })
+
   depends_on = [
     kubectl_manifest.mysql_deployment,
     google_storage_bucket_object.schema_tables_sql,
@@ -273,9 +323,13 @@ resource "kubectl_manifest" "mysql_schema_and_data_job" {
     google_storage_bucket_object.wordsets_csv,
     google_storage_bucket_object.words_csv,
     google_service_account_iam_member.lexitrail_workload_identity_binding,
-    google_project_iam_member.bucket_access
+    google_project_iam_member.bucket_access,
+    null_resource.schema_tables_sql_trigger,
+    null_resource.schema_data_sql_trigger,
+    null_resource.csv_files_trigger
   ]
 }
+
 
 
 # Python backend
@@ -343,7 +397,8 @@ resource "kubectl_manifest" "backend_configmap" {
     backend_namespace = var.backend_namespace,
     mysql_files_bucket = google_storage_bucket.mysql_files_bucket.name,
     sql_namespace = var.sql_namespace,
-    database_name = var.db_name
+    database_name = var.db_name,
+    google_client_id = local.google_client_id
   })
   depends_on = [
     kubectl_manifest.backend_namespace,        # Ensure backend namespace exists

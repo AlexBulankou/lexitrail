@@ -3,6 +3,8 @@ kind: Job
 metadata:
   name: mysql-schema-and-data-job
   namespace: ${sql_namespace}
+  annotations:
+    file-hash: ${files_hash}
 spec:
   template:
     spec:

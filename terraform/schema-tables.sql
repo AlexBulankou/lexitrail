@@ -1,3 +1,12 @@
+-- Temporarily drop all tables to ensure they are recreated from scratch
+DROP TABLE IF EXISTS recall_history;
+DROP TABLE IF EXISTS userwords;
+DROP TABLE IF EXISTS words;
+DROP TABLE IF EXISTS wordsets;
+DROP TABLE IF EXISTS users;
+
+-- Create tables after dropping them
+
 CREATE TABLE IF NOT EXISTS users (
     email VARCHAR(320) NOT NULL PRIMARY KEY
 );

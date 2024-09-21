@@ -1,7 +1,6 @@
 import os
 from flask import request, jsonify
-from google.oauth2 import id_token
-from google.auth.transport import requests
+import requests as req
 from app.config import Config
 import functools
 
@@ -11,38 +10,47 @@ def authenticate_user(func):
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
         if os.getenv('TESTING') == 'True':
-            # If in test mode, extract the email from the Authorization header
+            # If in test mode, mock the user info
             token = request.headers.get('Authorization')
             if token:
                 parts = token.split(' ')
                 if len(parts) == 2 and parts[0] == 'Bearer':
-                    # In test mode, treat the token part as the email address
-                    email = parts[1]
-                    request.user = {"email": email}  # Mock user info for testing
+                    email = parts[1]  # Mock the token as an email for testing purposes
+                    request.user = {"email": email}
             else:
-                # Default to the mock email if no Authorization header is present
-                request.user = {"email": default_mock_user}  # Default mock user
+                request.user = {"email": default_mock_user}  # Default mock user in test mode
             return func(*args, **kwargs)
 
-        # Extract the token from the Authorization header in non-test mode
+        # Extract the token from the Authorization header
         token = request.headers.get('Authorization')
         if not token:
             return jsonify({"message": "Missing token"}), 401
 
         try:
-            # Split the token, ensuring it follows the 'Bearer <token>' format
             parts = token.split(' ')
             if len(parts) != 2 or parts[0] != 'Bearer':
                 return jsonify({"message": "Invalid token format"}), 401
 
-            token = parts[1]  # Extract the actual token
-            idinfo = id_token.verify_oauth2_token(token, requests.Request(), Config.GOOGLE_CLIENT_ID)
+            access_token = parts[1]
+
+            # Call Google API to validate the access token
+            google_url = f"https://www.googleapis.com/oauth2/v1/tokeninfo?access_token={access_token}"
+            response = req.get(google_url)
+
+            if response.status_code != 200:
+                return jsonify({"message": "Invalid access token"}), 401
+
+            idinfo = response.json()
+
+            # Check if the token matches the expected client_id
+            if idinfo.get('issued_to') != Config.GOOGLE_CLIENT_ID:
+                return jsonify({"message": "Token's client ID does not match app's client ID"}), 401
 
             # Set the user info on the request
-            request.user = idinfo
+            request.user = {"email": idinfo.get('email')}
             return func(*args, **kwargs)
 
-        except ValueError:
-            return jsonify({"message": "Invalid token"}), 401
+        except Exception as e:
+            return jsonify({"message": "Error verifying access token", "error": str(e)}), 401
 
     return wrapper

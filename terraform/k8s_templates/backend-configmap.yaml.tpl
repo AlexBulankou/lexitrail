@@ -7,5 +7,5 @@ data:
   MYSQL_FILES_BUCKET: ${mysql_files_bucket}
   SQL_NAMESPACE: ${sql_namespace}
   DATABASE_NAME: ${database_name}
-  GOOGLE_CLIENT_ID = ${google_client_id}
+  GOOGLE_CLIENT_ID: ${google_client_id}
    

@@ -11,7 +11,7 @@ BACKEND_NAMESPACE=backend
 UI_NAMESPACE=default  # Assuming UI is in the default namespace
 DBNAME=lexitraildb
 BACKEND_SERVICE_NAME=lexitrail-backend-service
-BACKEND_PORT=5000
+BACKEND_PORT=5001
 BACKEND_ROUTE=/wordsets
 UI_SERVICE_NAME=lexitrail-ui-service
 UI_ROUTE=/
@@ -50,9 +50,21 @@ kubectl exec -n "$MYSQL_NAMESPACE" "$MYSQL_POD" -- mysql -u root -p"$DB_ROOT_PAS
 echo "Checking for tables in $DBNAME from MySQL pod..."
 kubectl exec -n "$MYSQL_NAMESPACE" "$MYSQL_POD" -- mysql -u root -p"$DB_ROOT_PASSWORD" -e "USE $DBNAME; SHOW TABLES;"
 
+# Verify that the userwords table has the id column
+echo "Checking if the userwords table has an 'id' column..."
+COLUMN_EXISTS=$(kubectl exec -n "$MYSQL_NAMESPACE" "$MYSQL_POD" -- mysql -u root -p"$DB_ROOT_PASSWORD" -e "USE $DBNAME; SHOW COLUMNS FROM userwords LIKE 'id';" | grep "id" || true)
+
+if [ -z "$COLUMN_EXISTS" ]; then
+    echo "Error: 'id' column not found in userwords table!"
+    exit 1
+else
+    echo "'id' column exists in the userwords table."
+fi
+
 # Verify that data exists in the words table
 echo "Checking data in words table in $DBNAME from MySQL pod..."
 kubectl exec -n "$MYSQL_NAMESPACE" "$MYSQL_POD" -- mysql -u root -p"$DB_ROOT_PASSWORD" -e "USE $DBNAME; SELECT * FROM words LIMIT 55;"
+
 
 # ========== Flask Backend Verification via External LoadBalancer ==========
 
