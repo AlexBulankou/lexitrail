@@ -5,7 +5,6 @@
     justify-content: center;
     align-items: center;
     height: 100vh;
-    background-color: #f9f9f9;
   }
   
   .wordsets-grid {
@@ -16,20 +15,37 @@
   }
   
   .wordset-tile {
-    background-color: #007bff;
-    color: white;
-    padding: 20px;
-    border-radius: 8px;
-    text-align: center;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 15px;
+  }
+  
+  .wordset-button-group {
+    display: flex;
+    align-items: center;
+  }
+  
+  .wordset-button {
+    padding: 10px 20px;
+    font-size: 1rem;
     cursor: pointer;
-    transition: transform 0.3s ease;
   }
   
-  .wordset-tile:hover {
-    transform: scale(1.05);
+  .show-excluded-button {
+    margin-left: 10px;
+    font-size: 0.8rem;  /* Make the font smaller */
+    padding: 5px 10px;  /* Smaller padding for a smaller button */
+    cursor: pointer;
+    background-color: #f5f5f5;
+    border: 1px solid #d3d3d3;
+    border-radius: 4px;
+    color: #333;
   }
   
-  .wordset-tile h3 {
-    margin: 0;
+  .show-excluded-button:hover {
+    background-color: #e0e0e0;
   }
+  
   

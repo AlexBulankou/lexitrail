@@ -1,13 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import WordCard from './WordCard';
 import Completed from './Completed';  
-import { useParams } from 'react-router-dom';  
+import { useParams, useLocation } from 'react-router-dom';  
 import { useWordsetLoader } from '../hooks/useWordsetLoader';
 import { useAuth } from '../hooks/useAuth';  
 import '../styles/Game.css';  
 
 const Game = () => {
   const { wordsetId } = useParams();
+  const { state } = useLocation();  // Capture the state passed from navigation
+  const showExcludedFromState = state?.showExcluded || false;  // Extract the showExcluded flag
   const { user } = useAuth();  
 
   if (!user) {
@@ -23,11 +25,13 @@ const Game = () => {
     firstTimeCorrect,
     correctlyMemorized,
     incorrectAttempts,
+    toggleExclusion,
     resetGame
-  } = useWordsetLoader(wordsetId, user.email);  // Pass user.email to useWordsetLoader
+  } = useWordsetLoader(wordsetId, user.email, showExcludedFromState);  // Pass showExcludedFromState to hook
 
   const [layoutClass, setLayoutClass] = useState('layout1');
   const [maxCardsToShow, setMaxCardsToShow] = useState(1);  
+  const [showExcluded, setShowExcluded] = useState(showExcludedFromState);  // Initialize with state value
 
   useEffect(() => {
     updateLayout();
@@ -76,6 +80,12 @@ const Game = () => {
     }
   };
 
+  const toggleWordsetFilter = () => {
+    const newShowExcluded = !showExcluded;
+    setShowExcluded(newShowExcluded);
+    loadWithExclusionFilter(newShowExcluded);  // Call the loadWithExclusionFilter explicitly
+  };
+
   const wordsToRender = displayWords.slice(0, maxCardsToShow);
 
   if (loading) {
@@ -95,6 +105,9 @@ const Game = () => {
 
   return (
     <div className="container">
+      <button onClick={toggleWordsetFilter}>
+        {showExcluded ? 'Show Included' : 'Show Excluded'}
+      </button>
       <div className="timer">
         {Math.floor(timeElapsed / 60)}:{('0' + timeElapsed % 60).slice(-2)}
       </div>
@@ -105,6 +118,7 @@ const Game = () => {
             word={word}
             handleMemorized={() => handleCardGuessed(index, true)}
             handleNotMemorized={() => handleCardGuessed(index, false)}
+            toggleExclusion={() => toggleExclusion(index)}  // Pass toggleExclusion to WordCard
             incorrectAttempts={incorrectAttempts[word.word] || 0}
           />
         ))}

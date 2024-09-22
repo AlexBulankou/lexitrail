@@ -29,7 +29,8 @@
   align-items: center;
 }
 
-.word-card-front, .word-card-back {
+.word-card-front,
+.word-card-back {
   position: absolute;
   width: 100%;
   height: 100%;
@@ -121,19 +122,58 @@
 }
 
 .recall-state {
-  padding: 8px;
+  padding: 1px 3px;
   border-radius: 4px;
   color: white;
   font-size: 1.5rem;
+  margin: 0 2px;
 }
 
 .recall-history {
   display: flex;
   flex-direction: column;
+  width: 100%;
 }
 
 .recall-item {
   display: flex;
   justify-content: space-between;
-  font-size: 0.9rem;
+  font-size: 0.6rem;
+  height: 0.6rem;
+}
+
+.recall-item-time {
+  color: #555;
+  font-size: 0.4rem;
+  overflow: hidden;
+  width: 60px;
+}
+
+.recall-item-guess {
+  font-size:0.4rem;
+  padding: 0px 2px;
+}
+
+.recall-item-old-state,
+.recall-item-new-state {
+  padding: 0px 2px;
+  border-radius: 4px;
+  color: white;
+  font-size: 0.6rem;
+  display: flex;
+  align-items: center;
+}
+
+.recall-item-transition {
+  margin: 0 0px;
+}
+
+.green-background {
+  background-color: green;
+  color: white;
+}
+
+.red-background {
+  background-color: red;
+  color: white;
 }

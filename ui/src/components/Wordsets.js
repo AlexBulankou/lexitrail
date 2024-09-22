@@ -27,34 +27,35 @@ const Wordsets = () => {
       })
       .finally(() => setLoading(false));
   }, []);
-  
 
-  const handleWordsetClick = (wordsetId) => {
-    // Navigate to the game route with the wordsetId
-    navigate(`/game/${wordsetId}`);
+  const handleWordsetClick = (wordsetId, showExcluded = false) => {
+    // Navigate to the game route with the wordsetId and whether to show excluded words
+    navigate(`/game/${wordsetId}`, { state: { showExcluded } });
   };
-
-  /*
-  if (loading) {
-    return <p>Loading wordsets...</p>;
-  }
-
-  if (error) {
-    return <p>{error}</p>;
-  }
-    */
 
   return (
     <div className="wordsets-container">
       <div className="wordsets-grid">
         {wordsets.length > 0 ? (
           wordsets.map(wordset => (
-            <div 
-              key={wordset.wordset_id} 
-              className="wordset-tile" 
-              onClick={() => handleWordsetClick(wordset.wordset_id)}
-            >
-              <h3>{wordset.description}</h3>
+            <div key={wordset.wordset_id} className="wordset-tile">
+              <div className="wordset-button-group">
+                {/* Main button to load included words */}
+                <button 
+                  className="wordset-button" 
+                  onClick={() => handleWordsetClick(wordset.wordset_id)}
+                >
+                  <h3>{wordset.description}</h3>
+                </button>
+
+                {/* New button to load excluded words */}
+                <button 
+                  className="show-excluded-button" 
+                  onClick={() => handleWordsetClick(wordset.wordset_id, true)}
+                >
+                  Show Excluded
+                </button>
+              </div>
             </div>
           ))
         ) : (
