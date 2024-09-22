@@ -40,7 +40,7 @@ const WordCard = ({ word, handleMemorized, handleNotMemorized, toggleExclusion, 
 
 
   return (
-    <div className="word-card" onClick={handleCardClick}>
+    <div className="word-card">
       {/* Metadata Section */}
       <div className="metadata">
 
@@ -83,7 +83,7 @@ const WordCard = ({ word, handleMemorized, handleNotMemorized, toggleExclusion, 
         </div>
       </div>
 
-      <div className={`word-card-inner ${isFlipped ? 'flipped' : ''}`}>
+      <div  onClick={handleCardClick} className={`word-card-inner ${isFlipped ? 'flipped' : ''}`}>
         <div className="word-card-front">
           {word.word}
         </div>

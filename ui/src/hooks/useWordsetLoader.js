@@ -90,41 +90,27 @@ export const useWordsetLoader = (wordsetId, userId, showExcluded) => {
   };
 
 
-  const toggleExclusion = async (index, maxWordsToShow) => {
+  const toggleExclusion = async (index) => {
     const currentWord = toShow[index];
     const newInclusionState = !currentWord.is_included;
   
     try {
       console.log(`Toggling exclusion for word ID ${currentWord.word_id}. New state: ${newInclusionState}`);
       
-      // Update the exclusion state on the backend
+      // Update the inclusion state in the backend
       await updateUserWordRecall(userId, currentWord.word_id, currentWord.recall_state, false, newInclusionState);
+      
+      // Remove the word from the current list based on the current filter (included or excluded)
+      const updatedWords = toShow.filter((_, i) => i !== index);
+      
+      // Update the local state to reflect the change
+      setToShow(updatedWords);
   
-      // Update the word's inclusion state locally
-      const updatedWords = [...toShow];
-      updatedWords[index].is_included = newInclusionState;
-  
-      // Filter out the word after exclusion if it's no longer part of the current filter set
-      const filteredToShow = updatedWords.filter(word => word.is_included === !newInclusionState);
-  
-      // Rebuild the list with proper order
-      const availableIndexes = filteredToShow.length > maxWordsToShow ?
-        filteredToShow.slice(maxWordsToShow) : filteredToShow;
-  
-      const randomWordIndex = availableIndexes.length > 0 ?
-        Math.floor(Math.random() * availableIndexes.length) + maxWordsToShow :
-        filteredToShow.length - 1;
-  
-      // Replace the removed word with a randomly selected word, keeping the order intact
-      const newWord = filteredToShow[randomWordIndex];
-      filteredToShow.splice(randomWordIndex, 1);
-      filteredToShow.splice(index, 0, newWord);
-  
-      setToShow(filteredToShow);
     } catch (error) {
       console.error('Error updating exclusion state:', error);
     }
   };
+  
   
   
   
