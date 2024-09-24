@@ -124,9 +124,13 @@ resource "google_service_account" "lexitrail_storage_sa" {
 
 # Cloud Build Execution
 
+locals {
+  ui_files_hash = sha1(join("", [for f in fileset(path.root, "../ui/**") : filesha1(f)]))
+}
+
 resource "null_resource" "cloud_build" {
   triggers = {
-    files_hash = sha1(join("", [for f in fileset(path.root, "../ui/**") : filesha1(f)]))
+    files_hash = local.ui_files_hash
   }
 
   provisioner "local-exec" {
@@ -149,9 +153,11 @@ resource "kubectl_manifest" "lexitrail_ui_deployment" {
     project_id     = var.project_id,
     container_name = var.container_name
     repo_name      = var.repository_id
-    region         = var.region
+    region         = var.region,
+    ui_files_hash  = local.ui_files_hash
   })
 }
+
 
 resource "kubectl_manifest" "lexitrail_ui_service" {
   yaml_body = templatefile("${path.module}/k8s_templates/deploy-service.yaml.tpl", {
@@ -193,6 +199,7 @@ resource "kubectl_manifest" "mysql_deployment" {
   yaml_body = templatefile("${path.module}/k8s_templates/mysql-deployment.yaml.tpl", {
     sql_namespace         = var.sql_namespace,
     db_root_password      = local.db_root_password,
+    terraform_time = timestamp()
   })
   depends_on = [kubectl_manifest.mysql_pvc, kubectl_manifest.mysql_service]
 }
@@ -335,10 +342,13 @@ resource "kubectl_manifest" "mysql_schema_and_data_job" {
 # Python backend
 
 # Cloud Build Execution for Backend Flask service
+locals {
+  backend_files_hash = sha1(join("", [for f in fileset(path.root, "../backend/**") : filesha1(f)]))
+}
 
 resource "null_resource" "backend_cloud_build" {
   triggers = {
-    files_hash = sha1(join("", [for f in fileset(path.root, "../backend/**") : filesha1(f)]))
+    files_hash = local.backend_files_hash
   }
 
   provisioner "local-exec" {
@@ -372,7 +382,8 @@ resource "kubectl_manifest" "backend_deployment" {
     container_name    = var.backend_container_name,
     repo_name         = var.repository_id,
     region            = var.region,
-    backend_namespace = var.backend_namespace
+    backend_namespace = var.backend_namespace,
+    backend_files_hash = local.backend_files_hash
   })
   depends_on = [
     kubectl_manifest.backend_namespace,        # Ensure backend namespace exists

@@ -1,3 +1,4 @@
+-- To force job update this version: 2
 -- Temporarily drop all tables to ensure they are recreated from scratch
 DROP TABLE IF EXISTS recall_history;
 DROP TABLE IF EXISTS userwords;

@@ -3,6 +3,9 @@ kind: Deployment
 metadata:
   name: lexitrail-backend
   namespace: ${backend_namespace}
+  annotations:
+    # This annotation will be updated every time you apply the terraform plan
+    terraform.io/change-cause: "${backend_files_hash}"
 spec:
   replicas: 2
   selector:
@@ -12,10 +15,13 @@ spec:
     metadata:
       labels:
         app: lexitrail-backend
+      annotations:
+        redeploy-hash: "${backend_files_hash}"
     spec:
       containers:
       - name: lexitrail-backend
         image: ${region}-docker.pkg.dev/${project_id}/${repo_name}/${container_name}:latest
+        imagePullPolicy: Always
         ports:
         - containerPort: 5001
         env:
