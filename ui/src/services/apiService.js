@@ -1,6 +1,9 @@
 import axios from 'axios';
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5001'; // Base URL for Flask backend
+const API_BASE_URL = window.config.API_BASE_URL;
+
+// Log the API base URL for diagnostics
+console.log(`API_BASE_URL is: ${API_BASE_URL}`);
 
 // Get the access token from localStorage
 const getAccessToken = () => localStorage.getItem('access_token');

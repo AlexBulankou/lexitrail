@@ -41,10 +41,12 @@ def authenticate_user(func):
                 return jsonify({"message": "Invalid access token"}), 401
 
             idinfo = response.json()
+            issued_to = idinfo.get('issued_to')
 
             # Check if the token matches the expected client_id
-            if idinfo.get('issued_to') != Config.GOOGLE_CLIENT_ID:
-                return jsonify({"message": "Token's client ID does not match app's client ID"}), 401
+            if issued_to != Config.GOOGLE_CLIENT_ID:
+                return jsonify({"message": 
+                                f"Token's client ID: {issued_to} does not match app's client ID {Config.GOOGLE_CLIENT_ID}. More: {str(idinfo)}"}), 401
 
             # Set the user info on the request
             request.user = {"email": idinfo.get('email')}

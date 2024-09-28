@@ -38,6 +38,24 @@ const WordCard = ({ word, handleMemorized, handleNotMemorized, toggleExclusion, 
     };
   };
 
+  // Remove leading and trailing quotes and whitespace
+const removeQuotes = (text) => text.replace(/^['"]+|['"]+$/g, '').trim();
+
+ // Remove quotes and calculate the longest line for font size
+ const calculateFontSize = (text) => {
+  // Remove leading and trailing quotes
+  const trimmedText = text.trim();
+
+  // Split text by '\n' and find the longest line
+  const lines = trimmedText.split('\n');
+  const longestLineLength = Math.max(...lines.map(line => removeQuotes(line).length));
+
+  // Calculate font size based on the longest line length
+  const fontSize = Math.max(10 / longestLineLength, 1); // Ensure the font size doesn't go too small
+  return `${fontSize}rem`;
+};
+
+
 
   return (
     <div className="word-card">
@@ -83,15 +101,21 @@ const WordCard = ({ word, handleMemorized, handleNotMemorized, toggleExclusion, 
         </div>
       </div>
 
-      <div  onClick={handleCardClick} className={`word-card-inner ${isFlipped ? 'flipped' : ''}`}>
-        <div className="word-card-front">
-          {word.word}
+      <div onClick={handleCardClick} className={`word-card-inner ${isFlipped ? 'flipped' : ''}`}>
+        <div
+          className="word-card-front"
+          style={{ fontSize: calculateFontSize(word.word) }} // Dynamically set the font size
+        >
+          {word.word} {/* Remove preceding and trailing quotes */}
         </div>
-        <div className="word-card-back">
+        <div
+          className="word-card-back"
+          style={{ fontSize: calculateFontSize(word.meaning) }} // Dynamically set the font size
+        >
           <p>
-            {word.meaning.split('\n').map((line, index) => (
+            {word.meaning.trim().split('\n').map((line, index) => (
               <React.Fragment key={index}>
-                {line}
+                {removeQuotes(line)}
                 <br />
               </React.Fragment>
             ))}

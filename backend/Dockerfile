@@ -10,12 +10,12 @@ COPY . /app
 # Install any needed packages specified in requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Expose the Flask port (default is 5000)
-EXPOSE 5000
+# Expose port 80 for Flask in production
+EXPOSE 80
 
-# Set environment variables (these can be adjusted)
+# Set environment variables
 ENV FLASK_APP=run.py
 ENV FLASK_ENV=production
 
-# Run the Flask app
-CMD ["flask", "run", "--host=0.0.0.0"]
+# Run the Flask app on port 80
+CMD ["flask", "run", "--host=0.0.0.0", "--port=80"]

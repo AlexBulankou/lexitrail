@@ -8,6 +8,6 @@ spec:
     app: lexitrail-backend
   ports:
     - protocol: TCP
-      port: 5001
-      targetPort: 5001
+      port: 80  # Expose service on port 80
+      targetPort: 80  # Target container's port 80
   type: LoadBalancer  # Expose service externally

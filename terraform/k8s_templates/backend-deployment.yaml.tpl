@@ -4,7 +4,6 @@ metadata:
   name: lexitrail-backend
   namespace: ${backend_namespace}
   annotations:
-    # This annotation will be updated every time you apply the terraform plan
     terraform.io/change-cause: "${backend_files_hash}"
 spec:
   replicas: 2
@@ -23,8 +22,10 @@ spec:
         image: ${region}-docker.pkg.dev/${project_id}/${repo_name}/${container_name}:latest
         imagePullPolicy: Always
         ports:
-        - containerPort: 5001
+        - containerPort: 80
         env:
+        - name: PORT
+          value: "80"
         - name: MYSQL_FILES_BUCKET
           valueFrom:
             configMapKeyRef:
@@ -40,6 +41,11 @@ spec:
             configMapKeyRef:
               name: backend-config
               key: DATABASE_NAME
+        - name: GOOGLE_CLIENT_ID
+          valueFrom:
+            configMapKeyRef:
+              name: backend-config
+              key: GOOGLE_CLIENT_ID
         - name: DB_ROOT_PASSWORD
           valueFrom:
             secretKeyRef:
