@@ -253,8 +253,6 @@ curl -v http://localhost:5001/wordsets
 ```
 
 
-Last
-
 
 
 

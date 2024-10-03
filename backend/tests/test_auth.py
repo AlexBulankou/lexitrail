@@ -2,6 +2,7 @@ import unittest
 from unittest.mock import patch
 from flask import jsonify, request
 from app.auth import authenticate_user, default_mock_user
+from app.config import Config
 from tests.utils import TestUtils
 import os
 
@@ -66,13 +67,17 @@ class TestAuthenticateUser(unittest.TestCase):
         self.assertEqual(response.status_code, 401)
         self.assertIn(b'Invalid token format', response.data)
 
-    @patch('google.oauth2.id_token.verify_oauth2_token')
-    def test_valid_token(self, mock_verify_oauth2_token):
+    @patch('requests.get')
+    def test_valid_token(self, mock_get):
         """Test that in non-test mode, a valid token sets request.user properly."""
         os.environ['TESTING'] = 'False'  # Simulate non-test mode
 
         # Mock a valid token verification
-        mock_verify_oauth2_token.return_value = {'email': 'validuser@example.com'}
+        mock_get.return_value.status_code = 200
+        mock_get.return_value.json.return_value = {
+            'email': 'validuser@example.com',
+            'issued_to': Config.GOOGLE_CLIENT_ID
+        }
         TestUtils.mock_auth_header(self.headers, 'valid_token')
 
         # Call the protected route with the mocked token
@@ -80,19 +85,19 @@ class TestAuthenticateUser(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIn(b'validuser@example.com', response.data)
 
-    @patch('google.oauth2.id_token.verify_oauth2_token')
-    def test_invalid_token(self, mock_verify_oauth2_token):
+    @patch('requests.get')
+    def test_invalid_token(self, mock_get):
         """Test that an invalid token returns a 401 response."""
         os.environ['TESTING'] = 'False'  # Simulate non-test mode
 
-        # Mock token verification to raise a ValueError (invalid token)
-        mock_verify_oauth2_token.side_effect = ValueError('Invalid token')
+        # Mock token verification to return an invalid response
+        mock_get.return_value.status_code = 400
         TestUtils.mock_auth_header(self.headers, 'invalid_token')
 
         # Call the protected route with the mocked invalid token
         response = self.client.get('/protected', headers=self.headers)
         self.assertEqual(response.status_code, 401)
-        self.assertIn(b'Invalid token', response.data)
+        self.assertIn(b'Invalid access token', response.data)
 
 if __name__ == '__main__':
     unittest.main()

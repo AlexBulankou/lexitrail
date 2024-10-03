@@ -36,6 +36,7 @@ def authenticate_user(func):
             # Call Google API to validate the access token
             google_url = f"https://www.googleapis.com/oauth2/v1/tokeninfo?access_token={access_token}"
             response = req.get(google_url)
+            print (response)
 
             if response.status_code != 200:
                 return jsonify({"message": "Invalid access token"}), 401
