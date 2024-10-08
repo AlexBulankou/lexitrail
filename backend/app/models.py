@@ -59,6 +59,7 @@ class UserWord(db.Model):
     last_recall = db.Column(db.Boolean, nullable=True)  # last_recall is a Boolean
     last_recall_time = db.Column(db.DateTime, nullable=True)
     hint_img = db.Column(db.LargeBinary, nullable=True)  # Add hint_img field for completeness
+    hint_text = db.Column(db.String(2048), nullable=True)
 
     # Relationships
     user = db.relationship('User', back_populates='userwords', overlaps="recall_histories")

@@ -16,5 +16,5 @@ coverage==6.3
 google-auth==2.21.0
 
 # Additional dependencies for hint generation
-google-cloud-aiplatform==1.25.0  # For Vertex AI services
+google-cloud-aiplatform==1.69.0 # For Vertex AI services
 Pillow==9.2.0  # For image processing

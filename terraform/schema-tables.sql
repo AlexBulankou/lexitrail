@@ -37,6 +37,7 @@ CREATE TABLE IF NOT EXISTS userwords (
     last_recall_time TIMESTAMP DEFAULT NULL,
     recall_state INT NOT NULL,
     hint_img BLOB,
+    hint_text VARCHAR(2048),
     UNIQUE(user_id, word_id),
     FOREIGN KEY (user_id) REFERENCES users(email) ON DELETE CASCADE ON UPDATE CASCADE,
     FOREIGN KEY (word_id) REFERENCES words(word_id) ON DELETE CASCADE ON UPDATE CASCADE
