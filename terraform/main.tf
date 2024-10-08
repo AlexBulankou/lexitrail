@@ -56,7 +56,7 @@ locals {
   backend_files_hash = sha1(join("", [for f in fileset(path.root, "../backend/**") : filesha1(f)]))
 }
 
-resource "google_service_account" "lexitrail_storage_sa" {
-  account_id   = "lexitrail-storage-sa"
-  display_name = "Lexitrail Storage Service Account"
+resource "google_service_account" "lexitrail_sa" {
+  account_id   = "lexitrail-sa"
+  display_name = "Lexitrail Service Account"
 }

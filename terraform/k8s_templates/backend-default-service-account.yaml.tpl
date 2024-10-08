@@ -1,6 +1,7 @@
 apiVersion: v1
-kind: Namespace
+kind: ServiceAccount
 metadata:
-  name: ${backend_namespace}
+  name: default
+  namespace: ${backend_namespace}
   annotations:
     iam.gke.io/gcp-service-account: ${gsa_email}

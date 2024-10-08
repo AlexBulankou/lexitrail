@@ -33,11 +33,23 @@ resource "google_project_iam_member" "compute_roles" {
 resource "google_project_iam_member" "bucket_access" {
   project = var.project_id
   role    = "roles/storage.admin"
-  member  = "serviceAccount:${google_service_account.lexitrail_storage_sa.email}"
+  member  = "serviceAccount:${google_service_account.lexitrail_sa.email}"
 }
 
-resource "google_service_account_iam_member" "lexitrail_workload_identity_binding" {
-  service_account_id = google_service_account.lexitrail_storage_sa.name
+resource "google_project_iam_member" "vertex_ai_access" {
+  project = var.project_id
+  role    = "roles/aiplatform.admin"
+  member  = "serviceAccount:${google_service_account.lexitrail_sa.email}"
+}
+
+resource "google_service_account_iam_member" "lexitrail_workload_identity_binding_mysql" {
+  service_account_id = google_service_account.lexitrail_sa.name
   role               = "roles/iam.workloadIdentityUser"
   member             = "serviceAccount:${var.project_id}.svc.id.goog[mysql/default]"
+}
+
+resource "google_service_account_iam_member" "lexitrail_workload_identity_binding_backend" {
+  service_account_id = google_service_account.lexitrail_sa.name
+  role               = "roles/iam.workloadIdentityUser"
+  member             = "serviceAccount:${var.project_id}.svc.id.goog[${var.backend_namespace}/default]"
 }

@@ -17,6 +17,7 @@ spec:
       annotations:
         redeploy-hash: "${backend_files_hash}"
     spec:
+      serviceAccountName: default
       containers:
       - name: lexitrail-backend
         image: ${region}-docker.pkg.dev/${project_id}/${repo_name}/${container_name}:latest

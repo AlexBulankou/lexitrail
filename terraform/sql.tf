@@ -1,7 +1,7 @@
 resource "kubectl_manifest" "mysql_namespace" {
   yaml_body = templatefile("${path.module}/k8s_templates/mysql-namespace.yaml.tpl", {
     sql_namespace = var.sql_namespace,
-    gsa_email     = google_service_account.lexitrail_storage_sa.email
+    gsa_email     = google_service_account.lexitrail_sa.email
   })
   depends_on = [
     google_container_cluster.autopilot_cluster
@@ -11,7 +11,7 @@ resource "kubectl_manifest" "mysql_namespace" {
 resource "kubectl_manifest" "default_sa_annotation" {
   yaml_body = templatefile("${path.module}/k8s_templates/mysql-default-service-account.yaml.tpl", {
     sql_namespace = var.sql_namespace,
-    gsa_email     = google_service_account.lexitrail_storage_sa.email
+    gsa_email     = google_service_account.lexitrail_sa.email
   })
   depends_on = [
     google_container_cluster.autopilot_cluster
@@ -61,7 +61,7 @@ resource "kubectl_manifest" "mysql_schema_and_data_job" {
     google_storage_bucket_object.schema_data_sql,
     google_storage_bucket_object.wordsets_csv,
     google_storage_bucket_object.words_csv,
-    google_service_account_iam_member.lexitrail_workload_identity_binding,
+    google_service_account_iam_member.lexitrail_workload_identity_binding_mysql,
     google_project_iam_member.bucket_access,
     null_resource.schema_tables_sql_trigger,
     null_resource.schema_data_sql_trigger,

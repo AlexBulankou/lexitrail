@@ -19,7 +19,8 @@ resource "null_resource" "backend_cloud_build" {
 
 resource "kubectl_manifest" "backend_namespace" {
   yaml_body = templatefile("${path.module}/k8s_templates/backend-namespace.yaml.tpl", {
-    backend_namespace = var.backend_namespace
+    backend_namespace = var.backend_namespace,
+    gsa_email         = google_service_account.lexitrail_sa.email
   })
   depends_on = [
     google_container_cluster.autopilot_cluster
@@ -38,7 +39,8 @@ resource "kubectl_manifest" "backend_deployment" {
   depends_on = [
     google_container_cluster.autopilot_cluster,
     kubectl_manifest.backend_namespace,
-    null_resource.backend_cloud_build
+    null_resource.backend_cloud_build,
+    google_service_account_iam_member.lexitrail_workload_identity_binding_backend
   ]
 }
 
@@ -74,4 +76,15 @@ resource "kubectl_manifest" "backend_secret" {
     db_root_password  = base64encode(local.db_root_password)
   })
   depends_on = [google_container_cluster.autopilot_cluster, kubectl_manifest.backend_namespace]
+}
+
+resource "kubectl_manifest" "backend_default_sa_annotation" {
+  yaml_body = templatefile("${path.module}/k8s_templates/backend-default-service-account.yaml.tpl", {
+    backend_namespace = var.backend_namespace,
+    gsa_email         = google_service_account.lexitrail_sa.email
+  })
+  depends_on = [
+    google_container_cluster.autopilot_cluster,
+    kubectl_manifest.backend_namespace
+  ]
 }
