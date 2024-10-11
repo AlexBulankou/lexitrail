@@ -13,6 +13,7 @@ import base64
 from io import BytesIO
 from app.auth import authenticate_user  # Import from auth.py
 from google.cloud import aiplatform
+from ..models import db, UserWord, Word
 
 
 
@@ -182,3 +183,52 @@ def generate_multiple_hints():
         return error_response(f"Initialization error: {str(e)}", 500)
     except Exception as e:
         return error_response(f"Error generating hints: {str(e)}", 500)
+    
+@bp.route('/generate_hint', methods=['GET'])
+@authenticate_user  # Protect this route
+def generate_hint():
+    try:
+        user_id = request.args.get('user_id')
+        word_id = request.args.get('word_id')
+        force_regenerate = request.args.get('force_regenerate', 'false').lower() == 'true'
+
+        if not user_id or not word_id:
+            return error_response('Missing required parameters: user_id, word_id', 400)
+
+        # Fetch the UserWord entry
+        userword = UserWord.query.filter_by(user_id=user_id, word_id=word_id).first()
+        if not userword:
+            return error_response('UserWord entry not found', 404)
+
+        # Check if regeneration is needed
+        if userword.hint_text and userword.hint_img and not force_regenerate:
+            return success_response({
+                'hint_text': userword.hint_text,
+                'hint_image': userword.hint_img.decode('utf-8')  # Convert BLOB to base64 string
+            })
+
+        # Fetch the Word entry
+        word_entry = Word.query.filter_by(word_id=word_id).first()
+        if not word_entry:
+            return error_response('Word entry not found', 404)
+
+        # Generate new hint text and image
+        start_total = time.time()
+        hint_result = process_single_hint(word_entry.word, word_entry.def1, word_entry.def2)
+        hint_text = hint_result['hint_text']
+        hint_img = hint_result['hint_image']
+
+        # Update UserWord with new hint_text and hint_img
+        userword.hint_text = hint_text
+        userword.hint_img = base64.b64decode(hint_img)
+        db.session.commit()
+
+        response_time = time.time() - start_total
+        return success_response({
+            'hint_text': hint_text,
+            'hint_image': hint_img,
+            'total_time': response_time
+        })
+
+    except Exception as e:
+        return error_response(f"Error generating hint: {str(e)}", 500)

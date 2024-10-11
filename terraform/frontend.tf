@@ -26,7 +26,8 @@ resource "kubectl_manifest" "lexitrail_ui_deployment" {
   })
 
   depends_on = [
-    google_container_cluster.autopilot_cluster
+    google_container_cluster.autopilot_cluster,
+    null_resource.cloud_build
   ]
 }
 

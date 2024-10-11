@@ -53,9 +53,9 @@ class UserWord(db.Model):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     user_id = db.Column(db.String(320), db.ForeignKey('users.email'), nullable=False)
     word_id = db.Column(db.Integer, db.ForeignKey('words.word_id'), nullable=False)
-    is_included = db.Column(db.Boolean, nullable=False)  # Ensure this field is added
+    is_included = db.Column(db.Boolean, default=True, nullable=False)  # Ensure this field is added
     is_included_change_time = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)  # Match with schema
-    recall_state = db.Column(db.Integer, nullable=False)
+    recall_state = db.Column(db.Integer, default=0,  nullable=False)
     last_recall = db.Column(db.Boolean, nullable=True)  # last_recall is a Boolean
     last_recall_time = db.Column(db.DateTime, nullable=True)
     hint_img = db.Column(db.LargeBinary, nullable=True)  # Add hint_img field for completeness

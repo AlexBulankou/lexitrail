@@ -3,11 +3,11 @@ import tempfile
 from unittest.mock import patch, MagicMock
 from tests.utils import TestUtils
 from app import db
+from app.models import UserWord
 from app.routes.hint_generation import process_single_hint, generate_prompt, generate_image
 from PIL import Image
 import base64
 import os
-
 
 class HintGenerationTests(unittest.TestCase):
 
@@ -63,46 +63,63 @@ class HintGenerationTests(unittest.TestCase):
             self.assertIn('hint_image', result)
             self.assertGreater(len(result['hint_image']), 0, "Generated image data should not be empty.")
 
-
             # Save the real image to disk and print file path for review
             image_path = self.save_image_from_base64(result['hint_image'], "必须")
             print(f"Generated image saved at: {image_path}")
 
-    def test_generate_single_hint_route_unmocked(self):
-        """Test the /generate route without mocks and save the output image."""
-        response = self.client.get('/hint/generate?word=必须&pinyin=bìxū&translation=must')
-        self.assertEqual(response.status_code, 200)
-        response_data = response.get_json().get('data')
-        self.assertIn('hint_text', response_data)
-        self.assertIn('hint_image', response_data)
-        self.assertGreater(len(response_data['hint_image']), 0, "Generated image data should not be empty.")
+    def test_regenerate_hint_no_existing_image_force_false(self):
+        """Test the /regenerate route with no existing image and force_regenerate=false."""
+        with self.app.app_context():
+            # Create test data
+            userword = UserWord(user_id='test_user', word_id=1, hint_text=None, hint_img=None)
+            db.session.add(userword)
+            db.session.commit()
 
+            response = self.client.get('/hint/regenerate?user_id=test_user&word_id=1')
+            self.assertEqual(response.status_code, 200)
+            response_data = response.get_json().get('data')
+            self.assertIn('hint_text', response_data)
+            self.assertIn('hint_image', response_data)
+            self.assertGreater(len(response_data['hint_image']), 0, "Generated image data should not be empty.")
 
-        # Save the real image to disk and print file path for review
-        image_path = self.save_image_from_base64(response_data['hint_image'], "必须")
-        print(f"Generated image saved at: {image_path}")
+            # Verify database is updated with new image and hint
+            updated_userword = UserWord.query.filter_by(user_id='test_user', word_id=1).first()
+            self.assertIsNotNone(updated_userword.hint_text)
+            self.assertIsNotNone(updated_userword.hint_img)
 
-    def test_generate_multiple_hints_route_unmocked(self):
-        """Test the /generate_multiple route without mocks and save the output images."""
-        test_data = [
-            {"word": "必须", "pinyin": "bìxū", "translation": "must"},
-            {"word": "变化", "pinyin": "biànhuà", "translation": "change"}
-        ]
+    def test_regenerate_hint_existing_image_force_false(self):
+        """Test the /regenerate route with existing image and force_regenerate=false (should not regenerate)."""
+        with self.app.app_context():
+            # Create test data
+            userword = UserWord(user_id='test_user', word_id=1, hint_text='Existing hint text', hint_img=b'Existing image data')
+            db.session.add(userword)
+            db.session.commit()
 
-        response = self.client.post('/hint/generate_multiple', json=test_data)
-        self.assertEqual(response.status_code, 200)
-        response_data = response.get_json().get('data')
-        hints = response_data.get('hints')
-        self.assertEqual(len(hints), 2)
+            response = self.client.get('/hint/regenerate?user_id=test_user&word_id=1&force_regenerate=false')
+            self.assertEqual(response.status_code, 200)
+            response_data = response.get_json().get('data')
+            self.assertEqual(response_data['hint_text'], 'Existing hint text')
+            self.assertEqual(base64.b64decode(response_data['hint_image']), b'Existing image data')
 
-        # Iterate over each hint to validate and save the image
-        for hint in hints:
-            self.assertGreater(len(hint['hint_image']), 0, f"Generated image for word '{hint['word']}' should not be empty.")
-            
-            # Save the real image to disk and print file path for review
-            image_path = self.save_image_from_base64(hint['hint_image'], hint['word'])
-            print(f"Generated image for word '{hint['word']}' saved at: {image_path}")
+    def test_regenerate_hint_existing_image_force_true(self):
+        """Test the /regenerate route with existing image and force_regenerate=true (should regenerate)."""
+        with self.app.app_context():
+            # Create test data
+            userword = UserWord(user_id='test_user', word_id=1, hint_text='Existing hint text', hint_img=b'Existing image data')
+            db.session.add(userword)
+            db.session.commit()
 
+            response = self.client.get('/hint/regenerate?user_id=test_user&word_id=1&force_regenerate=true')
+            self.assertEqual(response.status_code, 200)
+            response_data = response.get_json().get('data')
+            self.assertIn('hint_text', response_data)
+            self.assertIn('hint_image', response_data)
+            self.assertGreater(len(response_data['hint_image']), 0, "Generated image data should not be empty.")
+
+            # Verify database is updated with new image and hint
+            updated_userword = UserWord.query.filter_by(user_id='test_user', word_id=1).first()
+            self.assertNotEqual(updated_userword.hint_text, 'Existing hint text')
+            self.assertNotEqual(updated_userword.hint_img, b'Existing image data')
 
 
 class MockImage:

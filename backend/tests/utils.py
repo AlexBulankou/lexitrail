@@ -215,8 +215,40 @@ class TestUtils:
         """
         Create a test user, wordset, word, and userword entry.
         """
-        # Use the create_test_word method to create user, wordset, and word
-        user, wordset, word = TestUtils.create_test_word(db, user_email, word_description, word_name)
+        # Ensure user exists
+        user = db.session.query(User).filter_by(email=user_email).first()
+        if user is None:
+            user = User(email=user_email)
+            db.session.add(user)
+            db.session.commit()
+
+        # Ensure wordset exists
+        wordset = db.session.query(Wordset).filter_by(description=word_description).first()
+        if wordset is None:
+            wordset = Wordset(description=word_description)
+            db.session.add(wordset)
+            db.session.commit()
+
+        # Ensure word exists
+        word = db.session.query(Word).filter_by(word=word_name, wordset_id=wordset.wordset_id).first()
+        if word is None:
+            if word_name is None:
+                word_name = f'Test Word {datetime.utcnow().timestamp()}'
+            word = Word(
+                word=word_name,
+                wordset_id=wordset.wordset_id,
+                def1='Definition 1',
+                def2='Definition 2'
+            )
+            db.session.add(word)
+            db.session.commit()
+
+        # Re-fetch user and word to ensure they are committed to the database
+        user = db.session.query(User).filter_by(email=user.email).first()
+        word = db.session.query(Word).filter_by(word_id=word.word_id).first()
+
+        if user is None or word is None:
+            raise ValueError("User or Word could not be found after commit.")
 
         # Create and add userword
         userword = UserWord(user_id=user.email, word_id=word.word_id, is_included=True, recall_state=1)
@@ -225,6 +257,9 @@ class TestUtils:
 
         # Re-fetch userword to ensure it's attached to the session
         userword = db.session.query(UserWord).filter_by(user_id=user.email, word_id=word.word_id).first()
+
+        if userword is None:
+            raise ValueError("UserWord could not be created.")
 
         return user, wordset, word, userword
     
