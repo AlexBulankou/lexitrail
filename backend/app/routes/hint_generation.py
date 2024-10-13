@@ -14,6 +14,8 @@ from io import BytesIO
 from app.auth import authenticate_user  # Import from auth.py
 from google.cloud import aiplatform
 from ..models import db, UserWord, Word
+from ..utils import validate_user_access  # Import the shared validation function
+from datetime import datetime
 
 
 
@@ -195,11 +197,24 @@ def generate_hint():
         if not user_id or not word_id:
             return error_response('Missing required parameters: user_id, word_id', 400)
 
-        # Fetch the UserWord entry
+        # Use the shared validation function to ensure the user is only accessing their own data
+        validation_response = validate_user_access(user_id)
+        if validation_response:
+            return validation_response
+
+        # Fetch or create the UserWord entry
         userword = UserWord.query.filter_by(user_id=user_id, word_id=word_id).first()
         if not userword:
-            return error_response('UserWord entry not found', 404)
-
+            # Create a new UserWord entry if it does not exist
+            userword = UserWord(
+                user_id=user_id,
+                word_id=word_id,
+                is_included=True,  # Default value
+                recall_state=0,  # Default recall state
+                is_included_change_time=datetime.utcnow()
+            )
+            db.session.add(userword)
+        
         # Check if regeneration is needed
         if userword.hint_text and userword.hint_img and not force_regenerate:
             return success_response({

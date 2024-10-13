@@ -115,7 +115,7 @@ const Game = () => {
         {wordsToRender.map((word, index) => (
           <WordCard
             key={index}
-            word={word}
+            word={{ ...word, user_id: user.email }} // Ensure user_id is passed correctly
             handleMemorized={() => handleCardGuessed(index, true)}
             handleNotMemorized={() => handleCardGuessed(index, false)}
             toggleExclusion={() => toggleExclusion(index)}  // Pass toggleExclusion to WordCard

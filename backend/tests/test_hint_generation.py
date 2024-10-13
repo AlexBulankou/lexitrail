@@ -70,12 +70,10 @@ class HintGenerationTests(unittest.TestCase):
     def test_regenerate_hint_no_existing_image_force_false(self):
         """Test the /regenerate route with no existing image and force_regenerate=false."""
         with self.app.app_context():
-            # Create test data
-            userword = UserWord(user_id='test_user', word_id=1, hint_text=None, hint_img=None)
-            db.session.add(userword)
-            db.session.commit()
+            # Create test data using TestUtils
+            user, wordset, word, userword = TestUtils.create_test_userword(db, user_email='test@example.com', word_name='Test Word')
 
-            response = self.client.get('/hint/regenerate?user_id=test_user&word_id=1')
+            response = self.client.get(f'/hint/generate_hint?user_id={user.email}&word_id={word.word_id}')
             self.assertEqual(response.status_code, 200)
             response_data = response.get_json().get('data')
             self.assertIn('hint_text', response_data)
@@ -83,19 +81,20 @@ class HintGenerationTests(unittest.TestCase):
             self.assertGreater(len(response_data['hint_image']), 0, "Generated image data should not be empty.")
 
             # Verify database is updated with new image and hint
-            updated_userword = UserWord.query.filter_by(user_id='test_user', word_id=1).first()
+            updated_userword = UserWord.query.filter_by(user_id=user.email, word_id=word.word_id).first()
             self.assertIsNotNone(updated_userword.hint_text)
             self.assertIsNotNone(updated_userword.hint_img)
 
     def test_regenerate_hint_existing_image_force_false(self):
         """Test the /regenerate route with existing image and force_regenerate=false (should not regenerate)."""
         with self.app.app_context():
-            # Create test data
-            userword = UserWord(user_id='test_user', word_id=1, hint_text='Existing hint text', hint_img=b'Existing image data')
-            db.session.add(userword)
+            # Create test data using TestUtils
+            user, wordset, word, userword = TestUtils.create_test_userword(db, user_email='test@example.com', word_name='Test Word')
+            userword.hint_text = 'Existing hint text'
+            userword.hint_img = base64.b64encode(b'Existing image data')  # Properly encode the image data
             db.session.commit()
 
-            response = self.client.get('/hint/regenerate?user_id=test_user&word_id=1&force_regenerate=false')
+            response = self.client.get(f'/hint/generate_hint?user_id={user.email}&word_id={word.word_id}&force_regenerate=false')
             self.assertEqual(response.status_code, 200)
             response_data = response.get_json().get('data')
             self.assertEqual(response_data['hint_text'], 'Existing hint text')
@@ -104,12 +103,13 @@ class HintGenerationTests(unittest.TestCase):
     def test_regenerate_hint_existing_image_force_true(self):
         """Test the /regenerate route with existing image and force_regenerate=true (should regenerate)."""
         with self.app.app_context():
-            # Create test data
-            userword = UserWord(user_id='test_user', word_id=1, hint_text='Existing hint text', hint_img=b'Existing image data')
-            db.session.add(userword)
+            # Create test data using TestUtils
+            user, wordset, word, userword = TestUtils.create_test_userword(db, user_email='test@example.com', word_name='Test Word')
+            userword.hint_text = 'Existing hint text'
+            userword.hint_img = base64.b64encode(b'Existing image data')  # Properly encode the image data
             db.session.commit()
 
-            response = self.client.get('/hint/regenerate?user_id=test_user&word_id=1&force_regenerate=true')
+            response = self.client.get(f'/hint/generate_hint?user_id={user.email}&word_id={word.word_id}&force_regenerate=true')
             self.assertEqual(response.status_code, 200)
             response_data = response.get_json().get('data')
             self.assertIn('hint_text', response_data)
@@ -117,10 +117,28 @@ class HintGenerationTests(unittest.TestCase):
             self.assertGreater(len(response_data['hint_image']), 0, "Generated image data should not be empty.")
 
             # Verify database is updated with new image and hint
-            updated_userword = UserWord.query.filter_by(user_id='test_user', word_id=1).first()
+            updated_userword = UserWord.query.filter_by(user_id=user.email, word_id=word.word_id).first()
             self.assertNotEqual(updated_userword.hint_text, 'Existing hint text')
-            self.assertNotEqual(updated_userword.hint_img, b'Existing image data')
+            self.assertNotEqual(updated_userword.hint_img, base64.b64encode(b'Existing image data'))
 
+    def test_generate_hint_create_userword_entry(self):
+        """Test the /generate_hint route when UserWord entry does not exist (should create it)."""
+        with self.app.app_context():
+            # Create test data without creating a UserWord entry
+            user, wordset, word = TestUtils.create_test_word(db, user_email='test@example.com', word_name='Test Word')
+
+            response = self.client.get(f'/hint/generate_hint?user_id={user.email}&word_id={word.word_id}')
+            self.assertEqual(response.status_code, 200)
+            response_data = response.get_json().get('data')
+            self.assertIn('hint_text', response_data)
+            self.assertIn('hint_image', response_data)
+            self.assertGreater(len(response_data['hint_image']), 0, "Generated image data should not be empty.")
+
+            # Verify that a new UserWord entry was created and updated with hint
+            new_userword = UserWord.query.filter_by(user_id=user.email, word_id=word.word_id).first()
+            self.assertIsNotNone(new_userword)
+            self.assertIsNotNone(new_userword.hint_text)
+            self.assertIsNotNone(new_userword.hint_img)
 
 class MockImage:
     """Mock class for generated image objects."""
@@ -130,7 +148,6 @@ class MockImage:
     @property
     def pil_image(self):
         return self._pil_image
-
 
 if __name__ == '__main__':
     unittest.main()

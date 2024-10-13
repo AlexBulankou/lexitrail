@@ -211,7 +211,7 @@ class TestUtils:
         return user, wordset, word
 
     @staticmethod
-    def create_test_userword(db, user_email=default_mock_user, word_description='Test Wordset', word_name=None):
+    def create_test_userword(db, user_email=default_mock_user, word_description='Test Wordset', word_name=None, is_included=True, hint_text=None, hint_img=None):
         """
         Create a test user, wordset, word, and userword entry.
         """
@@ -251,7 +251,7 @@ class TestUtils:
             raise ValueError("User or Word could not be found after commit.")
 
         # Create and add userword
-        userword = UserWord(user_id=user.email, word_id=word.word_id, is_included=True, recall_state=1)
+        userword = UserWord(user_id=user.email, word_id=word.word_id, is_included=is_included, hint_text=hint_text, hint_img=hint_img, recall_state=1)
         db.session.add(userword)
         db.session.commit()
 

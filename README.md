@@ -253,6 +253,18 @@ curl -v http://localhost:5001/wordsets
 ```
 
 
+### Env file settings
+
+
+DB_ROOT_PASSWORD=
+MYSQL_FILES_BUCKET=
+SQL_NAMESPACE=
+DATABASE_NAME=
+GOOGLE_CLIENT_ID=
+PROJECT_ID=
+LOCATION=
+
+
 
 
 
