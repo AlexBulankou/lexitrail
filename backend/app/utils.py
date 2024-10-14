@@ -1,10 +1,21 @@
 from flask import request, jsonify
+import base64
 
 def to_dict(model_instance):
     """
     Convert SQLAlchemy model instance to dictionary.
+    Handles binary fields by excluding them or converting appropriately.
     """
-    return {c.name: getattr(model_instance, c.name) for c in model_instance.__table__.columns}
+    result = {}
+    for c in model_instance.__table__.columns:
+        value = getattr(model_instance, c.name)
+        if isinstance(value, bytes):
+            # Skip binary fields like hint_img or encode them
+            result[c.name] = base64.b64encode(value).decode('utf-8') if c.name == 'hint_img' else None
+        else:
+            result[c.name] = value
+    return result
+
 
 def not_found_response(message="Resource not found"):
     """

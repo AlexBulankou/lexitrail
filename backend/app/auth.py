@@ -3,6 +3,10 @@ from flask import request, jsonify
 import requests as req
 from app.config import Config
 import functools
+import logging
+
+logging.basicConfig(level=logging.WARNING)
+logger = logging.getLogger(__name__)
 
 default_mock_user = "test@example.com"
 
@@ -54,6 +58,7 @@ def authenticate_user(func):
             return func(*args, **kwargs)
 
         except Exception as e:
+            logger.error(f"Error authenticate_user: {e}", exc_info=True)
             return jsonify({"message": "Error verifying access token", "error": str(e)}), 401
 
     return wrapper

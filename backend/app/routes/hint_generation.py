@@ -16,6 +16,10 @@ from google.cloud import aiplatform
 from ..models import db, UserWord, Word
 from ..utils import validate_user_access  # Import the shared validation function
 from datetime import datetime
+import logging
+
+logging.basicConfig(level=logging.WARNING)
+logger = logging.getLogger(__name__)
 
 
 
@@ -91,15 +95,16 @@ def generate_image(prompt):
     image = image_generation_model.generate_images(
         prompt=prompt,
         number_of_images=1,
-        aspect_ratio="3:4",
+        aspect_ratio="4:3",
         safety_filter_level="block_some",
         person_generation="allow_adult",
     )
-    return image[0]._pil_image
+    resized_image = image[0]._pil_image.resize((400, 300), PIL_Image.ANTIALIAS)
+    return resized_image
 
 def image_to_base64(image):
     buffered = BytesIO()
-    image.save(buffered, format="JPEG")
+    image.save(buffered, format="JPEG", quality=70)
     return base64.b64encode(buffered.getvalue()).decode("utf-8")
 
 
@@ -149,8 +154,10 @@ def generate_single_hint():
         return success_response(result)
 
     except RuntimeError as e:
+        logger.error(f"RuntimeError generate_single_hint: {e}", exc_info=True)
         return error_response(f"Initialization error: {str(e)}", 500)
     except Exception as e:
+        logger.error(f"Error generate_single_hint: {e}", exc_info=True)
         return error_response(f"Error generating hint: {str(e)}", 500)
 
 @bp.route('/generate_multiple', methods=['POST'])
@@ -173,6 +180,7 @@ def generate_multiple_hints():
                 try:
                     results.append(future.result())
                 except Exception as e:
+                    logger.error(f"Error generating images: {e}", exc_info=True)
                     return error_response(f"Error generating images: {str(e)}", 500)
 
         response_time = time.time() - start_total
@@ -182,8 +190,10 @@ def generate_multiple_hints():
         })
 
     except RuntimeError as e:
+        logger.error(f"RuntimeError generate_multiple_hints: {e}", exc_info=True)
         return error_response(f"Initialization error: {str(e)}", 500)
     except Exception as e:
+        logger.error(f"Error generate_multiple_hints: {e}", exc_info=True)
         return error_response(f"Error generating hints: {str(e)}", 500)
     
 @bp.route('/generate_hint', methods=['GET'])
@@ -214,12 +224,15 @@ def generate_hint():
                 is_included_change_time=datetime.utcnow()
             )
             db.session.add(userword)
-        
+            db.session.commit()
+
         # Check if regeneration is needed
         if userword.hint_text and userword.hint_img and not force_regenerate:
+            # Convert BLOB to base64 string instead of UTF-8 decoding
+            hint_image_base64 = base64.b64encode(userword.hint_img).decode('utf-8')
             return success_response({
                 'hint_text': userword.hint_text,
-                'hint_image': userword.hint_img.decode('utf-8')  # Convert BLOB to base64 string
+                'hint_image': hint_image_base64
             })
 
         # Fetch the Word entry
@@ -246,4 +259,5 @@ def generate_hint():
         })
 
     except Exception as e:
+        logger.error(f"Error generate_hint: {e}", exc_info=True)
         return error_response(f"Error generating hint: {str(e)}", 500)
