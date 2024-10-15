@@ -61,7 +61,9 @@ resource "kubectl_manifest" "backend_configmap" {
     mysql_files_bucket = google_storage_bucket.mysql_files_bucket.name,
     sql_namespace = var.sql_namespace,
     database_name = var.db_name,
-    google_client_id = local.google_client_id
+    google_client_id = local.google_client_id,
+    project_id = var.project_id,
+    location = var.region
   })
   depends_on = [
     google_container_cluster.autopilot_cluster,

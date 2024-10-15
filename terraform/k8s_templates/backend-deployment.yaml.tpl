@@ -47,6 +47,16 @@ spec:
             configMapKeyRef:
               name: backend-config
               key: GOOGLE_CLIENT_ID
+        - name: PROJECT_ID
+          valueFrom:
+            configMapKeyRef:
+              name: backend-config
+              key: PROJECT_ID
+        - name: LOCATION
+          valueFrom:
+            configMapKeyRef:
+              name: backend-config
+              key: LOCATION
         - name: DB_ROOT_PASSWORD
           valueFrom:
             secretKeyRef:

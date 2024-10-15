@@ -1,5 +1,3 @@
-// ui/src/components/WordCard.js
-
 import React, { useState, useEffect } from 'react';
 import { getHint, regenerateHint } from '../services/hintService';
 import '../styles/WordCard.css';
@@ -8,11 +6,17 @@ const WordCard = ({ word, handleMemorized, handleNotMemorized, toggleExclusion, 
   const [isFlipped, setIsFlipped] = useState(false);
   const [hintImage, setHintImage] = useState(null);
   const [loadingHint, setLoadingHint] = useState(true);
+  const [loadingWord, setLoadingWord] = useState(true); // New state for controlling button loading state
 
   useEffect(() => {
     // Validate that user_id and word_id are set correctly
     if (word.user_id && word.word_id) {
-      // Fetch the hint image when the component mounts
+      // Clear the current hint and show loading message
+      setHintImage(null);
+      setLoadingHint(true);
+      setLoadingWord(true); // Set loadingWord to true while fetching the new word
+
+      // Fetch the hint image when the component mounts or the word changes
       const fetchHint = async () => {
         try {
           const response = await getHint(word.user_id, word.word_id);
@@ -23,12 +27,14 @@ const WordCard = ({ word, handleMemorized, handleNotMemorized, toggleExclusion, 
           console.error('Failed to load hint image:', error);
         } finally {
           setLoadingHint(false);
+          setLoadingWord(false); // Set loadingWord to false once the hint image is loaded
         }
       };
       fetchHint();
     } else {
       console.error('Invalid user_id or word_id:', word.user_id, word.word_id);
       setLoadingHint(false);
+      setLoadingWord(false); // Set loadingWord to false if user_id or word_id is invalid
     }
   }, [word.user_id, word.word_id]);
 
@@ -40,27 +46,34 @@ const WordCard = ({ word, handleMemorized, handleNotMemorized, toggleExclusion, 
     e.stopPropagation();
   };
 
-  const flipCard = () => {
-    setIsFlipped(!isFlipped);
+  const handleButtonClick = (action) => {
+    // Set loadingWord to true to disable all buttons
+    setLoadingWord(true);
+    // Execute the action
+    action();
   };
 
   const onMemorized = () => {
-    if (isFlipped) {
-      flipCard(); // Flip back to front first
-    }
-    handleMemorized(); // Then proceed with memorizing
+    handleButtonClick(() => {
+      if (isFlipped) {
+        flipCard(); // Flip back to front first
+      }
+      handleMemorized(); // Then proceed with memorizing
+    });
   };
 
   const onNotMemorized = () => {
-    if (isFlipped) {
-      flipCard(); // Flip back to front first
-    }
-    handleNotMemorized(); // Then proceed with not memorizing
+    handleButtonClick(() => {
+      if (isFlipped) {
+        flipCard(); // Flip back to front first
+      }
+      handleNotMemorized(); // Then proceed with not memorizing
+    });
   };
 
   const handleRegenerateHint = async () => {
     if (word.user_id && word.word_id) {
-      setLoadingHint(true);
+      setLoadingHint(true); // Set loadingHint to true while regenerating hint
       try {
         const response = await regenerateHint(word.user_id, word.word_id);
         if (response && response.data) {
@@ -69,7 +82,7 @@ const WordCard = ({ word, handleMemorized, handleNotMemorized, toggleExclusion, 
       } catch (error) {
         console.error('Failed to regenerate hint image:', error);
       } finally {
-        setLoadingHint(false);
+        setLoadingHint(false); // Set loadingHint to false once hint regeneration is done
       }
     } else {
       console.error('Invalid user_id or word_id for regeneration:', word.user_id, word.word_id);
@@ -109,14 +122,15 @@ const WordCard = ({ word, handleMemorized, handleNotMemorized, toggleExclusion, 
           className={`exclude-button ${word.is_included ? 'red' : 'green'}`}
           onClick={(e) => {
             stopPropagation(e);
-            toggleExclusion();  // Calls the passed toggleExclusion function
+            handleButtonClick(toggleExclusion);  // Disable all buttons and toggle exclusion
           }}
+          disabled={loadingWord} // Disable button while loading a new word
         >
           {word.is_included ? 'Exclude' : 'Include'}
         </button>
 
         <div className="recall-state" style={getRecallStateStyle(word.recall_state)}>
-          {word.recall_state}
+          {loadingWord ? '⏳' : word.recall_state}
         </div>
 
         <div className="recall-history">
@@ -150,7 +164,7 @@ const WordCard = ({ word, handleMemorized, handleNotMemorized, toggleExclusion, 
           hintImage && (
             <div className="hint-image-wrapper">
               <img src={`data:image/jpeg;base64,${hintImage}`} alt="Hint" className="hint-image" />
-              <button className="regenerate-hint-button" onClick={handleRegenerateHint}>🔄</button>
+              <button className="regenerate-hint-button" onClick={handleRegenerateHint} disabled={loadingWord}>🔄</button>
             </div>
           )
         )}
@@ -161,14 +175,14 @@ const WordCard = ({ word, handleMemorized, handleNotMemorized, toggleExclusion, 
           className="word-card-front"
           style={{ fontSize: calculateFontSize(word.word) }} // Dynamically set the font size
         >
-          {word.word} {/* Remove preceding and trailing quotes */}
+          {loadingWord ? '⏳' : word.word} {/* Remove preceding and trailing quotes */}
         </div>
         <div
           className="word-card-back"
           style={{ fontSize: calculateFontSize(word.meaning) }} // Dynamically set the font size
         >
           <p>
-            {word.meaning.trim().split('\n').map((line, index) => (
+            {loadingWord ? '⏳ Loading...' : word.meaning.trim().split('\n').map((line, index) => (
               <React.Fragment key={index}>
                 {removeQuotes(line)}
                 <br />
@@ -179,8 +193,12 @@ const WordCard = ({ word, handleMemorized, handleNotMemorized, toggleExclusion, 
       </div>
 
       <div className="buttons" onClick={stopPropagation}>
-        <button onClick={onNotMemorized}>❌</button>
-        <button onClick={onMemorized}>✔️</button>
+        <button onClick={onNotMemorized} disabled={loadingWord}>
+          {loadingWord ? '⏳' : '❌'}
+        </button>
+        <button onClick={onMemorized} disabled={loadingWord}>
+          {loadingWord ? '⏳' : '✔️'}
+        </button>
       </div>
     </div>
   );
