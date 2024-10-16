@@ -17,7 +17,7 @@ const App = () => {
     <Router>
       <NavBar user={user} login={login} logOut={logOut} />
       <Routes>
-        <Route path="/" element={<Profile profileDetails={user} login={login} logout={logOut} />} />
+        <Route path="/" element={<Profile profileDetails={user} login={login} logOut={logOut} />} />
         <Route path="/wordsets" element={
           <PrivateRoute profileDetails={user} login={login} logOut={logOut}>
             <Wordsets />

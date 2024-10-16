@@ -13,12 +13,12 @@ const WordCard = ({ word, handleMemorized, handleNotMemorized, toggleExclusion, 
     if (word.user_id && word.word_id) {
       // Clear the current hint and show loading message
       setHintImage(null);
-      setLoadingHint(true);
       setLoadingWord(true); // Set loadingWord to true while fetching the new word
 
       // Fetch the hint image when the component mounts or the word changes
       const fetchHint = async () => {
         try {
+          setLoadingHint(true);
           const response = await getHint(word.user_id, word.word_id);
           if (response && response.data) {
             setHintImage(response.data.hint_image);
@@ -49,6 +49,7 @@ const WordCard = ({ word, handleMemorized, handleNotMemorized, toggleExclusion, 
   const handleButtonClick = (action) => {
     // Set loadingWord to true to disable all buttons
     setLoadingWord(true);
+    setHintImage(null);
     // Execute the action
     action();
   };
@@ -56,7 +57,7 @@ const WordCard = ({ word, handleMemorized, handleNotMemorized, toggleExclusion, 
   const onMemorized = () => {
     handleButtonClick(() => {
       if (isFlipped) {
-        flipCard(); // Flip back to front first
+        setIsFlipped(false); // Flip back to front first
       }
       handleMemorized(); // Then proceed with memorizing
     });
@@ -65,7 +66,7 @@ const WordCard = ({ word, handleMemorized, handleNotMemorized, toggleExclusion, 
   const onNotMemorized = () => {
     handleButtonClick(() => {
       if (isFlipped) {
-        flipCard(); // Flip back to front first
+        setIsFlipped(false); // Flip back to front first
       }
       handleNotMemorized(); // Then proceed with not memorizing
     });
@@ -173,9 +174,15 @@ const WordCard = ({ word, handleMemorized, handleNotMemorized, toggleExclusion, 
       <div onClick={handleCardClick} className={`word-card-inner ${isFlipped ? 'flipped' : ''}`}>
         <div
           className="word-card-front"
-          style={{ fontSize: calculateFontSize(word.word) }} // Dynamically set the font size
         >
-          {loadingWord ? '⏳' : word.word} {/* Remove preceding and trailing quotes */}
+          <p>
+            {loadingWord ?
+              <p>⏳</p>
+              :
+              <p style={{ fontSize: calculateFontSize(word.word) }}>{word.word}</p>
+
+            }
+          </p>
         </div>
         <div
           className="word-card-back"

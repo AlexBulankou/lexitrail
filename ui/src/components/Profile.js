@@ -1,7 +1,16 @@
 import React from 'react';
 import '../styles/NavBar.css';
+import { useNavigate } from 'react-router-dom';
+
 
 function Profile({ profileDetails, login, logOut }) {
+
+  const navigate = useNavigate();
+  const profileLogin = () => {
+    login();
+    navigate(`/wordsets`);
+  }
+
   return (
 
     <div className="profile-container">
@@ -20,7 +29,7 @@ function Profile({ profileDetails, login, logOut }) {
 
 
         ) : (
-          <button className="login-button" onClick={login}>Login with Google</button>
+          <button className="login-button" onClick={profileLogin}>Login with Google</button>
         )
       }
     </div>

@@ -3,17 +3,28 @@ import { googleLogout, useGoogleLogin } from '@react-oauth/google';
 import { createUser, getUserByEmail } from '../services/userService';
 
 export const useAuth = () => {
+
+  
   const [user, setUser] = useState(() => {
-    const storedUser = localStorage.getItem('user');
+    const storedUser = sessionStorage.getItem('user');
     return storedUser ? JSON.parse(storedUser) : null;
   });
+  
+
+  /*
+  const [user, setUser] = useState(null);
+  const [accessToken, setAccessToken] = useState(null);
+  */
 
 
   const initUser = {
     onSuccess: async (tokenResponse) => {
       try {
-        // Store the access_token in localStorage
-        localStorage.setItem('access_token', tokenResponse.access_token);
+        
+        // Store the access_token in sessionStorage
+        sessionStorage.setItem('access_token', tokenResponse.access_token);
+        // setAccessToken(tokenResponse.access_token);
+        
   
         const response = await fetch(`https://www.googleapis.com/oauth2/v3/userinfo?access_token=${tokenResponse.access_token}`, {
           method: 'GET',
@@ -29,7 +40,8 @@ export const useAuth = () => {
   
         const data = await response.json();
         setUser(data);
-        localStorage.setItem('user', JSON.stringify(data));
+        
+        sessionStorage.setItem('user', JSON.stringify(data));
   
         try {
           const existingUser = await getUserByEmail(data.email);
@@ -54,8 +66,9 @@ export const useAuth = () => {
   const logOut = () => {
     googleLogout();
     setUser(null);
-    localStorage.removeItem('user');
-    localStorage.removeItem('access_token');
+    
+    sessionStorage.removeItem('user');
+    sessionStorage.removeItem('access_token');
   };
 
   return { user, login, logOut };

@@ -1,12 +1,14 @@
 import axios from 'axios';
+//import { useAuth } from '../hooks/useAuth';
 
 const API_BASE_URL = window.config.API_BASE_URL;
 
 // Log the API base URL for diagnostics
 console.log(`API_BASE_URL is: ${API_BASE_URL}`);
 
-// Get the access token from localStorage
-const getAccessToken = () => localStorage.getItem('access_token');
+// Get the access token from sessionStorage
+const getAccessToken = () => sessionStorage.getItem('access_token');
+// const getAccessToken = ()=>useAuth.accessToken;
 
 // Function to handle any GET request
 export const getData = async (endpoint) => {

@@ -1,19 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import WordCard from './WordCard';
-import Completed from './Completed';  
-import { useParams, useLocation } from 'react-router-dom';  
+import Completed from './Completed';
+import { useParams, useLocation } from 'react-router-dom';
 import { useWordsetLoader } from '../hooks/useWordsetLoader';
-import { useAuth } from '../hooks/useAuth';  
-import '../styles/Game.css';  
+import { useAuth } from '../hooks/useAuth';
+import '../styles/Game.css';
 
 const Game = () => {
   const { wordsetId } = useParams();
   const { state } = useLocation();  // Capture the state passed from navigation
   const showExcludedFromState = state?.showExcluded || false;  // Extract the showExcluded flag
-  const { user } = useAuth();  
+  const { user } = useAuth();
 
   if (!user) {
-    return <div>Please log in to play the game</div>;  
+    return <div>Please log in to play the game</div>;
   }
 
   const {
@@ -30,7 +30,7 @@ const Game = () => {
   } = useWordsetLoader(wordsetId, user.email, showExcludedFromState);  // Pass showExcludedFromState to hook
 
   const [layoutClass, setLayoutClass] = useState('layout1');
-  const [maxCardsToShow, setMaxCardsToShow] = useState(1);  
+  const [maxCardsToShow, setMaxCardsToShow] = useState(1);
   const [showExcluded, setShowExcluded] = useState(showExcludedFromState);  // Initialize with state value
 
   useEffect(() => {
@@ -46,27 +46,28 @@ const Game = () => {
     const width = window.innerWidth;
     const height = window.innerHeight;
 
-    const cardWidth = 250; 
-    const cardHeight = 300;  
+    const cardWidth = 250;
+    const cardHeight = 500;
+    const extraHorizonalSpaceNeeded = 250;
 
     if (width <= cardWidth * 2) {
       setLayoutClass('layout1');
-      setMaxCardsToShow(1);  
+      setMaxCardsToShow(1);
     } else if (width <= cardWidth * 3) {
       if (height <= cardHeight * 2) {
         setLayoutClass('layout2');
-        setMaxCardsToShow(2);  
+        setMaxCardsToShow(2);
       } else {
         setLayoutClass('layout4');
-        setMaxCardsToShow(4);  
+        setMaxCardsToShow(4);
       }
     } else {
-      if (height <= cardHeight * 2) {
+      if (height <= (cardHeight * 2) + extraHorizonalSpaceNeeded) {
         setLayoutClass('layout3');
-        setMaxCardsToShow(3);  
+        setMaxCardsToShow(3);
       } else {
         setLayoutClass('layout5');
-        setMaxCardsToShow(6);  
+        setMaxCardsToShow(6);
       }
     }
   };
@@ -74,9 +75,9 @@ const Game = () => {
   const handleCardGuessed = (index, isCorrect) => {
     const word = displayWords[index];
     if (isCorrect) {
-      handleMemorized(index, maxCardsToShow);  
+      handleMemorized(index, maxCardsToShow);
     } else {
-      handleNotMemorized(index, maxCardsToShow);  
+      handleNotMemorized(index, maxCardsToShow);
     }
   };
 
@@ -98,7 +99,7 @@ const Game = () => {
         timeElapsed={timeElapsed}
         firstTimeCorrect={firstTimeCorrect}
         incorrectAttempts={incorrectAttempts}
-        resetGame={resetGame}  
+        resetGame={resetGame}
       />
     );
   }
