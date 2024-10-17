@@ -5,12 +5,14 @@ import { useParams, useLocation } from 'react-router-dom';
 import { useWordsetLoader } from '../hooks/useWordsetLoader';
 import { useAuth } from '../hooks/useAuth';
 import '../styles/Game.css';
+import { useNavigate } from 'react-router-dom';
 
 const Game = () => {
   const { wordsetId } = useParams();
   const { state } = useLocation();  // Capture the state passed from navigation
   const showExcludedFromState = state?.showExcluded || false;  // Extract the showExcluded flag
   const { user } = useAuth();
+  const navigate = useNavigate();
 
   if (!user) {
     return <div>Please log in to play the game</div>;
@@ -18,6 +20,7 @@ const Game = () => {
 
   const {
     toShow: displayWords,
+    totalToShow: totalToShow,
     loading,
     timeElapsed,
     handleMemorized,
@@ -31,7 +34,6 @@ const Game = () => {
 
   const [layoutClass, setLayoutClass] = useState('layout1');
   const [maxCardsToShow, setMaxCardsToShow] = useState(1);
-  const [showExcluded, setShowExcluded] = useState(showExcludedFromState);  // Initialize with state value
 
   useEffect(() => {
     updateLayout();
@@ -82,9 +84,8 @@ const Game = () => {
   };
 
   const toggleWordsetFilter = () => {
-    const newShowExcluded = !showExcluded;
-    setShowExcluded(newShowExcluded);
-    loadWithExclusionFilter(newShowExcluded);  // Call the loadWithExclusionFilter explicitly
+    const reversedShowExcluded = !showExcludedFromState;
+    navigate(`/game/${wordsetId}`, { state: { showExcluded: reversedShowExcluded } });
   };
 
   const wordsToRender = displayWords.slice(0, maxCardsToShow);
@@ -106,12 +107,22 @@ const Game = () => {
 
   return (
     <div className="container">
-      <button onClick={toggleWordsetFilter}>
-        {showExcluded ? 'Show Included' : 'Show Excluded'}
-      </button>
-      <div className="timer">
-        {Math.floor(timeElapsed / 60)}:{('0' + timeElapsed % 60).slice(-2)}
+
+      <div className="progress-stats">
+        <div className="not-memorized">❌ {Object.keys(incorrectAttempts).length}</div>
+        <div>
+          <button onClick={toggleWordsetFilter}>
+            {showExcludedFromState ? 'Show Included' : 'Show Excluded'}
+          </button>
+          <div className="timer">
+            {Math.floor(timeElapsed / 60)}:{('0' + timeElapsed % 60).slice(-2)}
+          </div>
+        </div>
+        <div className="memorized">✔️ {correctlyMemorized.size}</div>
       </div>
+
+
+
       <div className={`cards-container ${layoutClass}`}>
         {wordsToRender.map((word, index) => (
           <WordCard
@@ -126,16 +137,13 @@ const Game = () => {
       </div>
       <div className="progress-bar-container">
         <div className="progress-bar">
-          <div className="progress" style={{ width: displayWords.length ? `${(correctlyMemorized.size / displayWords.length) * 100}%` : '0%' }}></div>
+          <div className="progress" style={{ width: totalToShow ? `${(correctlyMemorized.size / totalToShow) * 100}%` : '0%' }}></div>
         </div>
         <div className="progress-info">
-          recalled {correctlyMemorized.size} out of {displayWords.length}
+          recalled {correctlyMemorized.size} out of {totalToShow}
         </div>
       </div>
-      <div className="progress-stats">
-        <div className="not-memorized">❌ {Object.keys(incorrectAttempts).length}</div>
-        <div className="memorized">✔️ {correctlyMemorized.size}</div>
-      </div>
+
     </div>
   );
 };

@@ -11,9 +11,10 @@ const WordCard = ({ word, handleMemorized, handleNotMemorized, toggleExclusion, 
   useEffect(() => {
     // Validate that user_id and word_id are set correctly
     if (word.user_id && word.word_id) {
+      setLoadingWord(false);
+
       // Clear the current hint and show loading message
       setHintImage(null);
-      setLoadingWord(true); // Set loadingWord to true while fetching the new word
 
       // Fetch the hint image when the component mounts or the word changes
       const fetchHint = async () => {
@@ -27,7 +28,6 @@ const WordCard = ({ word, handleMemorized, handleNotMemorized, toggleExclusion, 
           console.error('Failed to load hint image:', error);
         } finally {
           setLoadingHint(false);
-          setLoadingWord(false); // Set loadingWord to false once the hint image is loaded
         }
       };
       fetchHint();

@@ -137,3 +137,8 @@ body, html {
 .memorized {
   color: #4caf50; /* Green color for memorized stats */
 }
+
+.timer{
+  text-align: center;
+  font-size:2rem;
+}

@@ -21,6 +21,7 @@ export const useWordsetLoader = (wordsetId, userId, showExcluded) => {
   const [incorrectAttempts, setIncorrectAttempts] = useState({});
   const [correctlyMemorized, setCorrectlyMemorized] = useState(new Set());
   const [timeElapsed, setTimeElapsed] = useState(0);
+  const [totalToShow, setTotalToShow] = useState(0);
 
   const loadWordsForWordset = useCallback(async () => {
     setLoading(true);
@@ -52,9 +53,12 @@ export const useWordsetLoader = (wordsetId, userId, showExcluded) => {
           };
         })
         // Filter based on inclusion/exclusion state
-        .filter(word => showExcluded ? !word.is_included : word.is_included);
+        .filter(word => showExcluded ? !word.is_included : word.is_included)
+        // Sort by recall_state in descending order
+        .sort((a, b) => b.recall_state - a.recall_state);
 
       setToShow(convertedWords);
+      setTotalToShow(convertedWords.length);
       setLoading(false);
     } catch (error) {
       setLoading(false);
@@ -93,27 +97,28 @@ export const useWordsetLoader = (wordsetId, userId, showExcluded) => {
   const toggleExclusion = async (index) => {
     const currentWord = toShow[index];
     const newInclusionState = !currentWord.is_included;
-  
+
     try {
       console.log(`Toggling exclusion for word ID ${currentWord.word_id}. New state: ${newInclusionState}`);
-      
+
       // Update the inclusion state in the backend
       await updateUserWordRecall(userId, currentWord.word_id, currentWord.recall_state, false, newInclusionState);
-      
+
       // Remove the word from the current list based on the current filter (included or excluded)
       const updatedWords = toShow.filter((_, i) => i !== index);
-      
+
       // Update the local state to reflect the change
       setToShow(updatedWords);
-  
+      setTotalToShow(totalToShow - 1);
+
     } catch (error) {
       console.error('Error updating exclusion state:', error);
     }
   };
-  
-  
-  
-  
+
+
+
+
 
   // Handle correct memorization
   const handleMemorized = async (index, maxWordsToShow) => {
@@ -173,6 +178,7 @@ export const useWordsetLoader = (wordsetId, userId, showExcluded) => {
 
   return {
     toShow,
+    totalToShow,
     loading,
     firstTimeCorrect,
     incorrectAttempts,
