@@ -265,6 +265,25 @@ PROJECT_ID=
 LOCATION=
 
 
+### Lexitrailcmdutil instructions
+
+* Step 1: Port-forward to connect to MySQL database
+```
+gcloud auth login
+gcloud container clusters get-credentials lexitrail-cluster --location=us-central1
+kubectl port-forward svc/mysql 3306:3306 -n mysql
+
+```
+
+* Step 2: Launch Python backend locally
+```
+cd backend
+python3 -m venv venv
+source venv/bin/activate
+python scripts/lexitrailcmd.py [function]
+```
+
+
 
 
 
