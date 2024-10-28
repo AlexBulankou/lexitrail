@@ -3,8 +3,8 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy import create_engine
 from .config import DB_URI
 from .validators import validate_local_files, validate_db_connection, validate_gcs_connection
-from .wordset_processing import process_entries
-from .data_loader import load_csv_data
+from .wordset_processing import process_wordset_entries, process_word_entries
+from .data_loader import load_wordset_data, load_word_data
 from .gcs_operations import upload_to_gcs
 from .logging_setup import log_info
 from app.models import Wordset, Word
@@ -16,11 +16,14 @@ Session = sessionmaker(bind=engine)
 
 def print_wordset_summary(session):
     """Prints a summary of wordsets and their word counts in both the file and database."""
-    # Word count per wordset in CSV file
-    csv_word_counts = load_csv_data(WORDS_CSV_PATH, 'wordset_id', word_level=True)
+    # Load wordsets to create a mapping of wordset_id to descriptions and a description-based data structure
+    wordset_mapping, csv_wordset_data = load_wordset_data(WORDSETS_CSV_PATH)
+
+    # Word count per wordset in CSV file using description-based data
+    csv_word_counts = load_word_data(WORDS_CSV_PATH, wordset_mapping)
     log_info("Wordsets and word counts from words.csv:")
-    for wordset_id, words in sorted(csv_word_counts.items()):
-        log_info(f" - Wordset ID: {wordset_id}, Word Count: {len(words)}")
+    for wordset_desc, words in sorted(csv_word_counts.items()):
+        log_info(f" - Wordset: {wordset_desc}, Word Count: {len(words)}")
 
     # Word count per wordset in database
     db_word_counts = {
@@ -31,21 +34,39 @@ def print_wordset_summary(session):
     for wordset_desc, count in sorted(db_word_counts.items()):
         log_info(f" - Wordset: {wordset_desc}, Word Count: {count}")
 
-def load_data(session, csv_path, key_field):
-    """Load data from CSV and DB into dictionary format."""
-    csv_data = load_csv_data(csv_path, key_field, word_level=True)
+def load_data(session, csv_path, word_level=False):
+    """Load data from CSV and DB into appropriate format based on word_level."""
+    if word_level:
+        # Load word-level data
+        wordset_mapping, _ = load_wordset_data(WORDSETS_CSV_PATH)  # Get mapping from wordset file
+        csv_data = load_word_data(csv_path, wordset_mapping)
+    else:
+        # Load wordset-level data
+        _, csv_data = load_wordset_data(csv_path)  # Returns only description-based data
+
+    # Ensure data format for downstream processing
+    if not isinstance(csv_data, dict):
+        log_info(f"Error: Expected csv_data to be a dictionary, but got {type(csv_data)}")
+        raise ValueError("Invalid csv_data format.")
+
+    # Load DB data in expected dictionary format with descriptions as keys
     db_data = {
         wordset.description.strip(): {
             word.word.strip() for word in session.query(Word).filter_by(wordset_id=wordset.wordset_id)
         }
         for wordset in session.query(Wordset).all()
     }
+    
     return csv_data, db_data
 
 def sync_and_log_summary(csv_data, db_data, entry_type, session, is_check):
     """Logs and processes the wordsets for dbcheck and dbupdate."""
     log_info(f"Starting {entry_type} sync (is_check={is_check})")
-    wordsets_added, wordsets_deleted = process_entries(csv_data, db_data, entry_type, session, is_check)
+    if entry_type == "wordset":
+        wordsets_added, wordsets_deleted = process_wordset_entries(csv_data, db_data, session, is_check)
+    else:
+        wordsets_added, wordsets_deleted = process_word_entries(csv_data, db_data, session, is_check)
+
     log_info(f"Total {entry_type}s to add: {wordsets_added}")
     log_info(f"Total {entry_type}s to delete: {wordsets_deleted}")
 
@@ -56,11 +77,11 @@ def dbupdate():
 
     try:
         # Load and sync wordsets
-        csv_wordsets, db_wordsets = load_data(session, WORDSETS_CSV_PATH, 'description')
+        csv_wordsets, db_wordsets = load_data(session, WORDSETS_CSV_PATH, word_level=False)
         sync_and_log_summary(csv_wordsets, db_wordsets, "wordset", session, is_check=False)
 
         # Load and sync words
-        csv_words, db_words = load_data(session, WORDS_CSV_PATH, 'word')
+        csv_words, db_words = load_data(session, WORDS_CSV_PATH, word_level=True)
         sync_and_log_summary(csv_words, db_words, "word", session, is_check=False)
 
         # Commit changes
@@ -90,11 +111,11 @@ def dbcheck():
 
     try:
         # Load and check wordsets
-        csv_wordsets, db_wordsets = load_data(session, WORDSETS_CSV_PATH, 'description')
+        csv_wordsets, db_wordsets = load_data(session, WORDSETS_CSV_PATH, word_level=False)
         sync_and_log_summary(csv_wordsets, db_wordsets, "wordset", session, is_check=True)
 
         # Load and check words
-        csv_words, db_words = load_data(session, WORDS_CSV_PATH, 'word')
+        csv_words, db_words = load_data(session, WORDS_CSV_PATH, word_level=True)
         sync_and_log_summary(csv_words, db_words, "word", session, is_check=True)
 
     except Exception as e:

@@ -104,7 +104,6 @@ word_id,word,wordset_id,def1,def2
 103,字,1,zì,character
 104,桌子,1,zhuōzi,desk
 105,椅子,1,yǐzi,chair
-106,Verb,1,,
 107,谢谢,1,xièxie,thank
 108,不客气,1,búkèqì,you are welcome
 109,再见,1,zàijiàn,good-bye
@@ -141,7 +140,6 @@ word_id,word,wordset_id,def1,def2
 140,认识,1,rènshi,know
 141,会,1,huì,can
 142,能,1,néng,"can, be able to"
-143,Adjective,1,,
 144,好,1,hǎo,good
 145,大,1,dà,big
 146,小,1,xiǎo,small
@@ -5001,3 +4999,19 @@ word_id,word,wordset_id,def1,def2
 5000,作废,6,zuòfèi,"cancel, blank out"
 5001,作风,6,zuòfēng,style
 5002,作息,6,zuòxī,work and rest
+6137,爱,7,ài,love
+6138,喜欢,7,xǐhuān,"love, like"
+6139,想,7,xiǎng,want
+6140,认识,7,rènshi,know
+6141,会,7,huì,can
+6142,能,7,néng,"can, be able to"
+6144,好,7,hǎo,good
+6145,大,7,dà,big
+6146,小,7,xiǎo,small
+6147,多,7,duō,"many, much"
+6148,少,7,shǎo,"few, little"
+6149,冷,7,lěng,cold
+6150,热,7,rè,hot
+6151,高兴,7,gāoxìng,happy
+6152,漂亮,7,piàoliang,beautiful
+
