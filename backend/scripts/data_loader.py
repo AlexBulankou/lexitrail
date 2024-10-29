@@ -1,82 +1,61 @@
 import csv
 from .logging_setup import log_info
 
-def load_wordset_data(file_path):
+def load_word_data(wordsets_path, words_path):
     """
-    Load wordset data from CSV and return both a mapping of wordset_id to descriptions 
-    and a dictionary of wordsets keyed by descriptions.
+    Load both wordset descriptions and word data from CSV files, returning a dictionary 
+    structured to meet the requirements of `process_entries` in `wordset_processing.py`.
 
     Parameters:
-        file_path (str): Path to the CSV file.
+        wordsets_path (str): Path to the wordsets CSV file.
+        words_path (str): Path to the words CSV file.
 
     Returns:
-        tuple: (dict, dict) where the first dict is a wordset_id to description mapping, 
-               and the second dict is a dictionary of descriptions.
+        dict: A dictionary where keys are wordset descriptions, each mapped to another dictionary.
+              The inner dictionary maps words to their definitions (e.g., {"word": {"def1": "", "def2": ""}}).
     """
+    # Step 1: Load wordset descriptions from wordsets CSV file
     id_to_description = {}
     description_data = {}
-    log_info(f"Loading data from {file_path} with key field 'description' and word_level=False")
     
-    with open(file_path, mode='r', encoding='utf-8') as file:
+    log_info(f"Loading wordset descriptions from {wordsets_path}")
+    
+    with open(wordsets_path, mode='r', encoding='utf-8') as file:
         csv_reader = csv.DictReader(file)
         for row in csv_reader:
             wordset_id = row['wordset_id'].strip()
             description = row['description'].strip()
-            id_to_description[wordset_id] = description
-            description_data[description] = set()  # Prepare a set for words under each description
-    
-    log_info(f"Loaded set data from {file_path} with {len(description_data)} entries.")
-    log_info(f"Example keys (first 5) from the loaded data: {list(description_data.keys())[:5]}")
-    
-    return id_to_description, description_data
+            if wordset_id and description:
+                id_to_description[wordset_id] = description
+                description_data[description] = {}  # Prepare a nested dict for each wordset description
 
-def load_word_data(file_path, wordset_mapping):
-    """
-    Load word data from CSV and return a dictionary keyed by wordset descriptions.
-
-    Parameters:
-        file_path (str): Path to the CSV file.
-        wordset_mapping (dict): A mapping of wordset_id to descriptions.
-
-    Returns:
-        dict: A dictionary of word entries grouped by wordset descriptions.
-    """
-    data = {}
-    log_info(f"Loading data from {file_path} with key field 'wordset_id' and word_level=True")
+    log_info(f"Loaded {len(description_data)} wordset descriptions.")
+    #log_info(f"Example descriptions (first 1): {list(description_data.keys())[:1]}")
     
-    with open(file_path, mode='r', encoding='utf-8') as file:
+    # Step 2: Load words and definitions, grouped by wordset description
+    log_info(f"Loading word data from {words_path}")
+    
+    with open(words_path, mode='r', encoding='utf-8') as file:
         csv_reader = csv.DictReader(file)
         for row in csv_reader:
             wordset_id = row['wordset_id'].strip()
             word = row['word'].strip()
-            description = wordset_mapping.get(wordset_id)  # Get the description based on wordset_id
+            def1 = row.get('def1', '').strip()
+            def2 = row.get('def2', '').strip()
+
+            # Map word to its corresponding wordset description
+            description = id_to_description.get(wordset_id)
             
             if description:
-                if description not in data:
-                    data[description] = set()
-                if word:  # Add word only if it's present
-                    data[description].add(word)
+                if word:  # Only add words that are present
+                    if description not in description_data:
+                        description_data[description] = {}
+                    description_data[description][word] = {"def1": def1, "def2": def2}
 
-    log_info(f"Loaded word-level data from {file_path} with {len(data)} wordsets.")
-    log_info(f"Example keys (first 5) from the loaded data: {list(data.keys())[:5]}")
+    # Step 3: Logging and return
+    log_info(f"Loaded {len(description_data)} wordsets with word definitions.")
+    #for desc, words in list(description_data.items())[:1]:  # Log example wordsets and words
+    #    example_words = list(words.items())[:1]  # Limit to 1 examples per wordset for brevity
+    #    log_info(f"Wordset '{desc}' with {len(words)} words, examples: {example_words}")
     
-    return data
-
-def load_csv_data(file_path, key_field, word_level=False, wordset_mapping=None):
-    """
-    Load CSV data based on the word level.
-
-    Parameters:
-        file_path (str): Path to the CSV file.
-        key_field (str): The field to use as the key in the returned dictionary.
-        word_level (bool): If True, loads data at the word level, else loads wordset data.
-        wordset_mapping (dict): A mapping of wordset_id to descriptions for word-level loading.
-
-    Returns:
-        dict or set: Returns a dictionary of wordsets or a set of words.
-    """
-    if word_level:
-        return load_word_data(file_path, wordset_mapping)
-    else:
-        # Return both the mapping and data for downstream use
-        return load_wordset_data(file_path)
+    return description_data

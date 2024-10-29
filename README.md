@@ -270,6 +270,7 @@ LOCATION=
 * Step 1: Port-forward to connect to MySQL database
 ```
 gcloud auth login
+gcloud auth application-default login
 gcloud container clusters get-credentials lexitrail-cluster --location=us-central1
 kubectl port-forward svc/mysql 3306:3306 -n mysql
 
