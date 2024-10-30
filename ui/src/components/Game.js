@@ -49,7 +49,7 @@ const Game = () => {
     const height = window.innerHeight;
 
     const cardWidth = 250;
-    const cardHeight = 500;
+    const cardHeight = 400;
     const extraHorizonalSpaceNeeded = 250;
 
     if (width <= cardWidth * 2) {
@@ -127,7 +127,7 @@ const Game = () => {
         {wordsToRender.map((word, index) => (
           <WordCard
             key={index}
-            word={{ ...word, user_id: user.email }} // Ensure user_id is passed correctly
+            word={{ ...word, user_id: user.email, index: word.word_index }} // Ensure user_id is passed correctly
             handleMemorized={() => handleCardGuessed(index, true)}
             handleNotMemorized={() => handleCardGuessed(index, false)}
             toggleExclusion={() => toggleExclusion(index)}  // Pass toggleExclusion to WordCard

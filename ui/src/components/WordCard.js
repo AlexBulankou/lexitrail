@@ -50,8 +50,21 @@ const WordCard = ({ word, handleMemorized, handleNotMemorized, toggleExclusion, 
     // Set loadingWord to true to disable all buttons
     setLoadingWord(true);
     setHintImage(null);
+  
+    // Save the current word ID to check if it changes after the action
+    const currentWordId = word.word_id;
+  
     // Execute the action
     action();
+  
+    // Check if the word has changed
+    setTimeout(() => {
+      if (word.word_id === currentWordId) {
+        // If the word is still the same, reset the loading state and hint image
+        setLoadingWord(false);
+        setHintImage(hintImage); // Restore the previous hint image
+      }
+    }, 0); // Run this check right after the action to update states
   };
 
   const onMemorized = () => {
@@ -119,6 +132,9 @@ const WordCard = ({ word, handleMemorized, handleNotMemorized, toggleExclusion, 
     <div className="word-card">
       {/* Metadata Section */}
       <div className="metadata">
+       {/* THIS IS FOR DEBUGGING
+        <span>{word.index}</span>
+        */}
         <button
           className={`exclude-button ${word.is_included ? 'red' : 'green'}`}
           onClick={(e) => {

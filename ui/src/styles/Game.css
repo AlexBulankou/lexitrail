@@ -21,7 +21,7 @@ body, html {
   height: 100%;
   width: 100%;
   max-width: 1200px; /* Increased max-width to ensure space for columns */
-  padding: 20px;
+  padding: 10px;
   box-sizing: border-box;
   background-color: white;
   border-radius: 8px;
@@ -88,14 +88,8 @@ body, html {
   }
 }
 
-/* Ensure each card takes full width of its grid cell */
-.word-card {
-  width: 100%;
-  height: auto;
-  box-sizing: border-box;
-}
-
 .progress-bar-container {
+  padding-top:5px;
   width: 100%; /* Full width of the parent container */
 }
 

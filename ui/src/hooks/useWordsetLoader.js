@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { getWordsByWordset } from '../services/wordsService';
 import { getUserWordsByWordset, updateUserWordRecall } from '../services/userService';
-import { formatDistanceToNow } from 'date-fns';
+import { formatDistanceToNow, max } from 'date-fns';
 
 // Function to abstract recall state logic
 const updateRecallState = (currentRecallState, isCorrect) => {
@@ -36,11 +36,13 @@ export const useWordsetLoader = (wordsetId, userId, showExcluded) => {
       const userwordsResponse = await getUserWordsByWordset(userId, wordsetId);
       const userWordsMetadata = userwordsResponse.data;
 
+      var wordIndex = 0;
       const convertedWords = loadedWords
         .map((word) => {
           const userWord = userWordsMetadata.find(uw => uw.word_id === word.word_id);
           return {
             word: word.word,
+            word_index: wordIndex++,
             meaning: `${word.def1}\n${word.def2}`,
             word_id: word.word_id,
             wordset_id: word.wordset_id,
@@ -73,22 +75,39 @@ export const useWordsetLoader = (wordsetId, userId, showExcluded) => {
   }, [loadWordsForWordset]);
 
   // Reusable function to update word list after an action (e.g., exclude, memorized, not memorized)
-  const updateWordListAfterAction = (index, maxWordsToShow, updatedWords) => {
+  const updateWordListAfterAction = (index, maxWordsToShow, updatedWords, removeWordAtIndex) => {
     // Filter out the word at the specified index
-    const filteredToShow = updatedWords.filter((_, i) => i !== index);
+    // console.log(`#Inside updateWordListAfterAction#. index=${index}, maxWordsToShow=${maxWordsToShow}, updatedWords=${updatedWords.map(item => item.word_index)}`);
 
-    // Calculate available indexes for random word replacement
-    const availableIndexes = filteredToShow.length > maxWordsToShow ?
-      filteredToShow.slice(maxWordsToShow) : filteredToShow;
+    var filteredToShow = updatedWords;
 
-    const randomWordIndex = availableIndexes.length > 0 ?
-      Math.floor(Math.random() * availableIndexes.length) + maxWordsToShow :
-      filteredToShow.length - 1;
+    if (!removeWordAtIndex && filteredToShow.length <= maxWordsToShow){
+      return filteredToShow;
+    }
+
+
+    if (removeWordAtIndex) {
+      filteredToShow = updatedWords.filter((_, i) => i !== index);
+    } else {
+      // move to the end of the array
+      const [itemAtIndex] = filteredToShow.splice(index, 1);
+      filteredToShow.push(itemAtIndex);
+    }
+
+    const nextWordIndex = filteredToShow.length > maxWordsToShow ? maxWordsToShow : filteredToShow.length - 1;
+
+    // console.log(`Now nextWordIndex=${nextWordIndex}, filteredToShow=${filteredToShow.map(item => item.word_index)}`);
+
+    if (filteredToShow.length == 0) {
+      return filteredToShow;
+    }
 
     // Replace the removed word with a randomly selected word and keep the order intact
-    const newWord = filteredToShow[randomWordIndex];
-    filteredToShow.splice(randomWordIndex, 1);
+    const newWord = filteredToShow[nextWordIndex];
+    filteredToShow.splice(nextWordIndex, 1);
     filteredToShow.splice(index, 0, newWord);
+
+    // console.log(`before return: newWord=${newWord.word_index}, filteredToShow=${filteredToShow.map(item => item.word_index)}`);
 
     return filteredToShow;
   };
@@ -138,7 +157,8 @@ export const useWordsetLoader = (wordsetId, userId, showExcluded) => {
     updatedWords[index].recall_state = newRecallState;
 
     // Update the local state using the common function
-    const filteredToShow = updateWordListAfterAction(index, maxWordsToShow, updatedWords);
+    const filteredToShow = updateWordListAfterAction(index, maxWordsToShow, updatedWords, true);
+    // console.log(`Now showing ${filteredToShow.map(item => item.word_index)}...`);
     setToShow(filteredToShow);
   };
 
@@ -159,7 +179,8 @@ export const useWordsetLoader = (wordsetId, userId, showExcluded) => {
     updatedWords[index].recall_state = newRecallState;
 
     // Update the local state using the common function
-    const filteredToShow = updateWordListAfterAction(index, maxWordsToShow, updatedWords);
+    const filteredToShow = updateWordListAfterAction(index, maxWordsToShow, updatedWords, false);
+    // console.log(`Now showing ${filteredToShow.map(item => item.word_index)}...`);
     setToShow(filteredToShow);
   };
 
