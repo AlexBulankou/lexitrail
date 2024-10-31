@@ -81,7 +81,7 @@ export const useWordsetLoader = (wordsetId, userId, showExcluded) => {
 
     var filteredToShow = updatedWords;
 
-    if (!removeWordAtIndex && filteredToShow.length <= maxWordsToShow){
+    if (!removeWordAtIndex && filteredToShow.length <= maxWordsToShow) {
       return filteredToShow;
     }
 
@@ -113,57 +113,62 @@ export const useWordsetLoader = (wordsetId, userId, showExcluded) => {
   };
 
 
-  const toggleExclusion = async (index) => {
+  // Common function to handle state updates and async recall state updates
+  const updateWordState = (index, updateCallback, maxWordsToShow, removeWordAtIndex = false) => {
+    setToShow(prevToShow => {
+      const updatedWords = [...prevToShow];
+      const currentWord = updatedWords[index];
+
+      // Apply the specific update logic for the word
+      updateCallback(currentWord, updatedWords);
+
+      // Reorder the list based on inclusion or memorization logic
+      const filteredToShow = updateWordListAfterAction(index, maxWordsToShow, updatedWords, removeWordAtIndex);
+      console.log(`Now showing ${filteredToShow.map(item => item.word_index)}...`);
+      return filteredToShow;
+    });
+  };
+
+  // Toggle exclusion state asynchronously
+  const toggleExclusion = (index) => {
     const currentWord = toShow[index];
     const newInclusionState = !currentWord.is_included;
 
-    try {
-      console.log(`Toggling exclusion for word ID ${currentWord.word_id}. New state: ${newInclusionState}`);
+    console.log(`Toggling exclusion for word ID ${currentWord.word_id}. New state: ${newInclusionState}`);
+    setTotalToShow(totalToShow - 1);
 
-      // Update the inclusion state in the backend
-      await updateUserWordRecall(userId, currentWord.word_id, currentWord.recall_state, false, newInclusionState);
+    updateWordState(index, (word, updatedWords) => {
+      updatedWords[index] = { ...word, is_included: newInclusionState };
+    }, 0, true);
 
-      // Remove the word from the current list based on the current filter (included or excluded)
-      const updatedWords = toShow.filter((_, i) => i !== index);
-
-      // Update the local state to reflect the change
-      setToShow(updatedWords);
-      setTotalToShow(totalToShow - 1);
-
-    } catch (error) {
-      console.error('Error updating exclusion state:', error);
-    }
+    // Async call to update the backend
+    updateUserWordRecall(userId, currentWord.word_id, currentWord.recall_state, false, newInclusionState)
+      .catch((error) => console.error('Error updating exclusion state:', error));
   };
 
-
-
-
-
-  // Handle correct memorization
-  const handleMemorized = async (index, maxWordsToShow) => {
+  // Handle correct memorization asynchronously with functional state update
+  const handleMemorized = (index, maxWordsToShow) => {
     const currentWord = toShow[index];
     const newRecallState = updateRecallState(currentWord.recall_state, true);
 
     if (!incorrectAttempts[currentWord.word]) {
       setFirstTimeCorrect([...firstTimeCorrect, currentWord]);
     }
-
     setCorrectlyMemorized(prevSet => new Set(prevSet.add(currentWord.word)));
 
     console.log(`Updating recall state to backend for word ID ${currentWord.word_id}. New state: ${newRecallState}`);
-    await updateUserWordRecall(userId, currentWord.word_id, newRecallState, true, currentWord.is_included);
 
-    const updatedWords = [...toShow];
-    updatedWords[index].recall_state = newRecallState;
+    updateWordState(index, (word, updatedWords) => {
+      updatedWords[index] = { ...word, recall_state: newRecallState };
+    }, maxWordsToShow, true);
 
-    // Update the local state using the common function
-    const filteredToShow = updateWordListAfterAction(index, maxWordsToShow, updatedWords, true);
-    // console.log(`Now showing ${filteredToShow.map(item => item.word_index)}...`);
-    setToShow(filteredToShow);
+    // Async call to update the backend
+    updateUserWordRecall(userId, currentWord.word_id, newRecallState, true, currentWord.is_included)
+      .catch((error) => console.error('Error updating recall state for memorized word:', error));
   };
 
-  // Handle incorrect memorization
-  const handleNotMemorized = async (index, maxWordsToShow) => {
+  // Handle incorrect memorization asynchronously
+  const handleNotMemorized = (index, maxWordsToShow) => {
     const currentWord = toShow[index];
     const newRecallState = updateRecallState(currentWord.recall_state, false);
 
@@ -173,17 +178,15 @@ export const useWordsetLoader = (wordsetId, userId, showExcluded) => {
     }));
 
     console.log(`Updating recall state to backend for word ID ${currentWord.word_id}. New state: ${newRecallState}`);
-    await updateUserWordRecall(userId, currentWord.word_id, newRecallState, false, currentWord.is_included);
 
-    const updatedWords = [...toShow];
-    updatedWords[index].recall_state = newRecallState;
+    updateWordState(index, (word, updatedWords) => {
+      updatedWords[index] = { ...word, recall_state: newRecallState };
+    }, maxWordsToShow, false);
 
-    // Update the local state using the common function
-    const filteredToShow = updateWordListAfterAction(index, maxWordsToShow, updatedWords, false);
-    // console.log(`Now showing ${filteredToShow.map(item => item.word_index)}...`);
-    setToShow(filteredToShow);
+    // Async call to update the backend
+    updateUserWordRecall(userId, currentWord.word_id, newRecallState, false, currentWord.is_included)
+      .catch((error) => console.error('Error updating recall state for not memorized word:', error));
   };
-
 
 
 

@@ -10,7 +10,7 @@
   .wordsets-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-    gap: 30px;
+    gap: 5px;
     width: 80%;
   }
   
@@ -28,24 +28,9 @@
   }
   
   .wordset-button {
-    padding: 10px 20px;
+    padding: 5px 10px;
+    margin:10px;
     font-size: 1rem;
     cursor: pointer;
   }
-  
-  .show-excluded-button {
-    margin-left: 10px;
-    font-size: 0.8rem;  /* Make the font smaller */
-    padding: 5px 10px;  /* Smaller padding for a smaller button */
-    cursor: pointer;
-    background-color: #f5f5f5;
-    border: 1px solid #d3d3d3;
-    border-radius: 4px;
-    color: #333;
-  }
-  
-  .show-excluded-button:hover {
-    background-color: #e0e0e0;
-  }
-  
   

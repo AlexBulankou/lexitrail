@@ -15,6 +15,7 @@ body, html {
 /* General container for the game */
 .container {
   display: flex;
+  background-color: #a9a9a9;
   flex-direction: column;
   align-items: center;
   justify-content: space-between;
@@ -23,16 +24,16 @@ body, html {
   max-width: 1200px; /* Increased max-width to ensure space for columns */
   padding: 10px;
   box-sizing: border-box;
-  background-color: white;
   border-radius: 8px;
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
   border: 2px solid #d3d3d3;
+  margin-top:60px;
 }
 
 /* Container for the word cards */
 .cards-container {
   display: grid;
-  gap: 20px;
+  gap: 10px;
   width: 100%;
   margin: 0 auto;
   padding: 0;
@@ -89,39 +90,54 @@ body, html {
 }
 
 .progress-bar-container {
-  padding-top:5px;
-  width: 100%; /* Full width of the parent container */
+  position: relative; /* Enables absolute positioning for .progress-info to position it centrally within this container */
+  width: 100%; /* Allows the progress bar to take up the full width of its parent */
+  max-width: 600px; /* Limits the maximum width for better readability and control */
+  margin: 5px auto; /* Centers the container horizontally and adds vertical spacing */
 }
 
 .progress-bar {
-  background-color: #e0e0e0; /* Light gray background for the progress bar track */
-  border-radius: 10px; /* Rounded corners for the progress bar track */
-  overflow: hidden; /* Ensure the progress doesn't overflow its container */
+  width: 100%; /* Ensures the progress bar fills the width of the container */
+  height: 24px; /* Sets the height of the progress bar for good visibility */
+  background-color: #e0e0e0; /* Light gray background to contrast with the progress indicator */
+  border-radius: 12px; /* Rounds the corners of the progress bar for a smooth, modern look */
+  overflow: hidden; /* Clips any overflow to ensure the progress doesn't exceed rounded edges */
 }
 
 .progress {
-  height: 40px; /* Height of the progress indicator */
-  background-color: #4caf50; /* Green color for the progress indicator */
-  transition: width 0.4s ease; /* Smooth transition when the progress changes */
-  border-radius: 10px 0 0 10px; /* Rounded corners on the left side */
+  height: 100%; /* Matches the height of the .progress-bar for a consistent look */
+  background-color: #4caf50; /* Green color indicating progress (can be customized) */
+  border-radius: 12px 0 0 12px; /* Rounds the starting side of the progress for smoothness */
+  transition: width 0.3s ease; /* Adds a smooth transition when progress updates */
 }
 
 .progress-info {
-  text-align: center; /* Center the text below the progress bar */
-  margin-top: 10px; /* Add some space between the progress bar and the text */
-  font-size: 2rem;
+  position: absolute; /* Positions this element relative to .progress-bar-container */
+  top: 50%; /* Vertically centers the element within .progress-bar-container */
+  left: 50%; /* Horizontally centers the element within .progress-bar-container */
+  transform: translate(-50%, -50%); /* Offsets the element by 50% of its height and width for exact centering */
+  padding: 4px 8px; /* Adds space around the text for visual balance */
+  border-radius: 8px; /* Rounds corners for a subtle, consistent styling with the bar */
+  font-weight: bold; /* Increases font weight for emphasis and readability */
+  font-size: 14px; /* Sets an optimal size for visibility without overwhelming the bar */
+  color: #333; /* Dark text color to contrast well against the white background */
+  text-align: center; /* Centers the text within the .progress-info box */
 }
 
 .progress-stats {
   display: flex;
+  width:100%;
   justify-content: space-between; /* Distribute the items evenly across the width */
+  margin: 0 0 5px 0;
 }
 
-.not-memorized, .memorized {
+.not-memorized, .memorized, .timer {
   display: flex;
-  align-items: center; /* Center the content vertically */
   font-size: 2rem;
-  margin: 0 2em;
+  text-wrap-mode: nowrap;
+  border-radius: 10px;
+  padding:0 10px;
+  background-color: #ffffff;
 }
 
 .not-memorized {
@@ -132,7 +148,21 @@ body, html {
   color: #4caf50; /* Green color for memorized stats */
 }
 
-.timer{
-  text-align: center;
-  font-size:2rem;
+.show-excluded-button {
+  padding: 0 4px;
+  border: none;
+  border-radius: 10%;
+  cursor: pointer;
+  color: white;
+  font-size:0.8rem;
+  text-wrap-mode: wrap;
+  padding:2px;
+  height:auto;
+  max-width:70px;
+  color:#ffffff;
+  background-color: #000000;
+}
+
+.show-excluded-button:hover {
+  background-color: #e0e0e0;
 }

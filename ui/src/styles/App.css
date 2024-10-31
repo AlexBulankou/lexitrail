@@ -10,19 +10,3 @@ body, html {
   background-color: #f0f0f0;
   box-sizing: border-box;
 }
-
-.container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: space-between; /* Adjust to space elements appropriately */
-  height: 100%;
-  width: 100%;
-  max-width: 1200px; /* Set a max-width for better content alignment */
-  padding: 20px;
-  box-sizing: border-box;
-  background-color: white;
-  border-radius: 8px;
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-  border: 2px solid #d3d3d3;
-}

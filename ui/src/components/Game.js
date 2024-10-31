@@ -48,9 +48,9 @@ const Game = () => {
     const width = window.innerWidth;
     const height = window.innerHeight;
 
-    const cardWidth = 250;
-    const cardHeight = 400;
-    const extraHorizonalSpaceNeeded = 250;
+    const cardWidth = 180;
+    const cardHeight = 330;
+    const extraHorizonalSpaceNeeded = 160;
 
     if (width <= cardWidth * 2) {
       setLayoutClass('layout1');
@@ -88,6 +88,12 @@ const Game = () => {
     navigate(`/game/${wordsetId}`, { state: { showExcluded: reversedShowExcluded } });
   };
 
+  const markAllAsMemorized = () => {
+    for (let i = 0; i < maxCardsToShow; i++) {
+      handleCardGuessed(i, true);
+    }
+  };
+
   const wordsToRender = displayWords.slice(0, maxCardsToShow);
 
   if (loading) {
@@ -110,13 +116,13 @@ const Game = () => {
 
       <div className="progress-stats">
         <div className="not-memorized">❌ {Object.keys(incorrectAttempts).length}</div>
-        <div>
-          <button onClick={toggleWordsetFilter}>
-            {showExcludedFromState ? 'Show Included' : 'Show Excluded'}
-          </button>
-          <div className="timer">
-            {Math.floor(timeElapsed / 60)}:{('0' + timeElapsed % 60).slice(-2)}
-          </div>
+
+        <button className="show-excluded-button" onClick={toggleWordsetFilter}>
+          {showExcludedFromState ? 'Show Included' : 'Show Excluded'}
+        </button>
+        <div className="timer">
+          {Math.floor(timeElapsed / 60)}:{('0' + timeElapsed % 60).slice(-2)}
+
         </div>
         <div className="memorized">✔️ {correctlyMemorized.size}</div>
       </div>
@@ -135,9 +141,19 @@ const Game = () => {
           />
         ))}
       </div>
+
+      {/* New Button to Mark All Cards as Memorized */}
+      <button
+        className="mark-all-memorized-button"
+        onClick={markAllAsMemorized}
+      >
+        ✔️ to all {maxCardsToShow}
+      </button>
+
       <div className="progress-bar-container">
         <div className="progress-bar">
           <div className="progress" style={{ width: totalToShow ? `${(correctlyMemorized.size / totalToShow) * 100}%` : '0%' }}></div>
+
         </div>
         <div className="progress-info">
           recalled {correctlyMemorized.size} out of {totalToShow}
