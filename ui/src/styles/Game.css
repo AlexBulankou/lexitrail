@@ -166,3 +166,15 @@ body, html {
 .show-excluded-button:hover {
   background-color: #e0e0e0;
 }
+
+.mark-all-memorized-button{
+  width:100%;
+  background-color: #4285f4;
+  color:#ffffff;
+  border-radius: 10px;
+  border:1px;
+  border-color: #ffffff;
+  padding:1px;
+  font-size:1rem;
+  margin:2px 0 0 0;
+}
