@@ -23,68 +23,90 @@ export const useWordsetLoader = (wordsetId, userId, showExcluded) => {
   const [timeElapsed, setTimeElapsed] = useState(0);
   const [totalToShow, setTotalToShow] = useState(0);
 
-// Helper function to shuffle an array
-const shuffleArray = (array) => {
-  for (let i = array.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [array[i], array[j]] = [array[j], array[i]];
-  }
-  return array;
-};
+  // Helper function to shuffle an array
+  const shuffleArray = (array) => {
+    for (let i = array.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [array[i], array[j]] = [array[j], array[i]];
+    }
+    return array;
+  };
 
-const loadWordsForWordset = useCallback(async () => {
-  setLoading(true);
-  try {
-    console.log('Loading words for wordset:', wordsetId, 'Show Excluded:', showExcluded);
+  const loadWordsForWordset = useCallback(async () => {
+    setLoading(true);
+    try {
+      console.log('Loading words for wordset:', wordsetId, 'Show Excluded:', showExcluded);
 
-    // Fetch words from the wordset
-    const response = await getWordsByWordset(wordsetId);
-    const loadedWords = response.data;
+      // Fetch words from the wordset
+      const response = await getWordsByWordset(wordsetId);
+      const loadedWords = response.data;
 
-    // Fetch userword metadata (recall history, exclusion state) for each word
-    const userwordsResponse = await getUserWordsByWordset(userId, wordsetId);
-    const userWordsMetadata = userwordsResponse.data;
+      // Fetch userword metadata (recall history, exclusion state) for each word
+      const userwordsResponse = await getUserWordsByWordset(userId, wordsetId);
+      const userWordsMetadata = userwordsResponse.data;
 
-    var wordIndex = 0;
-    const convertedWords = loadedWords
-      .map((word) => {
-        const userWord = userWordsMetadata.find(uw => uw.word_id === word.word_id);
-        return {
-          word: word.word,
-          word_index: wordIndex++,
-          meaning: `${word.def1}\n${word.def2}`,
-          word_id: word.word_id,
-          wordset_id: word.wordset_id,
-          is_included: userWord ? userWord.is_included : true,
-          recall_state: userWord ? userWord.recall_state : 0,
-          recall_history: userWord ? userWord.recall_histories.map(hist => ({
-            ...hist,
-            recall_time: formatDistanceToNow(new Date(hist.recall_time), { addSuffix: true })
-          })) : [],
-        };
-      })
-      // Shuffle the words initially
-      .filter(word => showExcluded ? !word.is_included : word.is_included);
+      var wordIndex = 0;
+      const convertedWords = loadedWords
+        .map((word) => {
+          const userWord = userWordsMetadata.find(uw => uw.word_id === word.word_id);
+          return {
+            word: word.word,
+            word_index: wordIndex++,
+            meaning: `${word.def1}\n${word.def2}`,
+            word_id: word.word_id,
+            wordset_id: word.wordset_id,
+            is_included: userWord ? userWord.is_included : true,
+            recall_state: userWord ? userWord.recall_state : 0,
+            recall_history: userWord ? userWord.recall_histories.map(hist => ({
+              ...hist,
+              original_recall_time: new Date(hist.recall_time), // Original Date for sorting
+              recall_time: formatDistanceToNow(new Date(hist.recall_time), { addSuffix: true }) // Human-readable format
+            })) : [],
+          };
+        })
+        // Filter based on inclusion/exclusion state
+        .filter(word => showExcluded ? !word.is_included : word.is_included);
 
-    // Shuffle words before sorting
-    const shuffledWords = shuffleArray(convertedWords);
+      // Shuffle words before sorting
+      const shuffledWords = shuffleArray(convertedWords);
 
-    // Sort by recall_state in descending order, then by recall history count in ascending order
-    const finalSortedWords = shuffledWords.sort((a, b) => {
-      if (b.recall_state !== a.recall_state) {
-        return b.recall_state - a.recall_state; // Primary: recall_state descending
-      }
-      return a.recall_history.length - b.recall_history.length; // Secondary: recall history count ascending
-    });
+      // Sort by recall_state descending, and last recall time ascending (oldest first)
+      const finalSortedWords = shuffledWords.sort((a, b) => {
+        // Primary: recall_state descending
+        if (b.recall_state !== a.recall_state) {
+          return b.recall_state - a.recall_state;
+        }
 
-    setToShow(finalSortedWords);
-    setTotalToShow(finalSortedWords.length);
-    setLoading(false);
-  } catch (error) {
-    setLoading(false);
-    console.error('Error loading words or userword metadata:', error);
-  }
-}, [wordsetId, userId, showExcluded]);
+        // Secondary: last recall time ascending, treating missing recall history as "oldest"
+        const aLastRecall = a.recall_history.length > 0 ? a.recall_history[0].original_recall_time : new Date(0);
+        const bLastRecall = b.recall_history.length > 0 ? b.recall_history[0].original_recall_time : new Date(0);
+
+        return aLastRecall - bLastRecall;
+      });
+
+
+      // Log the final sorted list for validation
+      /*
+      console.log("Final sorted list of words:");
+      finalSortedWords.forEach(word => {
+        const lastRecallTime = word.recall_history.length > 0
+          ? word.recall_history[word.recall_history.length - 1].original_recall_time
+          : "No History";
+        console.log(`Recall State: ${word.recall_state}, Last Recall Time: ${lastRecallTime}, Recall History Count: ${word.recall_history.length}`);
+      });
+      */
+
+      setToShow(finalSortedWords);
+      setTotalToShow(finalSortedWords.length);
+      setLoading(false);
+    } catch (error) {
+      setLoading(false);
+      console.error('Error loading words or userword metadata:', error);
+    }
+  }, [wordsetId, userId, showExcluded]);
+
+
+
 
 
   useEffect(() => {

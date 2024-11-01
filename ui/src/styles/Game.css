@@ -120,7 +120,6 @@ body, html {
 .progress-bar-container {
   position: relative; /* Enables absolute positioning for .progress-info to position it centrally within this container */
   width: 100%; /* Allows the progress bar to take up the full width of its parent */
-  max-width: 600px; /* Limits the maximum width for better readability and control */
   margin: 5px auto; /* Centers the container horizontally and adds vertical spacing */
 }
 
