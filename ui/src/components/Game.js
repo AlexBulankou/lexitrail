@@ -32,17 +32,19 @@ const Game = () => {
     resetGame
   } = useWordsetLoader(wordsetId, user.email, showExcludedFromState);  // Pass showExcludedFromState to hook
 
-  const [layoutClass, setLayoutClass] = useState('layout1');
+  const [layoutClass, setLayoutClass] = useState('layout1c1r');
   const [maxCardsToShow, setMaxCardsToShow] = useState(1);
 
   useEffect(() => {
     updateLayout();
     window.addEventListener('resize', updateLayout);
-
+  
     return () => {
       window.removeEventListener('resize', updateLayout);
     };
-  }, []);
+  }, [displayWords.length]); // Run effect whenever displayWords length changes
+
+
 
   const updateLayout = () => {
     const width = window.innerWidth;
@@ -50,29 +52,37 @@ const Game = () => {
 
     const cardWidth = 180;
     const cardHeight = 330;
-    const extraHorizonalSpaceNeeded = 160;
+    const extraHorizontalSpaceNeeded = 140;
 
-    if (width <= cardWidth * 2) {
-      setLayoutClass('layout1');
-      setMaxCardsToShow(1);
-    } else if (width <= cardWidth * 3) {
-      if (height <= cardHeight * 2) {
-        setLayoutClass('layout2');
-        setMaxCardsToShow(2);
-      } else {
-        setLayoutClass('layout4');
-        setMaxCardsToShow(4);
-      }
-    } else {
-      if (height <= (cardHeight * 2) + extraHorizonalSpaceNeeded) {
-        setLayoutClass('layout3');
-        setMaxCardsToShow(3);
-      } else {
-        setLayoutClass('layout5');
-        setMaxCardsToShow(6);
+    const maxColumns = Math.min(Math.floor(width / cardWidth), 12);
+    const maxRows = Math.min(Math.floor((height - extraHorizontalSpaceNeeded) / cardHeight), 4);
+
+    // Dynamically generate layout options
+    const layoutOptions = [];
+    for (let columns = 1; columns <= maxColumns; columns++) {
+      for (let rows = 1; rows <= maxRows; rows++) {
+        const capacity = columns * rows;
+        layoutOptions.push({
+          className: `layout${columns}c${rows}r`,
+          columns,
+          rows,
+          capacity
+        });
       }
     }
+
+    // Select the most suitable layout based on available cards and window size
+    const selectedLayout = layoutOptions
+      .filter(option => option.columns <= maxColumns && option.rows <= maxRows)
+      .filter(option => option.capacity <= displayWords.length)
+      .pop();
+
+    if (selectedLayout) {
+      setLayoutClass(selectedLayout.className);
+      setMaxCardsToShow(selectedLayout.capacity);
+    }
   };
+  
 
   const handleCardGuessed = (index, isCorrect) => {
     const word = displayWords[index];

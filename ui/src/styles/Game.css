@@ -21,7 +21,7 @@ body, html {
   justify-content: space-between;
   height: 100%;
   width: 100%;
-  max-width: 1200px; /* Increased max-width to ensure space for columns */
+  
   padding: 10px;
   box-sizing: border-box;
   border-radius: 8px;
@@ -41,53 +41,81 @@ body, html {
   grid-auto-flow: column; /* Prevents wrapping to a new row */
 }
 
-/* Layout for displaying 1 card */
-.cards-container.layout1 {
-  grid-template-columns: repeat(1, minmax(0, 1fr));
-}
+/* Layout combinations from 1x1 to 12x4 */
 
-/* Layout for displaying 2 cards in 2 columns */
-.cards-container.layout2 {
-  grid-template-columns: repeat(2, minmax(0, 1fr)); /* Two flexible columns */
-}
+/* 1 column layouts */
+.cards-container.layout1c1r { grid-template-columns: repeat(1, minmax(0, 1fr)); grid-auto-flow: row; }
+.cards-container.layout1c2r { grid-template-columns: repeat(1, minmax(0, 1fr)); grid-template-rows: repeat(2, minmax(0, auto)); grid-auto-flow: row; }
+.cards-container.layout1c3r { grid-template-columns: repeat(1, minmax(0, 1fr)); grid-template-rows: repeat(3, minmax(0, auto)); grid-auto-flow: row; }
+.cards-container.layout1c4r { grid-template-columns: repeat(1, minmax(0, 1fr)); grid-template-rows: repeat(4, minmax(0, auto)); grid-auto-flow: row; }
 
-/* Layout for displaying 3 cards in 3 columns */
-.cards-container.layout3 {
-  grid-template-columns: repeat(3, minmax(0, 1fr)); /* Three flexible columns */
-}
+/* 2 column layouts */
+.cards-container.layout2c1r { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-auto-flow: row; }
+.cards-container.layout2c2r { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: repeat(2, minmax(0, auto)); grid-auto-flow: row; }
+.cards-container.layout2c3r { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: repeat(3, minmax(0, auto)); grid-auto-flow: row; }
+.cards-container.layout2c4r { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: repeat(4, minmax(0, auto)); grid-auto-flow: row; }
 
-/* Layout for displaying 4 cards in a 2x2 grid */
-.cards-container.layout4 {
-  grid-template-columns: repeat(2, minmax(0, 1fr)); /* Two columns */
-  grid-template-rows: repeat(2, minmax(0, auto));  /* Two rows */
-}
+/* 3 column layouts */
+.cards-container.layout3c1r { grid-template-columns: repeat(3, minmax(0, 1fr)); grid-auto-flow: row; }
+.cards-container.layout3c2r { grid-template-columns: repeat(3, minmax(0, 1fr)); grid-template-rows: repeat(2, minmax(0, auto)); grid-auto-flow: row; }
+.cards-container.layout3c3r { grid-template-columns: repeat(3, minmax(0, 1fr)); grid-template-rows: repeat(3, minmax(0, auto)); grid-auto-flow: row; }
+.cards-container.layout3c4r { grid-template-columns: repeat(3, minmax(0, 1fr)); grid-template-rows: repeat(4, minmax(0, auto)); grid-auto-flow: row; }
 
-/* Layout for displaying 6 cards in a 3x2 grid */
-.cards-container.layout5 {
-  grid-template-columns: repeat(3, minmax(0, 1fr)); /* Three columns */
-  grid-template-rows: repeat(2, minmax(0, auto));  /* Two rows */
-}
+/* 4 column layouts */
+.cards-container.layout4c1r { grid-template-columns: repeat(4, minmax(0, 1fr)); grid-auto-flow: row; }
+.cards-container.layout4c2r { grid-template-columns: repeat(4, minmax(0, 1fr)); grid-template-rows: repeat(2, minmax(0, auto)); grid-auto-flow: row; }
+.cards-container.layout4c3r { grid-template-columns: repeat(4, minmax(0, 1fr)); grid-template-rows: repeat(3, minmax(0, auto)); grid-auto-flow: row; }
+.cards-container.layout4c4r { grid-template-columns: repeat(4, minmax(0, 1fr)); grid-template-rows: repeat(4, minmax(0, auto)); grid-auto-flow: row; }
 
-/* Responsive behavior for small screens */
-@media (max-width: 600px) {
-  .cards-container {
-    grid-template-columns: 1fr; /* Single column for small screens */
-  }
-}
+/* 5 column layouts */
+.cards-container.layout5c1r { grid-template-columns: repeat(5, minmax(0, 1fr)); grid-auto-flow: row; }
+.cards-container.layout5c2r { grid-template-columns: repeat(5, minmax(0, 1fr)); grid-template-rows: repeat(2, minmax(0, auto)); grid-auto-flow: row; }
+.cards-container.layout5c3r { grid-template-columns: repeat(5, minmax(0, 1fr)); grid-template-rows: repeat(3, minmax(0, auto)); grid-auto-flow: row; }
+.cards-container.layout5c4r { grid-template-columns: repeat(5, minmax(0, 1fr)); grid-template-rows: repeat(4, minmax(0, auto)); grid-auto-flow: row; }
 
-@media (min-width: 601px) and (max-width: 900px) {
-  .cards-container.layout1, 
-  .cards-container.layout2 {
-    grid-template-columns: 1fr; /* Single column for small screens */
-  }
-  .cards-container.layout3, 
-  .cards-container.layout4 {
-    grid-template-columns: repeat(2, 1fr); /* Two columns */
-  }
-  .cards-container.layout5 {
-    grid-template-columns: repeat(3, 1fr); /* Three columns */
-  }
-}
+/* 6 column layouts */
+.cards-container.layout6c1r { grid-template-columns: repeat(6, minmax(0, 1fr)); grid-auto-flow: row; }
+.cards-container.layout6c2r { grid-template-columns: repeat(6, minmax(0, 1fr)); grid-template-rows: repeat(2, minmax(0, auto)); grid-auto-flow: row; }
+.cards-container.layout6c3r { grid-template-columns: repeat(6, minmax(0, 1fr)); grid-template-rows: repeat(3, minmax(0, auto)); grid-auto-flow: row; }
+.cards-container.layout6c4r { grid-template-columns: repeat(6, minmax(0, 1fr)); grid-template-rows: repeat(4, minmax(0, auto)); grid-auto-flow: row; }
+
+/* 7 column layouts */
+.cards-container.layout7c1r { grid-template-columns: repeat(7, minmax(0, 1fr)); grid-auto-flow: row; }
+.cards-container.layout7c2r { grid-template-columns: repeat(7, minmax(0, 1fr)); grid-template-rows: repeat(2, minmax(0, auto)); grid-auto-flow: row; }
+.cards-container.layout7c3r { grid-template-columns: repeat(7, minmax(0, 1fr)); grid-template-rows: repeat(3, minmax(0, auto)); grid-auto-flow: row; }
+.cards-container.layout7c4r { grid-template-columns: repeat(7, minmax(0, 1fr)); grid-template-rows: repeat(4, minmax(0, auto)); grid-auto-flow: row; }
+
+/* 8 column layouts */
+.cards-container.layout8c1r { grid-template-columns: repeat(8, minmax(0, 1fr)); grid-auto-flow: row; }
+.cards-container.layout8c2r { grid-template-columns: repeat(8, minmax(0, 1fr)); grid-template-rows: repeat(2, minmax(0, auto)); grid-auto-flow: row; }
+.cards-container.layout8c3r { grid-template-columns: repeat(8, minmax(0, 1fr)); grid-template-rows: repeat(3, minmax(0, auto)); grid-auto-flow: row; }
+.cards-container.layout8c4r { grid-template-columns: repeat(8, minmax(0, 1fr)); grid-template-rows: repeat(4, minmax(0, auto)); grid-auto-flow: row; }
+
+/* 9 column layouts */
+.cards-container.layout9c1r { grid-template-columns: repeat(9, minmax(0, 1fr)); grid-auto-flow: row; }
+.cards-container.layout9c2r { grid-template-columns: repeat(9, minmax(0, 1fr)); grid-template-rows: repeat(2, minmax(0, auto)); grid-auto-flow: row; }
+.cards-container.layout9c3r { grid-template-columns: repeat(9, minmax(0, 1fr)); grid-template-rows: repeat(3, minmax(0, auto)); grid-auto-flow: row; }
+.cards-container.layout9c4r { grid-template-columns: repeat(9, minmax(0, 1fr)); grid-template-rows: repeat(4, minmax(0, auto)); grid-auto-flow: row; }
+
+/* 10 column layouts */
+.cards-container.layout10c1r { grid-template-columns: repeat(10, minmax(0, 1fr)); grid-auto-flow: row; }
+.cards-container.layout10c2r { grid-template-columns: repeat(10, minmax(0, 1fr)); grid-template-rows: repeat(2, minmax(0, auto)); grid-auto-flow: row; }
+.cards-container.layout10c3r { grid-template-columns: repeat(10, minmax(0, 1fr)); grid-template-rows: repeat(3, minmax(0, auto)); grid-auto-flow: row; }
+.cards-container.layout10c4r { grid-template-columns: repeat(10, minmax(0, 1fr)); grid-template-rows: repeat(4, minmax(0, auto)); grid-auto-flow: row; }
+
+/* 11 column layouts */
+.cards-container.layout11c1r { grid-template-columns: repeat(11, minmax(0, 1fr)); grid-auto-flow: row; }
+.cards-container.layout11c2r { grid-template-columns: repeat(11, minmax(0, 1fr)); grid-template-rows: repeat(2, minmax(0, auto)); grid-auto-flow: row; }
+.cards-container.layout11c3r { grid-template-columns: repeat(11, minmax(0, 1fr)); grid-template-rows: repeat(3, minmax(0, auto)); grid-auto-flow: row; }
+.cards-container.layout11c4r { grid-template-columns: repeat(11, minmax(0, 1fr)); grid-template-rows: repeat(4, minmax(0, auto)); grid-auto-flow: row; }
+
+/* 12 column layouts */
+.cards-container.layout12c1r { grid-template-columns: repeat(12, minmax(0, 1fr)); grid-auto-flow: row; }
+.cards-container.layout12c2r { grid-template-columns: repeat(12, minmax(0, 1fr)); grid-template-rows: repeat(2, minmax(0, auto)); grid-auto-flow: row; }
+.cards-container.layout12c3r { grid-template-columns: repeat(12, minmax(0, 1fr)); grid-template-rows: repeat(3, minmax(0, auto)); grid-auto-flow: row; }
+.cards-container.layout12c4r { grid-template-columns: repeat(12, minmax(0, 1fr)); grid-template-rows: repeat(4, minmax(0, auto)); grid-auto-flow: row; }
+
+
 
 .progress-bar-container {
   position: relative; /* Enables absolute positioning for .progress-info to position it centrally within this container */
@@ -174,7 +202,7 @@ body, html {
   border-radius: 10px;
   border:1px;
   border-color: #ffffff;
-  padding:1px;
-  font-size:1rem;
+  padding:2px;
+  font-size:1.6rem;
   margin:2px 0 0 0;
 }

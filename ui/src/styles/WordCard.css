@@ -38,7 +38,7 @@
   justify-content: center;
   align-items: center;
   border-radius: 8px;
-  padding: 20px;
+  padding: 10px;
   box-sizing: border-box;
   font-family: monospace;
 }
@@ -73,19 +73,19 @@
   justify-content: center;
   gap: 1rem;
   width: 95%;
-  margin-top: 10px;
+  margin-top: 5px;
   z-index: 1;
 }
 
 .buttons button {
   flex: 1;
-  max-width: 5rem;
-  max-height: 5rem;
+  max-width: 4rem;
+  max-height: 4rem;
   background-color: #4285f4;
   border: none;
   border-radius: 8px;
   color: white;
-  font-size: 3rem;
+  font-size: 2rem;
   cursor: pointer;
   transition: background-color 0.3s;
   padding: 0;
