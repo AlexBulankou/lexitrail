@@ -2,8 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { getHint, regenerateHint } from '../services/hintService';
 import '../styles/WordCard.css';
 
-const WordCard = ({ word, handleMemorized, handleNotMemorized, toggleExclusion, incorrectAttempts }) => {
-  const [isFlipped, setIsFlipped] = useState(false);
+const WordCard = ({ word, isFlipped, handleMemorized, handleNotMemorized, toggleExclusion, incorrectAttempts, setFlippedState }) => {
   const [hintImage, setHintImage] = useState(null);
   const [loadingHint, setLoadingHint] = useState(true);
   const [loadingWord, setLoadingWord] = useState(true); // New state for controlling button loading state
@@ -39,8 +38,9 @@ const WordCard = ({ word, handleMemorized, handleNotMemorized, toggleExclusion, 
   }, [word.user_id, word.word_id]);
 
   const handleCardClick = () => {
-    setIsFlipped(!isFlipped);
+    setFlippedState(!isFlipped);
   };
+
 
   const stopPropagation = (e) => {
     e.stopPropagation();
@@ -50,13 +50,13 @@ const WordCard = ({ word, handleMemorized, handleNotMemorized, toggleExclusion, 
     // Set loadingWord to true to disable all buttons
     setLoadingWord(true);
     setHintImage(null);
-  
+
     // Save the current word ID to check if it changes after the action
     const currentWordId = word.word_id;
-  
+
     // Execute the action
     action();
-  
+
     // Check if the word has changed
     setTimeout(() => {
       if (word.word_id === currentWordId) {
@@ -70,7 +70,7 @@ const WordCard = ({ word, handleMemorized, handleNotMemorized, toggleExclusion, 
   const onMemorized = () => {
     handleButtonClick(() => {
       if (isFlipped) {
-        setIsFlipped(false); // Flip back to front first
+        setFlippedState(false); // Ensure card flips back to front
       }
       handleMemorized(); // Then proceed with memorizing
     });
@@ -79,7 +79,7 @@ const WordCard = ({ word, handleMemorized, handleNotMemorized, toggleExclusion, 
   const onNotMemorized = () => {
     handleButtonClick(() => {
       if (isFlipped) {
-        setIsFlipped(false); // Flip back to front first
+        setFlippedState(false); // Ensure card flips back to front
       }
       handleNotMemorized(); // Then proceed with not memorizing
     });
@@ -132,7 +132,7 @@ const WordCard = ({ word, handleMemorized, handleNotMemorized, toggleExclusion, 
     <div className="word-card">
       {/* Metadata Section */}
       <div className="metadata">
-       {/* THIS IS FOR DEBUGGING
+        {/* THIS IS FOR DEBUGGING
         <span>{word.index}</span>
         */}
         <button

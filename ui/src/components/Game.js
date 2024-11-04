@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import WordCard from './WordCard';
 import Completed from './Completed';
 import { useParams, useLocation } from 'react-router-dom';
@@ -34,19 +34,48 @@ const Game = () => {
 
   const [layoutClass, setLayoutClass] = useState('layout1c1r');
   const [maxCardsToShow, setMaxCardsToShow] = useState(1);
+  const [flippedStates, setFlippedStates] = useState({});
 
   useEffect(() => {
-    updateLayout();
-    window.addEventListener('resize', updateLayout);
-  
-    return () => {
-      window.removeEventListener('resize', updateLayout);
+    const initialFlippedStates = {};
+    displayWords.forEach((_, index) => {
+      initialFlippedStates[index] = false;
+    });
+    setFlippedStates(initialFlippedStates);
+  }, [displayWords]);
+
+
+  // Use ref to store previous dimensions and word count
+  const previousDimensions = useRef({ width: null, height: null, wordCount: null });
+
+  useEffect(() => {
+    // Define the update function with event logging
+    const handleUpdate = (event) => {
+      console.log(`Event triggered: ${event.type}`);
+      updateLayout(event.type);
     };
-  }, [displayWords.length]); // Run effect whenever displayWords length changes
 
+    // Add event listeners
+    window.addEventListener('resize', handleUpdate);
+    window.addEventListener('orientationchange', handleUpdate);
+    window.addEventListener('visibilitychange', handleUpdate);
+    window.addEventListener('fullscreenchange', handleUpdate);
+    window.addEventListener('pageshow', handleUpdate);
 
+    // Initial call to set the layout
+    updateLayout('initial');
 
-  const updateLayout = () => {
+    // Cleanup listeners on unmount
+    return () => {
+      window.removeEventListener('resize', handleUpdate);
+      window.removeEventListener('orientationchange', handleUpdate);
+      window.removeEventListener('visibilitychange', handleUpdate);
+      window.removeEventListener('fullscreenchange', handleUpdate);
+      window.removeEventListener('pageshow', handleUpdate);
+    };
+  }, [displayWords.length]);
+
+  const updateLayout = (triggerEvent) => {
     const width = window.innerWidth;
     const height = window.innerHeight;
 
@@ -57,6 +86,19 @@ const Game = () => {
     const maxColumns = Math.min(Math.floor(width / cardWidth), 12);
     const maxRows = Math.min(Math.floor((height - extraHorizontalSpaceNeeded) / cardHeight), 4);
 
+    // Check if dimensions or displayWords length changed
+    if (
+      previousDimensions.current.width === width &&
+      previousDimensions.current.height === height &&
+      previousDimensions.current.wordCount === displayWords.length
+    ) {
+      console.log(`Skipped update: No change in dimensions or word count since last update (Event: ${triggerEvent}).`);
+      return;
+    }
+
+    // Update previous dimensions to the current values
+    previousDimensions.current = { width, height, wordCount: displayWords.length };
+
     // Dynamically generate layout options
     const layoutOptions = [];
     for (let columns = 1; columns <= maxColumns; columns++) {
@@ -66,7 +108,7 @@ const Game = () => {
           className: `layout${columns}c${rows}r`,
           columns,
           rows,
-          capacity
+          capacity,
         });
       }
     }
@@ -80,9 +122,18 @@ const Game = () => {
     if (selectedLayout) {
       setLayoutClass(selectedLayout.className);
       setMaxCardsToShow(selectedLayout.capacity);
+
+      console.log(
+        `Update layout: Width: ${width}, Height: ${height}, maxColumns: ${maxColumns}, maxRows: ${maxRows}, Selected layout: ${selectedLayout.className} (Event: ${triggerEvent}).`
+      );
+    } else {
+      console.log(`Update layout: Could not select layout (Event: ${triggerEvent}).`);
     }
   };
-  
+
+  const setFlippedState = (index, state) => {
+    setFlippedStates(prev => ({ ...prev, [index]: state }));
+  };
 
   const handleCardGuessed = (index, isCorrect) => {
     const word = displayWords[index];
@@ -100,6 +151,7 @@ const Game = () => {
 
   const markAllAsMemorized = () => {
     for (let i = 0; i < maxCardsToShow; i++) {
+      setFlippedState(i, false);
       handleCardGuessed(i, true);
     }
   };
@@ -144,10 +196,12 @@ const Game = () => {
           <WordCard
             key={index}
             word={{ ...word, user_id: user.email, index: word.word_index }} // Ensure user_id is passed correctly
+            isFlipped={flippedStates[index]} // The flipped state for this card
             handleMemorized={() => handleCardGuessed(index, true)}
             handleNotMemorized={() => handleCardGuessed(index, false)}
             toggleExclusion={() => toggleExclusion(index)}  // Pass toggleExclusion to WordCard
             incorrectAttempts={incorrectAttempts[word.word] || 0}
+            setFlippedState={(isFlipped)=>setFlippedState(index, isFlipped)}
           />
         ))}
       </div>
