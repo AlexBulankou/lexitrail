@@ -16,6 +16,10 @@ terraform {
       source  = "germanbrew/dotenv"
       version = "~> 1.1.4"
     }
+     helm = {
+      source  = "hashicorp/helm"
+      version = "~> 2.3"
+    }
   }
 }
 
@@ -54,6 +58,7 @@ locals {
   google_client_id = data.dotenv.env.entries.GOOGLE_CLIENT_ID
   ui_files_hash = sha1(join("", [for f in fileset(path.root, "../ui/**") : filesha1(f)]))
   backend_files_hash = sha1(join("", [for f in fileset(path.root, "../backend/**") : filesha1(f)]))
+  middle_layer_files_hash = sha1(join("", [for f in fileset(path.root, "../middle_layer/**") : filesha1(f)]))
 }
 
 resource "google_service_account" "lexitrail_sa" {

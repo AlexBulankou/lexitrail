@@ -61,3 +61,13 @@ variable "backend_container_name" {
   type    = string
   default = "lexitrail-backend"
 }
+
+variable "middel_layer_container_name" {
+  type    = string
+  default = "middle-layer-app"
+}
+
+variable "agones_system_namespace" {
+  type    = string
+  default = "agones-system"
+}

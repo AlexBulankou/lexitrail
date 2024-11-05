@@ -1,4 +1,4 @@
-import { getData, postData, putData, deleteData } from './apiService';
+import { getData, postData, putData, deleteData, callMiddleLayer } from './apiService';
 
 // Create a new user
 export const createUser = async (email) => {
@@ -35,5 +35,7 @@ export const getUserWordsByWordset = async (userId, wordsetId) => {
 // Update recall state for a word
 export const updateUserWordRecall = async (userId, wordId, recallState, recall, isIncluded) => {
   const data = { recall_state: recallState, recall, is_included: isIncluded };
+  // Call the middle layer so the user's recall state can be updated aysnchronously
+  // return await callMiddleLayer(`/userwords/${userId}/${wordId}/recall`, data);
   return await putData(`/userwords/${userId}/${wordId}/recall`, data);
 };
