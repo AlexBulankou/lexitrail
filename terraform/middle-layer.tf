@@ -31,3 +31,11 @@ resource "kubectl_manifest" "middle-layer-fleet" {
     helm_release.agones
   ]
 }
+
+resource "kubectl_manifest" "middle-layer-fleet-autoscaler" {
+  yaml_body = templatefile("${path.module}/k8s_templates/middle-layer-fleet-autoscaler.yaml.tpl", {})
+
+  depends_on = [
+    kubectl_manifest.middle-layer-fleet
+  ]
+}
