@@ -99,7 +99,7 @@ def generate_image(prompt):
         safety_filter_level="block_some",
         person_generation="allow_adult",
     )
-    resized_image = image[0]._pil_image.resize((400, 300), PIL_Image.ANTIALIAS)
+    resized_image = image[0]._pil_image.resize((400, 300), PIL_Image.Resampling.LANCZOS)
     return resized_image
 
 def image_to_base64(image):
@@ -200,9 +200,12 @@ def generate_multiple_hints():
 @authenticate_user  # Protect this route
 def generate_hint():
     try:
+        print("in generate_hint")
         user_id = request.args.get('user_id')
         word_id = request.args.get('word_id')
         force_regenerate = request.args.get('force_regenerate', 'false').lower() == 'true'
+
+        print("force_regenerate=%s" %(force_regenerate))
 
         if not user_id or not word_id:
             return error_response('Missing required parameters: user_id, word_id', 400)
@@ -213,9 +216,12 @@ def generate_hint():
             return validation_response
 
         # Fetch or create the UserWord entry
+        print ("Trying to find userword with user_id=%s, word_id=%s" %(user_id, word_id))
         userword = UserWord.query.filter_by(user_id=user_id, word_id=word_id).first()
         if not userword:
             # Create a new UserWord entry if it does not exist
+            print ("Userword does not exist, creating")
+
             userword = UserWord(
                 user_id=user_id,
                 word_id=word_id,
@@ -227,9 +233,12 @@ def generate_hint():
             db.session.commit()
 
         # Check if regeneration is needed
+        print ("Check if regenerate is needed: hint_text=%s, hint_img=%s" %(userword.hint_text, userword.hint_img))
         if userword.hint_text and userword.hint_img and not force_regenerate:
+            
             # Convert BLOB to base64 string instead of UTF-8 decoding
             hint_image_base64 = base64.b64encode(userword.hint_img).decode('utf-8')
+            print ("hint_image_base64: %s" %(hint_image_base64))
             return success_response({
                 'hint_text': userword.hint_text,
                 'hint_image': hint_image_base64

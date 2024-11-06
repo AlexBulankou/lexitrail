@@ -52,7 +52,7 @@ class HintGenerationTests(unittest.TestCase):
         
         image = generate_image(prompt)
         self.assertIsNotNone(image)
-        self.assertEqual(image.size, (100, 100))
+        self.assertEqual(image.size, (400, 300))
 
     def test_process_single_hint_unmocked(self):
         """Test process_single_hint without mocks and save the output image."""
@@ -91,14 +91,15 @@ class HintGenerationTests(unittest.TestCase):
             # Create test data using TestUtils
             user, wordset, word, userword = TestUtils.create_test_userword(db, user_email='test@example.com', word_name='Test Word')
             userword.hint_text = 'Existing hint text'
-            userword.hint_img = base64.b64encode(b'Existing image data')  # Properly encode the image data
+            userword.hint_img = b'Existing image data'  # Properly encode the image data
+            print ("test_regenerate_hint_existing_image_force_false: userword.hint_img: %s" %( userword.hint_img));
             db.session.commit()
 
             response = self.client.get(f'/hint/generate_hint?user_id={user.email}&word_id={word.word_id}&force_regenerate=false')
             self.assertEqual(response.status_code, 200)
             response_data = response.get_json().get('data')
             self.assertEqual(response_data['hint_text'], 'Existing hint text')
-            self.assertEqual(base64.b64decode(response_data['hint_image']), b'Existing image data')
+            self.assertEqual(response_data['hint_image'], base64.b64encode(b'Existing image data').decode('utf-8') )
 
     def test_regenerate_hint_existing_image_force_true(self):
         """Test the /regenerate route with existing image and force_regenerate=true (should regenerate)."""
