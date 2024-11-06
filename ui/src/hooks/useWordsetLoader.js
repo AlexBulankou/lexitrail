@@ -118,7 +118,7 @@ export const useWordsetLoader = (wordsetId, userId, showExcluded) => {
   // Reusable function to update word list after an action (e.g., exclude, memorized, not memorized)
   const updateWordListAfterAction = (index, maxWordsToShow, updatedWords, removeWordAtIndex) => {
     // Filter out the word at the specified index
-    // console.log(`#Inside updateWordListAfterAction#. index=${index}, maxWordsToShow=${maxWordsToShow}, updatedWords=${updatedWords.map(item => item.word_index)}`);
+    console.log(`#Inside updateWordListAfterAction#. index=${index}, maxWordsToShow=${maxWordsToShow}, updatedWords=${updatedWords.map(item => item.word_index)}`);
 
     var filteredToShow = updatedWords;
 
@@ -137,18 +137,18 @@ export const useWordsetLoader = (wordsetId, userId, showExcluded) => {
 
     const nextWordIndex = filteredToShow.length > maxWordsToShow ? maxWordsToShow : filteredToShow.length - 1;
 
-    // console.log(`Now nextWordIndex=${nextWordIndex}, filteredToShow=${filteredToShow.map(item => item.word_index)}`);
+    console.log(`Now nextWordIndex=${nextWordIndex}, filteredToShow=${filteredToShow.map(item => item.word_index)}`);
 
     if (filteredToShow.length == 0) {
       return filteredToShow;
     }
 
-    // Replace the removed word with a randomly selected word and keep the order intact
+    // Replace the removed word with the selected word and keep the order intact
     const newWord = filteredToShow[nextWordIndex];
     filteredToShow.splice(nextWordIndex, 1);
     filteredToShow.splice(index, 0, newWord);
 
-    // console.log(`before return: newWord=${newWord.word_index}, filteredToShow=${filteredToShow.map(item => item.word_index)}`);
+    console.log(`before return: newWord=${newWord.word_index}, filteredToShow=${filteredToShow.map(item => item.word_index)}`);
 
     return filteredToShow;
   };
@@ -171,7 +171,7 @@ export const useWordsetLoader = (wordsetId, userId, showExcluded) => {
   };
 
   // Toggle exclusion state asynchronously
-  const toggleExclusion = (index) => {
+  const toggleExclusion = (index, maxWordsToShow) => {
     const currentWord = toShow[index];
     const newInclusionState = !currentWord.is_included;
 
@@ -180,7 +180,7 @@ export const useWordsetLoader = (wordsetId, userId, showExcluded) => {
 
     updateWordState(index, (word, updatedWords) => {
       updatedWords[index] = { ...word, is_included: newInclusionState };
-    }, 0, true);
+    }, maxWordsToShow, true);
 
     // Async call to update the backend
     updateUserWordRecall(userId, currentWord.word_id, currentWord.recall_state, false, newInclusionState)

@@ -100,7 +100,7 @@ const Game = () => {
     previousDimensions.current = { width, height, wordCount: displayWords.length };
 
     // Dynamically generate layout options
-    const layoutOptions = [];
+    var layoutOptions = [];
     for (let columns = 1; columns <= maxColumns; columns++) {
       for (let rows = 1; rows <= maxRows; rows++) {
         const capacity = columns * rows;
@@ -112,6 +112,14 @@ const Game = () => {
         });
       }
     }
+
+    layoutOptions.sort((a, b) => a.capacity-b.capacity);
+
+    /*
+    for (var loIndex in layoutOptions){
+      console.log(`Option: ${layoutOptions[loIndex].className}`);
+    }
+    */
 
     // Select the most suitable layout based on available cards and window size
     const selectedLayout = layoutOptions
@@ -142,6 +150,11 @@ const Game = () => {
     } else {
       handleNotMemorized(index, maxCardsToShow);
     }
+  };
+
+  const handleCardInclusionStateChanged = (index, isIncluded) => {
+    const word = displayWords[index];
+    toggleExclusion(index, maxCardsToShow);
   };
 
   const toggleWordsetFilter = () => {
@@ -199,7 +212,7 @@ const Game = () => {
             isFlipped={flippedStates[index]} // The flipped state for this card
             handleMemorized={() => handleCardGuessed(index, true)}
             handleNotMemorized={() => handleCardGuessed(index, false)}
-            toggleExclusion={() => toggleExclusion(index)}  // Pass toggleExclusion to WordCard
+            toggleExclusion={() => handleCardInclusionStateChanged(index, word.is_included)}  // Pass toggleExclusion to WordCard
             incorrectAttempts={incorrectAttempts[word.word] || 0}
             setFlippedState={(isFlipped)=>setFlippedState(index, isFlipped)}
           />
