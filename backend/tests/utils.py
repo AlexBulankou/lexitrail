@@ -209,6 +209,34 @@ class TestUtils:
             raise ValueError(f"Failed to retrieve word with name: {word_name}")
 
         return user, wordset, word
+    
+
+    @staticmethod
+    def create_test_wordset(db, description="Test Wordset"):
+        """
+        Create a test wordset with a given description and return its ID.
+        """
+        wordset = Wordset(description=description)
+        db.session.add(wordset)
+        db.session.commit()
+        return wordset.wordset_id
+    
+    @staticmethod
+    def create_test_words(db, wordset_id, words):
+        """
+        Create multiple test words in a given wordset ID.
+        Each entry in 'words' should be a tuple: (word, def1, def2).
+        """
+        for word_text, def1, def2 in words:
+            word = Word(
+                word=word_text,
+                wordset_id=wordset_id,
+                def1=def1,
+                def2=def2
+            )
+            db.session.add(word)
+        db.session.commit()
+
 
     @staticmethod
     def create_test_userword(db, user_email=default_mock_user, word_description='Test Wordset', word_name=None, is_included=True, hint_text=None, hint_img=None):
