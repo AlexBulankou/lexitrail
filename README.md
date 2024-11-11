@@ -258,6 +258,8 @@ curl -v http://localhost:5001/wordsets
 ### Env file settings
 
 
+PROJECT_ID=
+CLUSTER_NAME=
 DB_ROOT_PASSWORD=
 MYSQL_FILES_BUCKET=
 SQL_NAMESPACE=

@@ -1,7 +1,7 @@
 resource "google_container_cluster" "autopilot_cluster" {
-  name             = var.cluster_name
+  name             = local.cluster_name
   location         = var.region
-  project          = var.project_id
+  project          = local.project_id
   enable_autopilot = true
   deletion_protection = false
   

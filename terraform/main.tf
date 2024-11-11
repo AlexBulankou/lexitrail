@@ -23,14 +23,24 @@ terraform {
   }
 }
 
+locals {
+  project_id = data.dotenv.env.entries.PROJECT_ID
+  cluster_name = data.dotenv.env.entries.CLUSTER_NAME
+  db_root_password = data.dotenv.env.entries.DB_ROOT_PASSWORD
+  google_client_id = data.dotenv.env.entries.GOOGLE_CLIENT_ID
+  ui_files_hash = sha1(join("", [for f in fileset(path.root, "../ui/**") : filesha1(f)]))
+  backend_files_hash = sha1(join("", [for f in fileset(path.root, "../backend/**") : filesha1(f)]))
+  middle_layer_files_hash = sha1(join("", [for f in fileset(path.root, "../middle_layer/**") : filesha1(f)]))
+}
+
 provider "google" {
-  project = var.project_id
+  project = local.project_id
   region  = var.region
 }
 
 provider "google" {
   alias   = "us-central1"
-  project = var.project_id
+  project = local.project_id
   region  = "us-central1"
 }
 
@@ -46,20 +56,14 @@ provider "dotenv" {}
 data "google_client_config" "default" {}
 
 data "google_project" "default" {
-  project_id = var.project_id
+  project_id = local.project_id
 }
 
 data "dotenv" "env" {
   filename = "./../.env"
 }
 
-locals {
-  db_root_password = data.dotenv.env.entries.DB_ROOT_PASSWORD
-  google_client_id = data.dotenv.env.entries.GOOGLE_CLIENT_ID
-  ui_files_hash = sha1(join("", [for f in fileset(path.root, "../ui/**") : filesha1(f)]))
-  backend_files_hash = sha1(join("", [for f in fileset(path.root, "../backend/**") : filesha1(f)]))
-  middle_layer_files_hash = sha1(join("", [for f in fileset(path.root, "../middle_layer/**") : filesha1(f)]))
-}
+
 
 resource "google_service_account" "lexitrail_sa" {
   account_id   = "lexitrail-sa"
