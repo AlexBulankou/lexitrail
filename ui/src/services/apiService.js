@@ -14,7 +14,7 @@ const getAccessToken = () => sessionStorage.getItem('access_token');
 // Function to handle any GET request
 export const getData = async (endpoint) => {
   try {
-    console.log(`Requesting: ${API_BASE_URL}${endpoint}`);
+    // console.log(`Requesting: ${API_BASE_URL}${endpoint}`);
     const accessToken = getAccessToken(); // Use the access token
     const response = await axios.get(`${API_BASE_URL}${endpoint}`, {
       headers: {

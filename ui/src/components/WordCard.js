@@ -31,7 +31,7 @@ const WordCard = ({ word, isFlipped, handleMemorized, handleNotMemorized, toggle
       };
       fetchHint();
     } else {
-      console.error('Invalid user_id or word_id:', word.user_id, word.word_id);
+      console.error(`Word: ${word?JSON.stringify(word): ""} has invalid user_id: ${word? word.user_id: ""} or word_id: ${word? word.word_id: ""}.`);
       setLoadingHint(false);
       setLoadingWord(false); // Set loadingWord to false if user_id or word_id is invalid
     }
@@ -191,27 +191,27 @@ const WordCard = ({ word, isFlipped, handleMemorized, handleNotMemorized, toggle
         <div
           className="word-card-front"
         >
-          <p>
+          
             {loadingWord ?
               <p>⏳</p>
               :
               <p style={{ fontSize: calculateFontSize(word.word) }}>{word.word}</p>
 
             }
-          </p>
+          
         </div>
         <div
           className="word-card-back"
           style={{ fontSize: calculateFontSize(word.meaning) }} // Dynamically set the font size
         >
-          <p>
+          
             {loadingWord ? '⏳ Loading...' : word.meaning.trim().split('\n').map((line, index) => (
               <React.Fragment key={index}>
                 {removeQuotes(line)}
                 <br />
               </React.Fragment>
             ))}
-          </p>
+          
         </div>
       </div>
 

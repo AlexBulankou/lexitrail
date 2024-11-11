@@ -161,6 +161,8 @@ def get_words_by_wordset(wordset_id):
             quiz_options = generate_quiz_options(word, words_by_syllable, syllable_count)
 
             word_data.append({
+                "word_id": word.word_id,       # Include word_id
+                "wordset_id": word.wordset_id, # Include wordset_id
                 "word": word.word,
                 "def1": word.def1,
                 "def2": word.def2,

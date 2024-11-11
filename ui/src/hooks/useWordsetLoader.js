@@ -1,7 +1,16 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { getWordsByWordset } from '../services/wordsService';
 import { getUserWordsByWordset, updateUserWordRecall } from '../services/userService';
 import { formatDistanceToNow, max } from 'date-fns';
+
+
+console.log("header or useWordsetLoader.js");
+
+// Initialize cache if it doesn't already exist on the window object
+if (!window.userWordsetExcludedCache) {
+  window.userWordsetExcludedCache = {};
+}
+const userWordsetExcludedCache = window.userWordsetExcludedCache;
 
 // Function to abstract recall state logic
 const updateRecallState = (currentRecallState, isCorrect) => {
@@ -14,14 +23,13 @@ const updateRecallState = (currentRecallState, isCorrect) => {
   }
 };
 
-export const useWordsetLoader = (wordsetId, userId, showExcluded) => {
-  const [toShow, setToShow] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [firstTimeCorrect, setFirstTimeCorrect] = useState([]);
-  const [incorrectAttempts, setIncorrectAttempts] = useState({});
-  const [correctlyMemorized, setCorrectlyMemorized] = useState(new Set());
-  const [timeElapsed, setTimeElapsed] = useState(0);
-  const [totalToShow, setTotalToShow] = useState(0);
+const invalidateCache = (userId, wordsetId) => {
+  const includedCacheKey = `${userId}-${wordsetId}-1`;
+  const excludedCacheKey = `${userId}-${wordsetId}-0`;
+
+  delete userWordsetExcludedCache[includedCacheKey];
+  delete userWordsetExcludedCache[excludedCacheKey];
+};
 
   // Helper function to shuffle an array
   const shuffleArray = (array) => {
@@ -32,11 +40,43 @@ export const useWordsetLoader = (wordsetId, userId, showExcluded) => {
     return array;
   };
 
-  const loadWordsForWordset = useCallback(async () => {
-    setLoading(true);
-    try {
-      console.log('Loading words for wordset:', wordsetId, 'Show Excluded:', showExcluded);
+export const useWordsetLoader = (wordsetId, userId, showExcluded) => {
 
+  console.log("inside useWordsetLoader");
+
+  const [toShow, setToShow] = useState([]);
+  const [loading, setLoading] = useState({ status: 'idle', error: null });
+  const [firstTimeCorrect, setFirstTimeCorrect] = useState([]);
+  const [incorrectAttempts, setIncorrectAttempts] = useState({});
+  const [correctlyMemorized, setCorrectlyMemorized] = useState(new Set());
+  const [totalToShow, setTotalToShow] = useState(0);
+
+  const isFetchingRef = useRef(false); // Ref to track if a fetch is in progress
+
+
+  const loadWordsForWordset = useCallback(async () => {
+
+    if (isFetchingRef.current) {
+      return; // Early exit if loading is already in progress
+    }
+
+    try {
+      const includedFlag = showExcluded ? 0 : 1;
+      const cacheKey = `${userId}-${wordsetId}-${includedFlag}`;
+
+      // Check cache first
+      if (userWordsetExcludedCache[cacheKey]) {
+        const cachedWords = userWordsetExcludedCache[cacheKey];
+        setToShow(cachedWords);
+        setTotalToShow(cachedWords.length);
+        setLoading({ status: 'loaded', error: null });
+        return;
+      }
+
+      setLoading({ status: 'loading', error: null });
+
+      console.log(`loadWordsForWordset: Key: ${cacheKey} not in cache. Loading words for wordset: ${wordsetId}. Show Excluded: ${showExcluded}`);
+      
       // Fetch words from the wordset
       const response = await getWordsByWordset(wordsetId);
       const loadedWords = response.data;
@@ -45,6 +85,7 @@ export const useWordsetLoader = (wordsetId, userId, showExcluded) => {
       const userwordsResponse = await getUserWordsByWordset(userId, wordsetId);
       const userWordsMetadata = userwordsResponse.data;
 
+      // Map and filter data for display
       var wordIndex = 0;
       const convertedWords = loadedWords
         .map((word) => {
@@ -96,29 +137,29 @@ export const useWordsetLoader = (wordsetId, userId, showExcluded) => {
       });
       */
 
+      // Cache the loaded data and update the loading flag
+      userWordsetExcludedCache[cacheKey] = finalSortedWords;
+
       setToShow(finalSortedWords);
       setTotalToShow(finalSortedWords.length);
-      setLoading(false);
+      setLoading({ status: 'loaded', error: null });
+
     } catch (error) {
-      setLoading(false);
       console.error('Error loading words or userword metadata:', error);
+      
+      // Reset the loading flag in case of error
+      userWordsetExcludedCache[cacheKey] = null;
+      setLoading({ status: 'error', error: error });
+
+    } finally {
+      isFetchingRef.current = false; // Reset loading in progress flag
     }
   }, [wordsetId, userId, showExcluded]);
-
-
-
-
-
-  useEffect(() => {
-    if (wordsetId && userId) {
-      loadWordsForWordset();
-    }
-  }, [loadWordsForWordset]);
 
   // Reusable function to update word list after an action (e.g., exclude, memorized, not memorized)
   const updateWordListAfterAction = (index, maxWordsToShow, updatedWords, removeWordAtIndex) => {
     // Filter out the word at the specified index
-    console.log(`#Inside updateWordListAfterAction#. index=${index}, maxWordsToShow=${maxWordsToShow}, updatedWords=${updatedWords.map(item => item.word_index)}`);
+    // console.log(`#Inside updateWordListAfterAction#. index=${index}, maxWordsToShow=${maxWordsToShow}, updatedWords=${updatedWords.map(item => item.word_index)}`);
 
     var filteredToShow = updatedWords;
 
@@ -137,7 +178,7 @@ export const useWordsetLoader = (wordsetId, userId, showExcluded) => {
 
     const nextWordIndex = filteredToShow.length > maxWordsToShow ? maxWordsToShow : filteredToShow.length - 1;
 
-    console.log(`Now nextWordIndex=${nextWordIndex}, filteredToShow=${filteredToShow.map(item => item.word_index)}`);
+    // console.log(`Now nextWordIndex=${nextWordIndex}, filteredToShow=${filteredToShow.map(item => item.word_index)}`);
 
     if (filteredToShow.length == 0) {
       return filteredToShow;
@@ -148,7 +189,7 @@ export const useWordsetLoader = (wordsetId, userId, showExcluded) => {
     filteredToShow.splice(nextWordIndex, 1);
     filteredToShow.splice(index, 0, newWord);
 
-    console.log(`before return: newWord=${newWord.word_index}, filteredToShow=${filteredToShow.map(item => item.word_index)}`);
+    // console.log(`before return: newWord=${newWord.word_index}, filteredToShow=${filteredToShow.map(item => item.word_index)}`);
 
     return filteredToShow;
   };
@@ -172,6 +213,8 @@ export const useWordsetLoader = (wordsetId, userId, showExcluded) => {
 
   // Toggle exclusion state asynchronously
   const toggleExclusion = (index, maxWordsToShow) => {
+
+    invalidateCache(userId, wordsetId);
     const currentWord = toShow[index];
     const newInclusionState = !currentWord.is_included;
 
@@ -189,6 +232,8 @@ export const useWordsetLoader = (wordsetId, userId, showExcluded) => {
 
   // Handle correct memorization asynchronously with functional state update
   const handleMemorized = (index, maxWordsToShow) => {
+
+    invalidateCache(userId, wordsetId);
     const currentWord = toShow[index];
     const newRecallState = updateRecallState(currentWord.recall_state, true);
 
@@ -215,6 +260,8 @@ export const useWordsetLoader = (wordsetId, userId, showExcluded) => {
 
   // Handle incorrect memorization asynchronously
   const handleNotMemorized = (index, maxWordsToShow) => {
+
+    invalidateCache(userId, wordsetId);
     const currentWord = toShow[index];
     const newRecallState = updateRecallState(currentWord.recall_state, false);
 
@@ -236,28 +283,16 @@ export const useWordsetLoader = (wordsetId, userId, showExcluded) => {
   };
 
 
-
-
-  useEffect(() => {
-    if (!loading) {
-      const timer = setInterval(() => setTimeElapsed(prev => prev + 1), 1000);
-      if (toShow.length === 0) {
-        clearInterval(timer);
-      }
-      return () => clearInterval(timer);
-    }
-  }, [toShow.length, loading]);
-
   return {
-    toShow,
-    totalToShow,
-    loading,
-    firstTimeCorrect,
-    incorrectAttempts,
-    correctlyMemorized,
-    timeElapsed,
-    toggleExclusion,
-    handleMemorized,
-    handleNotMemorized,
+    toShow, //1
+    loading, //2
+    firstTimeCorrect, //4
+    incorrectAttempts, //5
+    correctlyMemorized, //6
+    loadWordsForWordset, //7
+    totalToShow, //9
+    toggleExclusion, //10
+    handleMemorized, //11
+    handleNotMemorized, //12
   };
 };

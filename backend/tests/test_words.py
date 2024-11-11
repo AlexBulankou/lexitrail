@@ -40,11 +40,27 @@ class WordsTests(unittest.TestCase):
         
         words_data = response.get_json().get('data', [])
         for word in words_data:
+            # Verify the presence of all expected fields
+            self.assertIn("word_id", word)
+            self.assertIn("wordset_id", word)
+            self.assertIn("word", word)
+            self.assertIn("def1", word)
+            self.assertIn("def2", word)
+            self.assertIn("quiz_options", word)
+
+            # Check that wordset_id matches the created wordset’s ID
+            self.assertEqual(word["wordset_id"], wordset.wordset_id)
+            
+            # Verify that quiz options are present and correctly formatted
             self.assertEqual(len(word['quiz_options']), 3)
+
             # Ensure quiz options do not contain the word itself
             self.assertTrue(all(opt[0] != word["word"] for opt in word['quiz_options']))
-            # Verify that all quiz options have the same syllable count
-            self.assertTrue(all(len(opt[0]) == 1 for opt in word['quiz_options']))
+
+            # Verify that all quiz options have the same syllable count as the original word
+            syllable_count = len(word["word"])
+            self.assertTrue(all(len(opt[0]) == syllable_count for opt in word['quiz_options']))
+
 
     def test_get_words_by_wordset_with_concatenated_options(self):
         """Test retrieving words by wordset requiring concatenated words for quiz options."""

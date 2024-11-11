@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import WordCard from './WordCard';
 import Completed from './Completed';
+import Timer from './Timer';
 import { useParams, useLocation } from 'react-router-dom';
 import { useWordsetLoader } from '../hooks/useWordsetLoader';
 import { useAuth } from '../hooks/useAuth';
@@ -18,23 +19,38 @@ const Game = () => {
     return <div>Please log in to play the game</div>;
   }
 
+  console.log("loading Game::useWordsetLoader");
+
   const {
-    toShow: displayWords,
-    totalToShow: totalToShow,
-    loading,
-    timeElapsed,
-    handleMemorized,
-    handleNotMemorized,
-    firstTimeCorrect,
-    correctlyMemorized,
-    incorrectAttempts,
-    toggleExclusion,
-    resetGame
-  } = useWordsetLoader(wordsetId, user.email, showExcludedFromState);  // Pass showExcludedFromState to hook
+    toShow: displayWords, //1
+    loading, //2
+    firstTimeCorrect, //4
+    incorrectAttempts, //5
+    correctlyMemorized, //6
+    loadWordsForWordset, //7
+    totalToShow: totalToShow, //9
+    toggleExclusion, //10
+    handleMemorized, //11
+    handleNotMemorized, //12
+
+  } = useWordsetLoader(
+    wordsetId, 
+    user.email, 
+    showExcludedFromState
+  ); 
 
   const [layoutClass, setLayoutClass] = useState('layout1c1r');
   const [maxCardsToShow, setMaxCardsToShow] = useState(1);
   const [flippedStates, setFlippedStates] = useState({});
+  const [finalTimeElapsed, setFinalTimeElapsed] = useState(0);
+
+  // Initialize or re-run loadWordsForWordset on dependency change
+  useEffect(() => {
+    if (wordsetId && user) {
+      loadWordsForWordset();
+    }
+  }, [wordsetId, user, showExcludedFromState, loadWordsForWordset]);
+
 
   useEffect(() => {
     const initialFlippedStates = {};
@@ -51,7 +67,7 @@ const Game = () => {
   useEffect(() => {
     // Define the update function with event logging
     const handleUpdate = (event) => {
-      console.log(`Event triggered: ${event.type}`);
+      // console.log(`Event triggered: ${event.type}`);
       updateLayout(event.type);
     };
 
@@ -92,7 +108,7 @@ const Game = () => {
       previousDimensions.current.height === height &&
       previousDimensions.current.wordCount === displayWords.length
     ) {
-      console.log(`Skipped update: No change in dimensions or word count since last update (Event: ${triggerEvent}).`);
+      // console.log(`Skipped update: No change in dimensions or word count since last update (Event: ${triggerEvent}).`);
       return;
     }
 
@@ -113,7 +129,7 @@ const Game = () => {
       }
     }
 
-    layoutOptions.sort((a, b) => a.capacity-b.capacity);
+    layoutOptions.sort((a, b) => a.capacity - b.capacity);
 
     /*
     for (var loIndex in layoutOptions){
@@ -131,9 +147,9 @@ const Game = () => {
       setLayoutClass(selectedLayout.className);
       setMaxCardsToShow(selectedLayout.capacity);
 
-      console.log(
-        `Update layout: Width: ${width}, Height: ${height}, maxColumns: ${maxColumns}, maxRows: ${maxRows}, Selected layout: ${selectedLayout.className} (Event: ${triggerEvent}).`
-      );
+      //console.log(
+      //  `Update layout: Width: ${width}, Height: ${height}, maxColumns: ${maxColumns}, maxRows: ${maxRows}, Selected layout: ${selectedLayout.className} (Event: ${triggerEvent}).`
+      // );
     } else {
       console.log(`Update layout: Could not select layout (Event: ${triggerEvent}).`);
     }
@@ -171,17 +187,29 @@ const Game = () => {
 
   const wordsToRender = displayWords.slice(0, maxCardsToShow);
 
-  if (loading) {
+  // Optional callback to handle timer tick in parent (if you need the time in Game component)
+  const handleTimerTick = (elapsedTime) => {
+    console.log('Elapsed Time:', elapsedTime);
+    if (loading.status === 'loaded' && displayWords.length == 0){
+      setFinalTimeElapsed(timeElapsed);
+    }
+  };
+
+  if (loading.status === 'loading') {
     return <div>Loading...</div>;
   }
 
-  if (displayWords.length === 0) {
+  if (loading.status === 'error') {
+    return <div>Error loading data. Please try again.</div>;
+  }
+
+  if (displayWords.length === 0 && loading.status === 'loaded') {
     return (
       <Completed
-        timeElapsed={timeElapsed}
+      timeElapsed={finalTimeElapsed}
         firstTimeCorrect={firstTimeCorrect}
         incorrectAttempts={incorrectAttempts}
-        resetGame={resetGame}
+        resetGame={window.alert(1)}
       />
     );
   }
@@ -196,7 +224,7 @@ const Game = () => {
           {showExcludedFromState ? 'Show Included' : 'Show Excluded'}
         </button>
         <div className="timer">
-          {Math.floor(timeElapsed / 60)}:{('0' + timeElapsed % 60).slice(-2)}
+        <Timer onTick={handleTimerTick} />  {/* Timer updates every second */}
 
         </div>
         <div className="memorized">✔️ {correctlyMemorized.size}</div>
@@ -214,7 +242,7 @@ const Game = () => {
             handleNotMemorized={() => handleCardGuessed(index, false)}
             toggleExclusion={() => handleCardInclusionStateChanged(index, word.is_included)}  // Pass toggleExclusion to WordCard
             incorrectAttempts={incorrectAttempts[word.word] || 0}
-            setFlippedState={(isFlipped)=>setFlippedState(index, isFlipped)}
+            setFlippedState={(isFlipped) => setFlippedState(index, isFlipped)}
           />
         ))}
       </div>
