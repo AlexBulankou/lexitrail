@@ -1,3 +1,5 @@
+<img width="1633" alt="image" src="https://github.com/user-attachments/assets/2db50d59-624c-4d0f-a278-e8f629d354df">
+
 # Architecture
 The Lexitrail application is built using React, a popular JavaScript library for building user interfaces. The frontend is structured into components, each responsible for specific parts of the UI. The game logic is handled in React components, which manage state and user interactions.
 
