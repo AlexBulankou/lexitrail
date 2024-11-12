@@ -1,6 +1,6 @@
 import React from 'react';
 import { BrowserRouter as Router, Route, Routes, Navigate } from "react-router-dom";
-import Game from './components/Game';
+import {Game} from './components/Game';
 import Profile from './components/Profile.js';
 import PrivateRoute from './components/PrivateRoute.js';
 import NavBar from './components/NavBar.js';

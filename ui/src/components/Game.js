@@ -8,10 +8,17 @@ import { useAuth } from '../hooks/useAuth';
 import '../styles/Game.css';
 import { useNavigate } from 'react-router-dom';
 
+const GameMode = {
+  PRACTICE: "PRACTICE",
+  SHOW_EXCLUDED: "SHOW_EXCLUDED",
+  TEST: "TEST",
+};
+
+
 const Game = () => {
   const { wordsetId } = useParams();
   const { state } = useLocation();  // Capture the state passed from navigation
-  const showExcludedFromState = state?.showExcluded || false;  // Extract the showExcluded flag
+  const mode = state?.mode || GameMode.PRACTICE; 
   const { user } = useAuth();
   const navigate = useNavigate();
 
@@ -19,7 +26,9 @@ const Game = () => {
     return <div>Please log in to play the game</div>;
   }
 
-  console.log("loading Game::useWordsetLoader");
+  if (mode == GameMode.TEST) {
+    return <div>Test mode not implemented</div>;
+  }
 
   const {
     toShow: displayWords, //1
@@ -36,7 +45,7 @@ const Game = () => {
   } = useWordsetLoader(
     wordsetId, 
     user.email, 
-    showExcludedFromState
+    mode
   ); 
 
   const [layoutClass, setLayoutClass] = useState('layout1c1r');
@@ -49,7 +58,7 @@ const Game = () => {
     if (wordsetId && user) {
       loadWordsForWordset();
     }
-  }, [wordsetId, user, showExcludedFromState, loadWordsForWordset]);
+  }, [wordsetId, user, mode, loadWordsForWordset]);
 
 
   useEffect(() => {
@@ -174,8 +183,8 @@ const Game = () => {
   };
 
   const toggleWordsetFilter = () => {
-    const reversedShowExcluded = !showExcludedFromState;
-    navigate(`/game/${wordsetId}`, { state: { showExcluded: reversedShowExcluded } });
+    const reversedPracticeMode = mode == GameMode.PRACTICE? GameMode.SHOW_EXCLUDED : GameMode.PRACTICE;
+    navigate(`/game/${wordsetId}`, { state: { mode: reversedPracticeMode } });
   };
 
   const markAllAsMemorized = () => {
@@ -204,12 +213,17 @@ const Game = () => {
   }
 
   if (displayWords.length === 0 && loading.status === 'loaded') {
+
+    if (mode === GameMode.SHOW_EXCLUDED){
+      return <div>No excluded words in this wordset.</div>;
+    }
+
     return (
       <Completed
-      timeElapsed={finalTimeElapsed}
+        timeElapsed={finalTimeElapsed}
         firstTimeCorrect={firstTimeCorrect}
         incorrectAttempts={incorrectAttempts}
-        resetGame={window.alert(1)}
+        resetGame={()=>{}}
       />
     );
   }
@@ -221,8 +235,9 @@ const Game = () => {
         <div className="not-memorized">❌ {Object.keys(incorrectAttempts).length}</div>
 
         <button className="show-excluded-button" onClick={toggleWordsetFilter}>
-          {showExcludedFromState ? 'Show Included' : 'Show Excluded'}
+          {mode == GameMode.SHOW_EXCLUDED ? 'Show Included' : 'Show Excluded'}
         </button>
+
         <div className="timer">
         <Timer onTick={handleTimerTick} />  {/* Timer updates every second */}
 
@@ -269,4 +284,4 @@ const Game = () => {
   );
 };
 
-export default Game;
+export {Game, GameMode};

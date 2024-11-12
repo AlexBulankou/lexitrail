@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { getWordsByWordset } from '../services/wordsService';
 import { getUserWordsByWordset, updateUserWordRecall } from '../services/userService';
 import { formatDistanceToNow, max } from 'date-fns';
-
+import { GameMode } from '../components/Game';
 
 console.log("header or useWordsetLoader.js");
 
@@ -31,16 +31,16 @@ const invalidateCache = (userId, wordsetId) => {
   delete userWordsetExcludedCache[excludedCacheKey];
 };
 
-  // Helper function to shuffle an array
-  const shuffleArray = (array) => {
-    for (let i = array.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [array[i], array[j]] = [array[j], array[i]];
-    }
-    return array;
-  };
+// Helper function to shuffle an array
+const shuffleArray = (array) => {
+  for (let i = array.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [array[i], array[j]] = [array[j], array[i]];
+  }
+  return array;
+};
 
-export const useWordsetLoader = (wordsetId, userId, showExcluded) => {
+export const useWordsetLoader = (wordsetId, userId, mode) => {
 
   console.log("inside useWordsetLoader");
 
@@ -61,7 +61,18 @@ export const useWordsetLoader = (wordsetId, userId, showExcluded) => {
     }
 
     try {
-      const includedFlag = showExcluded ? 0 : 1;
+
+      if (!mode)
+        throw new Error("mode not defined");
+
+      if (!userId)
+        throw new Error("userId not defined");
+
+      if (!wordsetId)
+        throw new Error("wordsetId not defined");
+
+      const includedFlag = mode == GameMode.SHOW_EXCLUDED ? 0 : 1;
+
       const cacheKey = `${userId}-${wordsetId}-${includedFlag}`;
 
       // Check cache first
@@ -75,8 +86,8 @@ export const useWordsetLoader = (wordsetId, userId, showExcluded) => {
 
       setLoading({ status: 'loading', error: null });
 
-      console.log(`loadWordsForWordset: Key: ${cacheKey} not in cache. Loading words for wordset: ${wordsetId}. Show Excluded: ${showExcluded}`);
-      
+      console.log(`loadWordsForWordset: Key: ${cacheKey} not in cache. Loading words for wordset: ${wordsetId}. Mode: ${mode}`);
+
       // Fetch words from the wordset
       const response = await getWordsByWordset(wordsetId);
       const loadedWords = response.data;
@@ -106,7 +117,7 @@ export const useWordsetLoader = (wordsetId, userId, showExcluded) => {
           };
         })
         // Filter based on inclusion/exclusion state
-        .filter(word => showExcluded ? !word.is_included : word.is_included);
+        .filter(word => includedFlag ? word.is_included : !word.is_included);
 
       // Shuffle words before sorting
       const shuffledWords = shuffleArray(convertedWords);
@@ -146,7 +157,7 @@ export const useWordsetLoader = (wordsetId, userId, showExcluded) => {
 
     } catch (error) {
       console.error('Error loading words or userword metadata:', error);
-      
+
       // Reset the loading flag in case of error
       userWordsetExcludedCache[cacheKey] = null;
       setLoading({ status: 'error', error: error });
@@ -154,7 +165,7 @@ export const useWordsetLoader = (wordsetId, userId, showExcluded) => {
     } finally {
       isFetchingRef.current = false; // Reset loading in progress flag
     }
-  }, [wordsetId, userId, showExcluded]);
+  }, [wordsetId, userId, mode]);
 
   // Reusable function to update word list after an action (e.g., exclude, memorized, not memorized)
   const updateWordListAfterAction = (index, maxWordsToShow, updatedWords, removeWordAtIndex) => {

@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { getWordsets } from '../services/wordsService'; // Assuming getWordsets is implemented in wordsService.js
 import { useNavigate } from 'react-router-dom';
 import '../styles/Wordsets.css'; // Create a CSS file for styling the wordsets grid
+import { GameMode } from './Game';
 
 const Wordsets = () => {
   const [wordsets, setWordsets] = useState([]);  // Initialize as empty array
@@ -28,9 +29,9 @@ const Wordsets = () => {
       .finally(() => setLoading(false));
   }, []);
 
-  const handleWordsetClick = (wordsetId, showExcluded = false) => {
+  const handleWordsetClick = (wordsetId, mode) => {
     // Navigate to the game route with the wordsetId and whether to show excluded words
-    navigate(`/game/${wordsetId}`, { state: { showExcluded } });
+    navigate(`/game/${wordsetId}`, { state: { mode:mode } });
   };
 
   return (
@@ -39,21 +40,31 @@ const Wordsets = () => {
         {wordsets.length > 0 ? (
           wordsets.map(wordset => (
             <div key={wordset.wordset_id} className="wordset-tile">
-              <div className="wordset-button-group">
-                {/* Main button to load included words */}
-                <button 
-                  className="wordset-button" 
-                  onClick={() => handleWordsetClick(wordset.wordset_id)}
+              <div className="wordset-button-group" >
+                <div className="wordset-header">
+                  <div className="wordset-header-text">{wordset.description}</div>
+                </div>
+
+                <button
+                  className="wordset-button wordset-button-practice"
+                  onClick={() => handleWordsetClick(wordset.wordset_id, GameMode.PRACTICE)}
                 >
-                  <h3>{wordset.description}</h3>
+                  Practice
                 </button>
 
-                {/* New button to load excluded words */}
-                <button 
-                  className="show-excluded-button" 
-                  onClick={() => handleWordsetClick(wordset.wordset_id, true)}
+
+                <button
+                  className="wordset-button wordset-button-excluded"
+                  onClick={() => handleWordsetClick(wordset.wordset_id, GameMode.SHOW_EXCLUDED)}
                 >
                   Show Excluded
+                </button>
+
+                <button
+                  className="wordset-button wordset-button-test"
+                  onClick={() => handleWordsetClick(wordset.wordset_id, GameMode.TEST)}
+                >
+                  Test!
                 </button>
               </div>
             </div>
