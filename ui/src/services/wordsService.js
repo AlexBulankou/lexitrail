@@ -15,7 +15,8 @@ export const getWordsets = async () => {
     const data = JSON.parse(event.data);
     console.log('Received:', data);
     // Set the middle layer address so the ui client can send requests to it
-    if (data.connection !== undefined) {
+    if (data.connection !== undefined && window.config.MIDDLE_LAYER_ADDRESS === undefined) {
+      console.log('data.connection:', data.connection);
       window.config.MIDDLE_LAYER_ADDRESS = data.connection;
       console.log('MIDDLE_LAYER_ADDRESS:', window.config.MIDDLE_LAYER_ADDRESS);
     }
