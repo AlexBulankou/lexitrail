@@ -55,6 +55,18 @@ resource "kubectl_manifest" "backend_service" {
   ]
 }
 
+data "kubernetes_service" "backend_service" {
+  metadata {
+    name      = "lexitrail-backend-service"
+    namespace = var.backend_namespace
+  }
+  depends_on = [kubectl_manifest.backend_service]
+}
+
+output "backend_service_endpoint" {
+  value = data.kubernetes_service.backend_service.status.0.load_balancer.0.ingress.0.ip
+}
+
 resource "kubectl_manifest" "backend_configmap" {
   yaml_body = templatefile("${path.module}/k8s_templates/backend-configmap.yaml.tpl", {
     backend_namespace = var.backend_namespace,

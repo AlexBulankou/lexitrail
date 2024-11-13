@@ -57,6 +57,21 @@ variable "middel_layer_container_name" {
   default = "middle-layer-app"
 }
 
+variable "matchmaker_mmf_container_name" {
+  type    = string
+  default = "lexitrail-match-making-mmf"
+}
+
+variable "matchmaker_director_container_name" {
+  type    = string
+  default = "lexitrail-match-making-director"
+}
+
+variable "matchmaker_frontend_container_name" {
+  type    = string
+  default = "lexitrail-match-making-frontend"
+}
+
 variable "agones_system_namespace" {
   type    = string
   default = "agones-system"
