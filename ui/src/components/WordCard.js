@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { getHint, regenerateHint } from '../services/hintService';
+import { GameMode } from './Game';
+import PinyinText from './PinyinText';
 import '../styles/WordCard.css';
 
-const WordCard = ({ word, isFlipped, handleMemorized, handleNotMemorized, toggleExclusion, incorrectAttempts, setFlippedState }) => {
+const WordCard = ({ mode, word, isFlipped, handleMemorized, handleNotMemorized, toggleExclusion, incorrectAttempts, setFlippedState }) => {
   const [hintImage, setHintImage] = useState(null);
   const [loadingHint, setLoadingHint] = useState(true);
   const [loadingWord, setLoadingWord] = useState(true); // New state for controlling button loading state
@@ -31,7 +33,7 @@ const WordCard = ({ word, isFlipped, handleMemorized, handleNotMemorized, toggle
       };
       fetchHint();
     } else {
-      console.error(`Word: ${word?JSON.stringify(word): ""} has invalid user_id: ${word? word.user_id: ""} or word_id: ${word? word.word_id: ""}.`);
+      console.error(`Word: ${word ? JSON.stringify(word) : ""} has invalid user_id: ${word ? word.user_id : ""} or word_id: ${word ? word.word_id : ""}.`);
       setLoadingHint(false);
       setLoadingWord(false); // Set loadingWord to false if user_id or word_id is invalid
     }
@@ -191,38 +193,61 @@ const WordCard = ({ word, isFlipped, handleMemorized, handleNotMemorized, toggle
         <div
           className="word-card-front"
         >
-          
-            {loadingWord ?
-              <p>⏳</p>
-              :
-              <p style={{ fontSize: calculateFontSize(word.word) }}>{word.word}</p>
 
-            }
-          
+          {loadingWord ?
+            <p>⏳</p>
+            :
+            <p style={{ fontSize: calculateFontSize(word.word) }}>{word.word}</p>
+
+          }
+
         </div>
         <div
           className="word-card-back"
           style={{ fontSize: calculateFontSize(word.meaning) }} // Dynamically set the font size
         >
-          
-            {loadingWord ? '⏳ Loading...' : word.meaning.trim().split('\n').map((line, index) => (
-              <React.Fragment key={index}>
-                {removeQuotes(line)}
-                <br />
-              </React.Fragment>
-            ))}
-          
+
+          {loadingWord ? '⏳ Loading...' : word.meaning.trim().split('\n').map((line, index) => (
+            <React.Fragment key={index}>
+              {removeQuotes(line)}
+              <br />
+            </React.Fragment>
+          ))}
+
         </div>
       </div>
 
-      <div className="buttons" onClick={stopPropagation}>
-        <button onClick={onNotMemorized} disabled={loadingWord}>
-          {loadingWord ? '⏳' : '❌'}
-        </button>
-        <button onClick={onMemorized} disabled={loadingWord}>
-          {loadingWord ? '⏳' : '✔️'}
-        </button>
-      </div>
+
+      {mode === GameMode.PRACTICE ? (
+        <div className="practice-buttons" onClick={stopPropagation}>
+          <button onClick={onNotMemorized} disabled={loadingWord}>
+            {loadingWord ? '⏳' : '❌'}
+          </button>
+          <button onClick={onMemorized} disabled={loadingWord}>
+            {loadingWord ? '⏳' : '✔️'}
+          </button>
+        </div>
+      )
+        : (
+          <div className="test-buttons" onClick={stopPropagation}>
+            <button onClick="" disabled={loadingWord}>
+              {loadingWord ? '⏳' : (<PinyinText text={word.quiz_option1.pinyin} />)}
+            </button>
+            <button onClick="" disabled={loadingWord}>
+              {loadingWord ? '⏳' : (<PinyinText text={word.quiz_option2.pinyin} />)}
+            </button>
+            <button onClick="" disabled={loadingWord}>
+              {loadingWord ? '⏳' : (<PinyinText text={word.quiz_option3.pinyin} />)}
+            </button>
+            <button onClick="" disabled={loadingWord}>
+              {loadingWord ? '⏳' : (<PinyinText text={word.quiz_option4.pinyin} />)}
+            </button>
+          </div>
+        )
+      }
+
+
+
     </div>
   );
 };

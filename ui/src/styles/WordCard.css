@@ -1,7 +1,7 @@
 .word-card {
   position: relative;
   perspective: 1000px;
-  width:180px;
+  width: 180px;
   margin: auto;
   cursor: pointer;
   border: 2px solid #d3d3d3;
@@ -68,7 +68,7 @@
   transform: rotateY(180deg);
 }
 
-.buttons {
+.practice-buttons {
   display: flex;
   justify-content: center;
   gap: 1rem;
@@ -77,7 +77,7 @@
   z-index: 1;
 }
 
-.buttons button {
+.practice-buttons button {
   flex: 1;
   max-width: 4rem;
   max-height: 4rem;
@@ -92,7 +92,45 @@
   margin: 0;
 }
 
-.buttons button:hover {
+.practice-buttons button:hover {
+  background-color: #2c6cd3;
+}
+
+
+.test-buttons {
+  display: grid;
+  grid-template-columns: 1fr 1fr; /* Creates a 2-column grid */
+  gap: 0.2rem;
+  width: 95%;
+  margin-top: 5px;
+  z-index: 1;
+}
+
+.test-buttons button {
+  width: 100%;
+  aspect-ratio: 1; /* Makes the buttons square */
+  background-color: #4285f4;
+  border: none;
+  border-radius: 8px;
+  color: white;
+  font-size: 1.5rem;
+  cursor: pointer;
+  transition: background-color 0.3s;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  overflow: hidden;
+  word-break: break-word; /* Allows breaking within words */
+  white-space: normal; /* Allows wrapping */
+  line-height: 1.2; /* Adjusts line spacing for better fit */
+  max-height: 100%; /* Ensures text stays within button height */
+  text-overflow: ellipsis; /* Shows ellipsis for overflow */
+}
+
+.test-buttons button:hover {
   background-color: #2c6cd3;
 }
 
@@ -110,7 +148,7 @@
   border-radius: 4px;
   cursor: pointer;
   color: white;
-  font-size:0.5rem;
+  font-size: 0.5rem;
 }
 
 .red {
@@ -153,7 +191,7 @@
 }
 
 .recall-item-guess {
-  font-size:0.4rem;
+  font-size: 0.4rem;
   padding: 0px 2px;
 }
 

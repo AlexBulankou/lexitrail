@@ -18,7 +18,7 @@ const GameMode = {
 const Game = () => {
   const { wordsetId } = useParams();
   const { state } = useLocation();  // Capture the state passed from navigation
-  const mode = state?.mode || GameMode.PRACTICE; 
+  const mode = state?.mode || GameMode.PRACTICE;
   const { user } = useAuth();
   const navigate = useNavigate();
 
@@ -26,9 +26,11 @@ const Game = () => {
     return <div>Please log in to play the game</div>;
   }
 
+  /*
   if (mode == GameMode.TEST) {
     return <div>Test mode not implemented</div>;
   }
+    */
 
   const {
     toShow: displayWords, //1
@@ -43,10 +45,10 @@ const Game = () => {
     handleNotMemorized, //12
 
   } = useWordsetLoader(
-    wordsetId, 
-    user.email, 
+    wordsetId,
+    user.email,
     mode
-  ); 
+  );
 
   const [layoutClass, setLayoutClass] = useState('layout1c1r');
   const [maxCardsToShow, setMaxCardsToShow] = useState(1);
@@ -105,7 +107,7 @@ const Game = () => {
     const height = window.innerHeight;
 
     const cardWidth = 180;
-    const cardHeight = 310;
+    const cardHeight = mode === GameMode.TEST ? 390 : 310;
     const extraHorizontalSpaceNeeded = 120;
 
     const maxColumns = Math.min(Math.floor(width / cardWidth), 12);
@@ -183,7 +185,7 @@ const Game = () => {
   };
 
   const toggleWordsetFilter = () => {
-    const reversedPracticeMode = mode == GameMode.PRACTICE? GameMode.SHOW_EXCLUDED : GameMode.PRACTICE;
+    const reversedPracticeMode = mode == GameMode.PRACTICE ? GameMode.SHOW_EXCLUDED : GameMode.PRACTICE;
     navigate(`/game/${wordsetId}`, { state: { mode: reversedPracticeMode } });
   };
 
@@ -199,7 +201,7 @@ const Game = () => {
   // Optional callback to handle timer tick in parent (if you need the time in Game component)
   const handleTimerTick = (elapsedTime) => {
     console.log('Elapsed Time:', elapsedTime);
-    if (loading.status === 'loaded' && displayWords.length == 0){
+    if (loading.status === 'loaded' && displayWords.length == 0) {
       setFinalTimeElapsed(timeElapsed);
     }
   };
@@ -214,7 +216,7 @@ const Game = () => {
 
   if (displayWords.length === 0 && loading.status === 'loaded') {
 
-    if (mode === GameMode.SHOW_EXCLUDED){
+    if (mode === GameMode.SHOW_EXCLUDED) {
       return <div>No excluded words in this wordset.</div>;
     }
 
@@ -223,7 +225,7 @@ const Game = () => {
         timeElapsed={finalTimeElapsed}
         firstTimeCorrect={firstTimeCorrect}
         incorrectAttempts={incorrectAttempts}
-        resetGame={()=>{}}
+        resetGame={() => { }}
       />
     );
   }
@@ -239,7 +241,7 @@ const Game = () => {
         </button>
 
         <div className="timer">
-        <Timer onTick={handleTimerTick} />  {/* Timer updates every second */}
+          <Timer onTick={handleTimerTick} />  {/* Timer updates every second */}
 
         </div>
         <div className="memorized">✔️ {correctlyMemorized.size}</div>
@@ -250,6 +252,7 @@ const Game = () => {
       <div className={`cards-container ${layoutClass}`}>
         {wordsToRender.map((word, index) => (
           <WordCard
+            mode={mode}
             key={index}
             word={{ ...word, user_id: user.email, index: word.word_index }} // Ensure user_id is passed correctly
             isFlipped={flippedStates[index]} // The flipped state for this card
@@ -284,4 +287,4 @@ const Game = () => {
   );
 };
 
-export {Game, GameMode};
+export { Game, GameMode };

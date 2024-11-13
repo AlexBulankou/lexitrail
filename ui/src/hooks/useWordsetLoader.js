@@ -101,10 +101,29 @@ export const useWordsetLoader = (wordsetId, userId, mode) => {
       const convertedWords = loadedWords
         .map((word) => {
           const userWord = userWordsMetadata.find(uw => uw.word_id === word.word_id);
+
+          // Create the options array, including the correct answer
+          const options = [
+            { word: word.quiz_options[0][0], pinyin: word.quiz_options[0][1], meaning: word.quiz_options[0][2], correct: false },
+            { word: word.quiz_options[1][0], pinyin: word.quiz_options[1][1], meaning: word.quiz_options[1][2], correct: false },
+            { word: word.quiz_options[2][0], pinyin: word.quiz_options[2][1], meaning: word.quiz_options[2][2], correct: false },
+            { word: word.word, pinyin: word.def1, meaning: word.def2, correct: true } // The correct answer
+          ];
+
+          // Shuffle the options array
+          const shuffledOptions = options
+            .map(value => ({ value, sort: Math.random() })) // Assign a random sort key
+            .sort((a, b) => a.sort - b.sort) // Sort by the random key
+            .map(({ value }) => value); // Extract the shuffled options
+
           return {
             word: word.word,
             word_index: wordIndex++,
             meaning: `${word.def1}\n${word.def2}`,
+            quiz_option1: shuffledOptions[0],
+            quiz_option2: shuffledOptions[1],
+            quiz_option3: shuffledOptions[2],
+            quiz_option4: shuffledOptions[3],
             word_id: word.word_id,
             wordset_id: word.wordset_id,
             is_included: userWord ? userWord.is_included : true,
@@ -118,6 +137,7 @@ export const useWordsetLoader = (wordsetId, userId, mode) => {
         })
         // Filter based on inclusion/exclusion state
         .filter(word => includedFlag ? word.is_included : !word.is_included);
+
 
       // Shuffle words before sorting
       const shuffledWords = shuffleArray(convertedWords);
