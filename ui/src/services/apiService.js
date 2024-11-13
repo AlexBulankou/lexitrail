@@ -2,7 +2,6 @@ import axios from 'axios';
 //import { useAuth } from '../hooks/useAuth';
 
 const API_BASE_URL = window.config.API_BASE_URL;
-const MIDDLE_LAYER_URL = window.config.MIDDLE_LAYER_URL;
 
 // Log the API base URL for diagnostics
 console.log(`API_BASE_URL is: ${API_BASE_URL}`);
@@ -68,11 +67,12 @@ export const putData = async (endpoint, data) => {
 };
 
 // Function to handle request to middle layer
-export const callMiddleLayer = async (endpoint, data) => {
+export const callMiddleLayer = async (middleLayerURL, endpoint, data) => {
   try {
     const accessToken = getAccessToken(); // Use the access token
-    
-    const response = await axios.post(`${MIDDLE_LAYER_URL}${endpoint}`, data, {
+    const middleLayerAPIPath = `http://${middleLayerURL}/update${endpoint}`; // Construct the middle layer API path
+    console.log(`Calling middle layer: ${middleLayerAPIPath}`);
+    const response = await axios.post(middleLayerAPIPath, data, {
       headers: {
         Authorization: `Bearer ${accessToken}`,
       },

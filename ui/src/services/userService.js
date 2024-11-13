@@ -35,7 +35,11 @@ export const getUserWordsByWordset = async (userId, wordsetId) => {
 // Update recall state for a word
 export const updateUserWordRecall = async (userId, wordId, recallState, recall, isIncluded) => {
   const data = { recall_state: recallState, recall, is_included: isIncluded };
-  // Call the middle layer so the user's recall state can be updated aysnchronously
-  // return await callMiddleLayer(`/userwords/${userId}/${wordId}/recall`, data);
-  return await putData(`/userwords/${userId}/${wordId}/recall`, data);
+  if (window.config.MIDDLE_LAYER_ADDRESS === undefined) {
+    // If the middle layer is not ready, fall back to call backend directly
+    return await putData(`/userwords/${userId}/${wordId}/recall`, data);
+  } else {
+    // Call the middle layer so the user's recall state can be updated aysnchronously
+    return await callMiddleLayer(window.config.MIDDLE_LAYER_ADDRESS, `/userwords/${userId}/${wordId}/recall`, data);
+  }
 };
