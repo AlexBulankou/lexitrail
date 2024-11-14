@@ -43,6 +43,7 @@ const Game = () => {
     toggleExclusion, //10
     handleMemorized, //11
     handleNotMemorized, //12
+    handleMemorizedMultiple,
 
   } = useWordsetLoader(
     wordsetId,
@@ -107,8 +108,8 @@ const Game = () => {
     const height = window.innerHeight;
 
     const cardWidth = 180;
-    const cardHeight = mode === GameMode.TEST ? 390 : 310;
-    const extraHorizontalSpaceNeeded = 120;
+    const cardHeight = mode === GameMode.TEST ? 360 : 310;
+    const extraHorizontalSpaceNeeded = mode === GameMode.TEST ? 80 : 120;
 
     const maxColumns = Math.min(Math.floor(width / cardWidth), 12);
     const maxRows = Math.min(Math.floor((height - extraHorizontalSpaceNeeded) / cardHeight), 4);
@@ -171,7 +172,6 @@ const Game = () => {
   };
 
   const handleCardGuessed = (index, isCorrect) => {
-    const word = displayWords[index];
     if (isCorrect) {
       handleMemorized(index, maxCardsToShow);
     } else {
@@ -189,11 +189,22 @@ const Game = () => {
     navigate(`/game/${wordsetId}`, { state: { mode: reversedPracticeMode } });
   };
 
+  const resetGame = () => {
+    navigate(`/game/${wordsetId}`, { state: { mode: mode }, replace: true });
+    loadWordsForWordset();
+  }
+
   const markAllAsMemorized = () => {
+    const indicesToMark = [];
+  
+    // Collect all indices up to maxCardsToShow
     for (let i = 0; i < maxCardsToShow; i++) {
       setFlippedState(i, false);
-      handleCardGuessed(i, true);
+      indicesToMark.push(i);
     }
+  
+    // Call handleMemorizedMultiple with the collected indices
+    handleMemorizedMultiple(indicesToMark, maxCardsToShow);
   };
 
   const wordsToRender = displayWords.slice(0, maxCardsToShow);
@@ -225,7 +236,7 @@ const Game = () => {
         timeElapsed={finalTimeElapsed}
         firstTimeCorrect={firstTimeCorrect}
         incorrectAttempts={incorrectAttempts}
-        resetGame={() => { }}
+        resetGame={resetGame}
       />
     );
   }
@@ -236,9 +247,13 @@ const Game = () => {
       <div className="progress-stats">
         <div className="not-memorized">❌ {Object.keys(incorrectAttempts).length}</div>
 
-        <button className="show-excluded-button" onClick={toggleWordsetFilter}>
-          {mode == GameMode.SHOW_EXCLUDED ? 'Show Included' : 'Show Excluded'}
-        </button>
+        {mode !== GameMode.TEST ? (
+          <button className="show-excluded-button" onClick={toggleWordsetFilter}>
+            {mode == GameMode.SHOW_EXCLUDED ? 'Show Included' : 'Show Excluded'}
+          </button>
+        ) : (
+          <></>
+        )}
 
         <div className="timer">
           <Timer onTick={handleTimerTick} />  {/* Timer updates every second */}
@@ -265,13 +280,15 @@ const Game = () => {
         ))}
       </div>
 
-      {/* New Button to Mark All Cards as Memorized */}
-      <button
-        className="mark-all-memorized-button"
-        onClick={markAllAsMemorized}
-      >
-        ✔️ to all {maxCardsToShow}
-      </button>
+      {mode === GameMode.PRACTICE ? (
+        <button
+          className="mark-all-memorized-button"
+          onClick={markAllAsMemorized}
+        >
+          ✔️ to all {maxCardsToShow}
+        </button>
+      ) : (<></>)
+      }
 
       <div className="progress-bar-container">
         <div className="progress-bar">

@@ -1,21 +1,33 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 
 const Timer = ({ onTick }) => {
   const [timeElapsed, setTimeElapsed] = useState(0);
-  const timerRef = useRef(null);
 
   useEffect(() => {
-    // Start the timer
-    timerRef.current = setInterval(() => {
+    // Create a function to update time that will be used by the global interval
+    const tick = () => {
       setTimeElapsed((prev) => {
         const newTime = prev + 1;
-        onTick(newTime);  // Call onTick callback to send time to parent if needed
+        onTick(newTime);
         return newTime;
       });
-    }, 1000);
+    };
 
-    // Clean up timer on component unmount
-    return () => clearInterval(timerRef.current);
+    // If no global timer instance exists, create one
+    if (!window.timerInstance) {
+      console.log("starting global timer interval");
+      window.timerInstance = setInterval(tick, 1000);
+    }
+
+    return () => {
+      // Cleanup interval when no component is using it
+      if (window.timerInstance) {
+        console.log("clearing global timer interval");
+        onTick(timeElapsed);
+        clearInterval(window.timerInstance);
+        window.timerInstance = null;
+      }
+    };
   }, [onTick]);
 
   // Display the time in minutes:seconds format

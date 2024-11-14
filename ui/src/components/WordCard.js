@@ -69,6 +69,14 @@ const WordCard = ({ mode, word, isFlipped, handleMemorized, handleNotMemorized, 
     }, 0); // Run this check right after the action to update states
   };
 
+  const onQuizOptionClicked = (isCorrect) => {
+    if (isCorrect) {
+      handleMemorized();
+    } else {
+      handleNotMemorized();
+    }
+  }
+
   const onMemorized = () => {
     handleButtonClick(() => {
       if (isFlipped) {
@@ -114,7 +122,13 @@ const WordCard = ({ mode, word, isFlipped, handleMemorized, handleNotMemorized, 
   };
 
   // Remove leading and trailing quotes and whitespace
-  const removeQuotes = (text) => text.replace(/^['"]+|['"]+$/g, '').trim();
+  const removeQuotes = (text) => {
+    if (!text) {
+      return "";
+    }
+
+    return text.replace(/^['"]+|['"]+$/g, '').trim();
+  }
 
   // Remove quotes and calculate the longest line for font size
   const calculateFontSize = (text) => {
@@ -133,47 +147,50 @@ const WordCard = ({ mode, word, isFlipped, handleMemorized, handleNotMemorized, 
   return (
     <div className="word-card">
       {/* Metadata Section */}
-      <div className="metadata">
-        {/* THIS IS FOR DEBUGGING
+
+      {mode !== GameMode.TEST ? (
+        <div className="metadata">
+          {/* THIS IS FOR DEBUGGING
         <span>{word.index}</span>
         */}
-        <button
-          className={`exclude-button ${word.is_included ? 'red' : 'green'}`}
-          onClick={(e) => {
-            stopPropagation(e);
-            handleButtonClick(toggleExclusion);  // Disable all buttons and toggle exclusion
-          }}
-          disabled={loadingWord} // Disable button while loading a new word
-        >
-          {word.is_included ? 'Exclude' : 'Include'}
-        </button>
+          <button
+            className={`exclude-button ${word.is_included ? 'red' : 'green'}`}
+            onClick={(e) => {
+              stopPropagation(e);
+              handleButtonClick(toggleExclusion);  // Disable all buttons and toggle exclusion
+            }}
+            disabled={loadingWord} // Disable button while loading a new word
+          >
+            {word.is_included ? 'Exclude' : 'Include'}
+          </button>
 
-        <div className="recall-state" style={getRecallStateStyle(word.recall_state)}>
-          {loadingWord ? '⏳' : word.recall_state}
-        </div>
+          <div className="recall-state" style={getRecallStateStyle(word.recall_state)}>
+            {loadingWord ? '⏳' : word.recall_state}
+          </div>
 
-        <div className="recall-history">
-          {word.recall_history.map((recall, index) => (
-            <div key={index} className="recall-item">
-              <div className="recall-item-time">{recall.recall_time}</div>
-              <div className="recall-item-guess">{recall.recall ? '✅' : '❌'}</div>
-              <div
-                className="recall-item-old-state"
-                style={getRecallStateStyle(recall.old_recall_state ?? 0)}
-              >
-                {recall.old_recall_state ?? 0}
+          <div className="recall-history">
+            {word.recall_history.map((recall, index) => (
+              <div key={index} className="recall-item">
+                <div className="recall-item-time">{recall.recall_time}</div>
+                <div className="recall-item-guess">{recall.recall ? '✅' : '❌'}</div>
+                <div
+                  className="recall-item-old-state"
+                  style={getRecallStateStyle(recall.old_recall_state ?? 0)}
+                >
+                  {recall.old_recall_state ?? 0}
+                </div>
+                <div className="recall-item-transition">→</div>
+                <div
+                  className="recall-item-new-state"
+                  style={getRecallStateStyle(recall.new_recall_state)}
+                >
+                  {recall.new_recall_state}
+                </div>
               </div>
-              <div className="recall-item-transition">→</div>
-              <div
-                className="recall-item-new-state"
-                style={getRecallStateStyle(recall.new_recall_state)}
-              >
-                {recall.new_recall_state}
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
+            ))}
+          </div>
+        </div>) :
+        (<></>)}
 
       {/* Hint Image Section */}
       <div className="hint-image-container">
@@ -189,7 +206,7 @@ const WordCard = ({ mode, word, isFlipped, handleMemorized, handleNotMemorized, 
         )}
       </div>
 
-      <div onClick={handleCardClick} className={`word-card-inner ${isFlipped ? 'flipped' : ''}`}>
+      <div onClick={mode === GameMode.TEST ? undefined : handleCardClick} className={`word-card-inner ${isFlipped ? 'flipped' : ''}`}>
         <div
           className="word-card-front"
         >
@@ -204,21 +221,25 @@ const WordCard = ({ mode, word, isFlipped, handleMemorized, handleNotMemorized, 
         </div>
         <div
           className="word-card-back"
-          style={{ fontSize: calculateFontSize(word.meaning) }} // Dynamically set the font size
+          style={{ fontSize: "1rem" }} // Dynamically set the font size
         >
 
-          {loadingWord ? '⏳ Loading...' : word.meaning.trim().split('\n').map((line, index) => (
-            <React.Fragment key={index}>
-              {removeQuotes(line)}
-              <br />
-            </React.Fragment>
-          ))}
+          {loadingWord ? '⏳ Loading...' :
+            <div className="word-meaning">
+              <p style={{ fontSize: calculateFontSize(word.def1) }}>
+                <PinyinText text={word.def1} />
+              </p>
+              <p className="word-translation" style={{ fontSize: calculateFontSize(word.def2) }}>
+                {removeQuotes(word.def2)}
+              </p>
+            </div>
+          }
 
         </div>
       </div>
 
 
-      {mode === GameMode.PRACTICE ? (
+      {mode !== GameMode.TEST ? (
         <div className="practice-buttons" onClick={stopPropagation}>
           <button onClick={onNotMemorized} disabled={loadingWord}>
             {loadingWord ? '⏳' : '❌'}
@@ -228,20 +249,18 @@ const WordCard = ({ mode, word, isFlipped, handleMemorized, handleNotMemorized, 
           </button>
         </div>
       )
-        : (
+        :
+        (
           <div className="test-buttons" onClick={stopPropagation}>
-            <button onClick="" disabled={loadingWord}>
-              {loadingWord ? '⏳' : (<PinyinText text={word.quiz_option1.pinyin} />)}
-            </button>
-            <button onClick="" disabled={loadingWord}>
-              {loadingWord ? '⏳' : (<PinyinText text={word.quiz_option2.pinyin} />)}
-            </button>
-            <button onClick="" disabled={loadingWord}>
-              {loadingWord ? '⏳' : (<PinyinText text={word.quiz_option3.pinyin} />)}
-            </button>
-            <button onClick="" disabled={loadingWord}>
-              {loadingWord ? '⏳' : (<PinyinText text={word.quiz_option4.pinyin} />)}
-            </button>
+            {[word.quiz_option1, word.quiz_option2, word.quiz_option3, word.quiz_option4].map((option, index) => (
+              <button
+                key={index}
+                onClick={() => onQuizOptionClicked(option.correct)}
+                disabled={loadingWord}
+              >
+                {loadingWord ? '⏳' : <PinyinText text={option.pinyin} />}
+              </button>
+            ))}
           </div>
         )
       }

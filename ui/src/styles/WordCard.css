@@ -265,3 +265,21 @@
   font-size: 1rem;
   color: #888;
 }
+
+.word-meaning{
+  text-align: center; /* Center aligns the text */
+}
+
+.word-meaning p {
+  margin: 0; /* Removes default margin */
+  display: flex; /* Uses flex to contain children elements tightly */
+  justify-content: center; /* Center-aligns inner elements */
+  align-items: center; /* Centers inner elements vertically */
+  padding: 0; /* Removes padding to minimize height */
+}
+
+.word-translation{
+  font-style:italic;
+  font-family:'Times New Roman', Times, serif;
+  color:#4285f4;
+}

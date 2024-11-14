@@ -72,7 +72,6 @@ export const useWordsetLoader = (wordsetId, userId, mode) => {
         throw new Error("wordsetId not defined");
 
       const includedFlag = mode == GameMode.SHOW_EXCLUDED ? 0 : 1;
-
       const cacheKey = `${userId}-${wordsetId}-${includedFlag}`;
 
       // Check cache first
@@ -85,6 +84,11 @@ export const useWordsetLoader = (wordsetId, userId, mode) => {
       }
 
       setLoading({ status: 'loading', error: null });
+      setToShow([]);
+      setFirstTimeCorrect([]);
+      setIncorrectAttempts({});
+      setCorrectlyMemorized(new Set());
+      setTotalToShow(0);
 
       console.log(`loadWordsForWordset: Key: ${cacheKey} not in cache. Loading words for wordset: ${wordsetId}. Mode: ${mode}`);
 
@@ -104,10 +108,10 @@ export const useWordsetLoader = (wordsetId, userId, mode) => {
 
           // Create the options array, including the correct answer
           const options = [
-            { word: word.quiz_options[0][0], pinyin: word.quiz_options[0][1], meaning: word.quiz_options[0][2], correct: false },
-            { word: word.quiz_options[1][0], pinyin: word.quiz_options[1][1], meaning: word.quiz_options[1][2], correct: false },
-            { word: word.quiz_options[2][0], pinyin: word.quiz_options[2][1], meaning: word.quiz_options[2][2], correct: false },
-            { word: word.word, pinyin: word.def1, meaning: word.def2, correct: true } // The correct answer
+            { word: word.quiz_options[0][0], pinyin: word.quiz_options[0][1], def2: word.quiz_options[0][2], correct: false },
+            { word: word.quiz_options[1][0], pinyin: word.quiz_options[1][1], def2: word.quiz_options[1][2], correct: false },
+            { word: word.quiz_options[2][0], pinyin: word.quiz_options[2][1], def2: word.quiz_options[2][2], correct: false },
+            { word: word.word, pinyin: word.def1, def2: word.def2, correct: true } // The correct answer
           ];
 
           // Shuffle the options array
@@ -119,7 +123,8 @@ export const useWordsetLoader = (wordsetId, userId, mode) => {
           return {
             word: word.word,
             word_index: wordIndex++,
-            meaning: `${word.def1}\n${word.def2}`,
+            def1: word.def1,
+            def2: word.def2,
             quiz_option1: shuffledOptions[0],
             quiz_option2: shuffledOptions[1],
             quiz_option3: shuffledOptions[2],
@@ -225,6 +230,35 @@ export const useWordsetLoader = (wordsetId, userId, mode) => {
     return filteredToShow;
   };
 
+  const updateWordListAfterMultipleActions = (indices, maxWordsToShow, updatedWords, removeWordsAtIndices) => {
+    let filteredToShow = [...updatedWords];
+
+    if (!removeWordsAtIndices && filteredToShow.length <= maxWordsToShow) {
+      return filteredToShow;
+    }
+
+    if (removeWordsAtIndices) {
+      // Filter out words at the specified indices
+      filteredToShow = filteredToShow.filter((_, i) => !indices.includes(i));
+    } else {
+      // Move specified words to the end of the array
+      const itemsAtIndices = indices.map((i) => filteredToShow[i]);
+      filteredToShow = filteredToShow.filter((_, i) => !indices.includes(i)).concat(itemsAtIndices);
+    }
+
+    // Ensure the final list doesn't exceed the maxWordsToShow
+    const nextWordIndex = Math.min(filteredToShow.length, maxWordsToShow);
+
+    if (filteredToShow.length === 0) {
+      return filteredToShow;
+    }
+
+    // Reorder words to keep the list updated with the removed/relocated items
+    const newWords = filteredToShow.slice(0, nextWordIndex);
+    const remainingWords = filteredToShow.slice(nextWordIndex);
+    return [...newWords, ...remainingWords];
+  };
+
 
   // Common function to handle state updates and async recall state updates
   const updateWordState = (index, updateCallback, maxWordsToShow, removeWordAtIndex = false) => {
@@ -289,6 +323,50 @@ export const useWordsetLoader = (wordsetId, userId, mode) => {
       .catch((error) => console.error('Error updating recall state for memorized word:', error));
   };
 
+  // New function to handle correct memorization of multiple words
+  const handleMemorizedMultiple = (indices, maxWordsToShow) => {
+    invalidateCache(userId, wordsetId);
+
+    const newFirstTimeCorrect = [];
+    const updatedCorrectlyMemorized = new Set(correctlyMemorized);
+
+    const updatedWords = [...toShow];
+
+    indices.forEach((index) => {
+      const currentWord = updatedWords[index];
+      const newRecallState = updateRecallState(currentWord.recall_state, true);
+
+      // Update firstTimeCorrect only if the word has no incorrect attempts
+      if (!incorrectAttempts[currentWord.word]) {
+        newFirstTimeCorrect.push(currentWord);
+      }
+
+      // Add the word to correctlyMemorized set
+      updatedCorrectlyMemorized.add(currentWord.word);
+
+      // Update the word's recall state in the updatedWords array
+      updatedWords[index] = { ...currentWord, recall_state: newRecallState };
+
+      // Async call to update the backend for each word
+      updateUserWordRecall(userId, currentWord.word_id, newRecallState, true, currentWord.is_included)
+        .catch((error) => console.error(`Error updating recall state for word ID ${currentWord.word_id}:`, error));
+    });
+
+    // Update firstTimeCorrect, correctlyMemorized, and toShow states with new values
+    setFirstTimeCorrect((prevFirstTimeCorrect) => [
+      ...prevFirstTimeCorrect,
+      ...newFirstTimeCorrect,
+    ]);
+
+    setCorrectlyMemorized(updatedCorrectlyMemorized);
+
+    setToShow((prevToShow) =>
+      updateWordListAfterMultipleActions(indices, maxWordsToShow, updatedWords, true)
+    );
+  };
+
+
+
   // Handle incorrect memorization asynchronously
   const handleNotMemorized = (index, maxWordsToShow) => {
 
@@ -325,5 +403,6 @@ export const useWordsetLoader = (wordsetId, userId, mode) => {
     toggleExclusion, //10
     handleMemorized, //11
     handleNotMemorized, //12
+    handleMemorizedMultiple
   };
 };

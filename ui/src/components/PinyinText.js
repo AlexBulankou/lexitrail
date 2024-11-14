@@ -5,7 +5,7 @@ const toneColors = {
     1: '#FF4500', // Red for first tone
     2: '#FFA500', // Orange for second tone
     3: '#32CD32', // Green for third tone
-    4: '#4169E1', // Blue for fourth tone
+    4: '#800080', // Purple for fourth tone
     0: '#000000', // Black for neutral tone
 };
 
@@ -64,7 +64,7 @@ const renderPinyin = (text) => {
 
         // Return each character with a span, only applying color to vowels with tones
         return (
-            <span key={index} style={{ backgroundColor: tone > 0 ? '#fff' : 'inherit', color: tone > 0 ? color : 'inherit' }}>
+            <span key={index} style={{ fontWeight: tone > 0 ? 'bold' : 'inherit', color: tone > 0 ? color : 'inherit' }}>
                 {char}
             </span>
         );
