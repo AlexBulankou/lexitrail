@@ -65,11 +65,12 @@ def worker(queue):
             # Call the backend API to process the update
             try:
                 backend_url = f"http://lexitrail-backend-service.backend/{endpoint}"
+                print(f" Processing update: {data} to {backend_url} with headers: {headers}")
                 response = requests.put(backend_url, json=data, headers=headers)
                 response.raise_for_status()
-                print(f" [x] Processed update: {data} to {backend_url} with headers: {headers}, response: {response.json()}")
+                print(f" Processed update: {data} to {backend_url} with headers: {headers}, response: {response.json()}")
             except requests.exceptions.RequestException as e:
-                print(f" [!] Error processing update: {e}")
+                print(f" Error processing update: {e}")
                 # Re-add the task to the queue for retry
                 task_queue.put((endpoint, data, headers))
                 time.sleep(5)
