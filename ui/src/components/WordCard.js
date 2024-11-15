@@ -8,6 +8,7 @@ const WordCard = ({ mode, word, isFlipped, handleMemorized, handleNotMemorized, 
   const [hintImage, setHintImage] = useState(null);
   const [loadingHint, setLoadingHint] = useState(true);
   const [loadingWord, setLoadingWord] = useState(true); // New state for controlling button loading state
+  const [feedbackClass, setFeedbackClass] = useState('');
 
   useEffect(() => {
     // Validate that user_id and word_id are set correctly
@@ -69,29 +70,37 @@ const WordCard = ({ mode, word, isFlipped, handleMemorized, handleNotMemorized, 
     }, 0); // Run this check right after the action to update states
   };
 
-  const onQuizOptionClicked = (isCorrect) => {
-    if (isCorrect) {
-      handleMemorized();
-    } else {
-      handleNotMemorized();
-    }
-  }
+  const provideFeedback = (isSuccess, callback) => {
+    setFeedbackClass(isSuccess ? 'success' : 'failure');
+    setTimeout(() => setFeedbackClass(''), 200); // Reset the feedback class after 50ms
+    callback();
+  };
 
   const onMemorized = () => {
-    handleButtonClick(() => {
+    provideFeedback(true, () => {
       if (isFlipped) {
-        setFlippedState(false); // Ensure card flips back to front
+        setFlippedState(false); // Ensure the card flips back
       }
-      handleMemorized(); // Then proceed with memorizing
+      handleMemorized(); // Call the memorized handler
     });
   };
 
   const onNotMemorized = () => {
-    handleButtonClick(() => {
+    provideFeedback(false, () => {
       if (isFlipped) {
-        setFlippedState(false); // Ensure card flips back to front
+        setFlippedState(false); // Ensure the card flips back
       }
-      handleNotMemorized(); // Then proceed with not memorizing
+      handleNotMemorized(); // Call the not-memorized handler
+    });
+  };
+
+  const onQuizOptionClicked = (isCorrect) => {
+    provideFeedback(isCorrect, () => {
+      if (isCorrect) {
+        handleMemorized();
+      } else {
+        handleNotMemorized();
+      }
     });
   };
 
@@ -131,7 +140,7 @@ const WordCard = ({ mode, word, isFlipped, handleMemorized, handleNotMemorized, 
   }
 
   // Remove quotes and calculate the longest line for font size
-  const calculateFontSize = (text) => {
+  const calculateFontSize = (text, minSize = 1.5) => {
     // Remove leading and trailing quotes
     const trimmedText = text.trim();
 
@@ -140,12 +149,12 @@ const WordCard = ({ mode, word, isFlipped, handleMemorized, handleNotMemorized, 
     const longestLineLength = Math.max(...lines.map(line => removeQuotes(line).length));
 
     // Calculate font size based on the longest line length
-    const fontSize = Math.max(5 / longestLineLength, 1.5); // Ensure the font size doesn't go too small
+    const fontSize = Math.max(5 / longestLineLength, minSize); // Ensure the font size doesn't go too small
     return `${fontSize}rem`;
   };
 
   return (
-    <div className="word-card">
+    <div className={`word-card ${feedbackClass}`}>
       {/* Metadata Section */}
 
       {mode !== GameMode.TEST ? (
@@ -226,10 +235,10 @@ const WordCard = ({ mode, word, isFlipped, handleMemorized, handleNotMemorized, 
 
           {loadingWord ? '⏳ Loading...' :
             <div className="word-meaning">
-              <p style={{ fontSize: calculateFontSize(word.def1) }}>
+              <p style={{ fontSize: calculateFontSize(word.def1, 1.0) }}>
                 <PinyinText text={word.def1} />
               </p>
-              <p className="word-translation" style={{ fontSize: calculateFontSize(word.def2) }}>
+              <p className="word-translation" style={{ fontSize: calculateFontSize(word.def2, 1.0) }}>
                 {removeQuotes(word.def2)}
               </p>
             </div>

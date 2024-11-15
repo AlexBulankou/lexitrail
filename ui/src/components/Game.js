@@ -196,13 +196,13 @@ const Game = () => {
 
   const markAllAsMemorized = () => {
     const indicesToMark = [];
-  
+
     // Collect all indices up to maxCardsToShow
     for (let i = 0; i < maxCardsToShow; i++) {
       setFlippedState(i, false);
       indicesToMark.push(i);
     }
-  
+
     // Call handleMemorizedMultiple with the collected indices
     handleMemorizedMultiple(indicesToMark, maxCardsToShow);
   };
@@ -210,10 +210,11 @@ const Game = () => {
   const wordsToRender = displayWords.slice(0, maxCardsToShow);
 
   // Optional callback to handle timer tick in parent (if you need the time in Game component)
-  const handleTimerTick = (elapsedTime) => {
+  const handleTimerTick = (elapsedTime, isTimerBeingCleared = false) => {
     console.log('Elapsed Time:', elapsedTime);
-    if (loading.status === 'loaded' && displayWords.length == 0) {
-      setFinalTimeElapsed(timeElapsed);
+
+    if (isTimerBeingCleared) {
+      setFinalTimeElapsed(elapsedTime);
     }
   };
 
@@ -230,6 +231,8 @@ const Game = () => {
     if (mode === GameMode.SHOW_EXCLUDED) {
       return <div>No excluded words in this wordset.</div>;
     }
+
+
 
     return (
       <Completed

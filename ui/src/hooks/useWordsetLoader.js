@@ -140,12 +140,31 @@ export const useWordsetLoader = (wordsetId, userId, mode) => {
             })) : [],
           };
         })
-        // Filter based on inclusion/exclusion state
-        .filter(word => includedFlag ? word.is_included : !word.is_included);
+        // Apply mode-specific filters and constraints
+        .filter(word => {
+          if (mode === GameMode.TEST) {
+            // Remove words with "[quiz_word]" in any quiz option's def2
+            const hasQuizWordInOptions = [word.quiz_option1, word.quiz_option2, word.quiz_option3, word.quiz_option4]
+              .some(option => option.def2 === "[quiz_word]");
+
+            // Remove words containing special characters (e.g., parentheses)
+            const hasSpecialCharacters = /[(){}[\]!@#$%^&*]/.test(word.word);
+
+            // Exclude words with either quiz_word or special characters
+            if (hasQuizWordInOptions || hasSpecialCharacters) return false;
+            return true; // Keep all other words, regardless of inclusion status
+          } else {
+            // Original filtering behavior for other modes
+            return includedFlag ? word.is_included : !word.is_included;
+          }
+        });
+
+      // If mode is TEST, limit to 20 words
+      const finalWords = mode === GameMode.TEST ? convertedWords.slice(0, 20) : convertedWords;
 
 
       // Shuffle words before sorting
-      const shuffledWords = shuffleArray(convertedWords);
+      const shuffledWords = shuffleArray(finalWords);
 
       // Sort by recall_state descending, and last recall time ascending (oldest first)
       const finalSortedWords = shuffledWords.sort((a, b) => {

@@ -8,6 +8,8 @@ const Timer = ({ onTick }) => {
     const tick = () => {
       setTimeElapsed((prev) => {
         const newTime = prev + 1;
+        console.log(`Timer. inside onTick. newTime=${newTime}`);
+        window.gameTimeElapsed = newTime;
         onTick(newTime);
         return newTime;
       });
@@ -16,14 +18,15 @@ const Timer = ({ onTick }) => {
     // If no global timer instance exists, create one
     if (!window.timerInstance) {
       console.log("starting global timer interval");
+      window.gameTimeElapsed = 0;
       window.timerInstance = setInterval(tick, 1000);
     }
 
     return () => {
       // Cleanup interval when no component is using it
       if (window.timerInstance) {
-        console.log("clearing global timer interval");
-        onTick(timeElapsed);
+        console.log(`clearing global timer interval. sending window.gameTimeElapsed=${window.gameTimeElapsed}`);
+        onTick(window.gameTimeElapsed, true);
         clearInterval(window.timerInstance);
         window.timerInstance = null;
       }
