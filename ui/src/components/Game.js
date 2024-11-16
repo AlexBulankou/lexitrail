@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import WordCard from './WordCard';
 import Completed from './Completed';
 import Timer from './Timer';
-import { useParams, useLocation } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import { useWordsetLoader } from '../hooks/useWordsetLoader';
 import { useAuth } from '../hooks/useAuth';
 import '../styles/Game.css';
@@ -16,9 +16,14 @@ const GameMode = {
 
 
 const Game = () => {
-  const { wordsetId } = useParams();
-  const { state } = useLocation();  // Capture the state passed from navigation
-  const mode = state?.mode || GameMode.PRACTICE;
+  let { mode, wordsetId } = useParams();
+  const validMode = [GameMode.SHOW_EXCLUDED, GameMode.TEST].includes(mode || "")
+    ? mode
+    : GameMode.PRACTICE;
+
+  mode = validMode;
+
+
   const { user } = useAuth();
   const navigate = useNavigate();
 
@@ -54,6 +59,7 @@ const Game = () => {
   const [layoutClass, setLayoutClass] = useState('layout1c1r');
   const [maxCardsToShow, setMaxCardsToShow] = useState(1);
   const [flippedStates, setFlippedStates] = useState({});
+  const [feedbackClasses, setFeedbackClasses] = useState({});
   const [finalTimeElapsed, setFinalTimeElapsed] = useState(0);
 
   // Initialize or re-run loadWordsForWordset on dependency change
@@ -171,6 +177,13 @@ const Game = () => {
     setFlippedStates(prev => ({ ...prev, [index]: state }));
   };
 
+  const provideFeedback = (index, isSuccess, callback) => {
+    const newFeedbackClass = isSuccess ? 'success' : 'failure'
+    setFeedbackClasses(prev => ({ ...prev, [index]: newFeedbackClass }));
+    setTimeout(() => setFeedbackClasses(prev => ({ ...prev, [index]: '' })), 200);
+    callback();
+  };
+
   const handleCardGuessed = (index, isCorrect) => {
     if (isCorrect) {
       handleMemorized(index, maxCardsToShow);
@@ -186,11 +199,11 @@ const Game = () => {
 
   const toggleWordsetFilter = () => {
     const reversedPracticeMode = mode == GameMode.PRACTICE ? GameMode.SHOW_EXCLUDED : GameMode.PRACTICE;
-    navigate(`/game/${wordsetId}`, { state: { mode: reversedPracticeMode } });
+    navigate(`/game/${wordsetId}/${reversedPracticeMode}`);
   };
 
   const resetGame = () => {
-    navigate(`/game/${wordsetId}`, { state: { mode: mode }, replace: true });
+    navigate(`/game/${wordsetId}/${mode}`);
     loadWordsForWordset();
   }
 
@@ -199,8 +212,10 @@ const Game = () => {
 
     // Collect all indices up to maxCardsToShow
     for (let i = 0; i < maxCardsToShow; i++) {
-      setFlippedState(i, false);
-      indicesToMark.push(i);
+      provideFeedback(i, true, () => {
+        setFlippedState(i, false);
+        indicesToMark.push(i);
+      });
     }
 
     // Call handleMemorizedMultiple with the collected indices
@@ -274,11 +289,12 @@ const Game = () => {
             key={index}
             word={{ ...word, user_id: user.email, index: word.word_index }} // Ensure user_id is passed correctly
             isFlipped={flippedStates[index]} // The flipped state for this card
+            feedbackClass={feedbackClasses[index]}
             handleMemorized={() => handleCardGuessed(index, true)}
             handleNotMemorized={() => handleCardGuessed(index, false)}
             toggleExclusion={() => handleCardInclusionStateChanged(index, word.is_included)}  // Pass toggleExclusion to WordCard
-            incorrectAttempts={incorrectAttempts[word.word] || 0}
             setFlippedState={(isFlipped) => setFlippedState(index, isFlipped)}
+            provideFeedback={(isSuccess, callback) => provideFeedback(index, isSuccess, callback)}
           />
         ))}
       </div>

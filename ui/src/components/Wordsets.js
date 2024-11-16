@@ -31,7 +31,7 @@ const Wordsets = () => {
 
   const handleWordsetClick = (wordsetId, mode) => {
     // Navigate to the game route with the wordsetId and whether to show excluded words
-    navigate(`/game/${wordsetId}`, { state: { mode:mode } });
+    navigate(`/game/${wordsetId}/${mode}`);
   };
 
   return (

@@ -4,11 +4,10 @@ import { GameMode } from './Game';
 import PinyinText from './PinyinText';
 import '../styles/WordCard.css';
 
-const WordCard = ({ mode, word, isFlipped, handleMemorized, handleNotMemorized, toggleExclusion, incorrectAttempts, setFlippedState }) => {
+const WordCard = ({ mode, word, isFlipped, handleMemorized, handleNotMemorized, toggleExclusion, feedbackClass, provideFeedback, setFlippedState }) => {
   const [hintImage, setHintImage] = useState(null);
   const [loadingHint, setLoadingHint] = useState(true);
   const [loadingWord, setLoadingWord] = useState(true); // New state for controlling button loading state
-  const [feedbackClass, setFeedbackClass] = useState('');
 
   useEffect(() => {
     // Validate that user_id and word_id are set correctly
@@ -70,11 +69,7 @@ const WordCard = ({ mode, word, isFlipped, handleMemorized, handleNotMemorized, 
     }, 0); // Run this check right after the action to update states
   };
 
-  const provideFeedback = (isSuccess, callback) => {
-    setFeedbackClass(isSuccess ? 'success' : 'failure');
-    setTimeout(() => setFeedbackClass(''), 200); // Reset the feedback class after 50ms
-    callback();
-  };
+ 
 
   const onMemorized = () => {
     provideFeedback(true, () => {
@@ -149,7 +144,7 @@ const WordCard = ({ mode, word, isFlipped, handleMemorized, handleNotMemorized, 
     const longestLineLength = Math.max(...lines.map(line => removeQuotes(line).length));
 
     // Calculate font size based on the longest line length
-    const fontSize = Math.max(5 / longestLineLength, minSize); // Ensure the font size doesn't go too small
+    const fontSize = Math.max(5 / (Math.pow(longestLineLength,0.60)), minSize); // Ensure the font size doesn't go too small
     return `${fontSize}rem`;
   };
 

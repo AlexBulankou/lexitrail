@@ -23,7 +23,7 @@ const App = () => {
             <Wordsets />
           </PrivateRoute>
         } />
-        <Route path="/game/:wordsetId" element={
+        <Route path="/game/:wordsetId/:mode?" element={
           <PrivateRoute profileDetails={user} login={login} logOut={logOut}>
             <Game />
           </PrivateRoute>
