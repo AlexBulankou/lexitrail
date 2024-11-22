@@ -280,6 +280,7 @@
 
 .word-meaning{
   text-align: center; /* Center aligns the text */
+  line-height: 200%;
 }
 
 .word-meaning p {
