@@ -18,7 +18,31 @@ npm start
 cd terraform/
 gcloud auth login
 gcloud auth application-default login
+terraform apply
 ```
+
+Here’s an improved version of the section with clearer structure and enhanced readability:
+
+---
+
+## Handling Deleted Kubernetes Clusters: Pruning Resources from Terraform State
+
+If a Kubernetes cluster is deleted outside of Terraform, its associated Kubernetes resources (e.g., `kubectl_manifest`, `helm_release`) may still remain in the `terraform.tfstate` file. These residual state entries can cause issues when attempting to redeploy the cluster.
+
+To resolve this, you need to **prune** the orphaned resources from the state file. Follow these steps:
+
+1. Create and activate a Python virtual environment:
+   ```bash
+   python3 -m venv venv
+   source venv/bin/activate
+   ```
+
+2. Run the state pruning script:
+   ```bash
+   python state_pruner.py
+   ```
+
+The `state_pruner.py` script automatically removes entries of type `kubectl_manifest` and `helm_release` from the Terraform state file.
 
 
 # Create OAuthClientID
