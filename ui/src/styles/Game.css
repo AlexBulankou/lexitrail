@@ -174,23 +174,28 @@ body, html {
 .memorized {
   color: #4caf50; /* Green color for memorized stats */
 }
+.game-settings{
+  display: flex;
+  justify-content: space-between; 
+  flex-direction: row;
+}
 
-.show-excluded-button {
+.game-settings-button{
   padding: 0 4px;
+  margin: 0 3px 0 3px;
   border: none;
   border-radius: 10%;
   cursor: pointer;
   color: white;
   font-size:0.8rem;
   text-wrap-mode: wrap;
-  padding:2px;
-  height:auto;
+  height: 100%;
   max-width:70px;
   color:#ffffff;
   background-color: #000000;
 }
 
-.show-excluded-button:hover {
+.game-settings-button:hover {
   background-color: #e0e0e0;
 }
 

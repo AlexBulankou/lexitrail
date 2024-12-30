@@ -4,7 +4,7 @@ import { GameMode } from './Game';
 import PinyinText from './PinyinText';
 import '../styles/WordCard.css';
 
-const WordCard = ({ mode, word, isFlipped, handleMemorized, handleNotMemorized, toggleExclusion, feedbackClass, provideFeedback, setFlippedState }) => {
+const WordCard = ({ mode, word, isFlipped, isHintDisplayed, handleMemorized, handleNotMemorized, toggleExclusion, feedbackClass, provideFeedback, setFlippedState }) => {
   const [hintImage, setHintImage] = useState(null);
   const [loadingHint, setLoadingHint] = useState(true);
   const [loadingWord, setLoadingWord] = useState(true); // New state for controlling button loading state
@@ -69,7 +69,7 @@ const WordCard = ({ mode, word, isFlipped, handleMemorized, handleNotMemorized, 
     }, 0); // Run this check right after the action to update states
   };
 
- 
+
 
   const onMemorized = () => {
     provideFeedback(true, () => {
@@ -135,7 +135,7 @@ const WordCard = ({ mode, word, isFlipped, handleMemorized, handleNotMemorized, 
   }
 
   // Remove quotes and calculate the longest line for font size
-  const calculateFontSize = (text, minSize = 1.5) => {
+  const calculateFontSize = (text, baseCoefficient, minSize = 1.5) => {
     // Remove leading and trailing quotes
     const trimmedText = text.trim();
 
@@ -144,7 +144,7 @@ const WordCard = ({ mode, word, isFlipped, handleMemorized, handleNotMemorized, 
     const longestLineLength = Math.max(...lines.map(line => removeQuotes(line).length));
 
     // Calculate font size based on the longest line length
-    const fontSize = Math.max(5 / (Math.pow(longestLineLength,0.60)), minSize); // Ensure the font size doesn't go too small
+    const fontSize = Math.max(baseCoefficient / (Math.pow(longestLineLength, 0.60)), minSize); // Ensure the font size doesn't go too small
     return `${fontSize}rem`;
   };
 
@@ -197,20 +197,28 @@ const WordCard = ({ mode, word, isFlipped, handleMemorized, handleNotMemorized, 
         (<></>)}
 
       {/* Hint Image Section */}
-      <div className="hint-image-container">
-        {loadingHint ? (
-          <div className="loading-hint">Loading hint...</div>
-        ) : (
-          hintImage && (
-            <div className="hint-image-wrapper">
-              <img src={`data:image/jpeg;base64,${hintImage}`} alt="Hint" className="hint-image" />
-              <button className="regenerate-hint-button" onClick={handleRegenerateHint} disabled={loadingWord}>🔄</button>
-            </div>
-          )
-        )}
+      <div className="hint-image-container"
+        style={{ height: isHintDisplayed ? '85px' : '0px' }}
+      >
+        {isHintDisplayed ? (
+          <>
+            {loadingHint ? (
+              <div className="loading-hint">Loading hint...</div>
+            ) : (
+              hintImage && (
+                <div className="hint-image-wrapper">
+                  <img src={`data:image/jpeg;base64,${hintImage}`} alt="Hint" className="hint-image" />
+                  <button className="regenerate-hint-button" onClick={handleRegenerateHint} disabled={loadingWord}>🔄</button>
+                </div>
+              )
+            )}
+          </>
+        ) : (<></>)}
       </div>
 
-      <div onClick={mode === GameMode.TEST ? undefined : handleCardClick} className={`word-card-inner ${isFlipped ? 'flipped' : ''}`}>
+      <div onClick={mode === GameMode.TEST ? undefined : handleCardClick}
+        className={`word-card-inner ${isFlipped ? 'flipped' : ''}`}
+        style={{ height: isHintDisplayed ? '85px' : '170px' }}>
         <div
           className="word-card-front"
         >
@@ -218,22 +226,18 @@ const WordCard = ({ mode, word, isFlipped, handleMemorized, handleNotMemorized, 
           {loadingWord ?
             <p>⏳</p>
             :
-            <p style={{ fontSize: calculateFontSize(word.word) }}>{word.word}</p>
+            <p style={{ fontSize: calculateFontSize(word.word, isHintDisplayed ? 5 : 7) }}>{word.word}</p>
 
           }
 
         </div>
-        <div
-          className="word-card-back"
-          style={{ fontSize: "1rem" }} // Dynamically set the font size
-        >
-
+        <div className="word-card-back">
           {loadingWord ? '⏳ Loading...' :
             <div className="word-meaning">
-              <p style={{ fontSize: calculateFontSize(word.def1, 1.0) }}>
+              <p style={{ fontSize: calculateFontSize(word.def1, isHintDisplayed ? 6 : 7, 1.0) }}>
                 <PinyinText text={word.def1} />
               </p>
-              <p className="word-translation" style={{ fontSize: calculateFontSize(word.def2, 1.0) }}>
+              <p className="word-translation" style={{ fontSize: calculateFontSize(word.def2, isHintDisplayed ? 6 : 8, 1.0) }}>
                 {removeQuotes(word.def2)}
               </p>
             </div>
@@ -243,35 +247,36 @@ const WordCard = ({ mode, word, isFlipped, handleMemorized, handleNotMemorized, 
       </div>
 
 
-      {mode !== GameMode.TEST ? (
-        <div className="practice-buttons" onClick={stopPropagation}>
-          <button onClick={onNotMemorized} disabled={loadingWord}>
-            {loadingWord ? '⏳' : '❌'}
-          </button>
-          <button onClick={onMemorized} disabled={loadingWord}>
-            {loadingWord ? '⏳' : '✔️'}
-          </button>
-        </div>
-      )
-        :
-        (
-          <div className="test-buttons" onClick={stopPropagation}>
-            {[word.quiz_option1, word.quiz_option2, word.quiz_option3, word.quiz_option4].map((option, index) => (
-              <button
-                key={index}
-                onClick={() => onQuizOptionClicked(option.correct)}
-                disabled={loadingWord}
-              >
-                {loadingWord ? '⏳' : <PinyinText text={option.pinyin} />}
-              </button>
-            ))}
+      {
+        mode !== GameMode.TEST ? (
+          <div className="practice-buttons" onClick={stopPropagation}>
+            <button onClick={onNotMemorized} disabled={loadingWord}>
+              {loadingWord ? '⏳' : '❌'}
+            </button>
+            <button onClick={onMemorized} disabled={loadingWord}>
+              {loadingWord ? '⏳' : '✔️'}
+            </button>
           </div>
         )
+          :
+          (
+            <div className="test-buttons" onClick={stopPropagation}>
+              {[word.quiz_option1, word.quiz_option2, word.quiz_option3, word.quiz_option4].map((option, index) => (
+                <button
+                  key={index}
+                  onClick={() => onQuizOptionClicked(option.correct)}
+                  disabled={loadingWord}
+                >
+                  {loadingWord ? '⏳' : <PinyinText text={option.pinyin} />}
+                </button>
+              ))}
+            </div>
+          )
       }
 
 
 
-    </div>
+    </div >
   );
 };
 

@@ -61,6 +61,7 @@ const Game = () => {
   const [flippedStates, setFlippedStates] = useState({});
   const [feedbackClasses, setFeedbackClasses] = useState({});
   const [finalTimeElapsed, setFinalTimeElapsed] = useState(0);
+  const [hintsDisplayed, setHintsDisplayed]=useState(true);
 
   // Initialize or re-run loadWordsForWordset on dependency change
   useEffect(() => {
@@ -202,6 +203,10 @@ const Game = () => {
     navigate(`/game/${wordsetId}/${reversedPracticeMode}`);
   };
 
+  const toggleShowHints = () =>{
+    setHintsDisplayed(!hintsDisplayed);
+  };
+
   const resetGame = () => {
     navigate(`/game/${wordsetId}/${mode}`);
     loadWordsForWordset();
@@ -265,13 +270,18 @@ const Game = () => {
       <div className="progress-stats">
         <div className="not-memorized">❌ {Object.keys(incorrectAttempts).length}</div>
 
-        {mode !== GameMode.TEST ? (
-          <button className="show-excluded-button" onClick={toggleWordsetFilter}>
-            {mode == GameMode.SHOW_EXCLUDED ? 'Show Included' : 'Show Excluded'}
+        <div className="game-settings">
+          <button className="game-settings-button" onClick={toggleShowHints}>
+            {hintsDisplayed? 'Hide Hints' : 'Show Hints'}
           </button>
-        ) : (
-          <></>
-        )}
+          {mode !== GameMode.TEST ? (
+            <button className="game-settings-button" onClick={toggleWordsetFilter}>
+              {mode == GameMode.SHOW_EXCLUDED ? 'Show Included' : 'Show Excluded'}
+            </button>
+          ) : (
+            <></>
+          )}
+        </div>
 
         <div className="timer">
           <Timer onTick={handleTimerTick} />  {/* Timer updates every second */}
@@ -288,6 +298,7 @@ const Game = () => {
             mode={mode}
             key={index}
             word={{ ...word, user_id: user.email, index: word.word_index }} // Ensure user_id is passed correctly
+            isHintDisplayed={hintsDisplayed}
             isFlipped={flippedStates[index]} // The flipped state for this card
             feedbackClass={feedbackClasses[index]}
             handleMemorized={() => handleCardGuessed(index, true)}
