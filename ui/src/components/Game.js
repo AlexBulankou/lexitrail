@@ -61,7 +61,8 @@ const Game = () => {
   const [flippedStates, setFlippedStates] = useState({});
   const [feedbackClasses, setFeedbackClasses] = useState({});
   const [finalTimeElapsed, setFinalTimeElapsed] = useState(0);
-  const [hintsDisplayed, setHintsDisplayed]=useState(true);
+  const [hintsDisplayed, setHintsDisplayed] = useState(true);
+  const [allFlipped, setAllFlipped] = useState(false);
 
   // Initialize or re-run loadWordsForWordset on dependency change
   useEffect(() => {
@@ -202,9 +203,18 @@ const Game = () => {
     const reversedPracticeMode = mode == GameMode.PRACTICE ? GameMode.SHOW_EXCLUDED : GameMode.PRACTICE;
     navigate(`/game/${wordsetId}/${reversedPracticeMode}`);
   };
-
+  
   const toggleShowHints = () =>{
     setHintsDisplayed(!hintsDisplayed);
+  };
+
+
+  const toggleFlipStates = () => {
+    const newFlippedState = !allFlipped;
+    for (let i = 0; i < maxCardsToShow; i++) {
+      setFlippedState(i, newFlippedState);
+    }
+    setAllFlipped(newFlippedState);
   };
 
   const resetGame = () => {
@@ -222,6 +232,7 @@ const Game = () => {
         indicesToMark.push(i);
       });
     }
+    setAllFlipped(false);
 
     // Call handleMemorizedMultiple with the collected indices
     handleMemorizedMultiple(indicesToMark, maxCardsToShow);
@@ -272,12 +283,17 @@ const Game = () => {
 
         <div className="game-settings">
           <button className="game-settings-button" onClick={toggleShowHints}>
-            {hintsDisplayed? 'Hide Hints' : 'Show Hints'}
+            {hintsDisplayed ? 'Hide Hints' : 'Show Hints'}
           </button>
           {mode !== GameMode.TEST ? (
-            <button className="game-settings-button" onClick={toggleWordsetFilter}>
-              {mode == GameMode.SHOW_EXCLUDED ? 'Show Included' : 'Show Excluded'}
-            </button>
+            <>
+              <button className="game-settings-button" onClick={toggleFlipStates}>
+                {allFlipped ? 'Flip all back' : 'Flip all'}
+              </button>
+              <button className="game-settings-button" onClick={toggleWordsetFilter}>
+                {mode == GameMode.SHOW_EXCLUDED ? 'Show Included' : 'Show Excluded'}
+              </button>
+            </>
           ) : (
             <></>
           )}

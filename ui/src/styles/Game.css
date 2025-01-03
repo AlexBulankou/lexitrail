@@ -190,7 +190,7 @@ body, html {
   font-size:0.8rem;
   text-wrap-mode: wrap;
   height: 100%;
-  max-width:70px;
+  width:60px;
   color:#ffffff;
   background-color: #000000;
 }

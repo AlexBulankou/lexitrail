@@ -131,8 +131,12 @@ const WordCard = ({ mode, word, isFlipped, isHintDisplayed, handleMemorized, han
       return "";
     }
 
-    return text.replace(/^['"]+|['"]+$/g, '').trim();
-  }
+    return text
+    .replace(/^['"]+|['"]+$/g, '')  // Remove quotes at the beginning and end
+    .trim()                         // Trim whitespace
+    .toLowerCase()                  // Convert to lowercase
+    .replace(/\.$/, '');            // Remove trailing dot if it exists
+};
 
   // Remove quotes and calculate the longest line for font size
   const calculateFontSize = (text, baseCoefficient, minSize = 1.5) => {
@@ -144,7 +148,7 @@ const WordCard = ({ mode, word, isFlipped, isHintDisplayed, handleMemorized, han
     const longestLineLength = Math.max(...lines.map(line => removeQuotes(line).length));
 
     // Calculate font size based on the longest line length
-    const fontSize = Math.max(baseCoefficient / (Math.pow(longestLineLength, 0.60)), minSize); // Ensure the font size doesn't go too small
+    const fontSize = Math.max(baseCoefficient / (Math.pow(longestLineLength, 0.65)), minSize); // Ensure the font size doesn't go too small
     return `${fontSize}rem`;
   };
 
@@ -234,12 +238,21 @@ const WordCard = ({ mode, word, isFlipped, isHintDisplayed, handleMemorized, han
         <div className="word-card-back">
           {loadingWord ? '⏳ Loading...' :
             <div className="word-meaning">
-              <p style={{ fontSize: calculateFontSize(word.def1, isHintDisplayed ? 6 : 7, 1.0) }}>
-                <PinyinText text={word.def1} />
-              </p>
-              <p className="word-translation" style={{ fontSize: calculateFontSize(word.def2, isHintDisplayed ? 6 : 8, 1.0) }}>
-                {removeQuotes(word.def2)}
-              </p>
+              <div class="word-meaning-ref">
+                <div class="word-meaning-ref-text">
+                {word.word}
+                </div>
+              </div>
+              <div class="word-meaning-def1">
+                <p style={{ fontSize: calculateFontSize(word.def1, isHintDisplayed ? 6 : 7, 1.0) }}>
+                  <PinyinText text={word.def1} />
+                </p>
+              </div>
+              <div class="word-meaning-def2">
+                <p className="word-translation" style={{ fontSize: calculateFontSize(word.def2, isHintDisplayed ? 6 : 8, 1.0) }}>
+                  {removeQuotes(word.def2)}
+                </p>
+              </div>
             </div>
           }
 

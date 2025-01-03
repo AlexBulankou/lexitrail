@@ -17,13 +17,15 @@
 
 .word-card.success {
   border: 3px solid green;
-  box-shadow: 0 0 10px rgba(0, 255, 0, 0.6); /* Optional glow effect */
+  box-shadow: 0 0 10px rgba(0, 255, 0, 0.6);
+  /* Optional glow effect */
   transition: border 50ms ease-in-out, box-shadow 50ms ease-in-out;
 }
 
 .word-card.failure {
   border: 3px solid red;
-  box-shadow: 0 0 10px rgba(255, 0, 0, 0.6); /* Optional glow effect */
+  box-shadow: 0 0 10px rgba(255, 0, 0, 0.6);
+  /* Optional glow effect */
   transition: border 50ms ease-in-out, box-shadow 50ms ease-in-out;
 }
 
@@ -111,7 +113,8 @@
 
 .test-buttons {
   display: grid;
-  grid-template-columns: 1fr 1fr; /* Creates a 2-column grid */
+  grid-template-columns: 1fr 1fr;
+  /* Creates a 2-column grid */
   gap: 0.2rem;
   width: 95%;
   margin-top: 5px;
@@ -120,7 +123,8 @@
 
 .test-buttons button {
   width: 100%;
-  aspect-ratio: 1; /* Makes the buttons square */
+  aspect-ratio: 1;
+  /* Makes the buttons square */
   background-color: #4285f4;
   border: none;
   border-radius: 8px;
@@ -135,11 +139,16 @@
   justify-content: center;
   text-align: center;
   overflow: hidden;
-  word-break: break-word; /* Allows breaking within words */
-  white-space: normal; /* Allows wrapping */
-  line-height: 1.2; /* Adjusts line spacing for better fit */
-  max-height: 100%; /* Ensures text stays within button height */
-  text-overflow: ellipsis; /* Shows ellipsis for overflow */
+  word-break: break-word;
+  /* Allows breaking within words */
+  white-space: normal;
+  /* Allows wrapping */
+  line-height: 1.2;
+  /* Adjusts line spacing for better fit */
+  max-height: 100%;
+  /* Ensures text stays within button height */
+  text-overflow: ellipsis;
+  /* Shows ellipsis for overflow */
 }
 
 .test-buttons button:hover {
@@ -278,21 +287,40 @@
   color: #888;
 }
 
-.word-meaning{
-  text-align: center; /* Center aligns the text */
-  line-height: 100%;
+.word-meaning {
+  display: grid;
+  height:100%;
+  width:100%;
+  grid-template-rows: minmax(0, 20%) minmax(0, 1fr) minmax(0, 1fr);
 }
 
-.word-meaning p {
-  margin: 0; /* Removes default margin */
-  display: flex; /* Uses flex to contain children elements tightly */
-  justify-content: center; /* Center-aligns inner elements */
-  align-items: center; /* Centers inner elements vertically */
-  padding: 0; /* Removes padding to minimize height */
+.word-meaning-ref {
+  font-size: 1rem;
+  text-align: left;
+  display: flex;
+  align-items: center;
+}
+.word-meaning-ref-text{
+  background-color: #333;
+  color:#fff;
+  border-radius: 5px;
+  padding:2px;
 }
 
-.word-translation{
-  font-style:italic;
-  font-family:'Times New Roman', Times, serif;
-  color:#4285f4;
+.word-meaning-def1,
+.word-meaning-def2 {
+  display: flex;
+  align-items: center;
+  /* vertical center */
+  justify-content: center;
+  /* horizontal center */
+  margin: 0;
+  padding: 0;
+}
+
+
+.word-translation {
+  font-style: italic;
+  font-family: 'Times New Roman', Times, serif;
+  color: #4285f4;
 }
