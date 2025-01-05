@@ -71,7 +71,8 @@ const Game = () => {
     }
   }, [wordsetId, user, mode, loadWordsForWordset]);
 
-
+// TODO: consider re-activating this block if flipped states are loading incorrectly
+  /*
   useEffect(() => {
     const initialFlippedStates = {};
     displayWords.forEach((_, index) => {
@@ -79,7 +80,7 @@ const Game = () => {
     });
     setFlippedStates(initialFlippedStates);
   }, [displayWords]);
-
+*/
 
   // Use ref to store previous dimensions and word count
   const previousDimensions = useRef({ width: null, height: null, wordCount: null });
