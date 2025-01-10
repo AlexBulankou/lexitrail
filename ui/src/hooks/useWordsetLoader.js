@@ -48,6 +48,7 @@ export const useWordsetLoader = (wordsetId, userId, mode) => {
   const [loading, setLoading] = useState({ status: 'idle', error: null });
   const [firstTimeCorrect, setFirstTimeCorrect] = useState([]);
   const [incorrectAttempts, setIncorrectAttempts] = useState({});
+  const [incorrectWords, setIncorrectWords] = useState({}); // these are the word dictionary that were not set correctly last time
   const [correctlyMemorized, setCorrectlyMemorized] = useState(new Set());
   const [totalToShow, setTotalToShow] = useState(0);
 
@@ -87,6 +88,7 @@ export const useWordsetLoader = (wordsetId, userId, mode) => {
       setToShow([]);
       setFirstTimeCorrect([]);
       setIncorrectAttempts({});
+      setIncorrectWords({});
       setCorrectlyMemorized(new Set());
       setTotalToShow(0);
 
@@ -329,6 +331,12 @@ export const useWordsetLoader = (wordsetId, userId, mode) => {
       return prevFirstTimeCorrect;
     });
 
+    setIncorrectWords((prevWords) => {
+      const newIncorrectWords = { ...prevWords };
+      delete newIncorrectWords[currentWord.word];
+      return newIncorrectWords;
+    });
+
     setCorrectlyMemorized(prevSet => new Set(prevSet.add(currentWord.word)));
 
     console.log(`Updating recall state to backend for word ID ${currentWord.word_id}. New state: ${newRecallState}`);
@@ -348,8 +356,8 @@ export const useWordsetLoader = (wordsetId, userId, mode) => {
 
     const newFirstTimeCorrect = [];
     const updatedCorrectlyMemorized = new Set(correctlyMemorized);
-
     const updatedWords = [...toShow];
+    const newIncorrectWords = incorrectWords;
 
     indices.forEach((index) => {
       const currentWord = updatedWords[index];
@@ -359,6 +367,9 @@ export const useWordsetLoader = (wordsetId, userId, mode) => {
       if (!incorrectAttempts[currentWord.word]) {
         newFirstTimeCorrect.push(currentWord);
       }
+
+      // Remove the word from incorrect words, if it was guessed correctly
+      delete newIncorrectWords[currentWord.word];
 
       // Add the word to correctlyMemorized set
       updatedCorrectlyMemorized.add(currentWord.word);
@@ -370,6 +381,11 @@ export const useWordsetLoader = (wordsetId, userId, mode) => {
       updateUserWordRecall(userId, currentWord.word_id, newRecallState, true, currentWord.is_included)
         .catch((error) => console.error(`Error updating recall state for word ID ${currentWord.word_id}:`, error));
     });
+
+    setIncorrectWords((prevIncorrectWords) => [
+      ...prevIncorrectWords,
+      ...newIncorrectWords
+    ]);
 
     // Update firstTimeCorrect, correctlyMemorized, and toShow states with new values
     setFirstTimeCorrect((prevFirstTimeCorrect) => [
@@ -399,6 +415,11 @@ export const useWordsetLoader = (wordsetId, userId, mode) => {
       [currentWord.word]: (prev[currentWord.word] || 0) + 1,
     }));
 
+    setIncorrectWords((prevIncorrectWords) => ({
+      ...prevIncorrectWords,
+      [currentWord.word]: currentWord
+    }));
+
     console.log(`Updating recall state to backend for word ID ${currentWord.word_id}. New state: ${newRecallState}`);
 
     updateWordState(index, (word, updatedWords) => {
@@ -416,6 +437,7 @@ export const useWordsetLoader = (wordsetId, userId, mode) => {
     loading, //2
     firstTimeCorrect, //4
     incorrectAttempts, //5
+    incorrectWords, // 5.5 :)
     correctlyMemorized, //6
     loadWordsForWordset, //7
     totalToShow, //9

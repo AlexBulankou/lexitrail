@@ -42,6 +42,7 @@ const Game = () => {
     loading, //2
     firstTimeCorrect, //4
     incorrectAttempts, //5
+    incorrectWords, // 5.5 :)
     correctlyMemorized, //6
     loadWordsForWordset, //7
     totalToShow: totalToShow, //9
@@ -71,7 +72,7 @@ const Game = () => {
     }
   }, [wordsetId, user, mode, loadWordsForWordset]);
 
-// TODO: consider re-activating this block if flipped states are loading incorrectly
+  // TODO: consider re-activating this block if flipped states are loading incorrectly
   /*
   useEffect(() => {
     const initialFlippedStates = {};
@@ -204,8 +205,8 @@ const Game = () => {
     const reversedPracticeMode = mode == GameMode.PRACTICE ? GameMode.SHOW_EXCLUDED : GameMode.PRACTICE;
     navigate(`/game/${wordsetId}/${reversedPracticeMode}`);
   };
-  
-  const toggleShowHints = () =>{
+
+  const toggleShowHints = () => {
     setHintsDisplayed(!hintsDisplayed);
   };
 
@@ -308,24 +309,31 @@ const Game = () => {
       </div>
 
 
-
-      <div className={`cards-container ${layoutClass}`}>
-        {wordsToRender.map((word, index) => (
-          <WordCard
-            mode={mode}
-            key={index}
-            word={{ ...word, user_id: user.email, index: word.word_index }} // Ensure user_id is passed correctly
-            isHintDisplayed={hintsDisplayed}
-            isFlipped={flippedStates[index]} // The flipped state for this card
-            feedbackClass={feedbackClasses[index]}
-            handleMemorized={() => handleCardGuessed(index, true)}
-            handleNotMemorized={() => handleCardGuessed(index, false)}
-            toggleExclusion={() => handleCardInclusionStateChanged(index, word.is_included)}  // Pass toggleExclusion to WordCard
-            setFlippedState={(isFlipped) => setFlippedState(index, isFlipped)}
-            provideFeedback={(isSuccess, callback) => provideFeedback(index, isSuccess, callback)}
-          />
-        ))}
+      <div className="cards-area">
+        <div className="incorrect-cards-container">
+          {Object.values(incorrectWords).map((word) => (
+            <span>.</span>
+          ))}
+        </div>
+        <div className={`cards-container ${layoutClass}`}>
+          {wordsToRender.map((word, index) => (
+            <WordCard
+              mode={mode}
+              key={index}
+              word={{ ...word, user_id: user.email, index: word.word_index }} // Ensure user_id is passed correctly
+              isHintDisplayed={hintsDisplayed}
+              isFlipped={flippedStates[index]} // The flipped state for this card
+              feedbackClass={feedbackClasses[index]}
+              handleMemorized={() => handleCardGuessed(index, true)}
+              handleNotMemorized={() => handleCardGuessed(index, false)}
+              toggleExclusion={() => handleCardInclusionStateChanged(index, word.is_included)}  // Pass toggleExclusion to WordCard
+              setFlippedState={(isFlipped) => setFlippedState(index, isFlipped)}
+              provideFeedback={(isSuccess, callback) => provideFeedback(index, isSuccess, callback)}
+            />
+          ))}
+        </div>
       </div>
+
 
       {mode === GameMode.PRACTICE ? (
         <button

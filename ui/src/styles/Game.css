@@ -30,6 +30,23 @@ body, html {
   margin-top:60px;
 }
 
+.cards-area{
+  display:flex;
+  flex-direction: row;
+}
+
+.incorrect-cards-container{
+  background-color: #333;
+  border-radius: 8px;
+  width:50px;
+  display: grid;
+  gap: 10px;
+  margin: 0 auto;
+  padding: 0;
+  box-sizing: border-box;
+  grid-auto-flow: column; /* Prevents wrapping to a new row */
+}
+
 /* Container for the word cards */
 .cards-container {
   display: grid;
