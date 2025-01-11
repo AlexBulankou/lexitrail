@@ -1,0 +1,29 @@
+.mini-word-card {
+
+    border-radius: 7px;
+    border:0px;
+    height: 35px;
+    display: flex;
+    justify-content: space-between;
+    flex-direction: row;
+    margin:1px;
+    background-color: #fff;
+    align-items: center;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    line-height: 1rem;
+    text-align: center;
+}
+
+.mini-word-card-word {
+    width: 20px;
+    
+    
+}
+
+
+.mini-word-card-def1 {
+    line-height: 0.5rem;
+    width: 23px;
+    font-weight: bold;
+}

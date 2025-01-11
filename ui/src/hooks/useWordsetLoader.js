@@ -382,10 +382,10 @@ export const useWordsetLoader = (wordsetId, userId, mode) => {
         .catch((error) => console.error(`Error updating recall state for word ID ${currentWord.word_id}:`, error));
     });
 
-    setIncorrectWords((prevIncorrectWords) => [
-      ...prevIncorrectWords,
-      ...newIncorrectWords
-    ]);
+
+    setIncorrectWords((prevIncorrectWords) => {
+      return newIncorrectWords;
+    });
 
     // Update firstTimeCorrect, correctlyMemorized, and toShow states with new values
     setFirstTimeCorrect((prevFirstTimeCorrect) => [
@@ -415,7 +415,7 @@ export const useWordsetLoader = (wordsetId, userId, mode) => {
       [currentWord.word]: (prev[currentWord.word] || 0) + 1,
     }));
 
-    setIncorrectWords((prevIncorrectWords) => ({
+    setIncorrectWords(prevIncorrectWords => ({
       ...prevIncorrectWords,
       [currentWord.word]: currentWord
     }));

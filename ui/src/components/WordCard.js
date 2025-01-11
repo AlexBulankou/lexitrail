@@ -230,7 +230,7 @@ const WordCard = ({ mode, word, isFlipped, isHintDisplayed, handleMemorized, han
           {loadingWord ?
             <p>⏳</p>
             :
-            <p style={{ fontSize: calculateFontSize(word.word, isHintDisplayed ? 5 : 7) }}>{word.word}</p>
+            <p style={{ fontSize: calculateFontSize(word.word, isHintDisplayed ? 5 : 6) }}>{word.word}</p>
 
           }
 

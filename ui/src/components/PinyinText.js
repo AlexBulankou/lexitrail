@@ -73,7 +73,7 @@ const renderPinyin = (text) => {
 
 // Usage example in a React component
 const PinyinText = ({ text }) => {
-    return <div>{renderPinyin(text)}</div>;
+    return <>{renderPinyin(text)}</>;
 };
 
 export default PinyinText;

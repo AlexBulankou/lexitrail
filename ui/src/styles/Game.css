@@ -39,12 +39,12 @@ body, html {
   background-color: #333;
   border-radius: 8px;
   width:50px;
-  display: grid;
-  gap: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
   margin: 0 auto;
   padding: 0;
   box-sizing: border-box;
-  grid-auto-flow: column; /* Prevents wrapping to a new row */
 }
 
 /* Container for the word cards */

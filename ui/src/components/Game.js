@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import WordCard from './WordCard';
+import MiniWordCard from './MiniWordCard';
 import Completed from './Completed';
 import Timer from './Timer';
 import { useParams } from 'react-router-dom';
@@ -117,11 +118,12 @@ const Game = () => {
     const width = window.innerWidth;
     const height = window.innerHeight;
 
-    const cardWidth = 180;
+    const cardWidth = 155;
     const cardHeight = mode === GameMode.TEST ? 360 : 310;
     const extraHorizontalSpaceNeeded = mode === GameMode.TEST ? 80 : 120;
+    const extraVerticalSpaceNeeded = 50;
 
-    const maxColumns = Math.min(Math.floor(width / cardWidth), 12);
+    const maxColumns = Math.min(Math.floor((width - extraVerticalSpaceNeeded) / cardWidth), 12);
     const maxRows = Math.min(Math.floor((height - extraHorizontalSpaceNeeded) / cardHeight), 4);
 
     // Check if dimensions or displayWords length changed
@@ -312,7 +314,10 @@ const Game = () => {
       <div className="cards-area">
         <div className="incorrect-cards-container">
           {Object.values(incorrectWords).map((word) => (
-            <span>.</span>
+            <MiniWordCard
+            mode={mode}
+            word={{ ...word, user_id: user.email, index: word.word_index }}
+            />
           ))}
         </div>
         <div className={`cards-container ${layoutClass}`}>
