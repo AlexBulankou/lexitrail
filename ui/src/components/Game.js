@@ -118,10 +118,10 @@ const Game = () => {
     const width = window.innerWidth;
     const height = window.innerHeight;
 
-    const cardWidth = 155;
+    const cardWidth = 160;
     const cardHeight = mode === GameMode.TEST ? 360 : 310;
     const extraHorizontalSpaceNeeded = mode === GameMode.TEST ? 80 : 120;
-    const extraVerticalSpaceNeeded = 50;
+    const extraVerticalSpaceNeeded = 100;
 
     const maxColumns = Math.min(Math.floor((width - extraVerticalSpaceNeeded) / cardWidth), 12);
     const maxRows = Math.min(Math.floor((height - extraHorizontalSpaceNeeded) / cardHeight), 4);

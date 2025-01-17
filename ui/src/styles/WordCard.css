@@ -1,7 +1,7 @@
 .word-card {
   position: relative;
   perspective: 1000px;
-  width: 155px;
+  width: 160px;
   margin: auto;
   cursor: pointer;
   border: 3px solid #d3d3d3;
@@ -181,7 +181,7 @@
 }
 
 .recall-state {
-  padding: 3px 1px;
+  padding: 3px;
   border-radius: 4px;
   color: white;
   font-size: 1.2rem;

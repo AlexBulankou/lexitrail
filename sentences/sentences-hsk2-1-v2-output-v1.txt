@@ -1,0 +1,449 @@
+1: Are you our teacher?
+您是我们的老师吗？
+
+2: How many friends do you have?
+您有几个朋友？
+
+3: It is my cat.
+它是我的猫。
+
+4: Does it like to eat rice?
+它喜欢吃米饭吗？
+
+5: Hello everyone, I am a teacher.
+大家好，我是老师。
+
+6: Is everyone here?
+大家都在这儿吗？
+
+7: Everyone has come.
+每个人都来了。
+
+8: I study Chinese every day.
+我每天都学习汉语。
+
+9: Why are you here?
+你为什么在这里？
+
+10: Why does he not come?
+他为什么不来？
+
+11: Is this character zero?
+这个字是零吗？
+
+12: I have no small change (zero money).
+我没有零块钱。
+
+13: I have two books.
+我有两本书。
+
+14: He wants two cups of water.
+他要两杯水。
+
+15: I have one hundred yuan.
+我有一百块钱。
+
+16: Does this thing cost one hundred?
+这个东西要一百吗？
+
+17: Does he have one thousand yuan?
+他有一千块钱吗？
+
+18: I want to buy one thousand apples.
+我想买一千个苹果。
+
+19: This is my first book.
+这是我的第一本书。
+
+20: He is my first friend.
+他是我的第一位朋友。
+
+21: This is my first time coming here.
+这是我第一次来这里。
+
+22: I want to go one more time.
+我想再去一次。
+
+23: I bought one piece of clothing.
+我买了一件衣服。
+
+24: Whose item is this?
+这件东西是谁的？
+
+25: Do not speak.
+别说话。
+
+26: Do not eat that.
+别吃那个。
+
+27: I really like apples.
+我非常喜欢苹果。
+
+28: He is extremely big.
+他非常大。
+
+29: I also have a book.
+我也有一本书。
+
+30: She is also learning Chinese.
+她也在学汉语。
+
+31: I am still at school.
+我还在学校。
+
+32: He still hasn't come.
+他还没来。
+
+33: I like drinking tea the most.
+我最喜欢喝茶。
+
+34: She is my best friend.
+她是我最好的朋友。
+
+35: This apple is really big.
+这个苹果真大。
+
+36: You are really nice.
+你真好。
+
+37: I am reading a book right now.
+我正在看书。
+
+38: She is eating right now.
+她正在吃饭。
+
+39: I have already arrived.
+我已经来了。
+
+40: They have already left.
+他们已经走了。
+
+41: Let's go eat together.
+我们一起去吃饭吧。
+
+42: Do you want to watch a movie together with me?
+你想和我一起看电影吗？
+
+43: Please say it again.
+请再说一次。
+
+44: I want to see him again.
+我想再见他。
+
+45: I will go right now.
+我现在就去。
+
+46: He sleeps as soon as he finishes eating.
+他吃了就睡觉。
+
+47: Because I am tired, so I will not go.
+因为我累，所以我不去。
+
+48: Because it is raining, so I am at home.
+因为下雨，所以我在家。
+
+49: Although I am tired, I still study.
+虽然我累，但是我学习。
+
+50: Although he is big, he is very cute.
+虽然他很大，但是他很可爱。
+
+51: I go to school from home.
+我从家去学校。
+
+52: Did he come from Beijing?
+他从北京来了吗？
+
+53: I am older than you.
+我比你大。
+
+54: Today is hotter than yesterday.
+今天比昨天热。
+
+55: I walk toward the front.
+我往前面走。
+
+56: Please look to the left.
+请往左边看。
+
+57: Is my home close to the school?
+我家离学校很近吗？
+
+58: Is it far from here to Beijing?
+这里离北京远吗？
+
+59: You speak very well.
+你说得很好。
+
+60: He runs very fast.
+他跑得很快。
+
+61: He is reading the book (in a continuous state).
+他看着书。
+
+62: She smiles while saying hello to you.
+她笑着说你好。
+
+63: I have been here before.
+我来过这里。
+
+64: Have you eaten apples before?
+你吃过苹果吗？
+
+65: Let's go.
+我们走吧。
+
+66: You can have some tea.
+你喝茶吧。
+
+67: I will go to the airport tomorrow.
+我明天去机场。
+
+68: Does Beijing have a big airport?
+北京有一个大机场吗？
+
+69: We study in the classroom.
+我们在教室学习。
+
+70: That classroom is very big.
+那个教室很大。
+
+71: I live in that room.
+我住在那个房间。
+
+72: This room is very small.
+这个房间很小。
+
+73: Is this road very long?
+这条路很长吗？
+
+74: I don’t know this road.
+我不认识这条路。
+
+75: The cat is on the left side of the table.
+猫在桌子左边。
+
+76: On the left side of my house is a shop.
+我家左边是商店。
+
+77: To the right of the school is a restaurant.
+学校右边是饭店。
+
+78: I sit on your right side.
+我坐在你右边。
+
+79: Is she outside?
+她在外面吗？
+
+80: I don't want to go outside.
+我不想去外面。
+
+81: I sit next to you.
+我坐在你旁边。
+
+82: Is there a restroom next to the classroom?
+教室旁边是厕所吗？
+
+83: Please wait a moment.
+请等一下。
+
+84: Take a quick look at this.
+你看一下这个。
+
+85: I go to school in the morning.
+我早上去学校。
+
+86: Good morning, did you eat?
+早上好，你吃了吗？
+
+87: I watch TV at night.
+我晚上看电视。
+
+88: He is busy at night.
+他晚上很忙。
+
+89: I waited for one hour.
+我等了一个小时。
+
+90: Do you only have two hours?
+你只有两小时吗？
+
+91: I don't have time.
+我没有时间。
+
+92: Do you have time to help me?
+你有时间帮我吗？
+
+93: I was in Beijing last year.
+我去年在北京。
+
+94: He was a student last year.
+去年他是学生。
+
+95: Today is May 5th.
+今天是五月五日。
+
+96: Which date is his birthday?
+他生日是哪日？
+
+97: My birthday is in May.
+我的生日在五月。
+
+98: What do you want to do on your birthday?
+你生日想做什么？
+
+99: My older brother is a doctor.
+我哥哥是医生。
+
+100: Older brother likes watching movies.
+哥哥喜欢看电影。
+
+101: My older sister works in a shop.
+姐姐在商店工作。
+
+102: My older sister is very beautiful.
+我姐姐很漂亮。
+
+103: Younger brother likes to play.
+弟弟喜欢玩。
+
+104: My younger brother is watching TV.
+我弟弟在看电视。
+
+105: My younger sister is a student.
+妹妹是学生。
+
+106: Her younger sister is very cute.
+她妹妹很可爱。
+
+107: Is my husband at home?
+我丈夫在家吗？
+
+108: Her husband is a doctor.
+她的丈夫是医生。
+
+109: His wife is not at home.
+他妻子不在家。
+
+110: Is your wife working?
+你的妻子在工作吗？
+
+111: She has one child.
+她有一个孩子。
+
+112: The child is reading.
+孩子在看书。
+
+113: Who is that man?
+那个男人是谁？
+
+114: The man is eating.
+男人在吃饭。
+
+115: That woman is very beautiful.
+那个女人很漂亮。
+
+116: The woman is making a phone call.
+女人在打电话。
+
+117: Hello, waiter!
+服务员，你好！
+
+118: Please call the waiter over.
+请叫服务员来。
+
+119: I like to eat fish.
+我喜欢吃鱼。
+
+120: This fish is delicious.
+这条鱼很好吃。
+
+121: Do you like to eat mutton?
+你喜欢吃羊肉吗？
+
+122: I don't have mutton.
+我没有羊肉。
+
+123: I want to drink milk.
+我想喝牛奶。
+
+124: He has no milk left.
+他没有牛奶了。
+
+125: I eat eggs every day.
+我每天吃鸡蛋。
+
+126: How many eggs do you want?
+你想要几个鸡蛋？
+
+127: Is this watermelon very sweet?
+这个西瓜很甜吗？
+
+128: I want to buy a watermelon.
+我想买一个西瓜。
+
+129: I like drinking coffee.
+我喜欢喝咖啡。
+
+130: Do you want to drink coffee?
+你想喝咖啡吗？
+
+131: Is it snowing today?
+今天下雪吗？
+
+132: I like watching snow.
+我喜欢看雪。
+
+133: I bought medicine.
+我买了药。
+
+134: Does he have medicine?
+他有药吗？
+
+135: I have a cellphone.
+我有一个手机。
+
+136: Do you like this cellphone?
+你喜欢这个手机吗？
+
+137: I don’t have a watch.
+我没有手表。
+
+138: How much is that watch?
+那块手表多少钱？
+
+139: Your eyes are very beautiful.
+你眼睛很漂亮。
+
+140: I want to look at your eyes.
+我想看你的眼睛。
+
+141: Is your body well?
+你身体好吗？
+
+142: I am really healthy.
+我身体真好。
+
+143: We take the bus together.
+我们一起坐公共汽车。
+
+144: Does Beijing have buses?
+北京有公共汽车吗？
+
+145: I bought a newspaper.
+我买了报纸。
+
+146: Do you like reading newspapers?
+你喜欢看报纸吗？
+
+147: Please open the door.
+请开门。
+
+148: Is the door on the left?
+门在左边吗？
+
+149: Is this question easy to do?
+这个题好做吗？
+
+150: I have a question.
+我有一个题。

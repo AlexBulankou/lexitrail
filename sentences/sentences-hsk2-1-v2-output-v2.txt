@@ -1,0 +1,600 @@
+Are you our teacher?
+
+您是我们的老师吗？
+
+How many friends do you have?
+
+您有几个朋友？
+
+It is my cat.
+
+它是我的猫。
+
+Does it like to eat rice?
+
+它喜欢吃米饭吗？
+
+Hello everyone, I am a teacher.
+
+大家好，我是老师。
+
+Is everyone here?
+
+大家都在这儿吗？
+
+Everyone has come.
+
+每个人都来了。
+
+I study Chinese every day.
+
+我每天都学习汉语。
+
+Why are you here?
+
+你为什么在这里？
+
+Why does he not come?
+
+他为什么不来？
+
+Is this character zero?
+
+这个字是零吗？
+
+I have no small change (zero money).
+
+我没有零块钱。
+
+I have two books.
+
+我有两本书。
+
+He wants two cups of water.
+
+他要两杯水。
+
+I have one hundred yuan.
+
+我有一百块钱。
+
+Does this thing cost one hundred?
+
+这个东西要一百吗？
+
+Does he have one thousand yuan?
+
+他有一千块钱吗？
+
+I want to buy one thousand apples.
+
+我想买一千个苹果。
+
+This is my first book.
+
+这是我的第一本书。
+
+He is my first friend.
+
+他是我的第一位朋友。
+
+This is my first time coming here.
+
+这是我第一次来这里。
+
+I want to go one more time.
+
+我想再去一次。
+
+I bought one piece of clothing.
+
+我买了一件衣服。
+
+Whose item is this?
+
+这件东西是谁的？
+
+Do not speak.
+
+别说话。
+
+Do not eat that.
+
+别吃那个。
+
+I really like apples.
+
+我非常喜欢苹果。
+
+He is extremely big.
+
+他非常大。
+
+I also have a book.
+
+我也有一本书。
+
+She is also learning Chinese.
+
+她也在学汉语。
+
+I am still at school.
+
+我还在学校。
+
+He still hasn't come.
+
+他还没来。
+
+I like drinking tea the most.
+
+我最喜欢喝茶。
+
+She is my best friend.
+
+她是我最好的朋友。
+
+This apple is really big.
+
+这个苹果真大。
+
+You are really nice.
+
+你真好。
+
+I am reading a book right now.
+
+我正在看书。
+
+She is eating right now.
+
+她正在吃饭。
+
+I have already arrived.
+
+我已经来了。
+
+They have already left.
+
+他们已经走了。
+
+Let's go eat together.
+
+我们一起去吃饭吧。
+
+Do you want to watch a movie together with me?
+
+你想和我一起看电影吗？
+
+Please say it again.
+
+请再说一次。
+
+I want to see him again.
+
+我想再见他。
+
+I will go right now.
+
+我现在就去。
+
+He sleeps as soon as he finishes eating.
+
+他吃了就睡觉。
+
+Because I am tired, so I will not go.
+
+因为我累，所以我不去。
+
+Because it is raining, so I am at home.
+
+因为下雨，所以我在家。
+
+Although I am tired, I still study.
+
+虽然我累，但是我学习。
+
+Although he is big, he is very cute.
+
+虽然他很大，但是他很可爱。
+
+I go to school from home.
+
+我从家去学校。
+
+Did he come from Beijing?
+
+他从北京来了吗？
+
+I am older than you.
+
+我比你大。
+
+Today is hotter than yesterday.
+
+今天比昨天热。
+
+I walk toward the front.
+
+我往前面走。
+
+Please look to the left.
+
+请往左边看。
+
+Is my home close to the school?
+
+我家离学校很近吗？
+
+Is it far from here to Beijing?
+
+这里离北京远吗？
+
+You speak very well.
+
+你说得很好。
+
+He runs very fast.
+
+他跑得很快。
+
+He is reading the book (in a continuous state).
+
+他看着书。
+
+She smiles while saying hello to you.
+
+她笑着说你好。
+
+I have been here before.
+
+我来过这里。
+
+Have you eaten apples before?
+
+你吃过苹果吗？
+
+Let's go.
+
+我们走吧。
+
+You can have some tea.
+
+你喝茶吧。
+
+I will go to the airport tomorrow.
+
+我明天去机场。
+
+Does Beijing have a big airport?
+
+北京有一个大机场吗？
+
+We study in the classroom.
+
+我们在教室学习。
+
+That classroom is very big.
+
+那个教室很大。
+
+I live in that room.
+
+我住在那个房间。
+
+This room is very small.
+
+这个房间很小。
+
+Is this road very long?
+
+这条路很长吗？
+
+I don’t know this road.
+
+我不认识这条路。
+
+The cat is on the left side of the table.
+
+猫在桌子左边。
+
+On the left side of my house is a shop.
+
+我家左边是商店。
+
+To the right of the school is a restaurant.
+
+学校右边是饭店。
+
+I sit on your right side.
+
+我坐在你右边。
+
+Is she outside?
+
+她在外面吗？
+
+I don't want to go outside.
+
+我不想去外面。
+
+I sit next to you.
+
+我坐在你旁边。
+
+Is there a restroom next to the classroom?
+
+教室旁边是厕所吗？
+
+Please wait a moment.
+
+请等一下。
+
+Take a quick look at this.
+
+你看一下这个。
+
+I go to school in the morning.
+
+我早上去学校。
+
+Good morning, did you eat?
+
+早上好，你吃了吗？
+
+I watch TV at night.
+
+我晚上看电视。
+
+He is busy at night.
+
+他晚上很忙。
+
+I waited for one hour.
+
+我等了一个小时。
+
+Do you only have two hours?
+
+你只有两小时吗？
+
+I don't have time.
+
+我没有时间。
+
+Do you have time to help me?
+
+你有时间帮我吗？
+
+I was in Beijing last year.
+
+我去年在北京。
+
+He was a student last year.
+
+去年他是学生。
+
+Today is May 5th.
+
+今天是五月五日。
+
+Which date is his birthday?
+
+他生日是哪日？
+
+My birthday is in May.
+
+我的生日在五月。
+
+What do you want to do on your birthday?
+
+你生日想做什么？
+
+My older brother is a doctor.
+
+我哥哥是医生。
+
+Older brother likes watching movies.
+
+哥哥喜欢看电影。
+
+My older sister works in a shop.
+
+姐姐在商店工作。
+
+My older sister is very beautiful.
+
+我姐姐很漂亮。
+
+Younger brother likes to play.
+
+弟弟喜欢玩。
+
+My younger brother is watching TV.
+
+我弟弟在看电视。
+
+My younger sister is a student.
+
+妹妹是学生。
+
+Her younger sister is very cute.
+
+她妹妹很可爱。
+
+Is my husband at home?
+
+我丈夫在家吗？
+
+Her husband is a doctor.
+
+她的丈夫是医生。
+
+His wife is not at home.
+
+他妻子不在家。
+
+Is your wife working?
+
+你的妻子在工作吗？
+
+She has one child.
+
+她有一个孩子。
+
+The child is reading.
+
+孩子在看书。
+
+Who is that man?
+
+那个男人是谁？
+
+The man is eating.
+
+男人在吃饭。
+
+That woman is very beautiful.
+
+那个女人很漂亮。
+
+The woman is making a phone call.
+
+女人在打电话。
+
+Hello, waiter!
+
+服务员，你好！
+
+Please call the waiter over.
+
+请叫服务员来。
+
+I like to eat fish.
+
+我喜欢吃鱼。
+
+This fish is delicious.
+
+这条鱼很好吃。
+
+Do you like to eat mutton?
+
+你喜欢吃羊肉吗？
+
+I don't have mutton.
+
+我没有羊肉。
+
+I want to drink milk.
+
+我想喝牛奶。
+
+He has no milk left.
+
+他没有牛奶了。
+
+I eat eggs every day.
+
+我每天吃鸡蛋。
+
+How many eggs do you want?
+
+你想要几个鸡蛋？
+
+Is this watermelon very sweet?
+
+这个西瓜很甜吗？
+
+I want to buy a watermelon.
+
+我想买一个西瓜。
+
+I like drinking coffee.
+
+我喜欢喝咖啡。
+
+Do you want to drink coffee?
+
+你想喝咖啡吗？
+
+Is it snowing today?
+
+今天下雪吗？
+
+I like watching snow.
+
+我喜欢看雪。
+
+I bought medicine.
+
+我买了药。
+
+Does he have medicine?
+
+他有药吗？
+
+I have a cellphone.
+
+我有一个手机。
+
+Do you like this cellphone?
+
+你喜欢这个手机吗？
+
+I don’t have a watch.
+
+我没有手表。
+
+How much is that watch?
+
+那块手表多少钱？
+
+Your eyes are very beautiful.
+
+你眼睛很漂亮。
+
+I want to look at your eyes.
+
+我想看你的眼睛。
+
+Is your body well?
+
+你身体好吗？
+
+I am really healthy.
+
+我身体真好。
+
+We take the bus together.
+
+我们一起坐公共汽车。
+
+Does Beijing have buses?
+
+北京有公共汽车吗？
+
+I bought a newspaper.
+
+我买了报纸。
+
+Do you like reading newspapers?
+
+你喜欢看报纸吗？
+
+Please open the door.
+
+请开门。
+
+Is the door on the left?
+
+门在左边吗？
+
+Is this question easy to do?
+
+这个题好做吗？
+
+I have a question.
+
+我有一个题。
+

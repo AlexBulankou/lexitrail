@@ -5,8 +5,9 @@ metadata:
   namespace: ${backend_namespace}
   annotations:
     terraform.io/change-cause: "${backend_files_hash}"
+    cloud.google.com/gke-preemptible: "true"  # Enable preemptible workloads for cost savings
 spec:
-  replicas: 2
+  replicas: 1  # Scale up if backend processing increases
   selector:
     matchLabels:
       app: lexitrail-backend
@@ -62,3 +63,10 @@ spec:
             secretKeyRef:
               name: backend-secret
               key: DB_ROOT_PASSWORD
+        resources:  # Optimize resource requests and limits
+          requests:
+            memory: "256Mi"  # Backend requires more memory for processing
+            cpu: "100m"      # Moderate CPU for API and light processing
+          limits:
+            memory: "512Mi"
+            cpu: "200m"

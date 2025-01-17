@@ -38,13 +38,17 @@ body, html {
 .incorrect-cards-container{
   background-color: #333;
   border-radius: 8px;
-  width:50px;
+  width:100px;
+  min-width: 100px;
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
+  align-items: flex-start;
+  flex-wrap: wrap;
   gap: 0;
   margin: 0 auto;
   padding: 0;
   box-sizing: border-box;
+  align-content: flex-start;
 }
 
 /* Container for the word cards */

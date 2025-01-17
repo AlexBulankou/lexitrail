@@ -3,6 +3,8 @@
     border-radius: 7px;
     border:0px;
     height: 35px;
+    width:47px;
+    min-width: 47px;
     display: flex;
     justify-content: space-between;
     flex-direction: row;
@@ -16,7 +18,7 @@
 }
 
 .mini-word-card-word {
-    width: 20px;
+    width: 22px;
     
     
 }
