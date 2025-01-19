@@ -10,3 +10,72 @@ body, html {
   background-color: #f0f0f0;
   box-sizing: border-box;
 }
+
+
+.app {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.navbar {
+  height: 48px;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+}
+
+/* For regular pages (Privacy, Terms, Home) */
+.content {
+  margin-top: 48px;
+  height: calc(100vh - 48px);
+}
+
+.page-wrapper {
+  position: fixed;
+  top: 48px;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  overflow-y: auto;
+}
+
+.page-container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 40px 20px;
+}
+
+.centered-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.text-content {
+  text-align: left;
+  line-height: 1.6;
+}
+
+/* Game specific overrides */
+.content-container {
+  height: 100%;
+}
+
+
+.cards-area {
+  display: flex;
+  flex-direction: column;
+}
+
+.incorrect-cards-container {
+  flex-shrink: 0;
+}
+
+.cards-container {
+  flex: 1;
+  min-height: 0; /* Important for flex child */
+}

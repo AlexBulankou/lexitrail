@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import '../styles/Wordsets.css'; // Create a CSS file for styling the wordsets grid
 import { GameMode } from './Game';
 
-const Wordsets = () => {
+const Wordsets = ({ profileDetails, login }) => {
   const [wordsets, setWordsets] = useState([]);  // Initialize as empty array
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);  // Track errors if fetching fails

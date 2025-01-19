@@ -69,34 +69,17 @@ resource "kubectl_manifest" "backend_secret" {
   ]
 }
 
-# 4. Generate TLS certificates
-resource "tls_private_key" "backend_private_key" {
-  algorithm = "RSA"
-  rsa_bits  = 2048
+# 4. Create static IP and certificate (only if HTTPS is enabled)
+resource "google_compute_global_address" "backend_ip" {
+  count = var.enable_https ? 1 : 0
+  name  = "lexitrail-backend-ip"
 }
 
-resource "tls_self_signed_cert" "backend_cert" {
-  private_key_pem = tls_private_key.backend_private_key.private_key_pem
-
-  subject {
-    common_name  = "lexitrail-backend"
-    organization = "Lexitrail"
-  }
-
-  validity_period_hours = 8760 # 1 year
-
-  allowed_uses = [
-    "key_encipherment",
-    "digital_signature",
-    "server_auth",
-  ]
-}
-
-resource "kubectl_manifest" "backend_tls_secret" {
-  yaml_body = templatefile("${path.module}/k8s_templates/backend-tls-secret.yaml.tpl", {
+resource "kubectl_manifest" "backend_certificate" {
+  count = var.enable_https ? 1 : 0
+  yaml_body = templatefile("${path.module}/k8s_templates/backend-certificate.yaml.tpl", {
     backend_namespace = var.backend_namespace
-    tls_cert         = base64encode(tls_self_signed_cert.backend_cert.cert_pem)
-    tls_key          = base64encode(tls_private_key.backend_private_key.private_key_pem)
+    domain_name      = "api.${local.domain_name}"
   })
   depends_on = [
     kubectl_manifest.backend_namespace
@@ -124,40 +107,45 @@ resource "kubectl_manifest" "backend_deployment" {
 }
 
 # 6. Create service and ingress
-
-resource "kubectl_manifest" "backend_config" {
-  yaml_body = templatefile("${path.module}/k8s_templates/backend-config.yaml.tpl", {
-    backend_namespace = var.backend_namespace
-  })
-  depends_on = [
-    kubectl_manifest.backend_namespace
-  ]
-}
-
 resource "kubectl_manifest" "backend_service" {
   yaml_body = templatefile("${path.module}/k8s_templates/backend-service.yaml.tpl", {
-    backend_namespace = var.backend_namespace
+    backend_namespace = var.backend_namespace,
+    enable_https     = var.enable_https
   })
   depends_on = [
     google_container_cluster.autopilot_cluster,
     kubectl_manifest.backend_namespace,
-    kubectl_manifest.backend_deployment,
-    kubectl_manifest.backend_config  # Add this dependency
+    kubectl_manifest.backend_deployment
   ]
 }
 
 resource "kubectl_manifest" "backend_ingress" {
+  count = var.enable_https ? 1 : 0
   yaml_body = templatefile("${path.module}/k8s_templates/backend-ingress.yaml.tpl", {
-    backend_namespace = var.backend_namespace
+    backend_namespace = var.backend_namespace,
+    enable_https     = var.enable_https,
+    domain_name      = "api.${local.domain_name}"
   })
   depends_on = [
     kubectl_manifest.backend_service,
-    kubectl_manifest.backend_tls_secret
+    kubectl_manifest.backend_certificate[0]
   ]
 }
 
 # 7. Data sources and outputs
+data "kubernetes_service" "backend_service" {
+  count = var.enable_https ? 0 : 1
+  metadata {
+    name      = "lexitrail-backend-service"
+    namespace = var.backend_namespace
+  }
+  depends_on = [
+    kubectl_manifest.backend_service
+  ]
+}
+
 data "kubernetes_ingress_v1" "backend_ingress" {
+  count = var.enable_https ? 1 : 0
   metadata {
     name      = "lexitrail-backend-ingress"
     namespace = var.backend_namespace
@@ -169,5 +157,9 @@ data "kubernetes_ingress_v1" "backend_ingress" {
 
 output "backend_ip" {
   description = "Backend service IP address"
-  value       = try(data.kubernetes_ingress_v1.backend_ingress.status[0].load_balancer[0].ingress[0].ip, null)
+  value = var.enable_https ? (
+    google_compute_global_address.backend_ip[0].address
+  ) : (
+    data.kubernetes_service.backend_service[0].status[0].load_balancer[0].ingress[0].ip
+  )
 }

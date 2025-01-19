@@ -62,7 +62,7 @@ resource "google_compute_global_address" "default" {
 resource "kubectl_manifest" "certificate" {
   count = var.enable_https ? 1 : 0
   
-  yaml_body = templatefile("${path.module}/k8s_templates/certificate.yaml.tpl", {
+  yaml_body = templatefile("${path.module}/k8s_templates/frontend-certificate.yaml.tpl", {
     domain_name = local.domain_name
   })
 

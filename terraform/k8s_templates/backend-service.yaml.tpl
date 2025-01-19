@@ -3,15 +3,15 @@ kind: Service
 metadata:
   name: lexitrail-backend-service
   namespace: ${backend_namespace}
+  %{ if enable_https }
   annotations:
-    cloud.google.com/backend-config: '{"default": "lexitrail-backend-config"}'
-    cloud.google.com/neg: '{"ingress": true}'  # Add NEG support
+    cloud.google.com/neg: '{"ingress": true}'
+  %{ endif }
 spec:
+  type: ${enable_https ? "ClusterIP" : "LoadBalancer"}
+  ports:
+    - port: 80
+      targetPort: 80
+      protocol: TCP
   selector:
     app: lexitrail-backend
-  ports:
-    - protocol: TCP
-      port: 443
-      targetPort: 80
-      name: https  # Name the port for clarity
-  type: ClusterIP

@@ -5,13 +5,68 @@
     /* Make the navbar stick to the top of the screen */
     top: 0;
     left: 0;
-    /* Ensure it starts at the very left */
+    right: 0;
+    height: 48px; /* Fixed height */
     width: 100%;
     /* Make it stretch across the full width of the screen */
     background-color: #333;
-    padding: 5px 10px;
+    padding: 0 0.5rem 0 0.25rem; /* Reduce padding, especially on left */
     box-sizing: border-box;
     z-index: 1000;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.nav-left, .nav-center, .nav-right {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+}
+
+.nav-left {
+    margin-right: 0.5rem; /* Reduce margin after logo */
+}
+
+.nav-logo {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: #fff;
+    text-decoration: none;
+    font-size: 1.5rem;
+    font-weight: bold;
+}
+
+.logo-text {
+    font-size: 1.1rem; /* Optional: slightly smaller logo text */
+    margin-right: 0.5rem; /* Add some space after the logo text */
+}
+
+.navbar a {
+    color: #fff;
+    text-decoration: none;
+    padding: 0.5rem;
+}
+
+.navbar a:hover {
+    color: #007bff;
+}
+
+.nav-button {
+    background: #007bff;
+    color: white;
+    border: none;
+    padding: 0.25rem 0.75rem;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+    white-space: nowrap;
+    font-size: 0.9rem;
+}
+
+.nav-button:hover {
+    background: #0056b3;
 }
 
 .nav-list {
@@ -87,4 +142,142 @@
 .profile-avatar{
     width: 100px;
     height: 100px;
+}
+
+.nav-right a, .nav-center a {
+    font-size: 0.9rem; /* Smaller font */
+    padding: 0.5rem 1rem;
+    text-decoration: none;
+    color: #fff;
+}
+
+/* Add styles for active links */
+.nav-link-active {
+    background-color: rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+}
+
+.nav-right {
+    margin-left: 0; /* Remove any left margin */
+    gap: 0.4rem; /* Even tighter spacing between right items */
+}
+
+.nav-right a {
+    font-size: 0.8rem; /* Even smaller font for privacy/terms */
+    padding: 0.25rem 0.5rem; /* Reduced padding */
+    opacity: 0.7; /* Make them slightly less prominent */
+}
+
+.nav-center {
+    margin-right: auto; /* Push everything else to the right */
+    padding-left: 0; /* Remove any left padding */
+}
+
+/* Add new dropdown styles */
+.dropdown {
+  position: relative;
+  height: 100%;
+}
+
+.dropdown-trigger {
+  height: 100%;
+  padding: 0 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  border: none;
+  background: none;
+  color: white;
+  font-size: 0.8rem;
+}
+
+.dropdown-arrow {
+  font-size: 0.6rem;
+  opacity: 0.7;
+}
+
+.user-dropdown-trigger {
+  max-width: 200px;
+}
+
+.user-avatar {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+}
+
+.user-info-compact {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  font-size: 0.7rem;
+  line-height: 1.1;
+  overflow: hidden;
+}
+
+.user-info-compact .name {
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 150px;
+}
+
+.user-info-compact .email {
+  opacity: 0.7;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 150px;
+}
+
+.dropdown-menu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  background: #2a2a2a;
+  border-radius: 4px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+  min-width: 160px;
+  z-index: 1001;
+  margin-top: 4px;
+}
+
+.dropdown-item {
+  padding: 0.5rem 1rem;
+  color: white;
+  text-decoration: none;
+  display: block;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.dropdown-item:hover {
+  background: rgba(255,255,255,0.1);
+}
+
+.google-signin-compact {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: white;
+  color: #3c4043;
+  border: 1px solid #dadce0;
+  border-radius: 4px;
+  padding: 4px 12px;
+  height: 32px;
+  font-family: "Google Sans", Roboto, Arial, sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.google-signin-compact img {
+  width: 18px;
+  height: 18px;
+}
+
+.google-signin-compact:hover {
+  background: #f8f9fa;
 }

@@ -1,7 +1,7 @@
 // public/config.js
 window.config = {
     // TODO: Pipe in output from terraform so API_BASE_URL and MATCH_MAKER_ADDRESS are set in runtime
-    API_BASE_URL: "https://34.13.72.81", // Alex: for production
+    API_BASE_URL: "https://api.lexitrail.com", // Alex: for production
     // API_BASE_URL: "http://35.184.227.135", // Max: for production
     // API_BASE_URL: "http://localhost:5001", //  for testing
     // MATCH_MAKER_ADDRESS: "ws://34.31.42.53:80/ws",
