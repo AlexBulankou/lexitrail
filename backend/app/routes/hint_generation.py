@@ -96,8 +96,7 @@ def generate_image(prompt):
         prompt=prompt,
         number_of_images=1,
         aspect_ratio="4:3",
-        safety_filter_level="block_some",
-        person_generation="allow_adult",
+        safety_filter_level="block_some"
     )
     resized_image = image[0]._pil_image.resize((400, 300), PIL_Image.Resampling.LANCZOS)
     return resized_image

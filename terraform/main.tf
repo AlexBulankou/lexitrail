@@ -24,10 +24,16 @@ terraform {
       source  = "hashicorp/helm"
       version = "~> 2.3"
     }
+    tls = {
+      source  = "hashicorp/tls"
+      version = "~> 4.0"
+    }
   }
 }
 
 locals {
+  enable_https = var.enable_https
+  domain_name = data.dotenv.env.entries.DOMAIN_NAME
   project_id = data.dotenv.env.entries.PROJECT_ID
   cluster_name = data.dotenv.env.entries.CLUSTER_NAME
   db_root_password = data.dotenv.env.entries.DB_ROOT_PASSWORD

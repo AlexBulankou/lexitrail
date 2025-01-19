@@ -15,3 +15,8 @@ def register_routes(app):
     @app.route('/')
     def index():
         return jsonify(message="Welcome to the Flask API"), 200
+
+
+    @app.route('/health')
+    def health_check():
+        return jsonify({'status': 'healthy'}), 200

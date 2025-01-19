@@ -31,10 +31,55 @@ resource "kubectl_manifest" "lexitrail_ui_deployment" {
   ]
 }
 
+
+
 resource "kubectl_manifest" "lexitrail_ui_service" {
-  yaml_body = templatefile("${path.module}/k8s_templates/deploy-service.yaml.tpl", {})
+  yaml_body = templatefile("${path.module}/k8s_templates/deploy-service.yaml.tpl", {
+    enable_https = var.enable_https,
+    domain_name = local.domain_name
+  })
 
   depends_on = [
     google_container_cluster.autopilot_cluster
+  ]
+}
+
+resource "kubectl_manifest" "frontend_config" {
+  count = var.enable_https ? 1 : 0
+  
+  yaml_body = templatefile("${path.module}/k8s_templates/frontend-config.yaml.tpl", {})
+
+  depends_on = [
+    google_container_cluster.autopilot_cluster
+  ]
+}
+
+resource "google_compute_global_address" "default" {
+  count = var.enable_https ? 1 : 0
+  name = "lexitrail-ip"
+}
+
+resource "kubectl_manifest" "certificate" {
+  count = var.enable_https ? 1 : 0
+  
+  yaml_body = templatefile("${path.module}/k8s_templates/certificate.yaml.tpl", {
+    domain_name = local.domain_name
+  })
+
+  depends_on = [
+    google_container_cluster.autopilot_cluster
+  ]
+}
+
+resource "kubectl_manifest" "ingress" {
+  count = var.enable_https ? 1 : 0
+  
+  yaml_body = templatefile("${path.module}/k8s_templates/ingress.yaml.tpl", {
+    domain_name = local.domain_name
+  })
+
+  depends_on = [
+    kubectl_manifest.lexitrail_ui_service,
+    kubectl_manifest.frontend_config[0]
   ]
 }

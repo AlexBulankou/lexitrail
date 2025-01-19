@@ -76,3 +76,11 @@ variable "agones_system_namespace" {
   type    = string
   default = "agones-system"
 }
+
+variable "enable_https" {
+  description = "Whether to enable HTTPS (defaults to false for safety)"
+  type        = bool
+  default     = false
+}
+
+# Remove the domain_name variable since it will come from .env
