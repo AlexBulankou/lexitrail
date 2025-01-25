@@ -173,7 +173,7 @@ const Game = () => {
       setMaxCardsToShow(selectedLayout.capacity);
 
       // Add this: Set the height for incorrect-cards-container
-      const availableHeight = selectedLayout.rows * cardHeight -  35;
+      const availableHeight = selectedLayout.rows * cardHeight - 35;
       document.documentElement.style.setProperty('--cards-container-height', `${availableHeight}px`);
 
       //console.log(
@@ -296,35 +296,34 @@ const Game = () => {
 
   return (
     <div className="container">
-      <div className="header-area">
-        <Logo size="small" />
-        <div className="progress-stats">
-          <div className="not-memorized">❌ {Object.keys(incorrectAttempts).length}</div>
 
-          <div className="game-settings">
-            <button className="game-settings-button" onClick={toggleShowHints}>
-              {hintsDisplayed ? 'Hide Hints' : 'Show Hints'}
-            </button>
-            {mode !== GameMode.TEST ? (
-              <>
-                <button className="game-settings-button" onClick={toggleFlipStates}>
-                  {allFlipped ? 'Flip all back' : 'Flip all'}
-                </button>
-                <button className="game-settings-button" onClick={toggleWordsetFilter}>
-                  {mode == GameMode.SHOW_EXCLUDED ? 'Show Included' : 'Show Excluded'}
-                </button>
-              </>
-            ) : (
-              <></>
-            )}
-          </div>
+      <div className="progress-stats">
+        <div className="not-memorized">❌ {Object.keys(incorrectAttempts).length}</div>
 
-          <div className="timer">
-            <Timer onTick={handleTimerTick} />  {/* Timer updates every second */}
-
-          </div>
-          <div className="memorized">✔️ {correctlyMemorized.size}</div>
+        <div className="game-settings">
+          <button className="game-settings-button" onClick={toggleShowHints}>
+            {hintsDisplayed ? 'Hide Hints' : 'Show Hints'}
+          </button>
+          {mode !== GameMode.TEST ? (
+            <>
+              <button className="game-settings-button" onClick={toggleFlipStates}>
+                {allFlipped ? 'Flip all back' : 'Flip all'}
+              </button>
+              <button className="game-settings-button" onClick={toggleWordsetFilter}>
+                {mode == GameMode.SHOW_EXCLUDED ? 'Show Included' : 'Show Excluded'}
+              </button>
+            </>
+          ) : (
+            <></>
+          )}
         </div>
+
+        <div className="timer">
+          <Timer onTick={handleTimerTick} />  {/* Timer updates every second */}
+
+        </div>
+        <div className="memorized">✔️ {correctlyMemorized.size}</div>
+
       </div>
 
 
@@ -332,8 +331,8 @@ const Game = () => {
         <div className="incorrect-cards-container">
           {Object.values(incorrectWords).map((word) => (
             <MiniWordCard
-            mode={mode}
-            word={{ ...word, user_id: user.email, index: word.word_index }}
+              mode={mode}
+              word={{ ...word, user_id: user.email, index: word.word_index }}
             />
           ))}
         </div>
