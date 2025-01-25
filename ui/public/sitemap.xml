@@ -1,0 +1,213 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:image="http://www.google.com/schemas/sitemap-image/1.1"
+        xmlns:xhtml="http://www.w3.org/1999/xhtml">
+<url>
+    <loc>https://lexitrail.com/</loc>
+    <image:image>
+      <image:loc>https://lexitrail.com/images/og/hsk2-practice.png</image:loc>
+      <image:caption>Lexitrail - Smart Chinese Vocabulary Learning</image:caption>
+    </image:image>
+    <lastmod>2024-03-20</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+  </url>
+  
+  <url>
+    <loc>https://lexitrail.com/wordsets</loc>
+    <image:image>
+      <image:loc>https://lexitrail.com/images/og/wordsets.png</image:loc>
+      <image:title>HSK Wordsets</image:title>
+    </image:image>
+    <image:image>
+      <image:loc>https://lexitrail.com/images/screenshots/wordsets.png</image:loc>
+      <image:caption>HSK Wordsets Interface</image:caption>
+    </image:image>
+    <lastmod>2024-03-20</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+    <xhtml:link rel="alternate" media="only screen">
+      <xhtml:title>HSK wordsets</xhtml:title>
+    </xhtml:link>
+  </url>
+
+  <!-- HSK Practice Routes -->
+  <url>
+    <loc>https://lexitrail.com/game/1/PRACTICE</loc>
+    <image:image>
+      <image:loc>https://lexitrail.com/images/og/hsk1-practice.png</image:loc>
+      <image:title>Practice HSK1</image:title>
+    </image:image>
+    <image:image>
+      <image:loc>https://lexitrail.com/images/screenshots/hsk1-practice.png</image:loc>
+      <image:title>HSK1 Practice Mode Interface</image:title>
+    </image:image>
+    <lastmod>2024-03-20</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="alternate" media="only screen">
+      <xhtml:title>Practice HSK1</xhtml:title>
+    </xhtml:link>
+  </url>
+  <url>
+    <loc>https://lexitrail.com/game/2/PRACTICE</loc>
+    <image:image>
+      <image:loc>https://lexitrail.com/images/screenshots/hsk2-practice.png</image:loc>
+      <image:caption>HSK2 Practice Mode</image:caption>
+    </image:image>
+    <lastmod>2024-03-20</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="alternate" media="only screen">
+      <xhtml:title>Practice HSK2</xhtml:title>
+    </xhtml:link>
+  </url>
+  <url>
+    <loc>https://lexitrail.com/game/3/PRACTICE</loc>
+    <image:image>
+      <image:loc>https://lexitrail.com/images/og/hsk3-practice.png</image:loc>
+      <image:title>Practice HSK3</image:title>
+    </image:image>
+    <image:image>
+      <image:loc>https://lexitrail.com/images/screenshots/hsk3-practice.png</image:loc>
+      <image:title>HSK3 Practice Mode Interface</image:title>
+    </image:image>
+    <lastmod>2024-03-20</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="alternate" media="only screen">
+      <xhtml:title>Practice HSK3</xhtml:title>
+    </xhtml:link>
+  </url>
+  <url>
+    <loc>https://lexitrail.com/game/4/PRACTICE</loc>
+    <image:image>
+      <image:loc>https://lexitrail.com/images/og/hsk4-practice.png</image:loc>
+      <image:title>Practice HSK4</image:title>
+    </image:image>
+    <image:image>
+      <image:loc>https://lexitrail.com/images/screenshots/hsk4-practice.png</image:loc>
+      <image:title>HSK4 Practice Mode Interface</image:title>
+    </image:image>
+    <lastmod>2024-03-20</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="alternate" media="only screen">
+      <xhtml:title>Practice HSK4</xhtml:title>
+    </xhtml:link>
+  </url>
+  <url>
+    <loc>https://lexitrail.com/game/5/PRACTICE</loc>
+    <image:image>
+      <image:loc>https://lexitrail.com/images/og/hsk5-practice.png</image:loc>
+      <image:title>Practice HSK5</image:title>
+    </image:image>
+    <image:image>
+      <image:loc>https://lexitrail.com/images/screenshots/hsk5-practice.png</image:loc>
+      <image:title>HSK5 Practice Mode Interface</image:title>
+    </image:image>
+    <lastmod>2024-03-20</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="alternate" media="only screen">
+      <xhtml:title>Practice HSK5</xhtml:title>
+    </xhtml:link>
+  </url>
+  <url>
+    <loc>https://lexitrail.com/game/6/PRACTICE</loc>
+    <lastmod>2024-03-20</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="alternate" media="only screen">
+      <xhtml:title>Practice HSK6</xhtml:title>
+    </xhtml:link>
+  </url>
+
+  <!-- HSK Test Routes -->
+  <url>
+    <loc>https://lexitrail.com/game/1/TEST</loc>
+    <image:image>
+      <image:loc>https://lexitrail.com/images/og/hsk1-test.png</image:loc>
+      <image:title>Test your HSK1 knowledge</image:title>
+    </image:image>
+    <image:image>
+      <image:loc>https://lexitrail.com/images/screenshots/hsk1-test.png</image:loc>
+      <image:title>HSK1 Test Mode Interface</image:title>
+    </image:image>
+    <lastmod>2024-03-20</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+    <xhtml:link rel="alternate" media="only screen">
+      <xhtml:title>Test your HSK1 knowledge</xhtml:title>
+    </xhtml:link>
+  </url>
+  <url>
+    <loc>https://lexitrail.com/game/2/TEST</loc>
+    <image:image>
+      <image:loc>https://lexitrail.com/images/og/hsk2-test.png</image:loc>
+      <image:title>Test your HSK2 knowledge</image:title>
+    </image:image>
+    <image:image>
+      <image:loc>https://lexitrail.com/images/screenshots/hsk2-test.png</image:loc>
+      <image:title>HSK2 Test Mode Interface</image:title>
+    </image:image>
+    <lastmod>2024-03-20</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+    <xhtml:link rel="alternate" media="only screen">
+      <xhtml:title>Test your HSK2 knowledge</xhtml:title>
+    </xhtml:link>
+  </url>
+  <url>
+    <loc>https://lexitrail.com/game/3/TEST</loc>
+    <image:image>
+      <image:loc>https://lexitrail.com/images/og/hsk3-test.png</image:loc>
+      <image:title>Test your HSK3 knowledge</image:title>
+    </image:image>
+    <image:image>
+      <image:loc>https://lexitrail.com/images/screenshots/hsk3-test.png</image:loc>
+      <image:title>HSK3 Test Mode Interface</image:title>
+    </image:image>
+    <lastmod>2024-03-20</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+    <xhtml:link rel="alternate" media="only screen">
+      <xhtml:title>Test your HSK3 knowledge</xhtml:title>
+    </xhtml:link>
+  </url>
+  <url>
+    <loc>https://lexitrail.com/game/4/TEST</loc>
+    <image:image>
+      <image:loc>https://lexitrail.com/images/og/hsk4-test.png</image:loc>
+      <image:title>Test your HSK4 knowledge</image:title>
+    </image:image>
+    <image:image>
+      <image:loc>https://lexitrail.com/images/screenshots/hsk4-test.png</image:loc>
+      <image:title>HSK4 Test Mode Interface</image:title>
+    </image:image>
+    <lastmod>2024-03-20</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+    <xhtml:link rel="alternate" media="only screen">
+      <xhtml:title>Test your HSK4 knowledge</xhtml:title>
+    </xhtml:link>
+  </url>
+  <url>
+    <loc>https://lexitrail.com/game/5/TEST</loc>
+    <lastmod>2024-03-20</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+    <xhtml:link rel="alternate" media="only screen">
+      <xhtml:title>Test your HSK5 knowledge</xhtml:title>
+    </xhtml:link>
+  </url>
+  <url>
+    <loc>https://lexitrail.com/game/6/TEST</loc>
+    <lastmod>2024-03-20</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+    <xhtml:link rel="alternate" media="only screen">
+      <xhtml:title>Test your HSK6 knowledge</xhtml:title>
+    </xhtml:link>
+  </url>
+</urlset> 

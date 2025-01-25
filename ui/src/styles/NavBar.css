@@ -257,6 +257,13 @@
   background: rgba(255,255,255,0.1);
 }
 
+.nav-right .auth-buttons {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+}
+
 .google-signin-compact {
   display: flex;
   align-items: center;
@@ -271,6 +278,7 @@
   font-size: 14px;
   font-weight: 500;
   cursor: pointer;
+  order: 1;
 }
 
 .google-signin-compact img {
@@ -278,6 +286,19 @@
   height: 18px;
 }
 
-.google-signin-compact:hover {
-  background: #f8f9fa;
+.try-button {
+  background-color: #4285f4;
+  color: white;
+  padding: 6px 12px;
+  border-radius: 4px;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  height: 32px;
+  order: 2;
+  white-space: nowrap;
+}
+
+.try-button:hover {
+  background-color: #357ae8;
 }

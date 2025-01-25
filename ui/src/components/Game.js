@@ -8,6 +8,7 @@ import { useWordsetLoader } from '../hooks/useWordsetLoader';
 import { useAuth } from '../hooks/useAuth';
 import '../styles/Game.css';
 import { useNavigate } from 'react-router-dom';
+import Logo from './Logo';
 
 const GameMode = {
   PRACTICE: "PRACTICE",
@@ -171,6 +172,10 @@ const Game = () => {
       setLayoutClass(selectedLayout.className);
       setMaxCardsToShow(selectedLayout.capacity);
 
+      // Add this: Set the height for incorrect-cards-container
+      const availableHeight = selectedLayout.rows * cardHeight -  35;
+      document.documentElement.style.setProperty('--cards-container-height', `${availableHeight}px`);
+
       //console.log(
       //  `Update layout: Width: ${width}, Height: ${height}, maxColumns: ${maxColumns}, maxRows: ${maxRows}, Selected layout: ${selectedLayout.className} (Event: ${triggerEvent}).`
       // );
@@ -254,11 +259,21 @@ const Game = () => {
   };
 
   if (loading.status === 'loading') {
-    return <div>Loading...</div>;
+    return (
+      <div className="loading-container">
+        <Logo size="medium" />
+        <div>Loading...</div>
+      </div>
+    );
   }
 
   if (loading.status === 'error') {
-    return <div>Error loading data. Please try again.</div>;
+    return (
+      <div className="error-container">
+        <Logo size="small" />
+        <div>Error loading data. Please try again.</div>
+      </div>
+    );
   }
 
   if (displayWords.length === 0 && loading.status === 'loaded') {
@@ -281,33 +296,35 @@ const Game = () => {
 
   return (
     <div className="container">
+      <div className="header-area">
+        <Logo size="small" />
+        <div className="progress-stats">
+          <div className="not-memorized">❌ {Object.keys(incorrectAttempts).length}</div>
 
-      <div className="progress-stats">
-        <div className="not-memorized">❌ {Object.keys(incorrectAttempts).length}</div>
+          <div className="game-settings">
+            <button className="game-settings-button" onClick={toggleShowHints}>
+              {hintsDisplayed ? 'Hide Hints' : 'Show Hints'}
+            </button>
+            {mode !== GameMode.TEST ? (
+              <>
+                <button className="game-settings-button" onClick={toggleFlipStates}>
+                  {allFlipped ? 'Flip all back' : 'Flip all'}
+                </button>
+                <button className="game-settings-button" onClick={toggleWordsetFilter}>
+                  {mode == GameMode.SHOW_EXCLUDED ? 'Show Included' : 'Show Excluded'}
+                </button>
+              </>
+            ) : (
+              <></>
+            )}
+          </div>
 
-        <div className="game-settings">
-          <button className="game-settings-button" onClick={toggleShowHints}>
-            {hintsDisplayed ? 'Hide Hints' : 'Show Hints'}
-          </button>
-          {mode !== GameMode.TEST ? (
-            <>
-              <button className="game-settings-button" onClick={toggleFlipStates}>
-                {allFlipped ? 'Flip all back' : 'Flip all'}
-              </button>
-              <button className="game-settings-button" onClick={toggleWordsetFilter}>
-                {mode == GameMode.SHOW_EXCLUDED ? 'Show Included' : 'Show Excluded'}
-              </button>
-            </>
-          ) : (
-            <></>
-          )}
+          <div className="timer">
+            <Timer onTick={handleTimerTick} />  {/* Timer updates every second */}
+
+          </div>
+          <div className="memorized">✔️ {correctlyMemorized.size}</div>
         </div>
-
-        <div className="timer">
-          <Timer onTick={handleTimerTick} />  {/* Timer updates every second */}
-
-        </div>
-        <div className="memorized">✔️ {correctlyMemorized.size}</div>
       </div>
 
 

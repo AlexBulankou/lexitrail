@@ -13,42 +13,45 @@ import './styles/App.css';
 import './styles/NavBar.css';
 import './styles/Policy.css';
 import Home from './components/Home';
+import { AuthProvider } from './contexts/AuthContext';
 
 const App = () => {
-  const { user, login, logOut } = useAuth();
-
+  const { user, login, logOut, tryWithoutSignin } = useAuth();
+  
   return (
-    <Router>
-      <div className="app-container">
-        <NavBar user={user} login={login} logOut={logOut} />
-        <div className="content-container">
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/profile" element={
-              <PrivateRoute profileDetails={user} login={login} logOut={logOut}>
-                <Profile profileDetails={user} />
-              </PrivateRoute>
-            } />
-            <Route
-              path="/wordsets/*"
-              element={
-                <PrivateRoute profileDetails={user} login={login} logOut={logOut}>
-                  <Wordsets />
+    <AuthProvider>
+      <Router>
+        <div className="app-container">
+          <NavBar user={user} login={login} logOut={logOut} tryWithoutSignin={tryWithoutSignin} />
+          <div className="content-container">
+            <Routes>
+              <Route path="/" element={<Home />} />
+              <Route path="/profile" element={
+                <PrivateRoute>
+                  <Profile profileDetails={user} />
                 </PrivateRoute>
-              }
-            />
-            <Route path="/game/:wordsetId/:mode?" element={
-              <PrivateRoute profileDetails={user} login={login} logOut={logOut}>
-                <Game />
-              </PrivateRoute>
-            } />
-            <Route path="/game" element={<Navigate to="/wordsets" />} />
-            <Route path="/privacy" element={<PrivacyPolicy />} />
-            <Route path="/terms" element={<TermsOfService />} />
-          </Routes>
+              } />
+              <Route
+                path="/wordsets/*"
+                element={
+                  <PrivateRoute >
+                    <Wordsets />
+                  </PrivateRoute>
+                }
+              />
+              <Route path="/game/:wordsetId/:mode?" element={
+                <PrivateRoute>
+                  <Game />
+                </PrivateRoute>
+              } />
+              <Route path="/game" element={<Navigate to="/wordsets" />} />
+              <Route path="/privacy" element={<PrivacyPolicy />} />
+              <Route path="/terms" element={<TermsOfService />} />
+            </Routes>
+          </div>
         </div>
-      </div>
-    </Router>
+      </Router>
+    </AuthProvider>
   );
 };
 

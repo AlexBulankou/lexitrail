@@ -19,8 +19,17 @@ def authenticate_user(func):
             if token:
                 parts = token.split(' ')
                 if len(parts) == 2 and parts[0] == 'Bearer':
-                    email = parts[1]  # Mock the token as an email for testing purposes
-                    request.user = {"email": email}
+                    access_token = parts[1]
+                    # Handle test token format
+                    if access_token.startswith('test_token_'):
+                        email = access_token.replace('test_token_', '')
+                        request.user = {"email": email}
+                    # Handle unauth token format
+                    elif access_token.startswith('UNAUTH_USER:'):
+                        email = access_token.split('UNAUTH_USER:')[1]
+                        request.user = {"email": email}
+                    else:
+                        request.user = {"email": access_token}  # Fallback
             else:
                 request.user = {"email": default_mock_user}  # Default mock user in test mode
             return func(*args, **kwargs)
@@ -36,8 +45,14 @@ def authenticate_user(func):
                 return jsonify({"message": "Invalid token format"}), 401
 
             access_token = parts[1]
+            
+            # Check for unauthenticated user token format
+            if access_token.startswith('UNAUTH_USER:'):
+                email = access_token.split('UNAUTH_USER:')[1]
+                request.user = {"email": email}
+                return func(*args, **kwargs)
 
-            # Call Google API to validate the access token
+            # Regular Google token validation
             google_url = f"https://www.googleapis.com/oauth2/v1/tokeninfo?access_token={access_token}"
             response = req.get(google_url)
             print (response)

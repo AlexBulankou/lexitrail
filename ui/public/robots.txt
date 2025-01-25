@@ -1,0 +1,16 @@
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /static/js/
+Disallow: /*.js$
+Disallow: /*.json$
+
+# Allow main static assets
+Allow: /static/media/
+Allow: /static/css/
+Allow: /manifest.json
+Allow: /favicon.ico
+Allow: /logo192.png
+Allow: /logo512.png
+
+Sitemap: https://lexitrail.com/sitemap.xml 

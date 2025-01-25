@@ -55,5 +55,27 @@ class UserTests(unittest.TestCase):
         response = self.client.get('/users', headers=self.headers)
         self.assertEqual(response.status_code, 200)
 
+    def test_unauthenticated_user_access(self):
+        """Test that unauthenticated users can access endpoints with special token format."""
+        test_email = 'unauthenticated@example.com'
+        TestUtils.mock_unauth_header(self.headers, test_email)
+
+        # Test user creation
+        response = self.client.post('/users', 
+            json={
+                'email': test_email,
+                'name': 'Test User',
+                'picture': 'https://example.com/picture.jpg'
+            },
+            headers=self.headers
+        )
+        self.assertEqual(response.status_code, 201)
+        self.assertIn(b'User created successfully', response.data)
+
+        # Test user retrieval
+        response = self.client.get(f'/users/{test_email}', headers=self.headers)
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(test_email.encode(), response.data)
+
 if __name__ == '__main__':
     unittest.main()

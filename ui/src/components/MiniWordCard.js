@@ -47,12 +47,12 @@ const MiniWordCard = ({ mode, word }) => {
       {loadingWord ? '⏳' :
         <>
           <div className="mini-word-card-word">
-          <span style={{ fontSize: calculateFontSize(word.word, 1.3, 0.7) }}>
+          <span style={{ fontSize: calculateFontSize(word.word, 3.2, 0.7) }}>
             {word.word}
             </span>
             </div>
           <div className="mini-word-card-def1">
-            <span style={{ fontSize: calculateFontSize(word.def1, 1.3, 0.5) }}>
+            <span style={{ fontSize: calculateFontSize(word.def1, 3.5, 0.5) }}>
               <PinyinText text={word.def1} />
             </span>
           </div>

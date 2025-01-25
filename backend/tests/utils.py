@@ -293,20 +293,35 @@ class TestUtils:
     
 
     @staticmethod
-    def mock_auth_header(headers, email=default_mock_user):
-        """
-        Helper function to mock the Authorization header for a specific user.
-        Merges the Authorization header with any other existing headers.
-        """
-        headers['Authorization'] = f'Bearer {email}'
-        return headers
+    def mock_auth_header(headers, email):
+        """Mock the Authorization header with the given email."""
+        # Revert to original simple behavior
+        token = f'test_token_{email}'
+        headers['Authorization'] = f'Bearer {token}'
 
     @staticmethod
-    def authenticate_and_create_user(client, user_email=default_mock_user):
-        """
-        Helper function to mock the creation of a user and authenticate with Authorization header.
-        """
+    def mock_unauth_header(headers, email):
+        """Mock the Authorization header for unauthenticated users."""
+        token = f'UNAUTH_USER:{email}'
+        headers['Authorization'] = f'Bearer {token}'
+
+    @staticmethod
+    def authenticate_and_create_user(client, email):
+        """Create a new user with authentication."""
         headers = {}
-        TestUtils.mock_auth_header(headers, email=user_email)
-        response = client.post('/users', json={'email': user_email}, headers=headers)
-        return response
+        # If it's an unauth token, use it directly, otherwise create test token
+        if email.startswith('UNAUTH_USER:'):
+            TestUtils.mock_auth_header(headers, email)
+            user_email = email.split('UNAUTH_USER:')[1]
+        else:
+            TestUtils.mock_auth_header(headers, email)
+            user_email = email
+
+        return client.post('/users', 
+            json={
+                'email': user_email,
+                'name': 'Test User',
+                'picture': 'https://example.com/picture.jpg'
+            },
+            headers=headers
+        )

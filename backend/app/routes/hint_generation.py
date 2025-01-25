@@ -7,6 +7,7 @@ from ..config import Config
 from ..utils import success_response, error_response
 import vertexai
 from vertexai.preview.vision_models import ImageGenerationModel
+from vertexai.preview.generative_models import GenerativeModel as PreviewGenerativeModel
 from vertexai.generative_models import GenerativeModel, SafetySetting
 from PIL import Image as PIL_Image
 import base64
@@ -25,6 +26,9 @@ logger = logging.getLogger(__name__)
 
 # Define the Blueprint
 bp = Blueprint('hint_generation', __name__, url_prefix='/hint')
+
+# Configuration for image generation
+IMAGE_MODEL_TYPE = "imagen" #"stable_diffusion" 
 
 # Configuration for prompt generation
 generation_config = {
@@ -55,7 +59,8 @@ safety_settings = [
 
 # Lazy-loaded model instances
 _llm_model = None
-_image_generation_model = None
+_imagen_model = None
+_stable_diffusion_model = None
 
 aiplatform.init(project=Config.PROJECT_ID, location=Config.LOCATION)
 vertexai.init(project=Config.PROJECT_ID, location=Config.LOCATION)
@@ -70,13 +75,26 @@ def get_llm_model():
     return _llm_model
 
 def get_image_generation_model():
-    global _image_generation_model
-    if _image_generation_model is None:
-        try:
-            _image_generation_model = ImageGenerationModel.from_pretrained("imagen-3.0-fast-generate-001")
-        except Exception as e:
-            raise RuntimeError(f"Failed to initialize Image Generation model: {str(e)}")
-    return _image_generation_model
+    global _imagen_model, _stable_diffusion_model
+    
+    if IMAGE_MODEL_TYPE == "imagen":
+        if _imagen_model is None:
+            try:
+                logger.info("Initializing Imagen model using Vision API")
+                _imagen_model = ImageGenerationModel.from_pretrained("imagen-3.0-fast-generate-001")
+            except Exception as e:
+                raise RuntimeError(f"Failed to initialize Imagen model: {str(e)}")
+        return _imagen_model
+    elif IMAGE_MODEL_TYPE == "stable_diffusion":
+        if _stable_diffusion_model is None:
+            try:
+                logger.info("Initializing Stable Diffusion model using Preview Generative AI API")
+                _stable_diffusion_model = PreviewGenerativeModel("imagegeneration@002")
+            except Exception as e:
+                raise RuntimeError(f"Failed to initialize Stable Diffusion model: {str(e)}")
+        return _stable_diffusion_model
+    else:
+        raise ValueError(f"Unsupported image model type: {IMAGE_MODEL_TYPE}")
 
 def generate_prompt(word, pinyin, translation):
     model = get_llm_model()
@@ -91,15 +109,32 @@ def generate_prompt(word, pinyin, translation):
     return response.candidates[0].content.parts[0].text
 
 def generate_image(prompt):
-    image_generation_model = get_image_generation_model()
-    image = image_generation_model.generate_images(
-        prompt=prompt,
-        number_of_images=1,
-        aspect_ratio="4:3",
-        safety_filter_level="block_some"
-    )
-    resized_image = image[0]._pil_image.resize((400, 300), PIL_Image.Resampling.LANCZOS)
-    return resized_image
+    model = get_image_generation_model()
+    
+    if IMAGE_MODEL_TYPE == "imagen":
+        logger.info("Generating image with Imagen")
+        image = model.generate_images(
+            prompt=prompt,
+            number_of_images=1,
+            aspect_ratio="4:3",
+            safety_filter_level="block_some"
+        )
+        resized_image = image[0]._pil_image.resize((400, 300), PIL_Image.Resampling.LANCZOS)
+        return resized_image
+    elif IMAGE_MODEL_TYPE == "stable_diffusion":
+        logger.info("Generating image with Stable Diffusion")
+        response = model.generate_content(
+            prompt,
+            generation_config={
+                "temperature": 0.9,
+            }
+        )
+        # Convert the response to PIL Image
+        image_bytes = response.candidates[0].image.image_bytes
+        image = PIL_Image.open(BytesIO(image_bytes))
+        # Resize the image to match our desired dimensions
+        image = image.resize((400, 300), PIL_Image.Resampling.LANCZOS)
+        return image
 
 def image_to_base64(image):
     buffered = BytesIO()

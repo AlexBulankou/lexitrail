@@ -148,7 +148,7 @@ const WordCard = ({ mode, word, isFlipped, isHintDisplayed, handleMemorized, han
     const longestLineLength = Math.max(...lines.map(line => removeQuotes(line).length));
 
     // Calculate font size based on the longest line length
-    const fontSize = Math.max(baseCoefficient / (Math.pow(longestLineLength, 0.65)), minSize); // Ensure the font size doesn't go too small
+    const fontSize = Math.max(baseCoefficient / (Math.pow(longestLineLength, 0.70)), minSize); // Ensure the font size doesn't go too small
     return `${fontSize}rem`;
   };
 

@@ -2,15 +2,17 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import Logo from './Logo';
 import '../styles/NavBar.css';
-import googleGIcon from '../styles/assets/google-mini-icon.svg';
+import googleGIcon from '../styles/assets/google-g.svg';
+import { useAuth } from '../contexts/AuthContext';
 
-const NavBar = ({ user, login, logOut }) => {
+const NavBar = () => {
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [legalMenuOpen, setLegalMenuOpen] = useState(false);
   const userDropdownRef = useRef(null);
   const legalDropdownRef = useRef(null);
   const location = useLocation();
   const navigate = useNavigate();
+  const { user, login, logOut, tryWithoutSignin } = useAuth();
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -33,6 +35,12 @@ const NavBar = ({ user, login, logOut }) => {
     }
   };
 
+  const handleLogout = () => {
+    logOut();
+    setUserMenuOpen(false);
+    navigate('/');
+  };
+
   const isActive = (path) => {
     // Don't highlight anything on game pages
     if (location.pathname.startsWith('/game')) {
@@ -45,7 +53,7 @@ const NavBar = ({ user, login, logOut }) => {
     <nav className="navbar">
       <div className="nav-left">
         <Link to="/" className="nav-logo">
-          <Logo width={24} height={24} color="#fff" />
+          <Logo size="small" />
           <span className="logo-text">Lexitrail</span>
         </Link>
       </div>
@@ -98,10 +106,7 @@ const NavBar = ({ user, login, logOut }) => {
               <div className="dropdown-menu">
                 <div 
                   className="dropdown-item" 
-                  onClick={() => {
-                    logOut();
-                    setUserMenuOpen(false);
-                  }}
+                  onClick={handleLogout}
                 >
                   Log Out
                 </div>
@@ -109,10 +114,15 @@ const NavBar = ({ user, login, logOut }) => {
             )}
           </div>
         ) : (
-          <button onClick={handleLogin} className="google-signin-compact">
-            <img src={googleGIcon} alt="" />
-            Sign in
-          </button>
+          <div className="auth-buttons">
+            <button onClick={tryWithoutSignin} className="try-button">
+              Try
+            </button>
+            <button onClick={login} className="google-signin-compact">
+              <img src={googleGIcon} alt="" />
+              Sign in
+            </button>
+          </div>
         )}
       </div>
     </nav>

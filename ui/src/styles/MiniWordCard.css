@@ -1,10 +1,9 @@
 .mini-word-card {
 
     border-radius: 7px;
-    border:0px;
-    height: 35px;
-    width:47px;
-    min-width: 47px;
+    border:1px solid #333;
+    min-height: 70px;
+    min-width: 98px;
     display: flex;
     justify-content: space-between;
     flex-direction: row;
@@ -18,14 +17,18 @@
 }
 
 .mini-word-card-word {
-    width: 22px;
-    
+    min-width: 52px;
+    line-height: 2.2rem;
     
 }
 
 
 .mini-word-card-def1 {
-    line-height: 0.5rem;
-    width: 23px;
+    line-height: 1.5rem;
+    width: 46px;
     font-weight: bold;
+}
+
+.mini-word-card > * > span {
+    display:block
 }

@@ -38,6 +38,7 @@ locals {
   cluster_name = data.dotenv.env.entries.CLUSTER_NAME
   db_root_password = data.dotenv.env.entries.DB_ROOT_PASSWORD
   google_client_id = data.dotenv.env.entries.GOOGLE_CLIENT_ID
+  mysql_files_bucket_name = data.dotenv.env.entries.MYSQL_FILES_BUCKET
   ui_files_hash = sha1(join("", [for f in fileset(path.root, "../ui/**") : filesha1(f)]))
   backend_files_hash = sha1(join("", [for f in fileset(path.root, "../backend/**") : filesha1(f)]))
   middle_layer_files_hash = sha1(join("", [for f in fileset(path.root, "../middle_layer/**") : filesha1(f)]))

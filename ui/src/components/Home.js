@@ -1,13 +1,17 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import '../styles/Home.css';
+import Logo from './Logo';
 
 const Home = () => {
   return (
     <div className="page-wrapper">
       <div className="page-container">
         <div className="centered-content">
-          <h1>Welcome to Lexitrail</h1>
+          <div className="hero-section">
+            <Logo size="large" />
+            <h1>Welcome to Lexitrail</h1>
+          </div>
           <div className="intro-section">
             <h2>Master Chinese Vocabulary Through Smart Learning</h2>
             <p>Lexitrail is your AI-powered companion for mastering Mandarin Chinese vocabulary. Perfect for beginners to advanced learners looking to expand their Chinese word knowledge.</p>

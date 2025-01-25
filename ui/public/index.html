@@ -1,25 +1,57 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#000000" />
-    <meta name="description" content="Lexitrail - A word memorization game" />
-    <link rel="icon" href="%PUBLIC_URL%/favicon.ico" />
-    <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
-    <base href="%PUBLIC_URL%/" />
-    <title>Lexitrail</title>
-     <!-- Load config.js before the React bundle -->
-     <script src="%PUBLIC_URL%/config.js"></script>
-  </head>
-  <body>
-    <noscript>You need to enable JavaScript to run this app.</noscript>
-    <div id="root"></div>
-    <!--
+
+<head>
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-910V8PX54C"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag() { dataLayer.push(arguments); }
+    gtag('js', new Date());
+
+    gtag('config', 'G-910V8PX54C');
+  </script>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#000000" />
+  
+  <!-- Primary Meta Tags -->
+  <meta name="title" content="Lexitrail - Smart Chinese Vocabulary Learning">
+  <meta name="description" content="Master Chinese vocabulary with AI-powered learning tools, interactive flashcards, and personalized study paths. Perfect for beginners to advanced learners." />
+  <meta name="keywords" content="Chinese learning, vocabulary app, Mandarin Chinese, language learning, flashcards, HSK, Chinese characters, pinyin">
+  <meta name="author" content="Alex Bulankou">
+
+  <!-- Open Graph / Facebook -->
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://lexitrail.com/">
+  <meta property="og:title" content="Lexitrail - Smart Chinese Vocabulary Learning">
+  <meta property="og:description" content="Master Chinese vocabulary with AI-powered learning tools, interactive flashcards, and personalized study paths.">
+  <meta property="og:image" content="%PUBLIC_URL%/images/og/hsk2-practice.png">
+
+  <!-- Twitter -->
+  <meta property="twitter:card" content="summary_large_image">
+  <meta property="twitter:url" content="https://lexitrail.com/">
+  <meta property="twitter:title" content="Lexitrail - Smart Chinese Vocabulary Learning">
+  <meta property="twitter:description" content="Master Chinese vocabulary with AI-powered learning tools, interactive flashcards, and personalized study paths.">
+  <meta property="twitter:image" content="%PUBLIC_URL%/images/og/hsk2-practice.png">
+
+  <link rel="icon" href="%PUBLIC_URL%/favicon.ico" />
+  <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
+  <base href="%PUBLIC_URL%/" />
+  <title>Lexitrail - Smart Chinese Vocabulary Learning</title>
+  <!-- Load config.js before the React bundle -->
+  <script src="%PUBLIC_URL%/config.js"></script>
+</head>
+
+<body>
+  <noscript>You need to enable JavaScript to run this app.</noscript>
+  <div id="root"></div>
+  <!--
       The root div is where our React app will be mounted.
     -->
 
-    <!-- Scripts -->
-    <script src="%PUBLIC_URL%/static/js/bundle.js"></script>
-  </body>
+  <!-- Scripts -->
+  <script src="%PUBLIC_URL%/static/js/bundle.js"></script>
+</body>
+
 </html>

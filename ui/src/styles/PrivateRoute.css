@@ -4,7 +4,6 @@
     align-items: center;
     min-height: calc(100vh - 48px);
     padding: 20px;
-    background: #f8f9fa;
   }
   
   .login-card {
@@ -94,6 +93,15 @@
     }
   }
 
+  .auth-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    width: 100%;
+    max-width: 300px;
+    margin: 0 auto;
+  }
+
   .google-signin-button {
     display: flex;
     align-items: center;
@@ -103,23 +111,30 @@
     color: #3c4043;
     border: 1px solid #dadce0;
     border-radius: 4px;
-    padding: 0 12px;
-    height: 40px;
+    padding: 8px 16px;
     font-family: "Google Sans", Roboto, Arial, sans-serif;
     font-size: 14px;
     font-weight: 500;
     cursor: pointer;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
-    transition: background-color 0.2s;
+    width: 100%;
   }
 
-  .google-signin-button:hover {
-    background-color: #f8f9fa;
-    border-color: #dadce0;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.12);
-  }
-
-  .google-signin-button .google-icon {
+  .google-signin-button img {
     width: 18px;
     height: 18px;
+  }
+
+  .try-without-signin {
+    background-color: #4285f4;
+    color: white;
+    padding: 8px 16px;
+    border-radius: 4px;
+    border: none;
+    cursor: pointer;
+    font-size: 14px;
+    width: 100%;
+  }
+
+  .try-without-signin:hover {
+    background-color: #357ae8;
   }

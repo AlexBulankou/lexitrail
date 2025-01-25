@@ -57,11 +57,11 @@ spec:
           periodSeconds: 10
         resources:
           requests:
-            memory: "256Mi"
-            cpu: "100m"
-          limits:
             memory: "512Mi"
             cpu: "200m"
+          limits:
+            memory: "1024Mi"
+            cpu: "400m"
   volumeClaimTemplates:
   - metadata:
       name: mysql-persistent-storage

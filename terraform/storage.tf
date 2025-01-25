@@ -11,7 +11,7 @@ resource "google_artifact_registry_repository" "my_repo" {
 }
 
 resource "google_storage_bucket" "mysql_files_bucket" {
-  name     = "${local.project_id}-lexitrail-mysql-files"
+ name     = local.mysql_files_bucket_name
   location = var.region
 
   uniform_bucket_level_access = true

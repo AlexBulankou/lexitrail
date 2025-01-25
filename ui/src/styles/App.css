@@ -66,11 +66,6 @@ body, html {
 }
 
 
-.cards-area {
-  display: flex;
-  flex-direction: column;
-}
-
 .incorrect-cards-container {
   flex-shrink: 0;
 }

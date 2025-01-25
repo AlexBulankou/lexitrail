@@ -65,12 +65,12 @@ class HintGenerationTests(unittest.TestCase):
 
             # Save the real image to disk and print file path for review
             image_path = self.save_image_from_base64(result['hint_image'], "必须")
+            print(f"\nGenerated hint text: {result['hint_text']}")
             print(f"Generated image saved at: {image_path}")
 
     def test_regenerate_hint_no_existing_image_force_false(self):
         """Test the /regenerate route with no existing image and force_regenerate=false."""
         with self.app.app_context():
-            # Create test data using TestUtils
             user, wordset, word, userword = TestUtils.create_test_userword(db, user_email='test@example.com', word_name='Test Word')
 
             response = self.client.get(f'/hint/generate_hint?user_id={user.email}&word_id={word.word_id}')
@@ -79,6 +79,11 @@ class HintGenerationTests(unittest.TestCase):
             self.assertIn('hint_text', response_data)
             self.assertIn('hint_image', response_data)
             self.assertGreater(len(response_data['hint_image']), 0, "Generated image data should not be empty.")
+
+            # Print generated content
+            print(f"\nGenerated hint text: {response_data['hint_text']}")
+            image_path = self.save_image_from_base64(response_data['hint_image'], word.word)
+            print(f"Generated image saved at: {image_path}")
 
             # Verify database is updated with new image and hint
             updated_userword = UserWord.query.filter_by(user_id=user.email, word_id=word.word_id).first()
@@ -104,7 +109,6 @@ class HintGenerationTests(unittest.TestCase):
     def test_regenerate_hint_existing_image_force_true(self):
         """Test the /regenerate route with existing image and force_regenerate=true (should regenerate)."""
         with self.app.app_context():
-            # Create test data using TestUtils
             user, wordset, word, userword = TestUtils.create_test_userword(db, user_email='test@example.com', word_name='Test Word')
             userword.hint_text = 'Existing hint text'
             userword.hint_img = base64.b64encode(b'Existing image data')  # Properly encode the image data
@@ -116,6 +120,11 @@ class HintGenerationTests(unittest.TestCase):
             self.assertIn('hint_text', response_data)
             self.assertIn('hint_image', response_data)
             self.assertGreater(len(response_data['hint_image']), 0, "Generated image data should not be empty.")
+
+            # Print generated content
+            print(f"\nGenerated hint text: {response_data['hint_text']}")
+            image_path = self.save_image_from_base64(response_data['hint_image'], word.word)
+            print(f"Generated image saved at: {image_path}")
 
             # Verify database is updated with new image and hint
             updated_userword = UserWord.query.filter_by(user_id=user.email, word_id=word.word_id).first()

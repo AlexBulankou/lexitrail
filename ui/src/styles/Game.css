@@ -30,25 +30,41 @@ body, html {
   margin-top:60px;
 }
 
-.cards-area{
-  display:flex;
-  flex-direction: row;
-}
-
-.incorrect-cards-container{
-  background-color: #333;
-  border-radius: 8px;
-  width:100px;
-  min-width: 100px;
+.cards-area {
   display: flex;
   flex-direction: row;
-  align-items: flex-start;
-  flex-wrap: wrap;
+  height: calc(100% - 100px);
+  min-height: 0;
+  overflow: hidden;
+}
+
+.incorrect-cards-container {
+  background-color: #333;
+  border-radius: 8px;
+  width: 100px;
+  min-width: 100px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   gap: 0;
   margin: 0 auto;
   padding: 0;
   box-sizing: border-box;
-  align-content: flex-start;
+  overflow-y: auto;
+  max-height: var(--cards-container-height);  /* Use the CSS variable here */
+  min-height: 0;
+  flex-shrink: 0;
+}
+
+.incorrect-cards-container > * {
+  position: relative;
+  transition: transform 0.2s ease;
+  margin: 0;
+}
+
+.incorrect-cards-container > *:hover {
+  transform: translateY(-10px);
+  z-index: 1;
 }
 
 /* Container for the word cards */
