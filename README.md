@@ -13,25 +13,44 @@ A vocabulary learning platform with a React frontend and Flask backend.
 ## Quick Start
 
 ### Backend
-1. Set up and activate a virtual environment:
+This project uses Python 3.9 to maintain consistency with our production environment.
+
+1. Install Python 3.9:
+   ```bash
+   # macOS with Homebrew
+   brew install python@3.9
+   
+   # Ubuntu/Debian
+   sudo add-apt-repository ppa:deadsnakes/ppa
+   sudo apt update
+   sudo apt install python3.9 python3.9-venv
+   ```
+
+2. Set up and activate a virtual environment:
    ```bash
    cd backend
-   python3 -m venv venv
-   source venv/bin/activate
+   python3.9 -m venv venv
+   source venv/bin/activate  # On Windows: .\venv\Scripts\activate
    pip install -r requirements.txt
    ```
 
-2. Configure environment variables in `.env`:
+3. Configure environment variables in `.env`:
    ```
    DATABASE_URL=mysql://username:password@localhost/dbname
    SECRET_KEY=<your-secret-key>
    ```
 
-3. Start MySQL connection and run the backend:
+4. Start MySQL connection and run the backend:
    ```bash
    gcloud container clusters get-credentials lexitrail-cluster --location=us-central1
    kubectl port-forward svc/mysql 3306:3306 -n mysql
    python run.py
+   ```
+
+   Alternatively, test with Docker to match production environment:
+   ```bash
+   docker build -t lexitrail-backend .
+   docker run -p 80:80 --env-file .env lexitrail-backend
    ```
 
 ### Frontend

@@ -3,8 +3,14 @@ from .config import Config
 from .database import init_db, db  # Add db import
 from .routes import register_routes
 from flask_cors import CORS  # Import CORS
+import sys
+import logging
 
 def create_app(config_class=Config):
+    # Configure logging
+    logging.basicConfig(stream=sys.stdout, level=logging.INFO)
+    logging.getLogger('werkzeug').setLevel(logging.INFO)
+    
     app = Flask(__name__)
     app.config.from_object(config_class)
     

@@ -14,6 +14,7 @@ import './styles/NavBar.css';
 import './styles/Policy.css';
 import Home from './components/Home';
 import { AuthProvider } from './contexts/AuthContext';
+import About from './components/About';
 
 const App = () => {
   const { user, login, logOut, tryWithoutSignin } = useAuth();
@@ -47,6 +48,7 @@ const App = () => {
               <Route path="/game" element={<Navigate to="/wordsets" />} />
               <Route path="/privacy" element={<PrivacyPolicy />} />
               <Route path="/terms" element={<TermsOfService />} />
+              <Route path="/about" element={<About />} />
             </Routes>
           </div>
         </div>

@@ -62,3 +62,28 @@
       padding: 1rem;
   }
 }
+
+.cta-button-container {
+  text-align: center;
+  margin: 2rem 0;
+  padding: 1rem;
+  background-color: #f5f7fa;
+  border-radius: 8px;
+}
+
+.cta-button {
+  display: inline-block;
+  padding: 12px 24px;
+  background-color: #24292e;
+  color: white;
+  text-decoration: none;
+  border-radius: 6px;
+  font-weight: bold;
+  transition: background-color 0.2s ease;
+}
+
+.cta-button:hover {
+  background-color: #2f363d;
+  text-decoration: none;
+  color: white;
+}

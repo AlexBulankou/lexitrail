@@ -12,6 +12,12 @@
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
+  <url>
+    <loc>https://lexitrail.com/about</loc>
+    <lastmod>2024-03-21</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
   
   <url>
     <loc>https://lexitrail.com/wordsets</loc>

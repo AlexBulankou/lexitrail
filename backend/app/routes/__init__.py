@@ -1,4 +1,5 @@
 from flask import Blueprint, jsonify
+import logging
 from .users import bp as users_bp
 from .wordsets import bp as wordsets_bp
 from .userwords import bp as userwords_bp

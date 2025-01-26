@@ -68,17 +68,20 @@ const NavBar = () => {
         )}
       </div>
       <div className="nav-right">
-        {/* Legal Dropdown */}
+        {/* About Dropdown */}
         <div className="dropdown" ref={legalDropdownRef}>
           <button 
             className="dropdown-trigger"
             onClick={() => setLegalMenuOpen(!legalMenuOpen)}
           >
-            Privacy
+            About
             <span className="dropdown-arrow">▼</span>
           </button>
           {legalMenuOpen && (
             <div className="dropdown-menu">
+              <Link to="/about" className="dropdown-item" onClick={() => setLegalMenuOpen(false)}>
+                About
+              </Link>
               <Link to="/privacy" className="dropdown-item" onClick={() => setLegalMenuOpen(false)}>
                 Privacy Policy
               </Link>
