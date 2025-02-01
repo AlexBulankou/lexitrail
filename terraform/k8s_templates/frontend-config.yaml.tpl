@@ -11,3 +11,6 @@ spec:
     type: HTTP
     requestPath: /
     port: 3000
+  redirectToHttps:
+    enabled: true
+    responseCodeName: MOVED_PERMANENTLY_DEFAULT

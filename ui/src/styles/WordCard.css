@@ -139,8 +139,8 @@
   justify-content: center;
   text-align: center;
   overflow: hidden;
-  word-break: break-word;
-  /* Allows breaking within words */
+  word-break: break-all;
+  flex-wrap: wrap;
   white-space: normal;
   /* Allows wrapping */
   line-height: 1.2;

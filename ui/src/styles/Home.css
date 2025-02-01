@@ -1,6 +1,7 @@
 .page-wrapper {
     position: fixed;
     top: 48px; /* Navbar height */
+    padding:20px;
     left: 0;
     right: 0;
     bottom: 0;
@@ -21,13 +22,26 @@
 }
 
 .hero-section {
-    margin-bottom: 80px;
+    text-align: center;
+    margin-bottom: 2rem;
 }
 
-.feature-section {
+.hero-section h1 {
+    margin-bottom: 1rem;
+}
+
+.hero-section h2 {
+    margin-bottom: 1rem;
+}
+
+.hero-section p {
+    margin-bottom: 2rem;
+}
+
+.features-section {
     width: 100%;
-    margin: 20px 0;
-    padding: 30px;
+    margin: 10px 0;
+    padding: 10px;
     background: white;
     border-radius: 12px;
     box-shadow: 0 2px 10px rgba(0,0,0,0.08);
@@ -50,14 +64,14 @@
 }
 
 .intro-section {
-    margin: 3rem 0;
+    display: none;
 }
 
 .features-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 2rem;
-    margin: 3rem 0;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 10px;
+    margin: 10px 0;
 }
 
 .feature-card {
@@ -232,4 +246,17 @@
     .game-controls-demo {
         flex-wrap: wrap;
     }
+}
+
+/* Center the WordSets component */
+.page-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+/* Make WordSets more compact */
+.wordsets-container {
+    max-width: 800px;
+    margin: 0 auto;
 }

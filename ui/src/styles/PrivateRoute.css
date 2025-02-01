@@ -27,7 +27,7 @@
   
   .login-card p {
     color: #5f6368;
-    margin-bottom: 2rem;
+    margin-bottom: 1rem;
     line-height: 1.6;
     font-size: 1.2rem;
   }
@@ -81,17 +81,6 @@
   .login-button:hover {
     background: #1557b0;
   }
-  
-  @media (max-width: 768px) {
-    .login-card {
-      padding: 1.5rem;
-      margin: 1rem;
-    }
-    
-    .login-card h2 {
-      font-size: 2rem;
-    }
-  }
 
   .auth-buttons {
     display: flex;
@@ -125,16 +114,18 @@
   }
 
   .try-without-signin {
-    background-color: #4285f4;
+    background-color: #1a73e8;
     color: white;
-    padding: 8px 16px;
+    padding: 12px 24px;
     border-radius: 4px;
     border: none;
     cursor: pointer;
-    font-size: 14px;
+    font-size: 1.5em;
     width: 100%;
+    font-weight: 500;
+    transition: background-color 0.2s;
   }
 
   .try-without-signin:hover {
-    background-color: #357ae8;
+    background-color: #1557b0;
   }

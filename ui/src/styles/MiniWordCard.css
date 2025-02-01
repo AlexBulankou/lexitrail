@@ -3,7 +3,7 @@
     border-radius: 7px;
     border:1px solid #333;
     min-height: 70px;
-    min-width: 98px;
+    width: 98px;
     display: flex;
     justify-content: space-between;
     flex-direction: row;

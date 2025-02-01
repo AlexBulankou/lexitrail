@@ -41,8 +41,7 @@ body, html {
 .incorrect-cards-container {
   background-color: #333;
   border-radius: 8px;
-  width: 100px;
-  min-width: 100px;
+  width: 115px;
   display: flex;
   flex-direction: column;
   align-items: center;

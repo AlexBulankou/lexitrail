@@ -2,7 +2,9 @@ import { getData } from './apiService';
 
 // Fetch all wordsets
 export const getWordsets = async () => {
+  
   // Connect to the match making server
+  /*
   const ws = new WebSocket(window.config.MATCH_MAKER_ADDRESS);
 
   ws.onopen = () => {
@@ -25,8 +27,12 @@ export const getWordsets = async () => {
   ws.onerror = (error) => {
     console.error('WebSocket error:', error);
   };
+  */
 
-  return await getData('/wordsets');
+  const response = await getData('/wordsets');
+  // Filter out wordset with id 7
+  response.data = response.data.filter(wordset => wordset.wordset_id !== 7);
+  return response;
 };
 
 // Fetch words for a given wordset

@@ -12,6 +12,7 @@ import './styles/Global.css';
 import './styles/App.css';
 import './styles/NavBar.css';
 import './styles/Policy.css';
+import './styles/Home.css';
 import Home from './components/Home';
 import { AuthProvider } from './contexts/AuthContext';
 import About from './components/About';
@@ -27,16 +28,13 @@ const App = () => {
           <div className="content-container">
             <Routes>
               <Route path="/" element={<Home />} />
-              <Route path="/profile" element={
-                <PrivateRoute>
-                  <Profile profileDetails={user} />
-                </PrivateRoute>
-              } />
               <Route
                 path="/wordsets/*"
                 element={
                   <PrivateRoute >
-                    <Wordsets />
+                    <div className="page-wrapper">
+                      <Wordsets />
+                    </div>
                   </PrivateRoute>
                 }
               />

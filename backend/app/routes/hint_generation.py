@@ -119,6 +119,8 @@ def generate_image(prompt):
             aspect_ratio="4:3",
             safety_filter_level="block_some"
         )
+        # TODO: check if image exists before taking the index
+        # TODO: if image cannot be generated, use 400x300 placeholder image
         resized_image = image[0]._pil_image.resize((400, 300), PIL_Image.Resampling.LANCZOS)
         return resized_image
     elif IMAGE_MODEL_TYPE == "stable_diffusion":

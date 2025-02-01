@@ -120,8 +120,10 @@ const Game = () => {
     const height = window.innerHeight;
 
     const cardWidth = 160;
-    const cardHeight = mode === GameMode.TEST ? 360 : 310;
-    const extraHorizontalSpaceNeeded = mode === GameMode.TEST ? 80 : 120;
+    const cardHeight = mode === GameMode.TEST ? 345 : 280;
+
+    // TODO: 115 is the width of the incorrect cards container, not sure why 80 and 120 were added
+    const extraHorizontalSpaceNeeded = 200 ; //mode === (GameMode.TEST ? 80 : 120) + 115; 
     const extraVerticalSpaceNeeded = 100;
 
     const maxColumns = Math.min(Math.floor((width - extraVerticalSpaceNeeded) / cardWidth), 12);
@@ -173,7 +175,7 @@ const Game = () => {
       setMaxCardsToShow(selectedLayout.capacity);
 
       // Add this: Set the height for incorrect-cards-container
-      const availableHeight = selectedLayout.rows * cardHeight - 35;
+      const availableHeight = selectedLayout.rows * cardHeight;
       document.documentElement.style.setProperty('--cards-container-height', `${availableHeight}px`);
 
       //console.log(

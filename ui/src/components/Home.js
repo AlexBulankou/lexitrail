@@ -2,6 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import '../styles/Home.css';
 import Logo from './Logo';
+import WordSets from './Wordsets';
 
 const Home = () => {
   return (
@@ -11,12 +12,10 @@ const Home = () => {
           <div className="hero-section">
             <Logo size="large" />
             <h1>Welcome to Lexitrail</h1>
-          </div>
-          <div className="intro-section">
             <h2>Master Chinese Vocabulary Through Smart Learning</h2>
             <p>Lexitrail is your AI-powered companion for mastering Mandarin Chinese vocabulary. Perfect for beginners to advanced learners looking to expand their Chinese word knowledge.</p>
-            <Link to="/wordsets" className="cta-button">Start Learning Chinese</Link>
           </div>
+          <WordSets />
           
           <div className="features-section">
             <div className="features-grid">
@@ -36,67 +35,23 @@ const Home = () => {
                 <h3>Cultural Context</h3>
                 <p>Learn how words are actually used in Chinese culture with example sentences and usage notes.</p>
               </div>
-            </div>
-          </div>
-
-          <div className="game-preview">
-            <h3>Learn Through Interactive Flashcards</h3>
-            <div className="cards-demo">
-              <div className="flashcard">
-                <div className="card-content">
-                  <div className="chinese-word">护照</div>
-                  <div className="pinyin">hù zhào</div>
-                  <div className="english">passport</div>
-                  <div className="card-controls">
-                    <button className="wrong-btn">✕</button>
-                    <button className="right-btn">✓</button>
-                  </div>
-                </div>
+              <div className="feature-card">
+                <h3>Character Breakdown</h3>
+                <p>
+                  <span className="example-word">
+                    <span className="chinese-char">记忆</span>
+                    <span className="pinyin">jì yì</span>
+                    <span className="meaning">memory</span>
+                  </span>
+                  Think of 记 (jì) as a "speech" 讠with "self" 己 - speaking to yourself to remember something. 
+                  忆 (yì) shows a "heart" 心 - memories come from the heart!
+                </p>
               </div>
-
-              <div className="flashcard flipped">
-                <div className="card-content">
-                  <div className="chinese-word">公园</div>
-                  <div className="pinyin">gōng yuán</div>
-                  <div className="english">park</div>
-                  <div className="card-controls">
-                    <button className="wrong-btn">✕</button>
-                    <button className="right-btn">✓</button>
-                  </div>
-                </div>
-              </div>
-
-              <div className="game-stats">
-                <div className="timer">0:35</div>
-                <div className="score">
-                  <span className="wrong">✕ 1</span>
-                  <span className="right">✓ 0</span>
-                </div>
+              <div className="feature-card">
+                <h3>Expanding Horizons</h3>
+                <p>Starting with Mandarin Chinese, we're building a platform that will soon support multiple languages. Join our growing community of language learners!</p>
               </div>
             </div>
-            <div className="game-controls-demo">
-              <button className="control-btn">Hide Hints</button>
-              <button className="control-btn">Flip all</button>
-              <button className="control-btn">Show Excluded</button>
-            </div>
-          </div>
-
-          <div className="learning-example">
-            <h3>See How It Works</h3>
-            <div className="example-card">
-              <div className="word-example">
-                <span className="chinese-char">记忆</span>
-                <span className="pinyin">jì yì</span>
-                <span className="meaning">memory</span>
-              </div>
-              <p className="ai-hint">AI Hint: Think of 记 (jì) as a "speech" 讠with "self" 己 - speaking to yourself to remember something. 
-              忆 (yì) shows a "heart" 心 - memories come from the heart!</p>
-            </div>
-          </div>
-
-          <div className="future-features">
-            <h3>Coming Soon</h3>
-            <p>While we're starting with Mandarin Chinese, we're expanding to include more languages in the future. Join us on this learning journey!</p>
           </div>
 
           <div className="cta-section">

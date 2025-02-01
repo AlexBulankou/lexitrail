@@ -68,3 +68,17 @@ resource "kubectl_manifest" "mysql_schema_and_data_job" {
     null_resource.csv_files_trigger
   ]
 }
+
+resource "kubectl_manifest" "adminer_deployment" {
+  yaml_body = templatefile("${path.module}/k8s_templates/adminer-deployment.yaml.tpl", {
+    sql_namespace = var.sql_namespace
+  })
+  depends_on = [google_container_cluster.autopilot_cluster, kubectl_manifest.mysql_namespace]
+}
+
+resource "kubectl_manifest" "adminer_service" {
+  yaml_body = templatefile("${path.module}/k8s_templates/adminer-service.yaml.tpl", {
+    sql_namespace = var.sql_namespace
+  })
+  depends_on = [google_container_cluster.autopilot_cluster, kubectl_manifest.mysql_namespace]
+}

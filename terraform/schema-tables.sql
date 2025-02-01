@@ -55,3 +55,38 @@ CREATE TABLE IF NOT EXISTS recall_history (
     FOREIGN KEY (user_id) REFERENCES users(email) ON DELETE CASCADE ON UPDATE CASCADE,
     FOREIGN KEY (word_id) REFERENCES words(word_id) ON DELETE CASCADE ON UPDATE CASCADE
 );
+
+CREATE OR REPLACE VIEW daily_recall_stats AS
+WITH RECURSIVE date_series AS (
+    SELECT CURDATE() as date
+    UNION ALL
+    SELECT DATE_SUB(date, INTERVAL 1 DAY)
+    FROM date_series
+    WHERE date > DATE_SUB(CURDATE(), INTERVAL 29 DAY)
+),
+daily_stats AS (
+    SELECT 
+        DATE(recall_time) as stat_date,
+        user_id,
+        COUNT(*) as user_count,
+        COUNT(DISTINCT word_id) as word_count
+    FROM recall_history
+    WHERE recall_time >= DATE_SUB(CURDATE(), INTERVAL 29 DAY)
+    GROUP BY DATE(recall_time), user_id
+)
+SELECT 
+    ds.date,
+    COUNT(DISTINCT s.user_id) as unique_users,
+    SUM(s.word_count) as unique_words,
+    SUM(s.user_count) as total_recalls,
+    GROUP_CONCAT(
+        CONCAT(s.user_id, '(', s.user_count, ')\n')
+        ORDER BY s.user_count DESC
+        SEPARATOR ''
+    ) as user_recalls
+FROM date_series ds
+LEFT JOIN daily_stats s ON ds.date = s.stat_date
+GROUP BY ds.date
+ORDER BY ds.date DESC;
+
+

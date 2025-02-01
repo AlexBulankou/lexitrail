@@ -9,7 +9,19 @@ import logging
 def create_app(config_class=Config):
     # Configure logging
     logging.basicConfig(stream=sys.stdout, level=logging.INFO)
-    logging.getLogger('werkzeug').setLevel(logging.INFO)
+    
+
+    # Reconfigure the 'werkzeug' logger so it logs to stdout instead of stderr
+    werkzeug_logger = logging.getLogger('werkzeug')
+    werkzeug_logger.setLevel(logging.WARNING)
+    
+    # Remove any existing handlers (often the default is stderr)...
+    # for handler in list(werkzeug_logger.handlers):
+    #    werkzeug_logger.removeHandler(handler)
+    # ...then add a StreamHandler pointing to stdout
+    # handler = logging.StreamHandler(sys.stdout)
+    #  handler.setLevel(logging.INFO)
+    #  werkzeug_logger.addHandler(handler)
     
     app = Flask(__name__)
     app.config.from_object(config_class)

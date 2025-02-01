@@ -54,6 +54,16 @@ resource "kubectl_manifest" "frontend_config" {
   ]
 }
 
+resource "kubectl_manifest" "frontend_frontend_config" {
+  count = var.enable_https ? 1 : 0
+  
+  yaml_body = templatefile("${path.module}/k8s_templates/frontend-frontend-config.yaml.tpl", {})
+
+  depends_on = [
+    google_container_cluster.autopilot_cluster
+  ]
+}
+
 resource "google_compute_global_address" "default" {
   count = var.enable_https ? 1 : 0
   name = "lexitrail-ip"
@@ -80,6 +90,6 @@ resource "kubectl_manifest" "ingress" {
 
   depends_on = [
     kubectl_manifest.lexitrail_ui_service,
-    kubectl_manifest.frontend_config[0]
+    kubectl_manifest.frontend_frontend_config[0]
   ]
 }
