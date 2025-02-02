@@ -1,27 +1,34 @@
 from flask import Flask
 from .config import Config
-from .database import init_db, db  # Add db import
-from .routes import register_routes
-from flask_cors import CORS  # Import CORS
+from .database import init_db, db
+from .routes import register_routes, wordsets
+from flask_cors import CORS
 import sys
 import logging
+from .utils import ColorTruncatingFormatter
 
 def create_app(config_class=Config):
-    # Configure logging
-    logging.basicConfig(stream=sys.stdout, level=logging.INFO)
+    # Configure logging for the entire application
+    handler = logging.StreamHandler(sys.stdout)
+    formatter = ColorTruncatingFormatter(
+        fmt='[%(levelname)s][%(asctime)s][%(name)s]%(message)s',
+        max_length=100
+    )
+    handler.setFormatter(formatter)
     
+    logging.basicConfig(
+        level=logging.INFO,
+        force=True,
+        handlers=[handler]
+    )
 
-    # Reconfigure the 'werkzeug' logger so it logs to stdout instead of stderr
+    # Create logger for this module
+    logger = logging.getLogger(__name__)
+    logger.info("Hello from logging!")
+
+    # Configure the werkzeug logger specifically
     werkzeug_logger = logging.getLogger('werkzeug')
     werkzeug_logger.setLevel(logging.WARNING)
-    
-    # Remove any existing handlers (often the default is stderr)...
-    # for handler in list(werkzeug_logger.handlers):
-    #    werkzeug_logger.removeHandler(handler)
-    # ...then add a StreamHandler pointing to stdout
-    # handler = logging.StreamHandler(sys.stdout)
-    #  handler.setLevel(logging.INFO)
-    #  werkzeug_logger.addHandler(handler)
     
     app = Flask(__name__)
     app.config.from_object(config_class)
@@ -29,11 +36,14 @@ def create_app(config_class=Config):
     # Initialize the database
     init_db(app)
     
-    # Register routes
+    # Register routes (this already registers the wordsets blueprint)
     register_routes(app)
     
     # Enable CORS for all origins
     CORS(app, resources={r"/*": {"origins": "*"}})
+    
+    # Initialize cache
+    wordsets.init_app(app)
 
     return app
 

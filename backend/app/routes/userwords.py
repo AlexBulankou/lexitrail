@@ -5,10 +5,10 @@ from datetime import datetime
 import logging
 from ..utils import validate_user_access  # Import the shared validation function
 from app.auth import authenticate_user  # Import from auth.py
+import time
 
 bp = Blueprint('userwords', __name__, url_prefix='/userwords')
 
-logging.basicConfig(level=logging.WARNING)
 logger = logging.getLogger(__name__)
 
 @bp.route('/query', methods=['GET'])
@@ -30,54 +30,87 @@ def get_userwords_by_user_and_wordset():
         return validation_response
     
     try:
-        # Query userwords and include only the required fields
-        userwords = db.session.query(
-            UserWord.user_id,
-            UserWord.word_id,
-            UserWord.is_included,
-            UserWord.recall_state
-        ).join(Word, UserWord.word_id == Word.word_id).filter(
-            UserWord.user_id == user_id,
-            Word.wordset_id == wordset_id
-        ).all()
+        # Create a subquery to get the latest 3 recall histories per word
+        recall_subquery = (
+            db.session.query(
+                RecallHistory.user_id,
+                RecallHistory.word_id,
+                RecallHistory.recall,
+                RecallHistory.recall_time,
+                RecallHistory.new_recall_state,
+                RecallHistory.old_recall_state,
+                db.func.row_number().over(
+                    partition_by=(RecallHistory.user_id, RecallHistory.word_id),
+                    order_by=RecallHistory.recall_time.desc()
+                ).label('rn')
+            ).subquery()
+        )
 
-        userwords_data = []
-        for userword in userwords:
-            # Query only required fields from recall history for the last 3 recall attempts
-            recall_histories = (
-                RecallHistory.query.with_entities(
-                    RecallHistory.recall,
-                    RecallHistory.recall_time,
-                    RecallHistory.new_recall_state,
-                    RecallHistory.old_recall_state
-                )
-                .filter_by(user_id=userword.user_id, word_id=userword.word_id)
-                .order_by(RecallHistory.recall_time.desc())
-                .limit(3)
-                .all()
+        # Main query joining UserWord with the recall histories
+        query = (
+            db.session.query(
+                UserWord.user_id,
+                UserWord.word_id,
+                UserWord.is_included,
+                UserWord.recall_state,
+                recall_subquery.c.recall,
+                recall_subquery.c.recall_time,
+                recall_subquery.c.new_recall_state,
+                recall_subquery.c.old_recall_state
             )
+            .join(Word, UserWord.word_id == Word.word_id)
+            .outerjoin(
+                recall_subquery,
+                db.and_(
+                    UserWord.user_id == recall_subquery.c.user_id,
+                    UserWord.word_id == recall_subquery.c.word_id,
+                    recall_subquery.c.rn <= 3
+                )
+            )
+            .filter(
+                UserWord.user_id == user_id,
+                Word.wordset_id == wordset_id
+            )
+            .order_by(UserWord.word_id, recall_subquery.c.recall_time.desc())
+        )
 
-            recall_histories_data = [
-                {
-                    'recall': rh.recall,
-                    'recall_time': rh.recall_time,
-                    'new_recall_state': rh.new_recall_state,
-                    'old_recall_state': rh.old_recall_state,
-                    'is_included': userword.is_included  # Use `userword.is_included` for each recall history
+        # Get the SQL query as string
+        sql_query = str(query.statement.compile(compile_kwargs={"literal_binds": True}))
+        
+        # Execute query with timing
+        start_time = time.time()
+        results = query.all()
+        query_time_ms = (time.time() - start_time) * 1000  # Convert to milliseconds
+
+        # Process results into the desired format
+        userwords_data = {}
+        for result in results:
+            word_id = result.word_id
+            if word_id not in userwords_data:
+                userwords_data[word_id] = {
+                    'user_id': result.user_id,
+                    'word_id': word_id,
+                    'is_included': result.is_included,
+                    'recall_state': result.recall_state,
+                    'recall_histories': []
                 }
-                for rh in recall_histories
-            ]
+            
+            if result.recall_time:  # Only add recall history if it exists
+                userwords_data[word_id]['recall_histories'].append({
+                    'recall': result.recall,
+                    'recall_time': result.recall_time,
+                    'new_recall_state': result.new_recall_state,
+                    'old_recall_state': result.old_recall_state,
+                    'is_included': result.is_included
+                })
 
-            userword_dict = {
-                'user_id': userword.user_id,
-                'word_id': userword.word_id,
-                'is_included': userword.is_included,
-                'recall_state': userword.recall_state,
-                'recall_histories': recall_histories_data
+        return success_response(
+            data=list(userwords_data.values()),
+            query_metadata={
+                "sql_query": sql_query,
+                "execution_time_ms": round(query_time_ms, 2)
             }
-            userwords_data.append(userword_dict)
-
-        return success_response(userwords_data)
+        )
 
     except Exception as e:
         logger.error(f"Error retrieving userwords: {e}", exc_info=True)

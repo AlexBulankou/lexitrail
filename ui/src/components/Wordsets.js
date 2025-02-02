@@ -70,7 +70,7 @@ const Wordsets = ({ profileDetails, login }) => {
             </div>
           ))
         ) : (
-          <p>No wordsets available.</p>
+          <p>Loading wordsets...</p>
         )}
       </div>
     </div>

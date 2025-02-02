@@ -1,4 +1,8 @@
 from flask_sqlalchemy import SQLAlchemy
+import logging
+
+# Create a logger for SQL queries
+logging.getLogger('sqlalchemy.engine').setLevel(logging.ERROR)
 
 db = SQLAlchemy()
 

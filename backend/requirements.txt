@@ -18,3 +18,4 @@ google-auth==2.21.0
 # Additional dependencies for hint generation
 google-cloud-aiplatform==1.69.0 # For Vertex AI services
 Pillow==10.2.0  # Updated from 9.2.0 for Python 3.13 compatibility
+cachetools==5.3.3  # For in-memory TTL caching

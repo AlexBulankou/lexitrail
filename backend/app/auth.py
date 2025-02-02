@@ -5,7 +5,6 @@ from app.config import Config
 import functools
 import logging
 
-logging.basicConfig(level=logging.WARNING)
 logger = logging.getLogger(__name__)
 
 default_mock_user = "test@example.com"
