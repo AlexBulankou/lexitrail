@@ -13,4 +13,12 @@ Allow: /favicon.ico
 Allow: /logo192.png
 Allow: /logo512.png
 
+# Explicitly allow image crawling
+Allow: /images/
+Allow: /*.jpg$
+Allow: /*.jpeg$
+Allow: /*.png$
+Allow: /*.gif$
+Allow: /*.svg$
+
 Sitemap: https://lexitrail.com/sitemap.xml 

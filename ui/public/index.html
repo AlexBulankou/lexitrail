@@ -41,6 +41,31 @@
   <title>Lexitrail - Smart Chinese Vocabulary Learning</title>
   <!-- Load config.js before the React bundle -->
   <script src="%PUBLIC_URL%/config.js"></script>
+
+  <!-- Add structured data -->
+  <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebApplication",
+      "name": "Lexitrail",
+      "applicationCategory": "EducationalApplication",
+      "operatingSystem": "Any",
+      "offers": {
+        "@type": "Offer",
+        "price": "0"
+      },
+      "screenshot": {
+        "@type": "ImageObject",
+        "url": "https://lexitrail.com/images/screenshots/hsk2-practice.png"
+      }
+    }
+  </script>
+
+  <!-- Add image-specific meta tags -->
+  <meta name="thumbnail" content="%PUBLIC_URL%/images/thumbnails/app-preview.png" />
+  <meta property="og:image:type" content="image/png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
 </head>
 
 <body>

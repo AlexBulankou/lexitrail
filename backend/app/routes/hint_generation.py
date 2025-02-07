@@ -64,6 +64,9 @@ _stable_diffusion_model = None
 # Global variables at the top of the file with other configurations
 _placeholder_image = None
 
+# Configuration for hint generation
+UPDATE_WORD_ON_FORCE = False  # New configuration variable
+
 aiplatform.init(project=Config.PROJECT_ID, location=Config.LOCATION)
 vertexai.init(project=Config.PROJECT_ID, location=Config.LOCATION)
 
@@ -83,23 +86,20 @@ def get_image_generation_model():
         if _imagen_model is None:
             try:
                 logger.info("Initializing Imagen model using Vision API")
+                #_imagen_model = ImageGenerationModel.from_pretrained("imagegeneration@006")
                 _imagen_model = ImageGenerationModel.from_pretrained("imagen-3.0-fast-generate-001")
             except Exception as e:
                 raise RuntimeError(f"Failed to initialize Imagen model: {str(e)}")
         return _imagen_model
     elif IMAGE_MODEL_TYPE == "stable_diffusion":
         if _stable_diffusion_model is None:
-            try:
-                logger.info("Initializing Stable Diffusion model using Preview Generative AI API")
-                _stable_diffusion_model = PreviewGenerativeModel("imagegeneration@002")
-            except Exception as e:
-                raise RuntimeError(f"Failed to initialize Stable Diffusion model: {str(e)}")
+            raise RuntimeError(f"Stable Diffusion is not supported in this version of the app")
         return _stable_diffusion_model
     else:
         raise ValueError(f"Unsupported image model type: {IMAGE_MODEL_TYPE}")
 
 def get_placeholder_image():
-    """Get or create a cached 400x300 placeholder image with error message."""
+    """Get or create a cached 400x300 placeholder image with a large question mark."""
     global _placeholder_image
     
     if _placeholder_image is None:
@@ -110,76 +110,64 @@ def get_placeholder_image():
         # Draw a border
         draw.rectangle([0, 0, 399, 299], outline='#cccccc', width=2)
         
-        # Add multiline error message with large font size
-        lines = ["Image", "generation", "failed"]
-        font_size = 40
-        y = 60  # Start higher to accommodate multiple lines
+        # Add large question mark
+        question_mark = "?"
+        font_size = 200  # Increased font size from 150 to 200
         
-        for line in lines:
-            text_bbox = draw.textbbox((0, 0), line, font_size=font_size)
-            text_width = text_bbox[2] - text_bbox[0]
-            x = (400 - text_width) / 2
-            draw.text((x, y), line, fill='#666666', font_size=font_size)
-            y += font_size + 10  # Add spacing between lines
+        # Get text size and center it horizontally, but position it higher vertically
+        text_bbox = draw.textbbox((0, 0), question_mark, font_size=font_size)
+        text_width = text_bbox[2] - text_bbox[0]
+        text_height = text_bbox[3] - text_bbox[1]
+        x = (400 - text_width) / 2
+        y = (300 - text_height) / 3  # Changed from /2 to /3 to move it higher
+        
+        draw.text((x, y), question_mark, fill='#666666', font_size=font_size)
         
         _placeholder_image = img
     
     return _placeholder_image.copy()
 
-def create_placeholder_image(prompt):
-    """Create a 400x300 placeholder image with error message and failed prompt."""
-    # Create a new image with a light gray background
-    img = PIL_Image.new('RGB', (400, 300), color='#f0f0f0')
-    draw = ImageDraw.Draw(img)
-    
-    # Draw a border
-    draw.rectangle([0, 0, 399, 299], outline='#cccccc', width=2)
-    
-    # Break error message into lines
-    error_lines = ["Image", "generation", "failed:"]
-    font_size = 40
-    y = 40  # Start higher to accommodate more lines
-    
-    # Draw error message lines
-    for line in error_lines:
-        text_bbox = draw.textbbox((0, 0), line, font_size=font_size)
-        text_width = text_bbox[2] - text_bbox[0]
-        x = (400 - text_width) / 2
-        draw.text((x, y), line, fill='#666666', font_size=font_size)
-        y += font_size + 5  # Add spacing between lines
-    
-    # Process prompt into two lines of three words each
-    words = prompt.split()[:6]  # Take first 6 words
-    if len(words) > 0:
-        # First line: words 0-2
-        line1 = ", ".join(words[:3])
-        text_bbox = draw.textbbox((0, 0), line1, font_size=font_size)
-        text_width = text_bbox[2] - text_bbox[0]
-        x = (400 - text_width) / 2
-        draw.text((x, y), line1, fill='#666666', font_size=font_size)
-        y += font_size + 5
-        
-        # Second line: words 3-5 (if they exist)
-        if len(words) > 3:
-            line2 = ", ".join(words[3:]) + ("..." if len(prompt.split()) > 6 else "")
-            text_bbox = draw.textbbox((0, 0), line2, font_size=font_size)
-            text_width = text_bbox[2] - text_bbox[0]
-            x = (400 - text_width) / 2
-            draw.text((x, y), line2, fill='#666666', font_size=font_size)
-    
-    return img
-
 def generate_prompt(word, pinyin, translation):
     model = get_llm_model()
     chat = model.start_chat()
+    
+    # Add more creative direction and randomness to the prompt
+    prompt = f"""
+    Create a unique and creative image generation prompt for the Chinese word "{word}" (pinyin: "{pinyin}", meaning: "{translation}").
+
+    Requirements:
+    - The prompt should be subtle and not directly reveal the word's meaning
+    - No text or characters should appear in the image
+    - Use varied artistic styles (e.g., watercolor, digital art, photography, abstract)
+    - Incorporate different perspectives, moods, or settings
+    - Make it metaphorical or symbolic rather than literal
+    - Each generation should be different from previous ones
+    - Length should be 1-2 sentences maximum
+
+    Generate a completely new and unique prompt that has never been used before.
+    """
+
     response = chat.send_message(
-        [f"""
-        Generate a prompt that I can pass to an image generation model, like "imagen" to generate an image hint for Chinese word "{word}" pinyin "{pinyin}" translated as "{translation}". The hint should be subtle without revealing the meaning. No text should be in the picture.
-        """],
-        generation_config=generation_config,
+        [prompt],
+        generation_config={
+            "max_output_tokens": 8192,
+            "temperature": 1.0,      # Increased from default for more randomness
+            "top_p": 0.99,          # Slightly increased for more variety
+            "top_k": 40,            # Added to further control diversity
+            "candidate_count": 1,    # We only need one result
+        },
         safety_settings=safety_settings
     )
-    return response.candidates[0].content.parts[0].text
+    
+    generated_prompt = response.candidates[0].content.parts[0].text.strip()
+    
+    # Clean up the prompt if needed
+    if generated_prompt.lower().startswith(('prompt:', 'image prompt:', 'generate:')):
+        generated_prompt = generated_prompt.split(':', 1)[1].strip()
+    
+    logger.info("Generated prompt for word '%s': %s", word, generated_prompt)
+    
+    return generated_prompt
 
 def generate_image(prompt):
     model = get_image_generation_model()
@@ -195,14 +183,14 @@ def generate_image(prompt):
             )
             
             try:
-                return images[0]._pil_image.resize((400, 300), PIL_Image.Resampling.LANCZOS)
+                return (images[0]._pil_image.resize((400, 300), PIL_Image.Resampling.LANCZOS), False)
             except (IndexError, AttributeError) as e:
                 logger.warning("Failed to access generated image: %s", str(e))
-                return create_placeholder_image(prompt)
+                return (get_placeholder_image(), True)
                 
         except Exception as e:
             logger.error("Failed to generate image: %s", str(e))
-            return create_placeholder_image(prompt)
+            return (get_placeholder_image(), True)
             
     elif IMAGE_MODEL_TYPE == "stable_diffusion":
         try:
@@ -217,10 +205,10 @@ def generate_image(prompt):
             image_bytes = response.candidates[0].image.image_bytes
             image = PIL_Image.open(BytesIO(image_bytes))
             # Resize the image to match our desired dimensions
-            return image.resize((400, 300), PIL_Image.Resampling.LANCZOS)
+            return (image.resize((400, 300), PIL_Image.Resampling.LANCZOS), False)
         except Exception as e:
             logger.error("Failed to generate image with Stable Diffusion: %s", str(e))
-            return create_placeholder_image(prompt)
+            return (get_placeholder_image(), True)
 
 def image_to_base64(image):
     buffered = BytesIO()
@@ -229,19 +217,29 @@ def image_to_base64(image):
 
 
 def process_single_hint(word, pinyin, translation):
-    # Start timing for text generation
-    start_text = time.time()
-    
-    # Generate the prompt
-    prompt = generate_prompt(word, pinyin, translation)
-    text_time = time.time() - start_text  # Measure the time taken for text generation
+    try:
+        # Start timing for text generation
+        start_text = time.time()
+        
+        # Generate the prompt
+        prompt = generate_prompt(word, pinyin, translation)
+        text_time = time.time() - start_text  # Measure the time taken for text generation
 
-    # Start timing for image generation
-    start_image = time.time()
-    
-    # Generate the image from the prompt
-    image = generate_image(prompt)
-    image_time = time.time() - start_image  # Measure the time taken for image generation
+        # Start timing for image generation
+        start_image = time.time()
+        
+        # Generate the image from the prompt
+        image, is_placeholder = generate_image(prompt)
+        image_time = time.time() - start_image  # Measure the time taken for image generation
+
+    except Exception as e:
+        logger.error(f"Failed to generate hint: {str(e)}")
+        # If either prompt or image generation fails, return placeholder
+        image = get_placeholder_image()
+        prompt = f"A visual representation of the word '{word}' ({pinyin}), meaning '{translation}'"
+        is_placeholder = True
+        text_time = 0
+        image_time = 0
 
     # Convert the image to base64 format for return
     hint_image_base64 = image_to_base64(image)
@@ -252,7 +250,8 @@ def process_single_hint(word, pinyin, translation):
         'hint_text': prompt,
         'hint_image': hint_image_base64,
         'text_generation_time': text_time,
-        'image_generation_time': image_time
+        'image_generation_time': image_time,
+        'is_placeholder': is_placeholder
     }
 
 
@@ -335,57 +334,118 @@ def generate_hint():
         if validation_response:
             return validation_response
 
-        # Fetch or create the UserWord entry
-        logger.info("Trying to find userword with user_id=%s, word_id=%s", user_id, word_id)
-        userword = UserWord.query.filter_by(user_id=user_id, word_id=word_id).first()
-        if not userword:
-            # Create a new UserWord entry if it does not exist
-            logger.info("Userword does not exist, creating")
-
-            userword = UserWord(
-                user_id=user_id,
-                word_id=word_id,
-                is_included=True,  # Default value
-                recall_state=0,  # Default recall state
-                is_included_change_time=datetime.utcnow()
-            )
-            db.session.add(userword)
-            db.session.commit()
-
-        # Check if regeneration is needed
-        logger.info("Check if regenerate is needed: hint_text=%s, hint_img=%s", userword.hint_text, userword.hint_img)
-        if userword.hint_text and userword.hint_img and not force_regenerate:
-            
-            # Convert BLOB to base64 string instead of UTF-8 decoding
-            hint_image_base64 = base64.b64encode(userword.hint_img).decode('utf-8')
-            logger.info("hint_image_base64: %s", hint_image_base64)
-            return success_response({
-                'hint_text': userword.hint_text,
-                'hint_image': hint_image_base64
-            })
-
-        # Fetch the Word entry
+        # Fetch the Word entry first
         word_entry = Word.query.filter_by(word_id=word_id).first()
         if not word_entry:
             return error_response('Word entry not found', 404)
 
-        # Generate new hint text and image
-        start_total = time.time()
-        hint_result = process_single_hint(word_entry.word, word_entry.def1, word_entry.def2)
-        hint_text = hint_result['hint_text']
-        hint_img = hint_result['hint_image']
+        # Check for existing UserWord first
+        userword = UserWord.query.filter_by(user_id=user_id, word_id=word_id).first()
+        
+        # If we have valid userword hints, use them without checking word-level hints
+        if userword and userword.hint_text and userword.hint_img and not force_regenerate:
+            logger.info("Using existing userword hints")
+            return success_response(
+                data={
+                    'hint_text': userword.hint_text,
+                    'hint_image': base64.b64encode(userword.hint_img).decode('utf-8')
+                },
+                is_placeholder=False,
+                message="Hint retrieved successfully from userword"
+            )
 
-        # Update UserWord with new hint_text and hint_img
-        userword.hint_text = hint_text
-        userword.hint_img = base64.b64decode(hint_img)
-        db.session.commit()
-
-        response_time = time.time() - start_total
-        return success_response({
-            'hint_text': hint_text,
-            'hint_image': hint_img,
-            'total_time': response_time
-        })
+        # Generate word-level hints if they don't exist and we'll need them
+        if (word_entry.hint_text is None or word_entry.hint_img is None) and not force_regenerate:
+            logger.info("Generating word-level hints for word_id=%s", word_id)
+            start_total = time.time()
+            hint_result = process_single_hint(word_entry.word, word_entry.def1, word_entry.def2)
+            
+            # Only save if it's not a placeholder image
+            if not hint_result.get('is_placeholder', False):
+                word_entry.hint_text = hint_result['hint_text']
+                word_entry.hint_img = base64.b64decode(hint_result['hint_image'])
+                db.session.commit()
+                logger.info("Generated and saved word-level hints in %s seconds", time.time() - start_total)
+            else:
+                logger.warning("Generated placeholder image, not saving to database")
+        
+        if force_regenerate:
+            # Create UserWord if it doesn't exist
+            if not userword:
+                logger.info("Creating new UserWord for force_regenerate")
+                userword = UserWord(
+                    user_id=user_id,
+                    word_id=word_id,
+                    is_included=True,
+                    recall_state=0,
+                    is_included_change_time=datetime.utcnow()
+                )
+                db.session.add(userword)
+                db.session.commit()
+                
+            # Generate new personalized hints
+            logger.info("Force regenerating hints for userword")
+            start_total = time.time()
+            hint_result = process_single_hint(word_entry.word, word_entry.def1, word_entry.def2)
+            
+            if not hint_result.get('is_placeholder', False):
+                # Save successful generation
+                userword.hint_text = hint_result['hint_text']
+                userword.hint_img = base64.b64decode(hint_result['hint_image'])
+                
+                # Optionally update word-level hints as well
+                if UPDATE_WORD_ON_FORCE:
+                    logger.info("Also updating word-level hints due to force_regenerate")
+                    word_entry.hint_text = hint_result['hint_text']
+                    word_entry.hint_img = base64.b64decode(hint_result['hint_image'])
+                
+                db.session.commit()
+                logger.info("Generated and saved hints in %s seconds", time.time() - start_total)
+            else:
+                # Clear hints when we get a placeholder
+                logger.warning("Generated placeholder image, clearing existing hints")
+                userword.hint_text = None
+                userword.hint_img = None
+                
+                if UPDATE_WORD_ON_FORCE:
+                    logger.info("Also clearing word-level hints due to force_regenerate")
+                    word_entry.hint_text = None
+                    word_entry.hint_img = None
+                
+                db.session.commit()
+            
+            return success_response(
+                data={
+                    'hint_text': hint_result['hint_text'],
+                    'hint_image': hint_result['hint_image']
+                },
+                is_placeholder=hint_result.get('is_placeholder', False),
+                message="Hint generation completed" if not hint_result.get('is_placeholder', False) else "Generation failed, hints cleared"
+            )
+        
+        # Use word-level hints if they exist
+        if word_entry.hint_text and word_entry.hint_img:
+            logger.info("Using word-level hints")
+            return success_response(
+                data={
+                    'hint_text': word_entry.hint_text,
+                    'hint_image': base64.b64encode(word_entry.hint_img).decode('utf-8')
+                },
+                is_placeholder=False,
+                message="Hint retrieved successfully from word"
+            )
+        
+        # If we get here, we need to generate a placeholder
+        logger.info("Using placeholder image")
+        placeholder_result = process_single_hint(word_entry.word, word_entry.def1, word_entry.def2)
+        return success_response(
+            data={
+                'hint_text': placeholder_result['hint_text'],
+                'hint_image': placeholder_result['hint_image']
+            },
+            is_placeholder=True,
+            message="Using placeholder hint"
+        )
 
     except Exception as e:
         logger.error(f"Error generate_hint: {e}", exc_info=True)

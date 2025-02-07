@@ -8,14 +8,13 @@ import time
 from concurrent.futures import ThreadPoolExecutor
 from functools import partial
 import multiprocessing
-from cachetools import TTLCache
 from threading import Lock
 
 bp = Blueprint('wordsets', __name__, url_prefix='/wordsets')
 logger = logging.getLogger(__name__)
 
-# Add these at the module level
-cache = TTLCache(maxsize=1000, ttl=1800)  # 30 minutes TTL
+# Replace TTLCache with a regular dictionary
+cache = {}  # Indefinite in-memory cache
 cache_lock = Lock()
 
 def initialize_cache():
@@ -254,7 +253,7 @@ def get_words_by_wordset(wordset_id, skip_cache=False):
             }
         )
         
-        # Store in cache
+        # Store in cache (now always, regardless of skip_cache)
         with cache_lock:
             cache[wordset_id] = response
             

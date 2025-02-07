@@ -27,6 +27,8 @@ class Word(db.Model):
     wordset_id = db.Column(db.Integer, db.ForeignKey('wordsets.wordset_id'), nullable=False)
     def1 = db.Column(db.String(1024), nullable=False)
     def2 = db.Column(db.String(1024), nullable=False)
+    hint_img = db.Column(db.LargeBinary, nullable=True)  # Add hint_img field
+    hint_text = db.Column(db.String(2048), nullable=True)  # Add hint_text field
 
     # Relationships
     wordset = db.relationship('Wordset', back_populates='words')

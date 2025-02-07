@@ -29,6 +29,12 @@ const NavBar = () => {
   }, []);
 
   const handleLogin = () => {
+    // Track Google login click
+    window.gtag('event', 'login_to_google_click', {
+      'event_category': 'authentication',
+      'event_label': 'navbar'
+    });
+    
     login();
     if (!location.pathname.startsWith('/game')) {
       navigate('/wordsets');
@@ -39,6 +45,16 @@ const NavBar = () => {
     logOut();
     setUserMenuOpen(false);
     navigate('/');
+  };
+
+  const handleTryWithoutSignin = () => {
+    // Track demo account attempt
+    window.gtag('event', 'try_with_demo_account', {
+      'event_category': 'authentication',
+      'event_label': 'navbar'
+    });
+    
+    tryWithoutSignin();
   };
 
   const isActive = (path) => {
@@ -118,7 +134,7 @@ const NavBar = () => {
           </div>
         ) : (
           <div className="auth-buttons">
-            <button onClick={tryWithoutSignin} className="try-button">
+            <button onClick={handleTryWithoutSignin} className="try-button">
               Try
             </button>
             <button onClick={login} className="google-signin-compact">

@@ -1,4 +1,5 @@
 import React from 'react';
+import { OptimizedImage } from './OptimizedImage';
 
 // Replace the existing SVG logo with the new image logo
 const Logo = ({ size = 'medium' }) => {
@@ -9,14 +10,14 @@ const Logo = ({ size = 'medium' }) => {
   };
   
   return (
-    <img 
-      src="/images/brand/logo-symbol.png" 
-      alt="Lexitrail" 
-      style={{ 
-        width: sizes[size], 
-        height: sizes[size],
-        objectFit: 'contain'
-      }}
+    <OptimizedImage 
+      src="/images/brand/logo-symbol.png"
+      alt="Lexitrail"
+      width={parseInt(sizes[size])}
+      height={parseInt(sizes[size])}
+      priority={true}
+      className="logo"
+      style={{ objectFit: 'contain' }}
     />
   );
 };

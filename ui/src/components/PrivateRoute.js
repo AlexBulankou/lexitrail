@@ -6,11 +6,23 @@ const PrivateRoute = ({children}) => {
   const { user, login, tryWithoutSignin } = useAuth();
 
   const handleTryWithoutSignin = async () => {
+    // Track demo account attempt
+    window.gtag('event', 'try_with_demo_account', {
+      'event_category': 'authentication',
+      'event_label': 'private_route'
+    });
+    
     await tryWithoutSignin();
     // Stay on current page, component will re-render with user
   };
 
   const handleLogin = async () => {
+    // Track Google login click
+    window.gtag('event', 'login_to_google_click', {
+      'event_category': 'authentication',
+      'event_label': 'private_route'
+    });
+    
     await login();
     // Stay on current page, component will re-render with user
   };

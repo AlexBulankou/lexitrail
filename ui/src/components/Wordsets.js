@@ -30,7 +30,16 @@ const Wordsets = ({ profileDetails, login }) => {
   }, []);
 
   const handleWordsetClick = (wordsetId, mode) => {
-    // Navigate to the game route with the wordsetId and whether to show excluded words
+    // Send Google Analytics event
+    if (mode === GameMode.PRACTICE || mode === GameMode.TEST) {
+      window.gtag('event', 'wordset_click', {
+        'event_category': 'game_start',
+        'event_label': mode === GameMode.PRACTICE ? 'practice' : 'test',
+        'wordset_id': wordsetId
+      });
+    }
+    
+    // Navigate to the game route
     navigate(`/game/${wordsetId}/${mode}`);
   };
 

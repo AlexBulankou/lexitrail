@@ -198,6 +198,15 @@ const Game = () => {
   };
 
   const handleCardGuessed = (index, isCorrect) => {
+    // Send Google Analytics event for single recall attempt
+    window.gtag('event', 'recall', {
+      'event_category': 'learning',
+      'event_label': isCorrect ? 'correct' : 'incorrect',
+      'wordset_id': wordsetId,
+      'mode': mode,
+      'cards_count': 1
+    });
+
     if (isCorrect) {
       handleMemorized(index, maxCardsToShow);
     } else {
@@ -235,6 +244,15 @@ const Game = () => {
 
   const markAllAsMemorized = () => {
     const indicesToMark = [];
+
+    // Send Google Analytics event for bulk recall
+    window.gtag('event', 'recall', {
+      'event_category': 'learning',
+      'event_label': 'correct',
+      'wordset_id': wordsetId,
+      'mode': mode,
+      'cards_count': maxCardsToShow
+    });
 
     // Collect all indices up to maxCardsToShow
     for (let i = 0; i < maxCardsToShow; i++) {

@@ -222,21 +222,28 @@ class TestUtils:
         return wordset.wordset_id
     
     @staticmethod
-    def create_test_words(db, wordset_id, words):
+    def create_test_words(db, wordset_id, word_list):
+        """Create test words for a wordset.
+        
+        Args:
+            db: The database instance
+            wordset_id: The ID of the wordset to add words to
+            word_list: List of tuples containing (word, def1, def2)
         """
-        Create multiple test words in a given wordset ID.
-        Each entry in 'words' should be a tuple: (word, def1, def2).
-        """
-        for word_text, def1, def2 in words:
+        words = []
+        for word_data in word_list:
             word = Word(
-                word=word_text,
+                word=word_data[0],
+                def1=word_data[1],
+                def2=word_data[2],
                 wordset_id=wordset_id,
-                def1=def1,
-                def2=def2
+                hint_img=None,  # Add default None for hint_img
+                hint_text=None  # Add default None for hint_text
             )
             db.session.add(word)
+            words.append(word)
         db.session.commit()
-
+        return words
 
     @staticmethod
     def create_test_userword(db, user_email=default_mock_user, word_description='Test Wordset', word_name=None, is_included=True, hint_text=None, hint_img=None):

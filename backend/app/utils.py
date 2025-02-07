@@ -109,7 +109,7 @@ def success_response(data, message=None, **additional_data):
     truncated_data = (data_str[:97] + '...') if len(data_str) > 100 else data_str
     log_message = f"Success response sent: {message if message else 'No message'} | Data: {truncated_data}"
     if additional_data:
-        log_message += f" | Additional data keys: {list(additional_data.keys())}"
+        log_message += f" | Additional data: {additional_data}"
     logger.info(log_message)
     
     return response
@@ -136,7 +136,7 @@ def error_response(message, status_code=400, **additional_data):
     # Log the error response
     log_message = f"Error response sent (status {status_code}): {message}"
     if additional_data:
-        log_message += f" | Additional data keys: {list(additional_data.keys())}"
+        log_message += f" | Additional data: {additional_data}"
     logger.error(log_message)
     
     return response, status_code

@@ -23,6 +23,8 @@ CREATE TABLE IF NOT EXISTS words (
     wordset_id INT NOT NULL,
     def1 VARCHAR(1024) NOT NULL,
     def2 VARCHAR(1024) NOT NULL,
+    hint_img BLOB,
+    hint_text VARCHAR(2048),
     UNIQUE(word, wordset_id),
     FOREIGN KEY (wordset_id) REFERENCES wordsets(wordset_id) ON DELETE CASCADE ON UPDATE CASCADE
 );
