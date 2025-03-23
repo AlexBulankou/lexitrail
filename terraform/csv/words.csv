@@ -64,7 +64,7 @@ word_id,word,wordset_id,def1,def2
 63,月,1,yuè,month
 64,号,1,hào,number/date
 65,星期,1,xīngqī,week
-66,点,1,diǎn,o’clock
+66,点,1,diǎn,o'clock
 67,分钟,1,fēnzhōng,minute
 68,现在,1,xiànzài,now
 69,时候,1,shíhou,time
@@ -5014,4 +5014,603 @@ word_id,word,wordset_id,def1,def2
 6150,热,7,rè,hot
 6151,高兴,7,gāoxìng,happy
 6152,漂亮,7,piàoliang,beautiful
-
+7000,我,8,wǒ,"I, me"
+7001,我们,8,wǒmen,"we, us (pl.)"
+7002,你,8,nǐ,you
+7003,他,8,tā,"he, him"
+7004,她,8,tā,"she, her"
+7005,这 (这儿),8,zhè ( zhèr),this (here)
+7006,那 (那儿),8,nà (nàr),that (there)
+7007,哪,8,nǎ,which
+7008,哪儿,8,nǎr,where
+7009,谁,8,shéi,who
+7010,什么,8,shénme,"what, why"
+7011,多少,8,duōshǎo,"how many, how much"
+7012,几,8,jǐ,"a few, how many"
+7013,怎么,8,zěnme,how
+7014,怎么样,8,zěnmeyàng,how about
+7015,一,8,yī,one
+7016,二,8,èr,two
+7017,三,8,sān,three
+7018,四,8,sì,four
+7019,五,8,wǔ,five
+7020,六,8,liù,six
+7021,七,8,qī,seven
+7022,八,8,bā,eight
+7023,九,8,jiǔ,nine
+7024,十,8,shí,ten
+7025,个,8,gè,(for normal objects)
+7026,岁,8,suì,(for age)
+7027,本,8,běn,(for books)
+7028,些,8,xiē,some
+7029,块,8,kuài,"piece, chunk"
+7030,不,8,bù,no
+7031,没,8,méi,no
+7032,很,8,hěn,"quite, very"
+7033,太,8,tài,too
+7034,都,8,dōu,all
+7035,一点儿,8,yīdiǎnr,a little bit
+7036,和,8,hé,and
+7037,在,8,zài,"in, at"
+7038,的,8,de,
+7039,了,8,le,
+7040,吗,8,ma,
+7041,呢,8,ne,
+7042,喂,8,wèi,hello
+7043,家,8,jiā,home
+7044,学校,8,xuéxiào,school
+7045,饭店,8,fàndiàn,restaurant
+7046,商店,8,shāngdiàn,store
+7047,医院,8,yīyuàn,hospital
+7048,中国,8,Zhōngguò,China
+7049,北京,8,Běijīng,Beijing
+7050,上,8,shàng,up
+7051,下,8,xià,down
+7052,前面,8,qiánmiàn,front
+7053,后面,8,hòumiàn,behind
+7054,里,8,lǐmiàn,inside
+7055,今天,8,jīntiān,today
+7056,明天,8,míngtiān,tomorrow
+7057,昨天,8,zuótiān,yesterday
+7058,上午,8,shàngwǔ,morning
+7059,中午,8,zhōngwǔ,noon
+7060,下午,8,xiàwǔ,afternoon
+7061,年,8,nián,year
+7062,月,8,yuè,month
+7063,号,8,hào,number/date
+7064,星期,8,xīngqī,week
+7065,点,8,diǎn,o'clock
+7066,分钟,8,fēnzhōng,minute
+7067,现在,8,xiànzài,now
+7068,时候,8,shíhou,time
+7069,爸爸,8,bàba,father
+7070,妈妈,8,māma,mother
+7071,儿子,8,érzi,son
+7072,女儿,8,nǚér,daughter
+7073,老师,8,lǎoshī,teacher
+7074,学生,8,xuéshēng,student
+7075,同学,8,tóngxué,classmate
+7076,朋友,8,péngyǒu,friend
+7077,医生,8,yīshēng,doctor
+7078,先生,8,xiānsheng,sir
+7079,小姐,8,xiǎojiě,Miss
+7080,衣服,8,yīfu,cloth
+7081,水,8,shuǐ,water
+7082,菜,8,cài,dish
+7083,米饭,8,mǐfàn,rice
+7084,水果,8,shuǐguǒ,fruit
+7085,苹果,8,píngguǒ,apple
+7086,茶,8,chá,tea
+7087,杯子,8,bēizi,cup
+7088,钱,8,qián,money
+7089,飞机,8,fēijī,airplane
+7090,出租车,8,chūzūchē,taxi
+7091,电视,8,diànshì,television
+7092,电脑,8,diànnǎo,computer
+7093,电影,8,diànyǐng,movie
+7094,天气,8,tiānqì,weather
+7095,猫,8,māo,cat
+7096,狗,8,gǒu,dog
+7097,东西,8,dōngxi,thing
+7098,人,8,rén,person
+7099,名字,8,míngzi,name
+7100,书,8,shū,book
+7101,汉语,8,hànyǔ,mandarin Chinese
+7102,字,8,zì,character
+7103,桌子,8,zhuōzi,desk
+7104,椅子,8,yǐzi,chair
+7105,谢谢,8,xièxie,thank
+7106,不客气,8,búkèqì,you are welcome
+7107,再见,8,zàijiàn,good-bye
+7108,请,8,qǐng,please
+7109,对不起,8,duìbùqǐ,sorry
+7110,没关系,8,méiguānxì,It doesn't matter
+7111,是,8,shì,"be (am, is, are)"
+7112,有,8,yǒu,have
+7113,看,8,kàn,look
+7114,听,8,tīng,listen
+7115,说,8,shuō,speak
+7116,读,8,dú,read
+7117,写,8,xiě,write
+7118,看见,8,kànjiàn,see
+7119,叫,8,jiào,call
+7120,来,8,lái,come
+7121,回,8,huí,return
+7122,去,8,qù,go
+7123,吃,8,chī,eat
+7124,喝,8,hē,drink
+7125,睡觉,8,shuìjiào,sleep
+7126,打电话,8,dǎdiànhuà,make phone call
+7127,做,8,zuò,do
+7128,买,8,mǎi,buy
+7129,开,8,kāi,open
+7130,坐,8,zuò,sit
+7131,住,8,zhù,live
+7132,学习,8,xuéxí,study
+7133,工作,8,gōngzuò,work
+7134,下雨,8,xiàyǔ,rain
+7135,爱,8,ài,love
+7136,喜欢,8,xǐhuān,"love, like"
+7137,想,8,xiǎng,want
+7138,认识,8,rènshi,know
+7139,会,8,huì,can
+7140,能,8,néng,"can, be able to"
+7141,好,8,hǎo,good
+7142,大,8,dà,big
+7143,小,8,xiǎo,small
+7144,多,8,duō,"many, much"
+7145,少,8,shǎo,"few, little"
+7146,冷,8,lěng,cold
+7147,热,8,rè,hot
+7148,高兴,8,gāoxìng,happy
+7149,漂亮,8,piàoliang,beautiful
+7150,您,8,nín,you
+7151,它,8,tā,it
+7152,大家,8,dàjiā,everyone
+7153,每,8,měi,"every, each"
+7154,为什么,8,wèishénme,why
+7155,零,8,líng,zero
+7156,两,8,liǎng,two
+7157,百,8,bǎi,hundred
+7158,千,8,qiān,thousand
+7159,第一,8,dìyī,first
+7160,次,8,cì,times
+7161,件,8,jiàn,piece
+7162,别,8,bié,do not
+7163,非常,8,fēicháng,very
+7164,也,8,yě,also
+7165,还,8,hái,still
+7166,最,8,zuì,the most
+7167,真,8,zhēn,really
+7168,正在,8,zhèngzài,be being
+7169,已经,8,yǐjīng,already
+7170,一起,8,yìqǐ,together
+7171,再,8,zài,again
+7172,就,8,jiǜ,at once
+7173,因为……所以……,8,yīnwèi…suǒyǐ…,because…so…
+7174,虽然……但是……,8,suīrán…dànshì…,although… but…
+7175,从,8,cóng,from
+7176,比,8,bǐ,comparing to
+7177,往,8,wǎng,"toward, to"
+7178,离,8,lí,indicate the distance between two objects
+7179,得,8,de,
+7180,着,8,zhe,
+7181,过,8,guò,
+7182,吧,8,ba,
+7183,机场,8,jīchǎng,airport
+7184,教室,8,jiàoshì,classroom
+7185,房间,8,fángjiān,room
+7186,路,8,lù,road
+7187,左边,8,zuǒbiān,left
+7188,右边,8,yòubiān,right
+7189,外,8,wài,outside
+7190,旁边,8,pángbiān,side
+7191,一下,8,yīxià,in a short while
+7192,早上,8,zǎoshàng,morning
+7193,晚上,8,wǎnshàng,night
+7194,小时,8,xiǎoshí,hour
+7195,时间,8,shíjiān,time
+7196,去年,8,qùnián,last year
+7197,日,8,rì,date
+7198,生日,8,shēngrì,birthday
+7199,哥哥,8,gēge,older brother
+7200,姐姐,8,jiějie,older sister
+7201,弟弟,8,dìdi,younger brother
+7202,妹妹,8,mèimei,younger sister
+7203,丈夫,8,zhàngfu,husband
+7204,妻子,8,qīzi,wife
+7205,孩子,8,háizi,child
+7206,男人,8,nánrén,man
+7207,女人,8,nǚrén,woman
+7208,服务员,8,fúwùyuán,waiter
+7209,鱼,8,yú,fish
+7210,羊肉,8,yángròu,mutton
+7211,牛奶,8,niúnǎi,milk
+7212,鸡蛋,8,jīdàn,egg
+7213,西瓜,8,xīguā,watermelon
+7214,咖啡,8,kāfēi,coffee
+7215,雪,8,xuě,snow
+7216,药,8,yào,medicine
+7217,手机,8,shǒujī,cellphone
+7218,手表,8,shǒubiǎo,watch
+7219,眼睛,8,yǎnjīng,eye
+7220,身体,8,shēntǐ,body
+7221,公共汽车,8,gōnggòngqìchē,bus
+7222,报纸,8,bàozhǐ,newspaper
+7223,门,8,mén,door
+7224,题,8,tí,"topic, item"
+7225,课,8,kè,lesson
+7226,姓,8,xìng,surname
+7227,问题,8,wèntí,question
+7228,事情,8,shìqing,matter
+7229,考试,8,kǎoshì,exam
+7230,票,8,piào,ticket
+7231,意思,8,yìsi,meaning
+7232,颜色,8,yánsè,color
+7233,铅笔,8,qiánbǐ,pencil
+7234,面条,8,miàntiáo,noodle
+7235,火车站,8,huǒchēzhàn,train station
+7236,公司,8,gōngsī,company
+7237,宾馆,8,bīngguǎn,hotel
+7238,说话,8,shuōhuà,talk
+7239,卖,8,mài,sell
+7240,问,8,wèn,ask
+7241,走,8,zǒu,walk
+7242,进,8,jìn,enter
+7243,出,8,chū,come
+7244,跑步,8,pǎobù,run
+7245,到,8,dào,arrive
+7246,穿,8,chuān,wear
+7247,洗,8,xǐ,wash
+7248,给,8,gěi,give
+7249,找,8,zhǎo,find
+7250,懂,8,dǒng,understand
+7251,笑,8,xiào,smile
+7252,告诉,8,gàosù,tell
+7253,准备,8,zhǔnbèi,prepare
+7254,开始,8,kāishǐ,begin
+7255,介绍,8,jièshào,introduce
+7256,帮助,8,bāngzhù,help
+7257,玩,8,wán,play
+7258,送,8,sòng,present
+7259,等,8,děng,wait
+7260,让,8,ràng,let
+7261,起床,8,qǐchuáng,get up
+7262,唱歌,8,chànggē,sing
+7263,跳舞,8,tiàowǔ,dance
+7264,旅游,8,lǚyóu,travel
+7265,上班,8,shàngbān,be on duty
+7266,生病,8,shēngbìng,"get ill, get sick"
+7267,休息,8,xiūxi,rest
+7268,运动,8,yùndòng,exercise
+7269,游泳,8,yóuyǒng,swim
+7270,踢足球,8,tīzúqiú,play footbal
+7271,打篮球,8,dǎlánqiú,play basketball
+7272,完,8,wán,finish
+7273,觉得,8,juédé,think
+7274,知道,8,zhīdao,know
+7275,希望,8,xīwàng,hope
+7276,可以,8,kěyǐ,can
+7277,要,8,yào,want
+7278,可能,8,kěnéng,may
+7279,高,8,gāo,tall
+7280,红,8,hóng,red
+7281,白,8,bái,white
+7282,黑,8,hēi,black
+7283,忙,8,máng,busy
+7284,快,8,kuài,fast
+7285,慢,8,màn,slow
+7286,远,8,yuǎn,far
+7287,近,8,jìn,close
+7288,好吃,8,hǎochī,delicious
+7289,累,8,lèi,tired
+7290,长,8,cháng,long
+7291,新,8,xīn,new
+7292,贵,8,guì,expensive
+7293,便宜,8,piányi,cheap
+7294,晴,8,qíng,fine
+7295,阴,8,yīn,cloudy
+7296,错,8,cuò,wrong
+7297,快乐,8,kuàilè,happy
+7298,对,8,duì,to
+7299,对,8,duì,right
+7300,阿姨,8,āyí,aunt
+7301,啊,8,a,ah
+7302,矮,8,ǎi,short
+7303,爱好,8,àihào,hobby
+7304,安静,8,ānjìng,Be quiet
+7305,把,8,bǎ,hold
+7306,班,8,bān,class
+7307,搬,8,bān,move
+7308,半,8,bàn,half
+7309,办法,8,bànfǎ,Way
+7310,办公室,8,bàngōngshì,Office
+7311,帮忙,8,bāngmáng,Help
+7312,包,8,bāo,package
+7313,饱,8,bǎo,full
+7314,北方,8,běifāng,north
+7315,被,8,bèi,cover
+7316,鼻子,8,bízi,nose
+7317,比较,8,bǐjiào,compare
+7318,比赛,8,bǐsài,Match
+7319,笔记本,8,bǐjìběn,notebook
+7320,必须,8,bìxū,Must
+7321,变化,8,biànhuà,change
+7322,别人,8,biéren,Others
+7323,冰箱,8,bīngxiāng,Refrigerator
+7324,菜单,8,càidān,menu
+7325,参加,8,cānjiā,participate in
+7326,草,8,cǎo,grass
+7327,层,8,céng,layer
+7328,差,8,chà,bad
+7329,超市,8,chāoshì,Supermarket
+7330,衬衫,8,chènshān,shirt
+7331,成绩,8,chéngjì,achievement
+7332,城市,8,chéngshì,City
+7333,迟到,8,chídào,Late
+7334,除了,8,chúle,"except, besides"
+7335,船,8,chuán,ship
+7336,春,8,chūn,spring
+7337,词典,8,cídiǎn,Dictionaries
+7338,聪明,8,cōngming,clever
+7339,打扫,8,dǎsǎo,Clean
+7340,打算,8,dǎsuàn,Plan
+7341,带,8,dài,belt
+7342,担心,8,dānxīn,Worry
+7343,蛋糕,8,dàngāo,Cake
+7344,当然,8,dāngrán,Of course
+7345,地,8,de,
+7346,灯,8,dēng,lamp
+7347,地方,8,dìfang,local
+7348,地铁,8,dìtiě,metro
+7349,地图,8,dìtú,Map
+7350,电梯,8,diàntī,Elevator.
+7351,电子邮件,8,diànzǐyóujiàn,E-mail
+7352,东,8,dōng,east
+7353,冬,8,dōng,winter
+7354,动物,8,dòngwù,Animal
+7355,短,8,duǎn,short
+7356,段,8,duàn,paragraph
+7357,锻炼,8,duànliàn,Physical exercise
+7358,多么,8,duōme,such
+7359,饿,8,è,hungry
+7360,不但……而且……,8,búdàn…érqiě…,not only…but also…
+7361,耳朵,8,ěrduo,Ears
+7362,发,8,fā,send out
+7363,发烧,8,fāshāo,Have a fever
+7364,发现,8,fāxiàn,"find, discover"
+7365,方便,8,fāngbiàn,convenient
+7366,放,8,fàng,discharge
+7367,放心,8,fàngxīn,Don't worry
+7368,分,8,fēn,minute
+7369,附近,8,fùjìn,nearby
+7370,复习,8,fùxí,Review
+7371,干净,8,gānjìng,clean
+7372,感兴趣,8,gǎnxìngqù,be intretested in
+7373,感冒,8,gǎnmào,get a cold
+7374,刚才,8,gāngcái,just
+7375,个子,8,gèzi,height
+7376,跟,8,gēn,with
+7377,根据,8,gēnjù,according to
+7378,更,8,gèng,more
+7379,公斤,8,gōngjīn,Kg.
+7380,公园,8,gōngyuán,Park
+7381,故事,8,gùshi,Story
+7382,刮风,8,guāfēng,Windy
+7383,关,8,guān,shut
+7384,关系,8,guānxì,relationship
+7385,关心,8,guānxīn,Care for
+7386,关于,8,guānyú,about
+7387,国家,8,guójiā,Country
+7388,过去,8,guòqù,Past times
+7389,过（动词）,8,guò,pass
+7390,还是,8,háishì,still
+7391,害怕,8,hàipà,Fear
+7392,黑板,8,hēibǎn,blackboard
+7393,后来,8,hòulái,later
+7394,护照,8,hùzhào,passport
+7395,花（动词）,8,huā,spend
+7396,花（名词）,8,huā,flower
+7397,画,8,huà,painting
+7398,坏,8,huài,bad
+7399,欢迎,8,huānyíng,Welcome
+7400,还（动词）,8,huán,Return
+7401,环境,8,huánjìng,Environment
+7402,换,8,huàn,change
+7403,黄河,8,huánghé,Yellow River
+7404,回答,8,huídá,Answer
+7405,会议,8,huìyì,Meeting
+7406,或者,8,huòzhě,perhaps
+7407,几乎,8,jīhū,almost
+7408,机会,8,jīhuì,Opportunity
+7409,极,8,jí,extremely
+7410,记得,8,jìde,remember
+7411,季节,8,jìjié,Season
+7412,检查,8,jiǎnchá,inspect
+7413,简单,8,jiǎndān,simple
+7414,健康,8,jiànkāng,Healthy
+7415,见面,8,jiànmiàn,meet
+7416,讲,8,jiǎng,speak
+7417,教,8,jiāo,teach
+7418,角,8,jiǎo,horn
+7419,脚,8,jiǎo,foot
+7420,接,8,jiē,"pick,get"
+7421,街道,8,jiēdào,Street
+7422,结婚,8,jiéhūn,marry
+7423,结束,8,jiéshù,End
+7424,节目,8,jiémù,program
+7425,节日,8,jiérì,festival
+7426,解决,8,jiějué,Solve
+7427,借,8,jiè,borrow
+7428,经常,8,jīngcháng,Often
+7429,经过,8,jīngguò,"After, through"
+7430,经理,8,jīnglǐ,manager
+7431,久,8,jiǔ,long
+7432,旧,8,jiù,"old,used"
+7433,句子,8,jùzi,sentence
+7434,决定,8,juédìng,Decision
+7435,渴,8,kě,thirsty
+7436,可爱,8,kě'ài,Lovely
+7437,刻,8,kè,moment
+7438,客人,8,kèrén,Guest
+7439,空调,8,kōngtiáo,Air conditioner
+7440,口,8,kǒu,mouth
+7441,哭,8,kū,cry
+7442,裤子,8,kùzi,trousers
+7443,筷子,8,kuàizi,chopsticks
+7444,蓝,8,lán,blue
+7445,老,8,lǎo,old
+7446,离开,8,líkāi,leave
+7447,礼物,8,lǐwù,gift
+7448,历史,8,lìshǐ,History
+7449,脸,8,liǎn,face
+7450,聊天,8,liáotiān,chat
+7451,练习,8,liànxí,Practice
+7452,辆,8,liàng,Car
+7453,了解,8,liǎojiě,understand
+7454,邻居,8,línjū,neighbor
+7455,留学,8,liúxué,Overseas Study
+7456,楼,8,lóu,floor
+7457,绿,8,lǜ,green
+7458,马,8,mǎ,Horse
+7459,马上,8,mǎshàng,Right off
+7460,满意,8,mǎnyì,Satisfied
+7461,帽子,8,màozi,Hat
+7462,米,8,mǐ,rice
+7463,面包,8,miànbāo,Bread
+7464,明白,8,míngbai,clear
+7465,拿,8,ná,take
+7466,奶奶,8,nǎinai,grandma
+7467,南,8,nán,south
+7468,难,8,nán,difficult
+7469,难过,8,nánguò,sad
+7470,年级,8,niánjí,grade
+7471,年轻,8,niánqīng,Young
+7472,鸟,8,niǎo,bird
+7473,努力,8,nǔlì,Strive
+7474,爬山,8,páshān,Mountain climbing
+7475,盘子,8,pánzi,plate
+7476,胖,8,pàng,fat
+7477,啤酒,8,píjiǔ,Beer
+7478,皮鞋,8,píxié,leather shoes
+7479,瓶子,8,píngzi,bottle
+7480,其实,8,qíshí,actually
+7481,其他,8,qítā,Other
+7482,骑,8,qí,ride
+7483,奇怪,8,qíguài,strange
+7484,起来,8,qǐlái,get up
+7485,起飞,8,qǐfēi,take off
+7486,清楚,8,qīngchu,clear
+7487,请假,8,qǐngjià,ask for leave
+7488,秋,8,qiū,autumn
+7489,裙子,8,qúnzi,skirt
+7490,然后,8,ránhòu,Then
+7491,热情,8,rèqíng,Enthusiasm
+7492,认为,8,rènwéi,think
+7493,认真,8,rènzhēn,earnest
+7494,容易,8,róngyì,easily
+7495,如果,8,rúguǒ,If
+7496,伞,8,sǎn,umbrella
+7497,上网,8,shàngwǎng,Surf the Internet
+7498,生气,8,shēngqì,get angry
+7499,声音,8,shēngyīn,voice
+7500,试,8,shì,try
+7501,世界,8,shìjiè,world
+7502,瘦,8,shòu,thin
+7503,舒服,8,shūfu,comfortable
+7504,叔叔,8,shūshu,uncle
+7505,树,8,shù,tree
+7506,数学,8,shùxué,Mathematics
+7507,刷牙,8,shuāyá,Brush one's teeth
+7508,双,8,shuāng,"double, pair"
+7509,水平,8,shuǐpíng,level
+7510,司机,8,sījī,Driver
+7511,太阳,8,tàiyáng,sun
+7512,特别,8,tèbié,Especially
+7513,疼,8,téng,hurt
+7514,提高,8,tígāo,increase
+7515,体育,8,tǐyù,Sports
+7516,甜,8,tián,sweet
+7517,条,8,tiáo,strip
+7518,同事,8,tóngshì,Colleague
+7519,同意,8,tóngyì,Agree
+7520,头发,8,tóufa,Hair
+7521,突然,8,tūrán,suddenly
+7522,图书馆,8,túshūguǎn,Library
+7523,腿,8,tuǐ,leg
+7524,完成,8,wánchéng,complete
+7525,碗,8,wǎn,bowl
+7526,万,8,wàn,ten thousand
+7527,忘记,8,wàngjì,forget
+7528,为,8,wèi,for
+7529,为了,8,wèile,in order to
+7530,位,8,wèi,position
+7531,文化,8,wénhuà,Culture
+7532,西,8,xī,west
+7533,习惯,8,xíguàn,Habit
+7534,洗手间,8,xǐshǒujiān,Restroom
+7535,洗澡,8,xǐzǎo,Take a shower
+7536,夏,8,xià,summer
+7537,先,8,xiān,first
+7538,香蕉,8,xiāngjiāo,Banana
+7539,相信,8,xiāngxìn,believe
+7540,向,8,xiàng,towards
+7541,像,8,xiàng,image
+7542,小心,8,xiǎoxīn,watch out
+7543,校长,8,xiàozhǎng,Principal
+7544,新闻,8,xīnwén,news
+7545,新鲜,8,xīnxiān,fresh
+7546,信用卡,8,xìnyòngkǎ,Credit card
+7547,行李箱,8,xínglixiāng,Trunk
+7548,熊猫,8,xióngmāo,Panda
+7549,需要,8,xūyào,Need
+7550,选择,8,xuǎnzé,Choice
+7551,要求,8,yāoqiú,Requirement
+7552,爷爷,8,yéye,grandpa
+7553,一定,8,yídìng,Certain
+7554,一共,8,yígòng,Altogether
+7555,一会儿,8,yíhuìr,a while
+7556,一样,8,yíyàng,equally
+7557,以前,8,yǐqián,before
+7558,一般,8,yìbān,commonly
+7559,一边,8,yìbiān,One side
+7560,一直,8,yìzhí,always
+7561,音乐,8,yīnyuè,Music
+7562,银行,8,yínháng,Bank
+7563,饮料,8,yǐnliào,Drinks
+7564,应该,8,yīnggāi,Should
+7565,影响,8,yǐngxiǎng,Influence
+7566,用,8,yòng,use
+7567,游戏,8,yóuxì,Game
+7568,有名,8,yǒumíng,Famous
+7569,又,8,yòu,again
+7570,遇到,8,yùdào,encounter
+7571,元,8,yuán,element; yuan
+7572,愿意,8,yuànyì,Be willing
+7573,月亮,8,yuèliang,Moon
+7574,越,8,yuè,the more
+7575,站,8,zhàn,station
+7576,张,8,zhāng,Zhang (surname)
+7577,长（动词）,8,zhǎng,grow
+7578,着急,8,zháojí,Worry
+7579,照顾,8,zhàogù,look after
+7580,照片,8,zhàopiàn,Photo
+7581,照相机,8,zhàoxiàngjī,Camera
+7582,只（量词）,8,zhī,(measure word)
+7583,只（副词）,8,zhǐ,only
+7584,只有……才……,8,zhǐyǒu…cái…,only if
+7585,中文,8,zhōngwén,Chinese
+7586,中间,8,zhōngjiān,Middle
+7587,终于,8,zhōngyú,finally
+7588,种,8,zhǒng,species
+7589,重要,8,zhòngyào,important
+7590,周末,8,zhōumò,Weekend
+7591,主要,8,zhǔyào,main
+7592,注意,8,zhùyì,Be careful
+7593,自己,8,zìjǐ,"Own, self"
+7594,自行车,8,zìxíngchē,Bicycle
+7595,总是,8,zǒngshì,always
+7596,嘴,8,zuǐ,mouth
+7597,最后,8,zuìhòu,Last
+7598,最近,8,zuìjìn,lately
+7599,作业,8,zuòyè,homework

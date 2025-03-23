@@ -1,0 +1,1054 @@
+{
+  "sentences": [
+    {
+      "no": 1,
+      "word": {"no":76, "chinese":"课", "pinyin":"kè", "english":"lesson"},
+      "chinese": "我们今天有汉语课。",
+      "pinyin": "Wǒmen jīntiān yǒu Hànyǔ kè.",
+      "english": "We have a Chinese lesson today."
+    },
+    {
+      "no": 2,
+      "word": {"no":76, "chinese":"课", "pinyin":"kè", "english":"lesson"},
+      "chinese": "我喜欢这儿的课。",
+      "pinyin": "Wǒ xǐhuan zhèr de kè.",
+      "english": "I like the lessons here."
+    },
+    {
+      "no": 3,
+      "word": {"no":77, "chinese":"姓", "pinyin":"xìng", "english":"surname"},
+      "chinese": "你姓什么？",
+      "pinyin": "Nǐ xìng shénme?",
+      "english": "What is your surname?"
+    },
+    {
+      "no": 4,
+      "word": {"no":77, "chinese":"姓", "pinyin":"xìng", "english":"surname"},
+      "chinese": "我不认识他姓什么。",
+      "pinyin": "Wǒ bù rènshi tā xìng shénme.",
+      "english": "I do not know his surname."
+    },
+    {
+      "no": 5,
+      "word": {"no":78, "chinese":"问题", "pinyin":"wèntí", "english":"question"},
+      "chinese": "你有问题吗？",
+      "pinyin": "Nǐ yǒu wèntí ma?",
+      "english": "Do you have any questions?"
+    },
+    {
+      "no": 6,
+      "word": {"no":78, "chinese":"问题", "pinyin":"wèntí", "english":"question"},
+      "chinese": "这个问题很大。",
+      "pinyin": "Zhège wèntí hěn dà.",
+      "english": "This question is big."
+    },
+    {
+      "no": 7,
+      "word": {"no":79, "chinese":"事情", "pinyin":"shìqing", "english":"matter"},
+      "chinese": "这件事情很不好。",
+      "pinyin": "Zhè jiàn shìqing hěn bù hǎo.",
+      "english": "This matter is not good."
+    },
+    {
+      "no": 8,
+      "word": {"no":79, "chinese":"事情", "pinyin":"shìqing", "english":"matter"},
+      "chinese": "我不喜欢这件事情。",
+      "pinyin": "Wǒ bù xǐhuan zhè jiàn shìqing.",
+      "english": "I do not like this matter."
+    },
+    {
+      "no": 9,
+      "word": {"no":80, "chinese":"考试", "pinyin":"kǎoshì", "english":"exam"},
+      "chinese": "明天有汉语考试。",
+      "pinyin": "Míngtiān yǒu Hànyǔ kǎoshì.",
+      "english": "There is a Chinese exam tomorrow."
+    },
+    {
+      "no": 10,
+      "word": {"no":80, "chinese":"考试", "pinyin":"kǎoshì", "english":"exam"},
+      "chinese": "他不想去考试。",
+      "pinyin": "Tā bù xiǎng qù kǎoshì.",
+      "english": "He does not want to go take the exam."
+    },
+    {
+      "no": 11,
+      "word": {"no":81, "chinese":"票", "pinyin":"piào", "english":"ticket"},
+      "chinese": "我有两票。",
+      "pinyin": "Wǒ yǒu liǎng piào.",
+      "english": "I have two tickets."
+    },
+    {
+      "no": 12,
+      "word": {"no":81, "chinese":"票", "pinyin":"piào", "english":"ticket"},
+      "chinese": "这票是我的。",
+      "pinyin": "Zhè piào shì wǒ de.",
+      "english": "This ticket is mine."
+    },
+    {
+      "no": 13,
+      "word": {"no":82, "chinese":"意思", "pinyin":"yìsi", "english":"meaning"},
+      "chinese": "这个字什么意思？",
+      "pinyin": "Zhège zì shénme yìsi?",
+      "english": "What is the meaning of this character?"
+    },
+    {
+      "no": 14,
+      "word": {"no":82, "chinese":"意思", "pinyin":"yìsi", "english":"meaning"},
+      "chinese": "它的意思很好。",
+      "pinyin": "Tā de yìsi hěn hǎo.",
+      "english": "Its meaning is very good."
+    },
+    {
+      "no": 15,
+      "word": {"no":83, "chinese":"颜色", "pinyin":"yánsè", "english":"color"},
+      "chinese": "你喜欢什么颜色？",
+      "pinyin": "Nǐ xǐhuan shénme yánsè?",
+      "english": "Which color do you like?"
+    },
+    {
+      "no": 16,
+      "word": {"no":83, "chinese":"颜色", "pinyin":"yánsè", "english":"color"},
+      "chinese": "这个颜色很漂亮。",
+      "pinyin": "Zhège yánsè hěn piàoliang.",
+      "english": "This color is very beautiful."
+    },
+    {
+      "no": 17,
+      "word": {"no":84, "chinese":"铅笔", "pinyin":"qiānbǐ", "english":"pencil"},
+      "chinese": "我想买一个铅笔。",
+      "pinyin": "Wǒ xiǎng mǎi yí gè qiānbǐ.",
+      "english": "I want to buy a pencil."
+    },
+    {
+      "no": 18,
+      "word": {"no":84, "chinese":"铅笔", "pinyin":"qiānbǐ", "english":"pencil"},
+      "chinese": "这铅笔在哪儿？",
+      "pinyin": "Zhè qiānbǐ zài nǎr?",
+      "english": "Where is this pencil?"
+    },
+    {
+      "no": 19,
+      "word": {"no":85, "chinese":"面条", "pinyin":"miàntiáo", "english":"noodle"},
+      "chinese": "我喜欢吃面条。",
+      "pinyin": "Wǒ xǐhuan chī miàntiáo.",
+      "english": "I like to eat noodles."
+    },
+    {
+      "no": 20,
+      "word": {"no":85, "chinese":"面条", "pinyin":"miàntiáo", "english":"noodle"},
+      "chinese": "这家饭店有面条吗？",
+      "pinyin": "Zhè jiā fàndiàn yǒu miàntiáo ma?",
+      "english": "Does this restaurant have noodles?"
+    },
+    {
+      "no": 21,
+      "word": {"no":86, "chinese":"火车站", "pinyin":"huǒchēzhàn", "english":"train station"},
+      "chinese": "火车站在那儿吗？",
+      "pinyin": "Huǒchēzhàn zài nàr ma?",
+      "english": "Is the train station there?"
+    },
+    {
+      "no": 22,
+      "word": {"no":86, "chinese":"火车站", "pinyin":"huǒchēzhàn", "english":"train station"},
+      "chinese": "我们去火车站吧！",
+      "pinyin": "Wǒmen qù huǒchēzhàn ba!",
+      "english": "Let's go to the train station!"
+    },
+    {
+      "no": 23,
+      "word": {"no":87, "chinese":"公司", "pinyin":"gōngsī", "english":"company"},
+      "chinese": "你在公司工作吗？",
+      "pinyin": "Nǐ zài gōngsī gōngzuò ma?",
+      "english": "Do you work at the company?"
+    },
+    {
+      "no": 24,
+      "word": {"no":87, "chinese":"公司", "pinyin":"gōngsī", "english":"company"},
+      "chinese": "这家公司很大。",
+      "pinyin": "Zhè jiā gōngsī hěn dà.",
+      "english": "This company is big."
+    },
+    {
+      "no": 25,
+      "word": {"no":88, "chinese":"宾馆", "pinyin":"bīnguǎn", "english":"hotel"},
+      "chinese": "宾馆在那儿吗？",
+      "pinyin": "Bīnguǎn zài nàr ma?",
+      "english": "Is the hotel over there?"
+    },
+    {
+      "no": 26,
+      "word": {"no":88, "chinese":"宾馆", "pinyin":"bīnguǎn", "english":"hotel"},
+      "chinese": "我不喜欢这个宾馆。",
+      "pinyin": "Wǒ bù xǐhuan zhège bīnguǎn.",
+      "english": "I do not like this hotel."
+    },
+    {
+      "no": 27,
+      "word": {"no":89, "chinese":"说话", "pinyin":"shuōhuà", "english":"talk"},
+      "chinese": "请别说话。",
+      "pinyin": "Qǐng bié shuōhuà.",
+      "english": "Please do not talk."
+    },
+    {
+      "no": 28,
+      "word": {"no":89, "chinese":"说话", "pinyin":"shuōhuà", "english":"talk"},
+      "chinese": "他在教室说话吗？",
+      "pinyin": "Tā zài jiàoshì shuōhuà ma?",
+      "english": "Is he talking in the classroom?"
+    },
+    {
+      "no": 29,
+      "word": {"no":90, "chinese":"卖", "pinyin":"mài", "english":"sell"},
+      "chinese": "这个商店卖水果吗？",
+      "pinyin": "Zhège shāngdiàn mài shuǐguǒ ma?",
+      "english": "Does this store sell fruit?"
+    },
+    {
+      "no": 30,
+      "word": {"no":90, "chinese":"卖", "pinyin":"mài", "english":"sell"},
+      "chinese": "我想卖我的手机。",
+      "pinyin": "Wǒ xiǎng mài wǒ de shǒujī.",
+      "english": "I want to sell my cellphone."
+    },
+    {
+      "no": 31,
+      "word": {"no":91, "chinese":"问", "pinyin":"wèn", "english":"ask"},
+      "chinese": "我能问您吗？",
+      "pinyin": "Wǒ néng wèn nín ma?",
+      "english": "May I ask you?"
+    },
+    {
+      "no": 32,
+      "word": {"no":91, "chinese":"问", "pinyin":"wèn", "english":"ask"},
+      "chinese": "请问，你在吗？",
+      "pinyin": "Qǐngwèn, nǐ zài ma?",
+      "english": "Excuse me, are you there?"
+    },
+    {
+      "no": 33,
+      "word": {"no":92, "chinese":"走", "pinyin":"zǒu", "english":"walk"},
+      "chinese": "我们一起走吧。",
+      "pinyin": "Wǒmen yìqǐ zǒu ba.",
+      "english": "Let's walk together."
+    },
+    {
+      "no": 34,
+      "word": {"no":92, "chinese":"走", "pinyin":"zǒu", "english":"walk"},
+      "chinese": "他从家走去学校。",
+      "pinyin": "Tā cóng jiā zǒu qù xuéxiào.",
+      "english": "He walks from home to school."
+    },
+    {
+      "no": 35,
+      "word": {"no":93, "chinese":"进", "pinyin":"jìn", "english":"enter"},
+      "chinese": "请进！",
+      "pinyin": "Qǐng jìn!",
+      "english": "Please come in!"
+    },
+    {
+      "no": 36,
+      "word": {"no":93, "chinese":"进", "pinyin":"jìn", "english":"enter"},
+      "chinese": "他进房间了吗？",
+      "pinyin": "Tā jìn fángjiān le ma?",
+      "english": "Did he enter the room?"
+    },
+    {
+      "no": 37,
+      "word": {"no":94, "chinese":"出", "pinyin":"chū", "english":"come"},
+      "chinese": "请你出去。",
+      "pinyin": "Qǐng nǐ chūqù.",
+      "english": "Please go out."
+    },
+    {
+      "no": 38,
+      "word": {"no":94, "chinese":"出", "pinyin":"chū", "english":"come"},
+      "chinese": "他从教室出来吗？",
+      "pinyin": "Tā cóng jiàoshì chūlái ma?",
+      "english": "Is he coming out of the classroom?"
+    },
+    {
+      "no": 39,
+      "word": {"no":95, "chinese":"跑步", "pinyin":"pǎobù", "english":"run"},
+      "chinese": "我每个早上跑步。",
+      "pinyin": "Wǒ měi gè zǎoshang pǎobù.",
+      "english": "I run every morning."
+    },
+    {
+      "no": 40,
+      "word": {"no":95, "chinese":"跑步", "pinyin":"pǎobù", "english":"run"},
+      "chinese": "你喜欢在哪儿跑步？",
+      "pinyin": "Nǐ xǐhuan zài nǎr pǎobù?",
+      "english": "Where do you like to run?"
+    },
+    {
+      "no": 41,
+      "word": {"no":96, "chinese":"到", "pinyin":"dào", "english":"arrive"},
+      "chinese": "我到公司了。",
+      "pinyin": "Wǒ dào gōngsī le.",
+      "english": "I have arrived at the company."
+    },
+    {
+      "no": 42,
+      "word": {"no":96, "chinese":"到", "pinyin":"dào", "english":"arrive"},
+      "chinese": "你什么时候到家？",
+      "pinyin": "Nǐ shénme shíhou dào jiā?",
+      "english": "When do you arrive home?"
+    },
+    {
+      "no": 43,
+      "word": {"no":97, "chinese":"穿", "pinyin":"chuān", "english":"wear"},
+      "chinese": "我喜欢穿衣服。",
+      "pinyin": "Wǒ xǐhuan chuān yīfu.",
+      "english": "I like to wear clothes."
+    },
+    {
+      "no": 44,
+      "word": {"no":97, "chinese":"穿", "pinyin":"chuān", "english":"wear"},
+      "chinese": "他穿什么颜色？",
+      "pinyin": "Tā chuān shénme yánsè?",
+      "english": "What color is he wearing?"
+    },
+    {
+      "no": 45,
+      "word": {"no":98, "chinese":"洗", "pinyin":"xǐ", "english":"wash"},
+      "chinese": "我想洗衣服。",
+      "pinyin": "Wǒ xiǎng xǐ yīfu.",
+      "english": "I want to wash clothes."
+    },
+    {
+      "no": 46,
+      "word": {"no":98, "chinese":"洗", "pinyin":"xǐ", "english":"wash"},
+      "chinese": "你想洗杯子吗？",
+      "pinyin": "Nǐ xiǎng xǐ bēizi ma?",
+      "english": "Do you want to wash the cup?"
+    },
+    {
+      "no": 47,
+      "word": {"no":99, "chinese":"给", "pinyin":"gěi", "english":"give"},
+      "chinese": "请给我一个杯子。",
+      "pinyin": "Qǐng gěi wǒ yí gè bēizi.",
+      "english": "Please give me a cup."
+    },
+    {
+      "no": 48,
+      "word": {"no":99, "chinese":"给", "pinyin":"gěi", "english":"give"},
+      "chinese": "他给她一个苹果。",
+      "pinyin": "Tā gěi tā yí gè píngguǒ.",
+      "english": "He gave her an apple."
+    },
+    {
+      "no": 49,
+      "word": {"no":100, "chinese":"找", "pinyin":"zhǎo", "english":"find"},
+      "chinese": "我在找我的手机。",
+      "pinyin": "Wǒ zài zhǎo wǒ de shǒujī.",
+      "english": "I am looking for my cellphone."
+    },
+    {
+      "no": 50,
+      "word": {"no":100, "chinese":"找", "pinyin":"zhǎo", "english":"find"},
+      "chinese": "你找到了吗？",
+      "pinyin": "Nǐ zhǎo dào le ma?",
+      "english": "Did you find it?"
+    },
+    {
+      "no": 51,
+      "word": {"no":101, "chinese":"懂", "pinyin":"dǒng", "english":"understand"},
+      "chinese": "我听不懂汉语。",
+      "pinyin": "Wǒ tīng bù dǒng Hànyǔ.",
+      "english": "I cannot understand Chinese by listening."
+    },
+    {
+      "no": 52,
+      "word": {"no":101, "chinese":"懂", "pinyin":"dǒng", "english":"understand"},
+      "chinese": "他懂这个意思吗？",
+      "pinyin": "Tā dǒng zhège yìsi ma?",
+      "english": "Does he understand this meaning?"
+    },
+    {
+      "no": 53,
+      "word": {"no":102, "chinese":"笑", "pinyin":"xiào", "english":"smile"},
+      "chinese": "她笑得很高兴。",
+      "pinyin": "Tā xiào de hěn gāoxìng.",
+      "english": "She smiles happily."
+    },
+    {
+      "no": 54,
+      "word": {"no":102, "chinese":"笑", "pinyin":"xiào", "english":"smile"},
+      "chinese": "请别笑！",
+      "pinyin": "Qǐng bié xiào!",
+      "english": "Please don't laugh!"
+    },
+    {
+      "no": 55,
+      "word": {"no":103, "chinese":"告诉", "pinyin":"gàosu", "english":"tell"},
+      "chinese": "请告诉我你的名字。",
+      "pinyin": "Qǐng gàosu wǒ nǐ de míngzi.",
+      "english": "Please tell me your name."
+    },
+    {
+      "no": 56,
+      "word": {"no":103, "chinese":"告诉", "pinyin":"gàosu", "english":"tell"},
+      "chinese": "我告诉你一个事情。",
+      "pinyin": "Wǒ gàosu nǐ yí gè shìqing.",
+      "english": "I will tell you one matter."
+    },
+    {
+      "no": 57,
+      "word": {"no":104, "chinese":"准备", "pinyin":"zhǔnbèi", "english":"prepare"},
+      "chinese": "我们准备考试吧。",
+      "pinyin": "Wǒmen zhǔnbèi kǎoshì ba.",
+      "english": "Let's prepare for the exam."
+    },
+    {
+      "no": 58,
+      "word": {"no":104, "chinese":"准备", "pinyin":"zhǔnbèi", "english":"prepare"},
+      "chinese": "你准备好了吗？",
+      "pinyin": "Nǐ zhǔnbèi hǎo le ma?",
+      "english": "Are you ready?"
+    },
+    {
+      "no": 59,
+      "word": {"no":105, "chinese":"开始", "pinyin":"kāishǐ", "english":"begin"},
+      "chinese": "我们什么时候开始？",
+      "pinyin": "Wǒmen shénme shíhou kāishǐ?",
+      "english": "When do we begin?"
+    },
+    {
+      "no": 60,
+      "word": {"no":105, "chinese":"开始", "pinyin":"kāishǐ", "english":"begin"},
+      "chinese": "现在开始上课。",
+      "pinyin": "Xiànzài kāishǐ shàng kè.",
+      "english": "Now let's begin the lesson."
+    },
+    {
+      "no": 61,
+      "word": {"no":106, "chinese":"介绍", "pinyin":"jièshào", "english":"introduce"},
+      "chinese": "请介绍一下你。",
+      "pinyin": "Qǐng jièshào yíxià nǐ.",
+      "english": "Please introduce yourself briefly."
+    },
+    {
+      "no": 62,
+      "word": {"no":106, "chinese":"介绍", "pinyin":"jièshào", "english":"introduce"},
+      "chinese": "我想介绍我的朋友。",
+      "pinyin": "Wǒ xiǎng jièshào wǒ de péngyou.",
+      "english": "I want to introduce my friend."
+    },
+    {
+      "no": 63,
+      "word": {"no":107, "chinese":"帮助", "pinyin":"bāngzhù", "english":"help"},
+      "chinese": "请帮助我学习汉语。",
+      "pinyin": "Qǐng bāngzhù wǒ xuéxí Hànyǔ.",
+      "english": "Please help me study Chinese."
+    },
+    {
+      "no": 64,
+      "word": {"no":107, "chinese":"帮助", "pinyin":"bāngzhù", "english":"help"},
+      "chinese": "我能帮助你吗？",
+      "pinyin": "Wǒ néng bāngzhù nǐ ma?",
+      "english": "Can I help you?"
+    },
+    {
+      "no": 65,
+      "word": {"no":108, "chinese":"玩", "pinyin":"wán", "english":"play"},
+      "chinese": "孩子喜欢玩吗？",
+      "pinyin": "Háizi xǐhuan wán ma?",
+      "english": "Does the child like to play?"
+    },
+    {
+      "no": 66,
+      "word": {"no":108, "chinese":"玩", "pinyin":"wán", "english":"play"},
+      "chinese": "你想玩电脑吗？",
+      "pinyin": "Nǐ xiǎng wán diànnǎo ma?",
+      "english": "Do you want to play on the computer?"
+    },
+    {
+      "no": 67,
+      "word": {"no":109, "chinese":"送", "pinyin":"sòng", "english":"present"},
+      "chinese": "我想送你一个苹果。",
+      "pinyin": "Wǒ xiǎng sòng nǐ yí gè píngguǒ.",
+      "english": "I want to give you an apple."
+    },
+    {
+      "no": 68,
+      "word": {"no":109, "chinese":"送", "pinyin":"sòng", "english":"present"},
+      "chinese": "他送了我一件衣服。",
+      "pinyin": "Tā sòng le wǒ yí jiàn yīfu.",
+      "english": "He gave me a piece of clothing."
+    },
+    {
+      "no": 69,
+      "word": {"no":110, "chinese":"等", "pinyin":"děng", "english":"wait"},
+      "chinese": "请等一下。",
+      "pinyin": "Qǐng děng yíxià.",
+      "english": "Please wait a moment."
+    },
+    {
+      "no": 70,
+      "word": {"no":110, "chinese":"等", "pinyin":"děng", "english":"wait"},
+      "chinese": "我在家等你。",
+      "pinyin": "Wǒ zài jiā děng nǐ.",
+      "english": "I am waiting for you at home."
+    },
+    {
+      "no": 71,
+      "word": {"no":111, "chinese":"让", "pinyin":"ràng", "english":"let"},
+      "chinese": "请让他进来。",
+      "pinyin": "Qǐng ràng tā jìnlái.",
+      "english": "Please let him come in."
+    },
+    {
+      "no": 72,
+      "word": {"no":111, "chinese":"让", "pinyin":"ràng", "english":"let"},
+      "chinese": "妈妈让我吃米饭。",
+      "pinyin": "Māma ràng wǒ chī mǐfàn.",
+      "english": "Mom asks me to eat rice."
+    },
+    {
+      "no": 73,
+      "word": {"no":112, "chinese":"起床", "pinyin":"qǐchuáng", "english":"get up"},
+      "chinese": "我早上七点起床。",
+      "pinyin": "Wǒ zǎoshang qī diǎn qǐchuáng.",
+      "english": "I get up at seven in the morning."
+    },
+    {
+      "no": 74,
+      "word": {"no":112, "chinese":"起床", "pinyin":"qǐchuáng", "english":"get up"},
+      "chinese": "你什么时候起床？",
+      "pinyin": "Nǐ shénme shíhou qǐchuáng?",
+      "english": "When do you get up?"
+    },
+    {
+      "no": 75,
+      "word": {"no":113, "chinese":"唱歌", "pinyin":"chànggē", "english":"sing"},
+      "chinese": "姐姐喜欢唱歌。",
+      "pinyin": "Jiějie xǐhuan chànggē.",
+      "english": "Older sister likes to sing."
+    },
+    {
+      "no": 76,
+      "word": {"no":113, "chinese":"唱歌", "pinyin":"chànggē", "english":"sing"},
+      "chinese": "我们一起唱歌吧！",
+      "pinyin": "Wǒmen yìqǐ chànggē ba!",
+      "english": "Let's sing together!"
+    },
+    {
+      "no": 77,
+      "word": {"no":114, "chinese":"跳舞", "pinyin":"tiàowǔ", "english":"dance"},
+      "chinese": "妹妹在房间跳舞。",
+      "pinyin": "Mèimei zài fángjiān tiàowǔ.",
+      "english": "Younger sister is dancing in the room."
+    },
+    {
+      "no": 78,
+      "word": {"no":114, "chinese":"跳舞", "pinyin":"tiàowǔ", "english":"dance"},
+      "chinese": "你会跳舞吗？",
+      "pinyin": "Nǐ huì tiàowǔ ma?",
+      "english": "Can you dance?"
+    },
+    {
+      "no": 79,
+      "word": {"no":115, "chinese":"旅游", "pinyin":"lǚyóu", "english":"travel"},
+      "chinese": "我们想去中国旅游。",
+      "pinyin": "Wǒmen xiǎng qù Zhōngguó lǚyóu.",
+      "english": "We want to travel to China."
+    },
+    {
+      "no": 80,
+      "word": {"no":115, "chinese":"旅游", "pinyin":"lǚyóu", "english":"travel"},
+      "chinese": "你喜欢旅游吗？",
+      "pinyin": "Nǐ xǐhuan lǚyóu ma?",
+      "english": "Do you like to travel?"
+    },
+    {
+      "no": 81,
+      "word": {"no":116, "chinese":"上班", "pinyin":"shàngbān", "english":"be on duty"},
+      "chinese": "爸爸早上上班。",
+      "pinyin": "Bàba zǎoshang shàngbān.",
+      "english": "Dad goes to work in the morning."
+    },
+    {
+      "no": 82,
+      "word": {"no":116, "chinese":"上班", "pinyin":"shàngbān", "english":"be on duty"},
+      "chinese": "你几点上班？",
+      "pinyin": "Nǐ jǐ diǎn shàngbān?",
+      "english": "What time do you start work?"
+    },
+    {
+      "no": 83,
+      "word": {"no":117, "chinese":"生病", "pinyin":"shēngbìng", "english":"get ill, get sick"},
+      "chinese": "妹妹生病了。",
+      "pinyin": "Mèimei shēngbìng le.",
+      "english": "Younger sister is sick."
+    },
+    {
+      "no": 84,
+      "word": {"no":117, "chinese":"生病", "pinyin":"shēngbìng", "english":"get ill, get sick"},
+      "chinese": "你为什么生病了？",
+      "pinyin": "Nǐ wèishénme shēngbìng le?",
+      "english": "Why did you get sick?"
+    },
+    {
+      "no": 85,
+      "word": {"no":118, "chinese":"休息", "pinyin":"xiūxi", "english":"rest"},
+      "chinese": "你想休息吗？",
+      "pinyin": "Nǐ xiǎng xiūxi ma?",
+      "english": "Do you want to rest?"
+    },
+    {
+      "no": 86,
+      "word": {"no":118, "chinese":"休息", "pinyin":"xiūxi", "english":"rest"},
+      "chinese": "请在家休息一下。",
+      "pinyin": "Qǐng zài jiā xiūxi yíxià.",
+      "english": "Please rest at home for a bit."
+    },
+    {
+      "no": 87,
+      "word": {"no":119, "chinese":"运动", "pinyin":"yùndòng", "english":"exercise"},
+      "chinese": "我很喜欢运动。",
+      "pinyin": "Wǒ hěn xǐhuan yùndòng.",
+      "english": "I really like to exercise."
+    },
+    {
+      "no": 88,
+      "word": {"no":119, "chinese":"运动", "pinyin":"yùndòng", "english":"exercise"},
+      "chinese": "他和她一起运动吗？",
+      "pinyin": "Tā hé tā yìqǐ yùndòng ma?",
+      "english": "Do he and she exercise together?"
+    },
+    {
+      "no": 89,
+      "word": {"no":120, "chinese":"游泳", "pinyin":"yóuyǒng", "english":"swim"},
+      "chinese": "你会游泳吗？",
+      "pinyin": "Nǐ huì yóuyǒng ma?",
+      "english": "Can you swim?"
+    },
+    {
+      "no": 90,
+      "word": {"no":120, "chinese":"游泳", "pinyin":"yóuyǒng", "english":"swim"},
+      "chinese": "我想去游泳。",
+      "pinyin": "Wǒ xiǎng qù yóuyǒng.",
+      "english": "I want to go swimming."
+    },
+    {
+      "no": 91,
+      "word": {"no":121, "chinese":"踢足球", "pinyin":"tīzúqiú", "english":"play football"},
+      "chinese": "哥哥喜欢踢足球。",
+      "pinyin": "Gēge xǐhuan tīzúqiú.",
+      "english": "Older brother likes to play football."
+    },
+    {
+      "no": 92,
+      "word": {"no":121, "chinese":"踢足球", "pinyin":"tīzúqiú", "english":"play football"},
+      "chinese": "哥哥和弟弟下午踢足球吗？",
+      "pinyin": "Gēge hé dìdi xiàwǔ tīzúqiú ma?",
+      "english": "Do older brother and younger brother play football in the afternoon?"
+    },
+    {
+      "no": 93,
+      "word": {"no":122, "chinese":"打篮球", "pinyin":"dǎlánqiú", "english":"play basketball"},
+      "chinese": "弟弟想打篮球。",
+      "pinyin": "Dìdi xiǎng dǎlánqiú.",
+      "english": "Younger brother wants to play basketball."
+    },
+    {
+      "no": 94,
+      "word": {"no":122, "chinese":"打篮球", "pinyin":"dǎlánqiú", "english":"play basketball"},
+      "chinese": "你会打篮球吗？",
+      "pinyin": "Nǐ huì dǎlánqiú ma?",
+      "english": "Can you play basketball?"
+    },
+    {
+      "no": 95,
+      "word": {"no":123, "chinese":"完", "pinyin":"wán", "english":"finish"},
+      "chinese": "你看完电影了吗？",
+      "pinyin": "Nǐ kàn wán diànyǐng le ma?",
+      "english": "Have you finished watching the movie?"
+    },
+    {
+      "no": 96,
+      "word": {"no":123, "chinese":"完", "pinyin":"wán", "english":"finish"},
+      "chinese": "我吃完米饭了。",
+      "pinyin": "Wǒ chī wán mǐfàn le.",
+      "english": "I have finished eating rice."
+    },
+    {
+      "no": 97,
+      "word": {"no":124, "chinese":"觉得", "pinyin":"juédé", "english":"think"},
+      "chinese": "我觉得这个菜很好。",
+      "pinyin": "Wǒ juédé zhège cài hěn hǎo.",
+      "english": "I think this dish is good."
+    },
+    {
+      "no": 98,
+      "word": {"no":124, "chinese":"觉得", "pinyin":"juédé", "english":"think"},
+      "chinese": "你觉得这个电影怎么样？",
+      "pinyin": "Nǐ juédé zhège diànyǐng zěnmeyàng?",
+      "english": "What do you think of this movie?"
+    },
+    {
+      "no": 99,
+      "word": {"no":125, "chinese":"知道", "pinyin":"zhīdao", "english":"know"},
+      "chinese": "我知道你的名字。",
+      "pinyin": "Wǒ zhīdao nǐ de míngzi.",
+      "english": "I know your name."
+    },
+    {
+      "no": 100,
+      "word": {"no":125, "chinese":"知道", "pinyin":"zhīdao", "english":"know"},
+      "chinese": "他不知道这件事情。",
+      "pinyin": "Tā bù zhīdao zhè jiàn shìqing.",
+      "english": "He does not know about this matter."
+    },
+    {
+      "no": 101,
+      "word": {"no":126, "chinese":"希望", "pinyin":"xīwàng", "english":"hope"},
+      "chinese": "我希望明天不下雨。",
+      "pinyin": "Wǒ xīwàng míngtiān bù xiàyǔ.",
+      "english": "I hope it won't rain tomorrow."
+    },
+    {
+      "no": 102,
+      "word": {"no":126, "chinese":"希望", "pinyin":"xīwàng", "english":"hope"},
+      "chinese": "她希望去北京学习。",
+      "pinyin": "Tā xīwàng qù Běijīng xuéxí.",
+      "english": "She hopes to go study in Beijing."
+    },
+    {
+      "no": 103,
+      "word": {"no":127, "chinese":"可以", "pinyin":"kěyǐ", "english":"can"},
+      "chinese": "我可以进来吗？",
+      "pinyin": "Wǒ kěyǐ jìnlái ma?",
+      "english": "May I come in?"
+    },
+    {
+      "no": 104,
+      "word": {"no":127, "chinese":"可以", "pinyin":"kěyǐ", "english":"can"},
+      "chinese": "你可以告诉我吗？",
+      "pinyin": "Nǐ kěyǐ gàosu wǒ ma?",
+      "english": "Can you tell me?"
+    },
+    {
+      "no": 105,
+      "word": {"no":128, "chinese":"要", "pinyin":"yào", "english":"want"},
+      "chinese": "我今天要去商店。",
+      "pinyin": "Wǒ jīntiān yào qù shāngdiàn.",
+      "english": "I want to go to the store today."
+    },
+    {
+      "no": 106,
+      "word": {"no":128, "chinese":"要", "pinyin":"yào", "english":"want"},
+      "chinese": "你要喝水吗？",
+      "pinyin": "Nǐ yào hē shuǐ ma?",
+      "english": "Do you want to drink water?"
+    },
+    {
+      "no": 107,
+      "word": {"no":129, "chinese":"可能", "pinyin":"kěnéng", "english":"may"},
+      "chinese": "他可能不来学校。",
+      "pinyin": "Tā kěnéng bù lái xuéxiào.",
+      "english": "He may not come to school."
+    },
+    {
+      "no": 108,
+      "word": {"no":129, "chinese":"可能", "pinyin":"kěnéng", "english":"may"},
+      "chinese": "明天可能会下雨。",
+      "pinyin": "Míngtiān kěnéng huì xiàyǔ.",
+      "english": "It may rain tomorrow."
+    },
+    {
+      "no": 109,
+      "word": {"no":130, "chinese":"高", "pinyin":"gāo", "english":"tall"},
+      "chinese": "哥哥很高。",
+      "pinyin": "Gēge hěn gāo.",
+      "english": "Older brother is tall."
+    },
+    {
+      "no": 110,
+      "word": {"no":130, "chinese":"高", "pinyin":"gāo", "english":"tall"},
+      "chinese": "那个人比我高。",
+      "pinyin": "Nà ge rén bǐ wǒ gāo.",
+      "english": "That person is taller than me."
+    },
+    {
+      "no": 111,
+      "word": {"no":131, "chinese":"红", "pinyin":"hóng", "english":"red"},
+      "chinese": "我喜欢红苹果。",
+      "pinyin": "Wǒ xǐhuan hóng píngguǒ.",
+      "english": "I like red apples."
+    },
+    {
+      "no": 112,
+      "word": {"no":131, "chinese":"红", "pinyin":"hóng", "english":"red"},
+      "chinese": "这件衣服是红的吗？",
+      "pinyin": "Zhè jiàn yīfu shì hóng de ma?",
+      "english": "Is this piece of clothing red?"
+    },
+    {
+      "no": 113,
+      "word": {"no":132, "chinese":"白", "pinyin":"bái", "english":"white"},
+      "chinese": "我有白猫。",
+      "pinyin": "Wǒ yǒu bái māo.",
+      "english": "I have a white cat."
+    },
+    {
+      "no": 114,
+      "word": {"no":132, "chinese":"白", "pinyin":"bái", "english":"white"},
+      "chinese": "他穿白衣服吗？",
+      "pinyin": "Tā chuān bái yīfu ma?",
+      "english": "Is he wearing white clothes?"
+    },
+    {
+      "no": 115,
+      "word": {"no":133, "chinese":"黑", "pinyin":"hēi", "english":"black"},
+      "chinese": "他的狗是黑的。",
+      "pinyin": "Tā de gǒu shì hēi de.",
+      "english": "His dog is black."
+    },
+    {
+      "no": 116,
+      "word": {"no":133, "chinese":"黑", "pinyin":"hēi", "english":"black"},
+      "chinese": "你喜欢黑衣服吗？",
+      "pinyin": "Nǐ xǐhuan hēi yīfu ma?",
+      "english": "Do you like black clothes?"
+    },
+    {
+      "no": 117,
+      "word": {"no":134, "chinese":"忙", "pinyin":"máng", "english":"busy"},
+      "chinese": "我今天很忙。",
+      "pinyin": "Wǒ jīntiān hěn máng.",
+      "english": "I am very busy today."
+    },
+    {
+      "no": 118,
+      "word": {"no":134, "chinese":"忙", "pinyin":"máng", "english":"busy"},
+      "chinese": "他工作太忙了。",
+      "pinyin": "Tā gōngzuò tài máng le.",
+      "english": "He is too busy at work."
+    },
+    {
+      "no": 119,
+      "word": {"no":135, "chinese":"快", "pinyin":"kuài", "english":"fast"},
+      "chinese": "他的飞机很快。",
+      "pinyin": "Tā de fēijī hěn kuài.",
+      "english": "His airplane is very fast."
+    },
+    {
+      "no": 120,
+      "word": {"no":135, "chinese":"快", "pinyin":"kuài", "english":"fast"},
+      "chinese": "请说快一点儿。",
+      "pinyin": "Qǐng shuō kuài yìdiǎnr.",
+      "english": "Please speak a bit faster."
+    },
+    {
+      "no": 121,
+      "word": {"no":136, "chinese":"慢", "pinyin":"màn", "english":"slow"},
+      "chinese": "这出租车很慢。",
+      "pinyin": "Zhè chūzūchē hěn màn.",
+      "english": "This taxi is very slow."
+    },
+    {
+      "no": 122,
+      "word": {"no":136, "chinese":"慢", "pinyin":"màn", "english":"slow"},
+      "chinese": "请慢一点儿说话。",
+      "pinyin": "Qǐng màn yìdiǎnr shuōhuà.",
+      "english": "Please talk more slowly."
+    },
+    {
+      "no": 123,
+      "word": {"no":137, "chinese":"远", "pinyin":"yuǎn", "english":"far"},
+      "chinese": "学校离我家很远。",
+      "pinyin": "Xuéxiào lí wǒ jiā hěn yuǎn.",
+      "english": "The school is far from my home."
+    },
+    {
+      "no": 124,
+      "word": {"no":137, "chinese":"远", "pinyin":"yuǎn", "english":"far"},
+      "chinese": "那儿太远了。",
+      "pinyin": "Nàr tài yuǎn le.",
+      "english": "It is too far there."
+    },
+    {
+      "no": 125,
+      "word": {"no":138, "chinese":"近", "pinyin":"jìn", "english":"close"},
+      "chinese": "我家离商店很近。",
+      "pinyin": "Wǒ jiā lí shāngdiàn hěn jìn.",
+      "english": "My home is close to the store."
+    },
+    {
+      "no": 126,
+      "word": {"no":138, "chinese":"近", "pinyin":"jìn", "english":"close"},
+      "chinese": "公司离这儿很近吗？",
+      "pinyin": "Gōngsī lí zhèr hěn jìn ma?",
+      "english": "Is the company close to here?"
+    },
+    {
+      "no": 127,
+      "word": {"no":139, "chinese":"好吃", "pinyin":"hǎochī", "english":"delicious"},
+      "chinese": "这个菜很好吃。",
+      "pinyin": "Zhège cài hěn hǎochī.",
+      "english": "This dish is delicious."
+    },
+    {
+      "no": 128,
+      "word": {"no":139, "chinese":"好吃", "pinyin":"hǎochī", "english":"delicious"},
+      "chinese": "你觉得苹果好吃吗？",
+      "pinyin": "Nǐ juédé píngguǒ hǎochī ma?",
+      "english": "Do you think apples are tasty?"
+    },
+    {
+      "no": 129,
+      "word": {"no":140, "chinese":"累", "pinyin":"lèi", "english":"tired"},
+      "chinese": "跑步让我累了。",
+      "pinyin": "Pǎobù ràng wǒ lèi le.",
+      "english": "Running makes me tired."
+    },
+    {
+      "no": 130,
+      "word": {"no":140, "chinese":"累", "pinyin":"lèi", "english":"tired"},
+      "chinese": "你上班累吗？",
+      "pinyin": "Nǐ shàngbān lèi ma?",
+      "english": "Are you tired at work?"
+    },
+    {
+      "no": 131,
+      "word": {"no":141, "chinese":"长", "pinyin":"cháng", "english":"long"},
+      "chinese": "这路很长。",
+      "pinyin": "Zhè lù hěn cháng.",
+      "english": "This road is long."
+    },
+    {
+      "no": 132,
+      "word": {"no":141, "chinese":"长", "pinyin":"cháng", "english":"long"},
+      "chinese": "他的衣服很长吗？",
+      "pinyin": "Tā de yīfu hěn cháng ma?",
+      "english": "Are his clothes very long?"
+    },
+    {
+      "no": 133,
+      "word": {"no":142, "chinese":"新", "pinyin":"xīn", "english":"new"},
+      "chinese": "我买了一本新书。",
+      "pinyin": "Wǒ mǎi le yì běn xīn shū.",
+      "english": "I bought a new book."
+    },
+    {
+      "no": 134,
+      "word": {"no":142, "chinese":"新", "pinyin":"xīn", "english":"new"},
+      "chinese": "这个电脑是新的。",
+      "pinyin": "Zhège diànnǎo shì xīn de.",
+      "english": "This computer is new."
+    },
+    {
+      "no": 135,
+      "word": {"no":143, "chinese":"贵", "pinyin":"guì", "english":"expensive"},
+      "chinese": "这手表很贵吗？",
+      "pinyin": "Zhè shǒubiǎo hěn guì ma?",
+      "english": "Is this watch expensive?"
+    },
+    {
+      "no": 136,
+      "word": {"no":143, "chinese":"贵", "pinyin":"guì", "english":"expensive"},
+      "chinese": "这个宾馆不贵。",
+      "pinyin": "Zhège bīnguǎn bù guì.",
+      "english": "This hotel is not expensive."
+    },
+    {
+      "no": 137,
+      "word": {"no":144, "chinese":"便宜", "pinyin":"piányi", "english":"cheap"},
+      "chinese": "这个东西很便宜。",
+      "pinyin": "Zhège dōngxi hěn piányi.",
+      "english": "This thing is very cheap."
+    },
+    {
+      "no": 138,
+      "word": {"no":144, "chinese":"便宜", "pinyin":"piányi", "english":"cheap"},
+      "chinese": "那件衣服不便宜。",
+      "pinyin": "Nà jiàn yīfu bù piányi.",
+      "english": "That clothing is not cheap."
+    },
+    {
+      "no": 139,
+      "word": {"no":145, "chinese":"晴", "pinyin":"qíng", "english":"fine"},
+      "chinese": "今天天气晴吗？",
+      "pinyin": "Jīntiān tiānqì qíng ma?",
+      "english": "Is the weather clear today?"
+    },
+    {
+      "no": 140,
+      "word": {"no":145, "chinese":"晴", "pinyin":"qíng", "english":"fine"},
+      "chinese": "明天可能是晴。",
+      "pinyin": "Míngtiān kěnéng shì qíng.",
+      "english": "It may be sunny tomorrow."
+    },
+    {
+      "no": 141,
+      "word": {"no":146, "chinese":"阴", "pinyin":"yīn", "english":"cloudy"},
+      "chinese": "今天是阴天吗？",
+      "pinyin": "Jīntiān shì yīn tiān ma?",
+      "english": "Is it a cloudy day today?"
+    },
+    {
+      "no": 142,
+      "word": {"no":146, "chinese":"阴", "pinyin":"yīn", "english":"cloudy"},
+      "chinese": "昨天天气很阴。",
+      "pinyin": "Zuótiān tiānqì hěn yīn.",
+      "english": "Yesterday the weather was cloudy."
+    },
+    {
+      "no": 143,
+      "word": {"no":147, "chinese":"错", "pinyin":"cuò", "english":"wrong"},
+      "chinese": "我做错了吗？",
+      "pinyin": "Wǒ zuò cuò le ma?",
+      "english": "Did I do it wrong?"
+    },
+    {
+      "no": 144,
+      "word": {"no":147, "chinese":"错", "pinyin":"cuò", "english":"wrong"},
+      "chinese": "对不起，我错了。",
+      "pinyin": "Duìbuqǐ, wǒ cuò le.",
+      "english": "Sorry, I was wrong."
+    },
+    {
+      "no": 145,
+      "word": {"no":148, "chinese":"快乐", "pinyin":"kuàilè", "english":"happy"},
+      "chinese": "生日快乐！",
+      "pinyin": "Shēngrì kuàilè!",
+      "english": "Happy birthday!"
+    },
+    {
+      "no": 146,
+      "word": {"no":148, "chinese":"快乐", "pinyin":"kuàilè", "english":"happy"},
+      "chinese": "希望你今天快乐。",
+      "pinyin": "Xīwàng nǐ jīntiān kuàilè.",
+      "english": "I hope you are happy today."
+    },
+    {
+      "no": 147,
+      "word": {"no":149, "chinese":"对", "pinyin":"duì", "english":"to"},
+      "chinese": "我对她说汉语。",
+      "pinyin": "Wǒ duì tā shuō Hànyǔ.",
+      "english": "I speak Chinese to her."
+    },
+    {
+      "no": 148,
+      "word": {"no":149, "chinese":"对", "pinyin":"duì", "english":"to"},
+      "chinese": "他对我很好。",
+      "pinyin": "Tā duì wǒ hěn hǎo.",
+      "english": "He is very good to me."
+    },
+    {
+      "no": 149,
+      "word": {"no":150, "chinese":"对", "pinyin":"duì", "english":"right"},
+      "chinese": "你说得对。",
+      "pinyin": "Nǐ shuō de duì.",
+      "english": "What you said is right."
+    },
+    {
+      "no": 150,
+      "word": {"no":150, "chinese":"对", "pinyin":"duì", "english":"right"},
+      "chinese": "对，这个电影很好。",
+      "pinyin": "Duì, zhège diànyǐng hěn hǎo.",
+      "english": "Yes, this movie is very good."
+    }
+  ]
+}

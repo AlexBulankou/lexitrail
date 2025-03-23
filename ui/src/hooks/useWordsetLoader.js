@@ -168,6 +168,13 @@ export const useWordsetLoader = (wordsetId, userId, mode) => {
       // Shuffle words before sorting
       const shuffledWords = shuffleArray(finalWords);
 
+      // Helper function to round a date to the nearest hour
+      const roundToHour = (date) => {
+        const roundedDate = new Date(date);
+        roundedDate.setMinutes(0, 0, 0); // Set minutes, seconds, and milliseconds to 0
+        return roundedDate;
+      };
+
       // Sort by recall_state descending, and last recall time ascending (oldest first)
       const finalSortedWords = shuffledWords.sort((a, b) => {
         // Primary: recall_state descending
@@ -176,9 +183,19 @@ export const useWordsetLoader = (wordsetId, userId, mode) => {
         }
 
         // Secondary: last recall time ascending, treating missing recall history as "oldest"
-        const aLastRecall = a.recall_history.length > 0 ? a.recall_history[0].original_recall_time : new Date(0);
-        const bLastRecall = b.recall_history.length > 0 ? b.recall_history[0].original_recall_time : new Date(0);
+        // Round recall times to the nearest hour
+        const aLastRecallRaw = a.recall_history.length > 0 ? a.recall_history[0].original_recall_time : new Date(0);
+        const bLastRecallRaw = b.recall_history.length > 0 ? b.recall_history[0].original_recall_time : new Date(0);
+        
+        // Round to hour
+        const aLastRecall = roundToHour(aLastRecallRaw);
+        const bLastRecall = roundToHour(bLastRecallRaw);
 
+        // If recall times are within the same hour, maintain the shuffled order
+        if (aLastRecall.getTime() === bLastRecall.getTime()) {
+          return 0; // Keep original shuffled order for items recalled in the same hour
+        }
+        
         return aLastRecall - bLastRecall;
       });
 

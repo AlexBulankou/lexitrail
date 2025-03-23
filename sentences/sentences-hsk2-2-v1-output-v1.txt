@@ -1,0 +1,600 @@
+We have a Chinese lesson today.
+
+我们今天有汉语课。
+
+I like the lessons here.
+
+我喜欢这儿的课。
+
+What is your surname?
+
+你姓什么？
+
+I do not know his surname.
+
+我不认识他姓什么。
+
+Do you have any questions?
+
+你有问题吗？
+
+This question is big.
+
+这个问题很大。
+
+This matter is not good.
+
+这件事情很不好。
+
+I do not like this matter.
+
+我不喜欢这件事情。
+
+There is a Chinese exam tomorrow.
+
+明天有汉语考试。
+
+He does not want to go take the exam.
+
+他不想去考试。
+
+I have two tickets.
+
+我有两票。
+
+This ticket is mine.
+
+这票是我的。
+
+What is the meaning of this character?
+
+这个字什么意思？
+
+Its meaning is very good.
+
+它的意思很好。
+
+Which color do you like?
+
+你喜欢什么颜色？
+
+This color is very beautiful.
+
+这个颜色很漂亮。
+
+I want to buy a pencil.
+
+我想买一个铅笔。
+
+Where is this pencil?
+
+这铅笔在哪儿？
+
+I like to eat noodles.
+
+我喜欢吃面条。
+
+Does this restaurant have noodles?
+
+这家饭店有面条吗？
+
+Is the train station there?
+
+火车站在那儿吗？
+
+Let's go to the train station!
+
+我们去火车站吧！
+
+Do you work at the company?
+
+你在公司工作吗？
+
+This company is big.
+
+这家公司很大。
+
+Is the hotel over there?
+
+宾馆在那儿吗？
+
+I do not like this hotel.
+
+我不喜欢这个宾馆。
+
+Please do not talk.
+
+请别说话。
+
+Is he talking in the classroom?
+
+他在教室说话吗？
+
+Does this store sell fruit?
+
+这个商店卖水果吗？
+
+I want to sell my cellphone.
+
+我想卖我的手机。
+
+May I ask you?
+
+我能问您吗？
+
+Excuse me, are you there?
+
+请问，你在吗？
+
+Let's walk together.
+
+我们一起走吧。
+
+He walks from home to school.
+
+他从家走去学校。
+
+Please come in!
+
+请进！
+
+Did he enter the room?
+
+他进房间了吗？
+
+Please go out.
+
+请你出去。
+
+Is he coming out of the classroom?
+
+他从教室出来吗？
+
+I run every morning.
+
+我每个早上跑步。
+
+Where do you like to run?
+
+你喜欢在哪儿跑步？
+
+I have arrived at the company.
+
+我到公司了。
+
+When do you arrive home?
+
+你什么时候到家？
+
+I like to wear clothes.
+
+我喜欢穿衣服。
+
+What color is he wearing?
+
+他穿什么颜色？
+
+I want to wash clothes.
+
+我想洗衣服。
+
+Do you want to wash the cup?
+
+你想洗杯子吗？
+
+Please give me a cup.
+
+请给我一个杯子。
+
+He gave her an apple.
+
+他给她一个苹果。
+
+I am looking for my cellphone.
+
+我在找我的手机。
+
+Did you find it?
+
+你找到了吗？
+
+I cannot understand Chinese by listening.
+
+我听不懂汉语。
+
+Does he understand this meaning?
+
+他懂这个意思吗？
+
+She smiles happily.
+
+她笑得很高兴。
+
+Please don't laugh!
+
+请别笑！
+
+Please tell me your name.
+
+请告诉我你的名字。
+
+I will tell you one matter.
+
+我告诉你一个事情。
+
+Let's prepare for the exam.
+
+我们准备考试吧。
+
+Are you ready?
+
+你准备好了吗？
+
+When do we begin?
+
+我们什么时候开始？
+
+Now let's begin the lesson.
+
+现在开始上课。
+
+Please introduce yourself briefly.
+
+请介绍一下你。
+
+I want to introduce my friend.
+
+我想介绍我的朋友。
+
+Please help me study Chinese.
+
+请帮助我学习汉语。
+
+Can I help you?
+
+我能帮助你吗？
+
+Does the child like to play?
+
+孩子喜欢玩吗？
+
+Do you want to play on the computer?
+
+你想玩电脑吗？
+
+I want to give you an apple.
+
+我想送你一个苹果。
+
+He gave me a piece of clothing.
+
+他送了我一件衣服。
+
+Please wait a moment.
+
+请等一下。
+
+I am waiting for you at home.
+
+我在家等你。
+
+Please let him come in.
+
+请让他进来。
+
+Mom asks me to eat rice.
+
+妈妈让我吃米饭。
+
+I get up at seven in the morning.
+
+我早上七点起床。
+
+When do you get up?
+
+你什么时候起床？
+
+Older sister likes to sing.
+
+姐姐喜欢唱歌。
+
+Let's sing together!
+
+我们一起唱歌吧！
+
+Younger sister is dancing in the room.
+
+妹妹在房间跳舞。
+
+Can you dance?
+
+你会跳舞吗？
+
+We want to travel to China.
+
+我们想去中国旅游。
+
+Do you like to travel?
+
+你喜欢旅游吗？
+
+Dad goes to work in the morning.
+
+爸爸早上上班。
+
+What time do you start work?
+
+你几点上班？
+
+Younger sister is sick.
+
+妹妹生病了。
+
+Why did you get sick?
+
+你为什么生病了？
+
+Do you want to rest?
+
+你想休息吗？
+
+Please rest at home for a bit.
+
+请在家休息一下。
+
+I really like to exercise.
+
+我很喜欢运动。
+
+Do he and she exercise together?
+
+他和她一起运动吗？
+
+Can you swim?
+
+你会游泳吗？
+
+I want to go swimming.
+
+我想去游泳。
+
+Older brother likes to play football.
+
+哥哥喜欢踢足球。
+
+Do older brother and younger brother play football in the afternoon?
+
+哥哥和弟弟下午踢足球吗？
+
+Younger brother wants to play basketball.
+
+弟弟想打篮球。
+
+Can you play basketball?
+
+你会打篮球吗？
+
+Have you finished watching the movie?
+
+你看完电影了吗？
+
+I have finished eating rice.
+
+我吃完米饭了。
+
+I think this dish is good.
+
+我觉得这个菜很好。
+
+What do you think of this movie?
+
+你觉得这个电影怎么样？
+
+I know your name.
+
+我知道你的名字。
+
+He does not know about this matter.
+
+他不知道这件事情。
+
+I hope it won't rain tomorrow.
+
+我希望明天不下雨。
+
+She hopes to go study in Beijing.
+
+她希望去北京学习。
+
+May I come in?
+
+我可以进来吗？
+
+Can you tell me?
+
+你可以告诉我吗？
+
+I want to go to the store today.
+
+我今天要去商店。
+
+Do you want to drink water?
+
+你要喝水吗？
+
+He may not come to school.
+
+他可能不来学校。
+
+It may rain tomorrow.
+
+明天可能会下雨。
+
+Older brother is tall.
+
+哥哥很高。
+
+That person is taller than me.
+
+那个人比我高。
+
+I like red apples.
+
+我喜欢红苹果。
+
+Is this piece of clothing red?
+
+这件衣服是红的吗？
+
+I have a white cat.
+
+我有白猫。
+
+Is he wearing white clothes?
+
+他穿白衣服吗？
+
+His dog is black.
+
+他的狗是黑的。
+
+Do you like black clothes?
+
+你喜欢黑衣服吗？
+
+I am very busy today.
+
+我今天很忙。
+
+He is too busy at work.
+
+他工作太忙了。
+
+His airplane is very fast.
+
+他的飞机很快。
+
+Please speak a bit faster.
+
+请说快一点儿。
+
+This taxi is very slow.
+
+这出租车很慢。
+
+Please talk more slowly.
+
+请慢一点儿说话。
+
+The school is far from my home.
+
+学校离我家很远。
+
+It is too far there.
+
+那儿太远了。
+
+My home is close to the store.
+
+我家离商店很近。
+
+Is the company close to here?
+
+公司离这儿很近吗？
+
+This dish is delicious.
+
+这个菜很好吃。
+
+Do you think apples are tasty?
+
+你觉得苹果好吃吗？
+
+Running makes me tired.
+
+跑步让我累了。
+
+Are you tired at work?
+
+你上班累吗？
+
+This road is long.
+
+这路很长。
+
+Are his clothes very long?
+
+他的衣服很长吗？
+
+I bought a new book.
+
+我买了一本新书。
+
+This computer is new.
+
+这个电脑是新的。
+
+Is this watch expensive?
+
+这手表很贵吗？
+
+This hotel is not expensive.
+
+这个宾馆不贵。
+
+This thing is very cheap.
+
+这个东西很便宜。
+
+That clothing is not cheap.
+
+那件衣服不便宜。
+
+Is the weather clear today?
+
+今天天气晴吗？
+
+It may be sunny tomorrow.
+
+明天可能是晴。
+
+Is it a cloudy day today?
+
+今天是阴天吗？
+
+Yesterday the weather was cloudy.
+
+昨天天气很阴。
+
+Did I do it wrong?
+
+我做错了吗？
+
+Sorry, I was wrong.
+
+对不起，我错了。
+
+Happy birthday!
+
+生日快乐！
+
+I hope you are happy today.
+
+希望你今天快乐。
+
+I speak Chinese to her.
+
+我对她说汉语。
+
+He is very good to me.
+
+他对我很好。
+
+What you said is right.
+
+你说得对。
+
+Yes, this movie is very good.
+
+对，这个电影很好。
+

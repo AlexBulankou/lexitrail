@@ -31,7 +31,7 @@ export const getWordsets = async () => {
 
   const response = await getData('/wordsets');
   // Filter out wordset with id 7
-  response.data = response.data.filter(wordset => wordset.wordset_id !== 7);
+  response.data = response.data.filter(wordset => wordset.description !== 'test' && wordset.description !== 'HSK7\r');
   return response;
 };
 

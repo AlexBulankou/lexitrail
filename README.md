@@ -154,3 +154,26 @@ The `state_pruner.py` script automatically removes entries of type `kubectl_mani
     ```
     REACT_APP_CLIENT_ID=<YOUR_CLIENT_ID>
     ```
+
+## Database Management with lexitrailcmd
+
+A utility for synchronizing vocabulary data across local files, database, and cloud storage.
+
+### Usage
+
+From the backend directory with activated virtual environment:
+
+```bash
+# Check differences without making changes (dry run)
+python -m scripts.lexitrailcmd dbcheck
+
+# Synchronize data across all platforms
+python -m scripts.lexitrailcmd dbupdate
+```
+
+The `dbupdate` command follows this flow:
+1. Uses local CSV files as the source of truth
+2. Updates the database to match local files
+3. Uploads CSV files to Google Cloud Storage
+
+CSV files are located in `backend/data/` (wordsets.csv and words.csv).

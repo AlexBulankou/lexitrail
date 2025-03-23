@@ -1,0 +1,326 @@
+Below are 75 words from Chinese HSK2, in CSV format: No, Chinese, Pinyin, English
+Please generate 2 simple Chinese sentences that use each of the words, 150 total. While generating you can only use:
+(1) HSK1 words (listed below), 
+(2) 75 HSK2 words from the previous part (also listed below) and 
+(3) HSK2 that were already used in the previous sentences. 
+
+Generate them in the following JSON format:
+{
+sentences: [
+{
+"no": 1,
+"word": {"no":1, "chinese":"您", "pinyin": "nín", "english": "you"},
+"chinese": "您是我们的老师吗？",
+"pinyin": "Nín shì wǒmen de lǎoshī ma?",
+"english": "Are you our teacher?"
+}, <more sentences here>
+]
+}
+
+75 HSK words to generate sentences from:
+76,课,kè,lesson
+77,姓,xìng,surname
+78,问题,wèntí,question
+79,事情,shìqing,matter
+80,考试,kǎoshì,exam
+81,票,piào,ticket
+82,意思,yìsi,meaning
+83,颜色,yánsè,color
+84,铅笔,qiánbǐ,pencil
+85,面条,miàntiáo,noodle
+86,火车站,huǒchēzhàn,train station
+87,公司,gōngsī,company
+88,宾馆,bīngguǎn,hotel
+89,说话,shuōhuà,talk
+90,卖,mài,sell
+91,问,wèn,ask
+92,走,zǒu,walk
+93,进,jìn,enter
+94,出,chū,come
+95,跑步,pǎobù,run
+96,到,dào,arrive
+97,穿,chuān,wear
+98,洗,xǐ,wash
+99,给,gěi,give
+100,找,zhǎo,find
+101,懂,dǒng,understand
+102,笑,xiào,smile
+103,告诉,gàosù,tell
+104,准备,zhǔnbèi,prepare
+105,开始,kāishǐ,begin
+106,介绍,jièshào,introduce
+107,帮助,bāngzhù,help
+108,玩,wán,play
+109,送,sòng,present
+110,等,děng,wait
+111,让,ràng,let
+112,起床,qǐchuáng,get up
+113,唱歌,chànggē,sing
+114,跳舞,tiàowǔ,dance
+115,旅游,lǚyóu,travel
+116,上班,shàngbān,be on duty
+117,生病,shēngbìng,"get ill, get sick"
+118,休息,xiūxi,rest
+119,运动,yùndòng,exercise
+120,游泳,yóuyǒng,swim
+121,踢足球,tīzúqiú,play footbal
+122,打篮球,dǎlánqiú,play basketball
+123,完,wán,finish
+124,觉得,juédé,think
+125,知道,zhīdao,know
+126,希望,xīwàng,hope
+127,可以,kěyǐ,can
+128,要,yào,want
+129,可能,kěnéng,may
+130,高,gāo,tall
+131,红,hóng,red
+132,白,bái,white
+133,黑,hēi,black
+134,忙,máng,busy
+135,快,kuài,fast
+136,慢,màn,slow
+137,远,yuǎn,far
+138,近,jìn,close
+139,好吃,hǎochī,delicious
+140,累,lèi,tired
+141,长,cháng,long
+142,新,xīn,new
+143,贵,guì,expensive
+144,便宜,piányi,cheap
+145,晴,qíng,fine
+146,阴,yīn,cloudy
+147,错,cuò,wrong
+148,快乐,kuàilè,happy
+149,对,duì,to
+150,对,duì,right
+
+
+
+75 HSK 2 words that you can use:
+1,您,nín,you
+2,它,tā,it
+3,大家,dàjiā,everyone
+4,每,měi,"every, each"
+5,为什么,wèishénme,why
+6,零,líng,zero
+7,两,liǎng,two
+8,百,bǎi,hundred
+9,千,qiān,thousand
+10,第一,dìyī,first
+11,次,cì,times
+12,件,jiàn,piece
+13,别,bié,do not
+14,非常,fēicháng,very
+15,也,yě,also
+16,还,hái,still
+17,最,zuì,the most
+18,真,zhēn,really
+19,正在,zhèngzài,be being
+20,已经,yǐjīng,already
+21,一起,yìqǐ,together
+22,再,zài,again
+23,就,jiǜ,at once
+24,因为……所以……,yīnwèi…suǒyǐ…,because…so…
+25,虽然……但是……,suīrán…dànshì…,although… but…
+26,从,cóng,from
+27,比,bǐ,comparing to
+28,往,wǎng,"toward, to"
+29,离,lí,indicate the distance between two objects
+30,得,de,
+31,着,zhe,
+32,过,guò,
+33,吧,ba,
+34,机场,jīchǎng,airport
+35,教室,jiàoshì,classroom
+36,房间,fángjiān,room
+37,路,lù,road
+38,左边,zuǒbiān,left
+39,右边,yòubiān,right
+40,外,wài,outside
+41,旁边,pángbiān,side
+42,一下,yīxià,in a short while
+43,早上,zǎoshàng,morning
+44,晚上,wǎnshàng,night
+45,小时,xiǎoshí,hour
+46,时间,shíjiān,time
+47,去年,qùnián,last year
+48,日,rì,date
+49,生日,shēngrì,birthday
+50,哥哥,gēge,older brother
+51,姐姐,jiějie,older sister
+52,弟弟,dìdi,younger brother
+53,妹妹,mèimei,younger sister
+54,丈夫,zhàngfu,husband
+55,妻子,qīzi,wife
+56,孩子,háizi,child
+57,男人,nánrén,man
+58,女人,nǚrén,woman
+59,服务员,fúwùyuán,waiter
+60,鱼,yú,fish
+61,羊肉,yángròu,mutton
+62,牛奶,niúnǎi,milk
+63,鸡蛋,jīdàn,egg
+64,西瓜,xīguā,watermelon
+65,咖啡,kāfēi,coffee
+66,雪,xuě,snow
+67,药,yào,medicine
+68,手机,shǒujī,cellphone
+69,手表,shǒubiǎo,watch
+70,眼睛,yǎnjīng,eye
+71,身体,shēntǐ,body
+72,公共汽车,gōnggòngqìchē,bus
+73,报纸,bàozhǐ,newspaper
+74,门,mén,door
+75,题,tí,"topic, item"
+
+And these are 150 HSK 1 words, you can use them as well:
+1,我,wǒ,"I, me"
+2,我们,wǒmen,"we, us (pl.)"
+3,你,nǐ,you
+4,他,tā,"he, him"
+5,她,tā,"she, her"
+6,这 (这儿),zhè ( zhèr),this (here)
+7,那 (那儿),nà (nàr),that (there)
+8,哪,nǎ,which
+9,哪儿,nǎr,where
+10,谁,shéi,who
+11,什么,shénme,"what, why"
+12,多少,duōshǎo,"how many, how much"
+13,几,jǐ,"a few, how many"
+14,怎么,zěnme,how
+15,怎么样,zěnmeyàng,how about
+16,一,yī,one
+17,二,èr,two
+18,三,sān,three
+19,四,sì,four
+20,五,wǔ,five
+21,六,liù,six
+22,七,qī,seven
+23,八,bā,eight
+24,九,jiǔ,nine
+25,十,shí,ten
+26,个,gè,(for normal objects)
+27,岁,suì,(for age)
+28,本,běn,(for books)
+29,些,xiē,some
+30,块,kuài,"piece, chunk"
+31,不,bù,no
+32,没,méi,no
+33,很,hěn,"quite, very"
+34,太,tài,too
+35,都,dōu,all
+36,一点儿,yīdiǎnr,a little bit
+37,和,hé,and
+38,在,zài,"in, at"
+39,的,de,
+40,了,le,
+41,吗,ma,
+42,呢,ne,
+43,喂,wèi,hello
+44,家,jiā,home
+45,学校,xuéxiào,school
+46,饭店,fàndiàn,restaurant
+47,商店,shāngdiàn,store
+48,医院,yīyuàn,hospital
+49,中国,Zhōngguò,China
+50,北京,Běijīng,Beijing
+51,上,shàng,up
+52,下,xià,down
+53,前面,qiánmiàn,front
+54,后面,hòumiàn,behind
+55,里,lǐmiàn,inside
+56,今天,jīntiān,today
+57,明天,míngtiān,tomorrow
+58,昨天,zuótiān,yesterday
+59,上午,shàngwǔ,morning
+60,中午,zhōngwǔ,noon
+61,下午,xiàwǔ,afternoon
+62,年,nián,year
+63,月,yuè,month
+64,号,hào,number/date
+65,星期,xīngqī,week
+66,点,diǎn,o’clock
+67,分钟,fēnzhōng,minute
+68,现在,xiànzài,now
+69,时候,shíhou,time
+70,爸爸,bàba,father
+71,妈妈,māma,mother
+72,儿子,érzi,son
+73,女儿,nǚér,daughter
+74,老师,lǎoshī,teacher
+75,学生,xuéshēng,student
+76,同学,tóngxué,classmate
+77,朋友,péngyǒu,friend
+78,医生,yīshēng,doctor
+79,先生,xiānsheng,sir
+80,小姐,xiǎojiě,Miss
+81,衣服,yīfu,cloth
+82,水,shuǐ,water
+83,菜,cài,dish
+84,米饭,mǐfàn,rice
+85,水果,shuǐguǒ,fruit
+86,苹果,píngguǒ,apple
+87,茶,chá,tea
+88,杯子,bēizi,cup
+89,钱,qián,money
+90,飞机,fēijī,airplane
+91,出租车,chūzūchē,taxi
+92,电视,diànshì,television
+93,电脑,diànnǎo,computer
+94,电影,diànyǐng,movie
+95,天气,tiānqì,weather
+96,猫,māo,cat
+97,狗,gǒu,dog
+98,东西,dōngxi,thing
+99,人,rén,person
+100,名字,míngzi,name
+101,书,shū,book
+102,汉语,hànyǔ,mandarin Chinese
+103,字,zì,character
+104,桌子,zhuōzi,desk
+105,椅子,yǐzi,chair
+106,谢谢,xièxie,thank
+107,不客气,búkèqì,you are welcome
+108,再见,zàijiàn,good-bye
+109,请,qǐng,please
+110,对不起,duìbùqǐ,sorry
+111,没关系,méiguānxì,It doesn’t matter
+112,是,shì,"be (am, is, are)"
+113,有,yǒu,have
+114,看,kàn,look
+115,听,tīng,listen
+116,说,shuō,speak
+117,读,dú,read
+118,写,xiě,write
+119,看见,kànjiàn,see
+120,叫,jiào,call
+121,来,lái,come
+122,回,huí,return
+123,去,qù,go
+124,吃,chī,eat
+125,喝,hē,drink
+126,睡觉,shuìjiào,sleep
+127,打电话,dǎdiànhuà,make phone call
+128,做,zuò,do
+129,买,mǎi,buy
+130,开,kāi,open
+131,坐,zuò,sit
+132,住,zhù,live
+133,学习,xuéxí,study
+134,工作,gōngzuò,work
+135,下雨,xiàyǔ,rain
+136,爱,ài,love
+137,喜欢,xǐhuān,"love, like"
+138,想,xiǎng,want
+139,认识,rènshi,know
+140,会,huì,can
+141,能,néng,"can, be able to"
+142,好,hǎo,good
+143,大,dà,big
+144,小,xiǎo,small
+145,多,duō,"many, much"
+146,少,shǎo,"few, little"
+147,冷,lěng,cold
+148,热,rè,hot
+149,高兴,gāoxìng,happy
+150,漂亮,piàoliang,beautiful

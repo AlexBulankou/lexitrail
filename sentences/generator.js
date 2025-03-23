@@ -75,8 +75,8 @@ function processSentences(inputFilePath, outputFilePath) {
 }
 
 // Input and output file paths
-const inputFilePath = './sentences-hsk2-1-v2.json'; // Update with your input file path
-const outputFilePath = './sentences-hsk2-1-v2-output-v2.txt';    // Update with your desired output file path
+const inputFilePath = './sentences-hsk2-2-v1.json'; // Update with your input file path
+const outputFilePath = './sentences-hsk2-2-v1-output-v1.txt';    // Update with your desired output file path
 
 // Call the function
 processSentences(inputFilePath, outputFilePath);
