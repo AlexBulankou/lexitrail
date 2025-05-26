@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import WordCard from './WordCard';
 import MiniWordCard from './MiniWordCard';
 import Completed from './Completed';
@@ -66,6 +66,15 @@ const Game = () => {
   const [finalTimeElapsed, setFinalTimeElapsed] = useState(0);
   const [hintsDisplayed, setHintsDisplayed] = useState(true);
   const [allFlipped, setAllFlipped] = useState(false);
+
+  // Optional callback to handle timer tick in parent (if you need the time in Game component)
+  const handleTimerTick = useCallback((elapsedTime, isTimerBeingCleared = false) => {
+    console.log('Elapsed Time:', elapsedTime);
+
+    if (isTimerBeingCleared) {
+      setFinalTimeElapsed(elapsedTime);
+    }
+  }, [setFinalTimeElapsed]); // setFinalTimeElapsed is stable from useState, but explicit dependency is good practice
 
   // Initialize or re-run loadWordsForWordset on dependency change
   useEffect(() => {
@@ -268,15 +277,6 @@ const Game = () => {
   };
 
   const wordsToRender = displayWords.slice(0, maxCardsToShow);
-
-  // Optional callback to handle timer tick in parent (if you need the time in Game component)
-  const handleTimerTick = (elapsedTime, isTimerBeingCleared = false) => {
-    console.log('Elapsed Time:', elapsedTime);
-
-    if (isTimerBeingCleared) {
-      setFinalTimeElapsed(elapsedTime);
-    }
-  };
 
   if (loading.status === 'loading') {
     return (
