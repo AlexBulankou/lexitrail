@@ -126,7 +126,7 @@ const Game = () => {
     const extraHorizontalSpaceNeeded = 200 ; //mode === (GameMode.TEST ? 80 : 120) + 115; 
     const extraVerticalSpaceNeeded = 100;
 
-    const maxColumns = Math.min(Math.floor((width - extraVerticalSpaceNeeded) / cardWidth), 15);
+    const maxColumns = Math.min(Math.floor((width - extraVerticalSpaceNeeded) / cardWidth), 20);
     const maxRows = Math.min(Math.floor((height - extraHorizontalSpaceNeeded) / cardHeight), 7);
 
     // Check if dimensions or displayWords length changed
