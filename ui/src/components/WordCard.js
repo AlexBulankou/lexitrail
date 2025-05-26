@@ -43,6 +43,16 @@ const WordCard = ({ mode, word, isFlipped, isHintDisplayed, handleMemorized, han
     setFlippedState(!isFlipped);
   };
 
+  const handleSpeakChinese = (text) => {
+    if ('speechSynthesis' in window) {
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = 'zh-CN'; // Set language to Mandarin Chinese
+      window.speechSynthesis.speak(utterance);
+    } else {
+      console.error('Speech synthesis not supported in this browser.');
+      // Optionally, display a message to the user
+    }
+  };
 
   const stopPropagation = (e) => {
     e.stopPropagation();
@@ -230,25 +240,37 @@ const WordCard = ({ mode, word, isFlipped, isHintDisplayed, handleMemorized, han
           {loadingWord ?
             <p>⏳</p>
             :
-            <p style={{ fontSize: calculateFontSize(word.word, isHintDisplayed ? 5 : 6) }}>{word.word}</p>
-
+            <div className="word-card-front-content-wrapper">
+              <p style={{ fontSize: calculateFontSize(word.word, isHintDisplayed ? 5 : 6), marginRight: '10px' }}>{word.word}</p>
+              <button
+                onClick={(e) => {
+                  stopPropagation(e);
+                  handleSpeakChinese(word.word);
+                }}
+                disabled={loadingWord}
+                className="speak-button"
+                // Inline styles removed, will be handled by WordCard.css
+              >
+                🔊
+              </button>
+            </div>
           }
 
         </div>
         <div className="word-card-back">
           {loadingWord ? '⏳ Loading...' :
             <div className="word-meaning">
-              <div class="word-meaning-ref">
-                <div class="word-meaning-ref-text">
+              <div className="word-meaning-ref">
+                <div className="word-meaning-ref-text">
                 {word.word}
                 </div>
               </div>
-              <div class="word-meaning-def1">
+              <div className="word-meaning-def1">
                 <p style={{ fontSize: calculateFontSize(word.def1, isHintDisplayed ? 6 : 7, 1.0) }}>
                   <PinyinText text={word.def1} />
                 </p>
               </div>
-              <div class="word-meaning-def2">
+              <div className="word-meaning-def2">
                 <p className="word-translation" style={{ fontSize: calculateFontSize(word.def2, isHintDisplayed ? 6 : 8, 1.0) }}>
                   {removeQuotes(word.def2)}
                 </p>

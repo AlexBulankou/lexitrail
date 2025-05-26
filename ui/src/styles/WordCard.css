@@ -324,3 +324,25 @@
   font-family: 'Times New Roman', Times, serif;
   color: #4285f4;
 }
+
+/* Styles for the speak button and its wrapper */
+.word-card-front-content-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%; /* Ensure it takes full width of the front card */
+}
+
+.speak-button {
+  font-size: 1.5rem;
+  padding: 0.2rem 0.5rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #333; /* Adding a default color, can be adjusted */
+}
+
+.speak-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}

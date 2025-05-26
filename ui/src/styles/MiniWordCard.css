@@ -19,7 +19,9 @@
 .mini-word-card-word {
     min-width: 52px;
     line-height: 2.2rem;
-    
+    display: flex;
+    align-items: center;
+    justify-content: center; /* To keep the content centered if only word is present */
 }
 
 
@@ -31,4 +33,19 @@
 
 .mini-word-card > * > span {
     display:block
+}
+
+.speak-button-mini {
+  font-size: 1rem; /* Smaller size for mini card */
+  padding: 0.1rem 0.3rem; /* Smaller padding */
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #333; /* Default color */
+  margin-left: 2px; /* Small spacing between word and button */
+}
+
+.speak-button-mini:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
 }

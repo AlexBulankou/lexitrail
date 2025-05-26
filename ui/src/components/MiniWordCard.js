@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { GameMode } from './Game';
+// import { GameMode } from './Game'; // GameMode is not used
 import PinyinText from './PinyinText';
 import '../styles/MiniWordCard.css';
 
@@ -13,6 +13,21 @@ const MiniWordCard = ({ mode, word }) => {
       setLoadingWord(false);
     }
   }, [word.user_id, word.word_id]);
+
+  const handleSpeakChinese = (text) => {
+    if ('speechSynthesis' in window) {
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = 'zh-CN'; // Set language to Mandarin Chinese
+      window.speechSynthesis.speak(utterance);
+    } else {
+      console.error('Speech synthesis not supported in this browser.');
+      // Optionally, display a message to the user
+    }
+  };
+
+  const stopPropagation = (e) => {
+    e.stopPropagation();
+  };
 
   // Remove leading and trailing quotes and whitespace
   const removeQuotes = (text) => {
@@ -46,11 +61,21 @@ const MiniWordCard = ({ mode, word }) => {
     <div className="mini-word-card">
       {loadingWord ? '⏳' :
         <>
-          <div className="mini-word-card-word">
-          <span style={{ fontSize: calculateFontSize(word.word, 3.2, 0.7) }}>
-            {word.word}
+          <div className="mini-word-card-word"> {/* Inline style removed */}
+            <span style={{ fontSize: calculateFontSize(word.word, 3.2, 0.7), marginRight: '5px' }}>
+              {word.word}
             </span>
-            </div>
+            <button
+              onClick={(e) => {
+                stopPropagation(e);
+                handleSpeakChinese(word.word);
+              }}
+              disabled={loadingWord}
+              className="speak-button-mini" // Inline style removed
+            >
+              🔊
+            </button>
+          </div>
           <div className="mini-word-card-def1">
             <span style={{ fontSize: calculateFontSize(word.def1, 3.5, 0.5) }}>
               <PinyinText text={word.def1} />
