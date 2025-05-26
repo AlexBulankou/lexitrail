@@ -1,0 +1,600 @@
+Is aunt at home?
+
+阿姨在家吗？
+
+I go to the store with my aunt.
+
+我和阿姨一起去商店。
+
+Ah, you came!
+
+啊，你来了！
+
+Ah, this dish is delicious!
+
+啊，这个菜很好吃！
+
+My younger brother is short.
+
+我弟弟很矮。
+
+This table is too short.
+
+这张桌子太矮了。
+
+My hobby is reading books.
+
+我的爱好是看书。
+
+What hobbies do you have?
+
+你有什么爱好？
+
+Please be a little quieter.
+
+请安静一点儿。
+
+The library is very quiet.
+
+图书馆很安静。
+
+Please open the door.
+
+请把门打开。
+
+Give me the book.
+
+把书给我。
+
+There are twenty students in our class.
+
+我们班有二十个学生。
+
+Which class are you in?
+
+你是哪个班的？
+
+We will move next month.
+
+我们下个月要搬家。
+
+He helps me move the table.
+
+他帮我搬桌子。
+
+I ate half an apple.
+
+我吃了半个苹果。
+
+It is three thirty now.
+
+现在是三点半。
+
+Do you have a good way (solution)?
+
+你有好办法吗？
+
+I thought of a way.
+
+我想了一个办法。
+
+The teacher works in the office.
+
+老师在办公室工作。
+
+My mom has an office.
+
+我的妈妈有一个办公室。
+
+Can you help?
+
+你可以帮忙吗？
+
+Thank you for your help.
+
+谢谢你的帮忙。
+
+I have a new bag.
+
+我有一个新包。
+
+This bag is very big.
+
+这个包很大。
+
+I am full.
+
+我吃饱了。
+
+Are you full?
+
+你饱了吗？
+
+The north of China is very cold.
+
+中国的北方很冷。
+
+I want to travel to the north.
+
+我想去北方旅游。
+
+The quilt is on the bed.
+
+被子在床上。
+
+Please give me the quilt.
+
+请把被子给我。
+
+My nose is small.
+
+我的鼻子很小。
+
+Her nose is beautiful.
+
+她的鼻子很漂亮。
+
+Today is relatively cold.
+
+今天比较冷。
+
+This apple is bigger.
+
+这个苹果比较大。
+
+We have a match tomorrow.
+
+我们明天有一个比赛。
+
+Do you like to watch matches?
+
+你喜欢看比赛吗？
+
+My notebook is on the table.
+
+我的笔记本在桌子上。
+
+Please give me the notebook.
+
+请把笔记本给我。
+
+You must study Chinese.
+
+你必须学习汉语。
+
+We must go home early.
+
+我们必须早点回家。
+
+The weather has changed.
+
+天气有变化。
+
+Your Chinese has changed a lot.
+
+你的汉语有很大变化。
+
+Others have all come.
+
+别人都来了。
+
+I don't know others.
+
+我不认识别人。
+
+There is milk in the fridge.
+
+冰箱里有牛奶。
+
+Please put the apples in the fridge.
+
+请把苹果放进冰箱。
+
+Please give me the menu.
+
+请给我菜单。
+
+There are many dishes on the menu.
+
+菜单上有很多菜。
+
+I want to participate in the match.
+
+我想参加比赛。
+
+Did you participate in this activity?
+
+你参加了这个活动吗？
+
+The puppy is playing on the grass.
+
+小狗在草上玩。
+
+The grass is green.
+
+草是绿色的。
+
+My home is on the third floor.
+
+我家在三层。
+
+The classroom is on the second floor.
+
+教室在二层。
+
+Today's weather is bad.
+
+今天的天气很差。
+
+My grades are bad.
+
+我的成绩很差。
+
+I go to the supermarket to buy things.
+
+我去超市买东西。
+
+The supermarket is very big.
+
+超市很大。
+
+I have a white shirt.
+
+我有一件白衬衫。
+
+This shirt looks good.
+
+这件衬衫很好看。
+
+My grades are good.
+
+我的成绩很好。
+
+How are your exam results?
+
+你考试成绩怎么样？
+
+Beijing is a big city.
+
+北京是一个大城市。
+
+I like this city.
+
+我喜欢这个城市。
+
+Don't be late for school.
+
+上学不要迟到。
+
+He was late today.
+
+他今天迟到了。
+
+Except me, everyone came.
+
+除了我，大家都来了。
+
+Besides apples, I also like bananas.
+
+除了苹果，我还喜欢香蕉。
+
+We take a boat to see the sea.
+
+我们坐船去看海。
+
+This boat is very big.
+
+这条船很大。
+
+Spring has come.
+
+春天来了。
+
+I like the flowers in spring.
+
+我喜欢春天的花。
+
+I have a Chinese dictionary.
+
+我有一本汉语词典。
+
+Please give me the dictionary.
+
+请把词典给我。
+
+He is very clever.
+
+他很聪明。
+
+Your younger sister is clever.
+
+你的妹妹很聪明。
+
+I am cleaning the room.
+
+我在打扫房间。
+
+Mom cleans the house every day.
+
+妈妈每天打扫家。
+
+What do you plan to do tomorrow?
+
+你打算明天做什么？
+
+I plan to go to Beijing.
+
+我打算去北京。
+
+I brought an umbrella.
+
+我带了雨伞。
+
+Please bring your book to school.
+
+请带你的书来学校。
+
+Mom is worried about you.
+
+妈妈很担心你。
+
+Don't worry, I am fine.
+
+不要担心，我很好。
+
+I like to eat cake.
+
+我喜欢吃蛋糕。
+
+Eat cake on your birthday.
+
+生日的时候吃蛋糕。
+
+Will you come? Of course!
+
+你会来吗？当然！
+
+Of course I like you.
+
+我当然喜欢你。
+
+He smiled happily.
+
+他高兴地笑了。
+
+Please speak slowly.
+
+请慢慢地说。
+
+There is a lamp in the room.
+
+房间里有一盏灯。
+
+Please turn on the lamp.
+
+请把灯打开。
+
+This place is beautiful.
+
+这个地方很漂亮。
+
+What place do you like?
+
+你喜欢什么地方？
+
+I take the subway to the company.
+
+我坐地铁去公司。
+
+The subway is fast.
+
+地铁很快。
+
+I have a map of China.
+
+我有一张中国地图。
+
+Please look at the map.
+
+请看地图。
+
+We take the elevator upstairs.
+
+我们坐电梯上楼。
+
+The elevator is on the first floor.
+
+电梯在一层。
+
+I send you an email.
+
+我给你发电子邮件。
+
+Did you receive the email?
+
+你收到电子邮件了吗？
+
+The sun rises from the east.
+
+太阳从东边出来。
+
+My home is east of the school.
+
+我家在学校东边。
+
+Winter is very cold.
+
+冬天很冷。
+
+I like the snow in winter.
+
+我喜欢冬天的雪。
+
+I like small animals.
+
+我喜欢小动物。
+
+There are many animals in the zoo.
+
+动物园里有很多动物。
+
+These pants are too short.
+
+这条裤子太短了。
+
+My hair is short.
+
+我的头发很短。
+
+Please read this paragraph.
+
+请读这一段。
+
+This paragraph is interesting.
+
+这一段很有意思。
+
+I exercise every morning.
+
+我每天早上锻炼。
+
+Exercising is important for the body.
+
+锻炼身体很重要。
+
+What beautiful flowers!
+
+多么漂亮的花！
+
+How clever you are!
+
+你多么聪明啊！
+
+I am very hungry.
+
+我很饿。
+
+Are you hungry?
+
+你饿了吗？
+
+He can not only speak Chinese, but also English.
+
+他不但会说汉语，而且会说英语。
+
+I not only like apples, but also bananas.
+
+我不但喜欢苹果，而且喜欢香蕉。
+
+The kitten's ears are small.
+
+小猫的耳朵很小。
+
+My ear hurts a little.
+
+我的耳朵有点疼。
+
+I send you a message.
+
+我给你发短信。
+
+Please send me an email.
+
+请发电子邮件给我。
+
+I have a little fever.
+
+我有点发烧。
+
+He had a fever yesterday.
+
+他昨天发烧了。
+
+I found you are clever.
+
+我发现你很聪明。
+
+What did you discover?
+
+你发现了什么？
+
+Taking the subway is convenient.
+
+坐地铁很方便。
+
+It's convenient to buy things here.
+
+这里买东西很方便。
+
+Please put the book on the table.
+
+请把书放在桌子上。
+
+Mom puts the fruit in the fridge.
+
+妈妈把水果放进冰箱。
+
+Don't worry, I will do it.
+
+你放心吧，我会做的。
+
+Please don't worry, I am fine.
+
+请放心，我很好。
+
+It is 5:10 now.
+
+现在是五点十分。
+
+I waited for ten minutes.
+
+我等了十分。
+
+There is a supermarket near my home.
+
+我家附近有一个超市。
+
+There are many restaurants near the school.
+
+学校附近有很多饭店。
+
+I review Chinese every day.
+
+我每天复习汉语。
+
+Review more before the exam.
+
+考试前要多复习。
+
+The room is very clean.
+
+房间很干净。
+
+Please clean the table.
+
+请把桌子擦干净。
+
+I am very interested in Chinese.
+
+我对汉语很感兴趣。
+
+What are you interested in?
+
+你对什么感兴趣？
+
+I caught a cold.
+
+我感冒了。
+
+He caught a cold because of the rain.
+
+他因为下雨感冒了。
+
+I was just reading.
+
+我刚才在看书。
+
+Where did you just go?
+
+你刚才去哪儿了？
+
