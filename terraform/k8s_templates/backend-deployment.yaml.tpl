@@ -29,16 +29,18 @@ spec:
           httpGet:
             path: /health
             port: 80
-          initialDelaySeconds: 30
+          initialDelaySeconds: 120
           periodSeconds: 30
-          timeoutSeconds: 5
+          timeoutSeconds: 10
+          failureThreshold: 5
         readinessProbe:
           httpGet:
             path: /health
             port: 80
-          initialDelaySeconds: 5
+          initialDelaySeconds: 30
           periodSeconds: 10
-          timeoutSeconds: 5
+          timeoutSeconds: 10
+          failureThreshold: 3
         env:
         - name: PORT
           value: "80"

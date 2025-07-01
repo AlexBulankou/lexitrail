@@ -9,6 +9,7 @@ from concurrent.futures import ThreadPoolExecutor
 from functools import partial
 import multiprocessing
 from threading import Lock
+import threading
 
 bp = Blueprint('wordsets', __name__, url_prefix='/wordsets')
 logger = logging.getLogger(__name__)
@@ -16,6 +17,7 @@ logger = logging.getLogger(__name__)
 # Replace TTLCache with a regular dictionary
 cache = {}  # Indefinite in-memory cache
 cache_lock = Lock()
+cache_status = {"initialized": False, "progress": 0, "total": 0, "error": None}
 
 def initialize_cache():
     """Initialize cache with all wordsets data."""
@@ -23,16 +25,26 @@ def initialize_cache():
     try:
         # Get all wordsets within the main application context
         wordsets = Wordset.query.all()
+        cache_status["total"] = len(wordsets)
+        cache_status["progress"] = 0
         
         def init_wordset_cache(app, ws):
             """Initialize cache for a single wordset with proper app context"""
-            with app.app_context():
-                return get_words_by_wordset(ws.wordset_id, skip_cache=True)
+            try:
+                with app.app_context():
+                    result = get_words_by_wordset(ws.wordset_id, skip_cache=True)
+                    cache_status["progress"] += 1
+                    logger.info(f"Cache initialized for wordset {ws.wordset_id} ({cache_status['progress']}/{cache_status['total']})")
+                    return result
+            except Exception as e:
+                logger.error(f"Error initializing cache for wordset {ws.wordset_id}: {e}", exc_info=True)
+                cache_status["error"] = str(e)
+                return None
         
         # Get the current app
         app = current_app._get_current_object()
         
-        with ThreadPoolExecutor() as executor:
+        with ThreadPoolExecutor(max_workers=2) as executor:  # Limit to 2 workers to reduce load
             # Create futures for each wordset with app context
             futures = [
                 executor.submit(init_wordset_cache, app, ws)
@@ -42,15 +54,23 @@ def initialize_cache():
             # Wait for all futures to complete
             for future in futures:
                 try:
-                    result = future.result()
+                    result = future.result(timeout=60)  # 60 second timeout per wordset
                     if isinstance(result, tuple):  # Error response
                         logger.error(f"Error initializing cache: {result[0]}")
                 except Exception as e:
                     logger.error(f"Error initializing cache: {e}", exc_info=True)
+                    cache_status["error"] = str(e)
                     
+        cache_status["initialized"] = True
         logger.info("Cache initialization completed")
     except Exception as e:
         logger.error(f"Error during cache initialization: {e}", exc_info=True)
+        cache_status["error"] = str(e)
+
+@bp.route('/cache-status', methods=['GET'])
+def get_cache_status():
+    """Get the status of cache initialization."""
+    return success_response(cache_status)
 
 @bp.route('', methods=['GET'])
 def get_all_wordsets():
@@ -190,6 +210,12 @@ def get_words_by_wordset(wordset_id, skip_cache=False):
         if cached_data:
             logger.debug(f"Cache hit for wordset_id: {wordset_id}")
             return cached_data
+        else:
+            # If cache is still initializing, inform the client
+            if not cache_status["initialized"] and cache_status["progress"] > 0:
+                logger.info(f"Cache miss for wordset_id: {wordset_id}, cache still initializing ({cache_status['progress']}/{cache_status['total']})")
+            else:
+                logger.debug(f"Cache miss for wordset_id: {wordset_id}")
 
     try:
         # Fetch the wordset by ID
@@ -271,6 +297,11 @@ def get_words_by_wordset(wordset_id, skip_cache=False):
 
 def init_app(app):
     """Initialize the blueprint with the app context."""
-    with app.app_context():
-        initialize_cache()
+    def background_cache_init():
+        with app.app_context():
+            initialize_cache()
+    
+    # Start cache initialization in background thread
+    cache_thread = threading.Thread(target=background_cache_init, daemon=True)
+    cache_thread.start()
 
