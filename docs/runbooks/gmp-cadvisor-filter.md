@@ -76,8 +76,9 @@ terraform **apply identity** (fleet owner) — `epod-d-sa` is GKE cluster-admin
 for everything EXCEPT creating RBAC objects (GKE gates `container.roles.create`
 / `container.roleBindings.create` behind Cloud IAM, which `epod-d-sa` lacks).
 So run `terraform apply` for these resources as the fleet-owner identity, not
-`epod-d-sa`. Verify the image tag (`var.gmp_guard_image`) is pullable first;
-pin to a digest for supply-chain hardening.
+`epod-d-sa`. The guard image defaults to the official `registry.k8s.io/kubectl`
+(version-pinned, no Docker Hub / bitnami dependency); pin to a digest for
+further supply-chain hardening.
 
 Verify after apply:
 

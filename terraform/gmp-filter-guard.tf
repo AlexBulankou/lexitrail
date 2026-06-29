@@ -19,9 +19,9 @@
 # controller; that is the rejected Option B).
 
 variable "gmp_guard_image" {
-  description = "kubectl image for the gmp-filter-guard CronJob. Override at apply time if the default tag is unavailable; pin to a digest for supply-chain hardening."
+  description = "kubectl image for the gmp-filter-guard CronJob. Defaults to the official, version-pinned Kubernetes kubectl image (registry.k8s.io — no Docker Hub / bitnami dependency, which is being deprecated). v1.35.0 matches the cluster's GKE 1.35 control plane; a stable `patch` tolerates skew regardless. Pin to a digest for further supply-chain hardening."
   type        = string
-  default     = "bitnami/kubectl:latest"
+  default     = "registry.k8s.io/kubectl:v1.35.0"
 }
 
 variable "gmp_guard_schedule" {
