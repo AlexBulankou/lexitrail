@@ -32,15 +32,23 @@ spec:
           containers:
             - name: kubectl
               image: ${image}
-              command: ["/bin/sh", "-c"]
+              # registry.k8s.io/kubectl is DISTROLESS — no /bin/sh, so a
+              # `["/bin/sh","-c"]` wrapper fails ("/bin/sh: no such file or
+              # directory"). The image entrypoint is kubectl itself, so invoke it
+              # directly via args: a single idempotent --type=merge patch. The
+              # job's success/failure status is the signal; AC2 verify_gmp_filter.sh
+              # provides external verification (the shell form's echo logging isn't
+              # available without a shell, and isn't needed).
               args:
-                - |
-                  set -eu
-                  echo "[gmp-filter-guard] re-applying cadvisor metric-drop filter to operatorconfig/config in ${namespace}"
-                  kubectl patch operatorconfig config -n ${namespace} --type merge -p '${filter_patch}'
-                  echo "[gmp-filter-guard] patch applied (idempotent). current filter.matchOneOf:"
-                  kubectl get operatorconfig config -n ${namespace} -o jsonpath='{.collection.filter.matchOneOf}'
-                  echo
+                - patch
+                - operatorconfig
+                - config
+                - -n
+                - ${namespace}
+                - --type
+                - merge
+                - -p
+                - '${filter_patch}'
               resources:
                 requests:
                   cpu: "250m"
