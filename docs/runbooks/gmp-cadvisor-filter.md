@@ -25,8 +25,8 @@ Run the read-only check (no mutation):
 - exit 2 — could not read the OperatorConfig (cluster/auth issue).
 
 Schedule this (cron / CI) so a reset is caught in hours, not at the next
-billing review. (Durable in-cluster guard that re-applies automatically:
-see "Remaining work" below — tracked on #7.)
+billing review. A durable in-cluster guard that re-applies the filter
+**automatically** also ships — see "AC1 — durable guard" below.
 
 ## Re-apply (recovery)
 
@@ -49,25 +49,43 @@ Verify after:
 Rule 1 drops every `container_*` series; rule 2 re-admits the 5 essentials
 (CPU usage, memory working-set, memory usage, network rx/tx bytes).
 
-## Remaining work (AC1 — durable guard)
+## AC1 — durable guard
 
 Detection + documented recovery (this runbook + the verify script) close
 the "silent + slow-to-notice" half of the risk. The durable guard that
-makes the filter survive a reset **automatically** is still tracked on #7:
+makes the filter survive a reset **automatically** is now terraform-codified
+(Option A) in `terraform/gmp-filter-guard.tf` +
+`terraform/k8s_templates/gmp-filter-guard-*.yaml.tpl`:
 
-- **Option A (preferred) — terraform-codified re-apply CronJob.** An
-  in-cluster `CronJob` (additive; does NOT adopt the addon-owned
-  `OperatorConfig`) that re-applies the patch every N hours. Needs a
-  `ServiceAccount` + `Role`/`RoleBinding` granting `patch operatorconfigs`
-  in `gmp-public`. Fits the existing `terraform/k8s_templates/*.yaml.tpl`
-  + `kubectl` provider pattern.
-- **Option B — adopt the OperatorConfig into terraform** via the
-  `kubectl` provider with server-side-apply. Higher risk: terraform then
-  co-owns an addon resource and can fight the addon controller on
-  upgrades. Prefer Option A.
+- An in-cluster **CronJob** (`gmp-filter-guard` in `gmp-public`, every 6h by
+  default — `var.gmp_guard_schedule`) issues the idempotent merge-patch above.
+- It runs as a dedicated **ServiceAccount** bound by a namespaced
+  **Role/RoleBinding** to exactly `get`/`patch` on operatorconfig `config` —
+  least-privilege, no other resources. Patching is a pure Kubernetes API call,
+  so no GCP SA / Workload Identity is involved.
+- **Additive**: it does NOT adopt the OperatorConfig into terraform state (the
+  GMP addon owns it). That was the rejected **Option B** (terraform co-owning
+  an addon resource fights the addon controller on upgrades).
 
-This is deliberate live-prod terraform work; give it its own focused
-review rather than rushing it. Sister fleet-wide gap:
-AlexBulankou/ensemble#6669.
+The keep-list in `local.gmp_filter_matchoneof` MUST stay identical to the
+merge-patch above and to `verify_gmp_filter.sh` (`jsonencode` produces the
+exact payload).
+
+**Operator-apply caveat.** Creating the `Role`/`RoleBinding` requires the
+terraform **apply identity** (fleet owner) — `epod-d-sa` is GKE cluster-admin
+for everything EXCEPT creating RBAC objects (GKE gates `container.roles.create`
+/ `container.roleBindings.create` behind Cloud IAM, which `epod-d-sa` lacks).
+So run `terraform apply` for these resources as the fleet-owner identity, not
+`epod-d-sa`. The guard image defaults to the official `registry.k8s.io/kubectl`
+(version-pinned, no Docker Hub / bitnami dependency); pin to a digest for
+further supply-chain hardening.
+
+Verify after apply:
+
+    kubectl get cronjob gmp-filter-guard -n gmp-public
+    kubectl create job --from=cronjob/gmp-filter-guard gmp-filter-guard-manual -n gmp-public   # one-off test fire
+    terraform/verify_gmp_filter.sh   # expect exit 0 / "OK"
+
+Sister fleet-wide gap: AlexBulankou/ensemble#6669.
 
 Refs: #5 (ask #1), #7.
