@@ -1,4 +1,8 @@
-To improve the responsiveness of our user interface (UI) and ensure high availability, we've introduced a middle layer service. This service acts as an intermediary between the UI and the backend database.
+# Agones-Managed Middleware for Lexitrail 🎮🚀
+
+Meet Agones: the Kubernetes-native game server manager that’s perfectly built for powering multiplayer games on Google Kubernetes Engine (GKE) 🕹️. Designed with scaling and resilience in mind, Agones takes the heavy lifting out of managing game servers. Whether your game needs to handle hundreds of players at once 👥 or just a few hardcore fans 💪, Agones dynamically adjusts server resources to keep things smooth. It’s open-source 👐, easy to get started with 🛠️, and slots right into your Kubernetes setup like it was made for it (because it was!) 🔗. If you're hosting cloud-based games on GKE, Agones is hands-down one of the best ways to keep everything running at full speed 🏎️, no sweat 😅.
+
+To improve the responsiveness of our user interface (UI) and ensure high availability, we've introduced a middle layer servic, managed by Agones. This service acts as an intermediary between the UI and the backend database.
 
 Here's how it works:
 
