@@ -7,9 +7,9 @@
 # the domain's A-record points at the new LB — i.e. it can't go Active until the
 # cutover A-flip, leaving an HTTPS-down window of 15-60min on a LIVE service
 # (HC2 #905 catch 2). Certificate Manager with DNS-authorization validates domain
-# ownership via a TXT record at the DNS provider (TopDNS), INDEPENDENT of where the
-# A-record points — so the cert can be ACTIVE before cutover and HTTPS works the
-# instant traffic flips. The one cost: a one-time TopDNS TXT record per domain
+# ownership via a CNAME record at the DNS provider (TopDNS), INDEPENDENT of where
+# the A-record points — so the cert can be ACTIVE before cutover and HTTPS works
+# the instant traffic flips. The one cost: a one-time TopDNS CNAME record per domain
 # (operator/Alex action — TopDNS is the registrar, not Cloud DNS; see the
 # `dns_auth_*` outputs + my-hermes#905).
 
@@ -32,9 +32,10 @@ resource "google_compute_global_address" "backend" {
   name    = "lexitrail-ys-backend-ip"
 }
 
-# ---------- DNS authorizations — produce the TopDNS TXT records ----------
-# Each emits a CNAME-style TXT (`dns_resource_record`) the operator adds at TopDNS;
-# once live, the cert below provisions without touching A-records.
+# ---------- DNS authorizations — produce the TopDNS CNAME records ----------
+# Each emits a CNAME (`dns_resource_record`: _acme-challenge.<domain> →
+# <id>.authorize.certificatemanager.goog) the operator adds at TopDNS; once live,
+# the cert below provisions without touching A-records.
 resource "google_certificate_manager_dns_authorization" "ui" {
   project = var.ys_project_id
   name    = "lexitrail-ys-ui-dnsauth"
@@ -89,10 +90,10 @@ resource "google_certificate_manager_certificate_map_entry" "backend" {
   hostname     = "api.lexitrail.com"
 }
 
-# ---------- Outputs: the exact TXT records for the operator to add at TopDNS ----------
+# ---------- Outputs: the exact CNAME records for the operator to add at TopDNS ----------
 # `terraform output -json dns_auth_records` after apply → hand these to Alex.
 output "dns_auth_records" {
-  description = "TXT records to add at TopDNS so the Cert Manager certs provision BEFORE cutover."
+  description = "CNAME records to add at TopDNS so the Cert Manager certs provision BEFORE cutover."
   value = {
     "lexitrail.com"     = google_certificate_manager_dns_authorization.ui.dns_resource_record
     "api.lexitrail.com" = google_certificate_manager_dns_authorization.backend.dns_resource_record
