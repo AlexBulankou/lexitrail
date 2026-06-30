@@ -63,6 +63,16 @@ kubectl --context gke_lexitrail_us-central1_lexitrail-cluster -n backend \
 > The freeze holds until step 6 confirms the new stack serves.
 
 ## 4. DUMP → RESTORE the live data (HCL)
+> ⚠️ **SEED-JOB CAVEAT (HC2 #18).** The dump→restore below is the **authoritative**
+> data source. Do **NOT** run the live root's GCS seed job (`../terraform`'s
+> `mysql-schema-and-data-job`, which seeds `lexitraildb` from `MYSQL_FILES_BUCKET`)
+> against the ys MySQL — it would clobber the restored 527-day live data with stale
+> seed data. The ys `terraform-ys/` stack **deliberately omits** the seed job (only
+> the StatefulSet); keep it omitted. Ordering guard: the backend connects to MySQL
+> at startup, so **complete the restore BEFORE the backend connects** (restore into
+> the StatefulSet, then step-4's `rollout restart` of the backend) — never let an
+> empty-DB backend trigger a seed/auto-migrate ahead of the restore.
+
 `lexitraildb` is small (~6 tables; `recall_history` ~43K rows the largest), so
 this is seconds-to-a-minute. Dump live, restore into the ys MySQL:
 ```
