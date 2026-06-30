@@ -58,6 +58,12 @@ variable "mysql_files_bucket" {
   default     = "lexitrail-lexitrail-mysql-files"
 }
 
+variable "location" {
+  description = "Region the backend targets for Vertex AI / GCP API calls (backend-config LOCATION). An app/AI-region choice independent of the ys COMPUTE region (var.ys_region) — decoupled per HC2 #16 nb so a future ys cluster-region move doesn't silently retarget Vertex. us-central1 today (= ys region)."
+  type        = string
+  default     = "us-central1"
+}
+
 # --- Tenant namespace (D1: single collapsed ns; owned by my-hermes tenants root,
 #     referenced here — NOT created here) ---
 variable "namespace" {

@@ -25,7 +25,7 @@ resource "kubernetes_config_map_v1" "backend_config" {
   data = {
     DATABASE_NAME      = var.database_name
     GOOGLE_CLIENT_ID   = var.google_client_id
-    LOCATION           = var.ys_region
+    LOCATION           = var.location
     MYSQL_FILES_BUCKET = var.mysql_files_bucket
     PROJECT_ID         = var.lexitrail_project_id
     SQL_NAMESPACE      = var.namespace # D1 collapse: MySQL is in THIS ns now
@@ -206,6 +206,17 @@ resource "kubernetes_deployment_v1" "ui" {
 
           port {
             container_port = 3000
+          }
+
+          # Readiness probe (HC2 #16 nb): live UI had none, but once an ingress
+          # fronts the Service (incr-4) the LB should only route to ready pods.
+          # TCP :3000 (the UI serves static assets; no dedicated health path).
+          readiness_probe {
+            tcp_socket {
+              port = 3000
+            }
+            initial_delay_seconds = 5
+            period_seconds        = 10
           }
 
           resources {
