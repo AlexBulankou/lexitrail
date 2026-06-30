@@ -70,7 +70,9 @@ resource "kubernetes_deployment_v1" "backend" {
 
         container {
           name  = "lexitrail-backend"
-          image = "${var.ys_region}-docker.pkg.dev/${var.lexitrail_project_id}/lexitrail-repo/lexitrail-backend:${var.image_tag}"
+          # Registry hostname is the AR repo's LOCATION (lexitrail-side), NOT the
+          # ys region — same decoupling as the iam.tf AR grant (HC2 #15/#16 catch).
+          image = "${var.lexitrail_repo_location}-docker.pkg.dev/${var.lexitrail_project_id}/lexitrail-repo/lexitrail-backend:${var.image_tag}"
 
           port {
             container_port = 80
@@ -199,7 +201,8 @@ resource "kubernetes_deployment_v1" "ui" {
       spec {
         container {
           name  = "lexitrail-ui"
-          image = "${var.ys_region}-docker.pkg.dev/${var.lexitrail_project_id}/lexitrail-repo/lexitrail-ui:${var.image_tag}"
+          # Registry hostname = repo location (lexitrail-side), not ys_region (HC2 #16).
+          image = "${var.lexitrail_repo_location}-docker.pkg.dev/${var.lexitrail_project_id}/lexitrail-repo/lexitrail-ui:${var.image_tag}"
 
           port {
             container_port = 3000
