@@ -25,6 +25,12 @@ variable "lexitrail_project_id" {
   default     = "lexitrail"
 }
 
+variable "lexitrail_repo_location" {
+  description = "Location of the lexitrail-repo Artifact Registry repo. A lexitrail-side fact fixed at the repo's creation — kept separate from ys_region so a future ys cluster-region move can't break the cross-project AR-reader grant (HC2 #15 catch). Verified live: us-central1."
+  type        = string
+  default     = "us-central1"
+}
+
 # --- Tenant namespace (D1: single collapsed ns; owned by my-hermes tenants root,
 #     referenced here — NOT created here) ---
 variable "namespace" {

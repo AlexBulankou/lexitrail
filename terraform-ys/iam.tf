@@ -7,6 +7,16 @@
 # This unblocks the workload increments (3b backend, 3c UI): without (1) the ys
 # nodes can't PULL the cross-project images (ImagePullBackOff); without (2) the
 # backend pod can't reach its GCS bucket / Vertex AI at runtime.
+#
+# OWNERSHIP NOTE: my apply identity (epod-d-sa@yojowa-ensemble) owns the ys+live
+# GKE *clusters* but lacks setIamPolicy on the lexitrail PROJECT, so it cannot
+# apply the two GCP-IAM grants below. ADM applied them out-of-band on 2026-06-30
+# (Path B, least-privilege — no standing IAM-admin granted to epod-d-sa), and
+# they are IMPORTED into this state so `plan` stays clean + the config is
+# cutover-reproducible. Caveat: a future drift-correction of these two grants is
+# an operator action (epod-d-sa would 403 on setIamPolicy); the grants are
+# stable, so this is low-risk. The lexitrail-backend KSA below IS applied by this
+# stack (it's a k8s resource, not IAM-gated).
 
 # ys cluster's project number — for the default compute SA the Autopilot nodes
 # pull images as (verified: nodeConfig.serviceAccount=default → default compute SA).
@@ -20,8 +30,13 @@ data "google_project" "ys" {
 # reader on the lexitrail project). Scoped to the SINGLE repo (least-privilege)
 # rather than project-wide AR — only lexitrail-repo holds the images.
 resource "google_artifact_registry_repository_iam_member" "ys_nodes_ar_reader" {
-  project    = var.lexitrail_project_id
-  location   = var.ys_region
+  project = var.lexitrail_project_id
+  # The repo's location is a LEXITRAIL-side fact (fixed at the repo's creation),
+  # NOT the ys cluster's region — they happen to both be us-central1 today, but
+  # coupling them to var.ys_region would silently 404 this grant if the ys
+  # cluster ever moved region (the repo never would). Decoupled var (HC2 #15
+  # catch). Verified live: projects/lexitrail/locations/us-central1/repositories/lexitrail-repo.
+  location   = var.lexitrail_repo_location
   repository = "lexitrail-repo"
   role       = "roles/artifactregistry.reader"
   member     = "serviceAccount:${data.google_project.ys.number}-compute@developer.gserviceaccount.com"
