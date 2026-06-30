@@ -32,3 +32,14 @@ variable "namespace" {
   type        = string
   default     = "lexitrail"
 }
+
+# --- Secrets (D5: sourced cluster→cluster from the live lexitrail DB, NOT a local
+#     .env and NOT an Alex handoff — I own both clusters). No default: provided at
+#     apply via TF_VAR_db_root_password (e.g. read from the live StatefulSet env),
+#     so the value never lands in git — only in access-controlled tf state + the
+#     in-cluster Secret. ---
+variable "db_root_password" {
+  description = "MySQL root password — must match the live DB so dump→restore (exec step 4) and the backend connection keep working. Sourced from the live cluster at apply time; never committed."
+  type        = string
+  sensitive   = true
+}
