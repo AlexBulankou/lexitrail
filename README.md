@@ -62,6 +62,20 @@ This project uses Python 3.9 to maintain consistency with our production environ
    ```
 
 ## Deployment
+
+> [!WARNING]
+> **This Terraform uses local state only — there is no remote (GCS) backend.**
+> `terraform apply` is only safe from the machine/clone that holds the original
+> `terraform.tfstate`. From a **fresh clone the state is empty**, so `apply`
+> would attempt to **recreate the entire live stack** (cluster, Cloud SQL, IAM,
+> app) rather than make incremental changes — do not run it there. `data.dotenv.env`
+> also requires a local `.env` (gitignored) that a fresh clone won't have.
+>
+> Until a shared backend is set up, treat infra changes as **operator-applied
+> from the state-holding machine**, or apply individual additive Kubernetes
+> objects directly via `kubectl apply` of the rendered `k8s_templates/`. See
+> issue #11 for the GCS-backend-migration vs operator-applied-only decision.
+
 ```bash
 cd terraform/
 gcloud auth login
