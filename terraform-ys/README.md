@@ -11,36 +11,77 @@ This root has its own state (GCS `lexitrail-ys` prefix) and never touches the li
 root — enabling parallel-run + DNS-flip + rollback. The live root is decommissioned
 only after cutover + soak.
 
-## Increment plan (this PR = increment 1, foundation)
+## Increment plan + status
 
-1. **Foundation (this PR):** providers (k8s → ys-autopilot cross-project), cluster
-   data source, variables, and the `allow-lb-healthcheck` NetworkPolicy. No secrets,
-   no workloads — validates the cross-project wiring + ingress-allow.
-2. **MySQL** — Deployment/StatefulSet + PVC (Autopilot `standard-rwo`, NOT legacy
-   `standard`) into the `lexitrail` ns. Data migrated by dump→restore of the live
-   527-day DB (NOT the GCS seed job, which must not clobber live data).
-3. **Backend + UI** — deployments/services + GKE ingress; cross-ns service DNS
-   rewritten to same-ns (collapsed `lexitrail` ns).
+1. ✅ **Foundation** — providers (k8s → ys-autopilot cross-project), cluster data
+   source, variables, `allow-lb-healthcheck` NetworkPolicy. (lexitrail PR #13)
+2. ✅ **MySQL** — StatefulSet + headless Service + Secret-backed root password +
+   PVC (Autopilot `standard-rwo`, NOT legacy `standard`). Brought up on a FRESH
+   empty PVC; live 527-day data migrated by dump→restore (step 4), NOT the GCS seed
+   job. (lexitrail PR #14)
+3. **Backend + UI workloads:**
+   - ✅ **3a IAM (D4)** — repo-scoped `artifactregistry.reader` for the ys node SA +
+     cross-project Workload Identity binding (`lexitrail-backend` KSA → `lexitrail-sa`
+     GSA). Operator-applied (Path B) + imported. (lexitrail PR #15)
+   - ✅ **3b/3c workloads** — backend (ConfigMap/Secret/Deployment/Service) + UI
+     (Deployment/Service) into the collapsed `lexitrail` ns. `SQL_NAMESPACE`
+     rewritten cross-ns→same-ns (`= var.namespace`). Smoke-tested: cross-proj image
+     pull ✅, WI identity wired ✅, backend↔MySQL connect + /health 200 ✅, UI 1/1 ✅.
 4. **TLS** — Certificate Manager DNS-authorization (one-time TopDNS record) so the
    cert is READY before the DNS A-flip.
-5. **Cross-project IAM (D4)** — ys WI/node SA → `artifactregistry.reader` + GCS
-   access on the `lexitrail` project (AR images + buckets stay there).
+5. **(folded into 3a)** Cross-project IAM — done with the workloads.
 6. **Cutover** — operator updates TopDNS A-records; soak; decommission live root.
 
-## Open dependency — secrets (D5)
+> **Step-4 data note:** the backend app fails to bind `:80` until the `lexitraildb`
+> database exists (it connects to MySQL at startup). An EMPTY `lexitraildb` was
+> created on the ys MySQL to smoke-test 3b (the app boots + /health passes once the
+> DB exists). Step 4's dump→restore of the live `lexitraildb` populates it
+> authoritatively — the empty DB is harmless (restore overwrites).
 
-The live root reads a local `.env` (dotenv): `DB_ROOT_PASSWORD`, `GOOGLE_CLIENT_ID`,
-`DOMAIN_NAME`, `MYSQL_FILES_BUCKET`, … not present in this clone (operator-held).
-**Recommendation:** source these from GCP Secret Manager (agent-deployable, no local
-`.env`) via the cross-project WI SA, rather than replicating a local `.env`. The
-actual secret values are an operator/SM dependency for increment 2+. Tracked on
-my-hermes#905.
+## Secrets (D5 — resolved)
 
-## Apply (once increments land)
+D5 is self-sourceable: the only secret is the MySQL root password (the backend
+connects as root — `backend-secret`/`mysql-root` both hold just `DB_ROOT_PASSWORD`).
+It's sourced **cluster→cluster** from the live Lexitrail DB at apply time and passed
+via `TF_VAR_db_root_password` — never committed, lives only in access-controlled tf
+state + the in-cluster Secrets. No local `.env`, no Secret Manager, no Alex handoff.
+`GOOGLE_CLIENT_ID` is a public OAuth client id (a plain variable, not a secret).
+
+## Cross-project IAM — ownership + re-apply runbook (Path B)
+
+The two GCP-IAM grants in `iam.tf` (AR-reader on `lexitrail-repo`; WI binding on the
+`lexitrail-sa` GSA) target the **lexitrail** project. The apply identity
+(`epod-d-sa@yojowa-ensemble`) owns the GKE *clusters* but lacks `setIamPolicy` on the
+lexitrail project, so it **cannot apply or drift-correct these two grants** — they
+are operator-applied (Path B) and `terraform import`ed so `plan` stays clean.
+
+If either grant is ever removed/drifts (terraform `plan` would want to "create" it but
+`apply` 403s), an **operator** (or anyone with lexitrail-project IAM-admin) re-applies:
+
+```bash
+# 1. AR-reader (image pull) — repo-scoped, least-privilege
+gcloud artifacts repositories add-iam-policy-binding lexitrail-repo \
+  --project=lexitrail --location=us-central1 \
+  --member="serviceAccount:360889204939-compute@developer.gserviceaccount.com" \
+  --role="roles/artifactregistry.reader"
+
+# 2. Cross-project Workload Identity (runtime GCS/Vertex)
+gcloud iam service-accounts add-iam-policy-binding \
+  lexitrail-sa@lexitrail.iam.gserviceaccount.com --project=lexitrail \
+  --member="serviceAccount:yojowa-claw.svc.id.goog[lexitrail/lexitrail-backend]" \
+  --role="roles/iam.workloadIdentityUser"
+```
+
+The grants are stable, so this is a break-glass procedure, not routine. (Alternative:
+grant `epod-d-sa` standing `artifactregistry.admin` + `iam.serviceAccountAdmin` on
+lexitrail to make the stack fully self-applying — declined for least-privilege.)
+
+## Apply
 
 ```bash
 cd terraform-ys
 terraform init
+export TF_VAR_db_root_password="$(…source from the live MySQL root…)"
 terraform plan -out ys.plan
 terraform apply ys.plan
 ```

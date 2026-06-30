@@ -31,6 +31,33 @@ variable "lexitrail_repo_location" {
   default     = "us-central1"
 }
 
+# --- Backend non-secret config (mirrors the live backend-config ConfigMap;
+#     SQL_NAMESPACE is the one D1-collapse adaptation and is derived from
+#     var.namespace, not hardcoded here) ---
+variable "image_tag" {
+  description = "Image tag for the backend + UI images in lexitrail-repo (live uses :latest)."
+  type        = string
+  default     = "latest"
+}
+
+variable "database_name" {
+  description = "App database name (live backend-config DATABASE_NAME)."
+  type        = string
+  default     = "lexitraildb"
+}
+
+variable "google_client_id" {
+  description = "OAuth client ID (live backend-config GOOGLE_CLIENT_ID; public, not a secret)."
+  type        = string
+  default     = "323289939168-p7nv7pp1smqa46ck3uqigapkq9hslth3.apps.googleusercontent.com"
+}
+
+variable "mysql_files_bucket" {
+  description = "GCS bucket the backend reads MySQL/seed files from (stays in the lexitrail project, D4)."
+  type        = string
+  default     = "lexitrail-lexitrail-mysql-files"
+}
+
 # --- Tenant namespace (D1: single collapsed ns; owned by my-hermes tenants root,
 #     referenced here — NOT created here) ---
 variable "namespace" {
