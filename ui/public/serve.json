@@ -1,0 +1,13 @@
+{
+  "redirects": [
+    { "source": "/go/ig-wod", "destination": "/?utm_source=instagram&utm_medium=social&utm_campaign=lt_wod", "type": 302 },
+    { "source": "/go/ig-streak", "destination": "/?utm_source=instagram&utm_medium=social&utm_campaign=lt_streak", "type": 302 },
+    { "source": "/go/ig-hsk", "destination": "/?utm_source=instagram&utm_medium=social&utm_campaign=lt_hsk", "type": 302 },
+    { "source": "/go/x-wod", "destination": "/?utm_source=x&utm_medium=social&utm_campaign=lt_wod", "type": 302 },
+    { "source": "/go/x-streak", "destination": "/?utm_source=x&utm_medium=social&utm_campaign=lt_streak", "type": 302 },
+    { "source": "/go/x-hsk", "destination": "/?utm_source=x&utm_medium=social&utm_campaign=lt_hsk", "type": 302 }
+  ],
+  "rewrites": [
+    { "source": "**", "destination": "/index.html" }
+  ]
+}
