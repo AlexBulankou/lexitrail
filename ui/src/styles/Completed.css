@@ -53,6 +53,58 @@
   font-weight: bolder;
 }
 
+.completed-review {
+  width: 80%;
+  max-width: 400px;
+  margin: 10px auto;
+  text-align: left;
+}
+
+.completed-review-title {
+  font-size: 1.3rem;
+  text-align: center;
+  margin: 10px 0;
+}
+
+.completed-review-list {
+  list-style: none;
+  padding-left: 0;
+  margin: 0;
+}
+
+.completed-review-item {
+  display: flex;
+  align-items: baseline;
+  gap: 0.4em;
+  flex-wrap: wrap;
+  padding: 4px 0;
+  border-bottom: 1px solid #eee;
+  font-size: 1.2rem;
+}
+
+.completed-review-word {
+  font-weight: bold;
+}
+
+.completed-review-def {
+  color: #555;
+  font-size: 1rem;
+}
+
+.completed-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.completed-share-message {
+  margin-top: 12px;
+  color: #2c6cd3;
+  font-size: 1rem;
+}
+
 .completed-button {
   background-color: #4285f4;
   border: none;
@@ -63,6 +115,18 @@
   cursor: pointer;
   margin-top: 20px;
   transition: background-color 0.3s;
+}
+
+.completed-actions .completed-button {
+  margin-top: 0;
+}
+
+.completed-button-share {
+  background-color: #34a853;
+}
+
+.completed-button-share:hover {
+  background-color: #2a8544;
 }
 
 .completed-button:hover {
