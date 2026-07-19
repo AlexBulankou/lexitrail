@@ -30,8 +30,13 @@ export const getWordsets = async () => {
   */
 
   const response = await getData('/wordsets');
-  // Filter out wordset with id 7
-  response.data = response.data.filter(wordset => wordset.description !== 'test' && wordset.description !== 'HSK7\r');
+  // Hide the internal "test" and "HSK7" wordsets. Trim first so the match is
+  // robust to legacy rows whose descriptions carry a trailing CR from an
+  // older CSV import (e.g. "HSK7\r").
+  const HIDDEN_DESCRIPTIONS = new Set(['test', 'HSK7']);
+  response.data = response.data.filter(
+    wordset => !HIDDEN_DESCRIPTIONS.has((wordset.description || '').trim())
+  );
   return response;
 };
 
