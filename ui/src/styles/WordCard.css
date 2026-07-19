@@ -29,6 +29,25 @@
   transition: border 50ms ease-in-out, box-shadow 50ms ease-in-out;
 }
 
+/* SUG-7: shape/label cue for correct/incorrect (not color-only) */
+.feedback-indicator {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  z-index: 2;
+  font-size: 1.1rem;
+  font-weight: bold;
+  line-height: 1;
+}
+
+.feedback-indicator.success {
+  color: green;
+}
+
+.feedback-indicator.failure {
+  color: red;
+}
+
 .word-card-inner {
   position: relative;
   width: 95%;
