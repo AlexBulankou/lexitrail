@@ -4,7 +4,6 @@ import {Game} from './components/Game';
 import Profile from './components/Profile.js';
 import PrivateRoute from './components/PrivateRoute.js';
 import NavBar from './components/NavBar.js';
-import { useAuth } from './hooks/useAuth';
 import Wordsets from './components/Wordsets';
 import PrivacyPolicy from './components/PrivacyPolicy.js';
 import TermsOfService from './components/TermsOfService.js';
@@ -18,13 +17,11 @@ import { AuthProvider } from './contexts/AuthContext';
 import About from './components/About';
 
 const App = () => {
-  const { user, login, logOut, tryWithoutSignin } = useAuth();
-  
   return (
     <AuthProvider>
       <Router>
         <div className="app-container">
-          <NavBar user={user} login={login} logOut={logOut} tryWithoutSignin={tryWithoutSignin} />
+          <NavBar />
           <div className="content-container">
             <Routes>
               <Route path="/" element={<Home />} />
