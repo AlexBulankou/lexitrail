@@ -64,7 +64,7 @@ const Game = () => {
   const [flippedStates, setFlippedStates] = useState({});
   const [feedbackClasses, setFeedbackClasses] = useState({});
   const [finalTimeElapsed, setFinalTimeElapsed] = useState(0);
-  const [hintsDisplayed, setHintsDisplayed] = useState(true);
+  const [hintsDisplayed, setHintsDisplayed] = useState(false); // SUG-2: hints opt-in (toggle via "Show Hints")
   const [allFlipped, setAllFlipped] = useState(false);
 
   // Optional callback to handle timer tick in parent (if you need the time in Game component)

@@ -17,6 +17,14 @@ const WordCard = ({ mode, word, isFlipped, isHintDisplayed, handleMemorized, han
       // Clear the current hint and show loading message
       setHintImage(null);
 
+      // SUG-2: hint images are opt-in. Only request one when the learner has
+      // hints shown, so browsing the card grid doesn't fire a generate/fetch
+      // request per card (one short session issued 37 hint requests).
+      if (!isHintDisplayed) {
+        setLoadingHint(false);
+        return;
+      }
+
       // Fetch the hint image when the component mounts or the word changes
       const fetchHint = async () => {
         try {
@@ -37,7 +45,7 @@ const WordCard = ({ mode, word, isFlipped, isHintDisplayed, handleMemorized, han
       setLoadingHint(false);
       setLoadingWord(false); // Set loadingWord to false if user_id or word_id is invalid
     }
-  }, [word.user_id, word.word_id]);
+  }, [word.user_id, word.word_id, isHintDisplayed]);
 
   const handleCardClick = () => {
     setFlippedState(!isFlipped);
