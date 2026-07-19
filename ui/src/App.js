@@ -16,6 +16,7 @@ import './styles/Home.css';
 import Home from './components/Home';
 import { AuthProvider } from './contexts/AuthContext';
 import About from './components/About';
+import NotFound from './components/NotFound';
 
 const App = () => {
   const { user, login, logOut, tryWithoutSignin } = useAuth();
@@ -47,6 +48,7 @@ const App = () => {
               <Route path="/privacy" element={<PrivacyPolicy />} />
               <Route path="/terms" element={<TermsOfService />} />
               <Route path="/about" element={<About />} />
+              <Route path="*" element={<NotFound />} />
             </Routes>
           </div>
         </div>
