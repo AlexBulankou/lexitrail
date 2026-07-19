@@ -87,7 +87,7 @@ def count_syllables(word):
     """Simple function to count the syllables in a Chinese word."""
     return len(word)
 
-def generate_quiz_options(word, words_by_syllable, syllable_count):
+def generate_quiz_options(word, words_by_syllable, syllable_count, corpus_by_syllable=None):
     logger.debug(f"Generating quiz options for word '{word.word}' with syllable count {syllable_count}")
     used_word_ids = {word.word_id}
 
@@ -101,12 +101,28 @@ def generate_quiz_options(word, words_by_syllable, syllable_count):
         used_word_ids.update(opt.word_id for opt in quiz_options)
         logger.debug(f"Selected same syllable words: {[opt.word for opt in quiz_options]}")
     else:
-        # Add available same-syllable words first
+        # Add available same-syllable words from this wordset first
         quiz_options.extend(same_syllable_words)
         used_word_ids.update(opt.word_id for opt in same_syllable_words)
         logger.debug(f"Not enough same syllable words, selected so far: {[opt.word for opt in quiz_options]}")
 
-        # Continue filling up quiz options to reach 3
+        # SUG-3: before synthesizing pseudo-words, fill with REAL words of the
+        # same syllable length drawn from the full corpus (all wordsets).
+        if len(quiz_options) < 3 and corpus_by_syllable:
+            corpus_same_syllable = [
+                w for w in corpus_by_syllable.get(syllable_count, [])
+                if w.word_id not in used_word_ids
+            ]
+            random.shuffle(corpus_same_syllable)
+            for w in corpus_same_syllable:
+                if len(quiz_options) >= 3:
+                    break
+                quiz_options.append(w)
+                used_word_ids.add(w.word_id)
+            logger.debug(f"After corpus fill: {[opt.word for opt in quiz_options if isinstance(opt, Word)]}")
+
+        # Last resort: synthetic concatenation, only when neither this wordset
+        # nor the corpus can supply enough real words of this length.
         while len(quiz_options) < 3:
            
             total_syllables = 0
@@ -172,23 +188,32 @@ def generate_quiz_options(word, words_by_syllable, syllable_count):
     logger.debug(f"Final quiz options for word '{word.word}': {quiz_options_formatted}")
     return quiz_options_formatted
 
-def process_word_with_options(word, words_by_syllable, total_syllables):
+def process_word_with_options(word, words_by_syllable, total_syllables, corpus_by_syllable=None):
     """Process a single word and generate its quiz options."""
     syllable_count = count_syllables(word.word)
-    remaining_syllables = total_syllables - syllable_count
-    required_syllables = syllable_count * 3
 
-    # Early validation
-    if remaining_syllables < required_syllables:
-        error_msg = (
-            f"Insufficient syllables in wordset to generate quiz options for word '{word.word}' "
-            f"with required syllable count {syllable_count} per option."
-        )
-        logger.error(error_msg)
-        raise ValueError(error_msg)
+    # SUG-3: count REAL same-length distractor candidates from this wordset plus
+    # the full corpus. Only when those can't supply 3 options do we fall back to
+    # synthetic concatenation, which needs a wordset syllable budget.
+    corpus_pool = corpus_by_syllable or {}
+    real_candidate_ids = {
+        w.word_id
+        for w in words_by_syllable.get(syllable_count, []) + corpus_pool.get(syllable_count, [])
+        if w.word_id != word.word_id
+    }
+    if len(real_candidate_ids) < 3:
+        remaining_syllables = total_syllables - syllable_count
+        required_syllables = syllable_count * 3
+        if remaining_syllables < required_syllables:
+            error_msg = (
+                f"Insufficient syllables in wordset to generate quiz options for word '{word.word}' "
+                f"with required syllable count {syllable_count} per option."
+            )
+            logger.error(error_msg)
+            raise ValueError(error_msg)
 
     logger.debug(f"Processing word '{word.word}' with syllable count {syllable_count}")
-    quiz_options = generate_quiz_options(word, words_by_syllable, syllable_count)
+    quiz_options = generate_quiz_options(word, words_by_syllable, syllable_count, corpus_by_syllable)
 
     return {
         "word_id": word.word_id,
@@ -250,6 +275,13 @@ def get_words_by_wordset(wordset_id, skip_cache=False):
                 words_by_syllable[syllable_count] = []
             words_by_syllable[syllable_count].append(word)
 
+        # SUG-3: corpus-wide pool of REAL words grouped by syllable length,
+        # used as distractors so quiz options are real words of matching length
+        # rather than synthetic syllable concatenations (e.g. "wǒmen diànnǎo").
+        corpus_by_syllable = {}
+        for w in Word.query.all():
+            corpus_by_syllable.setdefault(count_syllables(w.word), []).append(w)
+
         # Determine optimal number of workers
         num_workers = min(multiprocessing.cpu_count(), len(words))
         
@@ -259,7 +291,8 @@ def get_words_by_wordset(wordset_id, skip_cache=False):
             process_word_partial = partial(
                 process_word_with_options,
                 words_by_syllable=words_by_syllable,
-                total_syllables=total_syllables
+                total_syllables=total_syllables,
+                corpus_by_syllable=corpus_by_syllable
             )
             
             # Process all words in parallel
