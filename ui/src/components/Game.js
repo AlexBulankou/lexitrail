@@ -5,7 +5,7 @@ import Completed from './Completed';
 import Timer from './Timer';
 import { useParams } from 'react-router-dom';
 import { useWordsetLoader } from '../hooks/useWordsetLoader';
-import { useAuth } from '../hooks/useAuth';
+import { useAuth } from '../contexts/AuthContext';
 import '../styles/Game.css';
 import { useNavigate } from 'react-router-dom';
 import Logo from './Logo';
