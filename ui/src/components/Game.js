@@ -309,6 +309,7 @@ const Game = () => {
         timeElapsed={finalTimeElapsed}
         firstTimeCorrect={firstTimeCorrect}
         incorrectAttempts={incorrectAttempts}
+        incorrectWords={incorrectWords}
         resetGame={resetGame}
       />
     );
