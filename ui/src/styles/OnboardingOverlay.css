@@ -1,0 +1,65 @@
+.onboarding-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 16px;
+  box-sizing: border-box;
+}
+
+.onboarding-card {
+  background: #fff;
+  border-radius: 12px;
+  max-width: 360px;
+  width: 100%;
+  padding: 20px 22px 22px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
+  text-align: left;
+}
+
+.onboarding-title {
+  margin: 0 0 12px;
+  font-size: 1.5rem;
+  text-align: center;
+}
+
+.onboarding-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 18px;
+}
+
+.onboarding-list li {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5em;
+  margin: 10px 0;
+  font-size: 1rem;
+  line-height: 1.35;
+}
+
+.onboarding-icon {
+  flex: 0 0 auto;
+  width: 1.4em;
+  text-align: center;
+}
+
+.onboarding-button {
+  display: block;
+  width: 100%;
+  background-color: #4285f4;
+  border: none;
+  border-radius: 8px;
+  color: white;
+  font-size: 1.25rem;
+  padding: 10px 20px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.onboarding-button:hover {
+  background-color: #2c6cd3;
+}
