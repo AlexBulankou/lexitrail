@@ -180,54 +180,12 @@
   background-color: green;
 }
 
-.recall-state {
-  padding: 3px;
-  border-radius: 4px;
-  color: white;
-  font-size: 1.2rem;
-  margin: 0 1px;
-  width: 2.5rem;
-  height: auto;
-  text-align: center;
-}
-
-.recall-history {
-  display: flex;
-  flex-direction: column;
-  width: 100%;
-}
-
-.recall-item {
-  display: flex;
-  justify-content: space-between;
-  font-size: 0.6rem;
-  height: 0.6rem;
-}
-
-.recall-item-time {
+.mastery-indicator {
+  align-self: center;
+  text-align: right;
   color: #555;
-  font-size: 0.4rem;
-  overflow: hidden;
-  width: 35px;
-}
-
-.recall-item-guess {
-  font-size: 0.4rem;
-  padding: 0px 2px;
-}
-
-.recall-item-old-state,
-.recall-item-new-state {
-  padding: 0px 2px;
-  border-radius: 4px;
-  color: white;
-  font-size: 0.6rem;
-  display: flex;
-  align-items: center;
-}
-
-.recall-item-transition {
-  margin: 0 0px;
+  font-size: 0.55rem;
+  white-space: nowrap;
 }
 
 .green-background {

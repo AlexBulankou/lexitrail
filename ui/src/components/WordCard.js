@@ -117,12 +117,14 @@ const WordCard = ({ mode, word, isFlipped, isHintDisplayed, handleMemorized, han
     }
   };
 
-  // Helper function to determine the style for recall states
-  const getRecallStateStyle = (state) => {
-    return {
-      backgroundColor: state === 0 ? 'green' : 'red',
-      color: 'white',
-    };
+  // SUG-1: learners were shown raw spaced-repetition internals (the numeric
+  // recall_state box + a full recall_history row). Replace with a plain-language
+  // mastery summary so the card stays focused on the word.
+  const getMasterySummary = (w) => {
+    const history = w.recall_history || [];
+    if (history.length === 0) return 'New word';
+    const correct = history.filter((r) => r.recall).length;
+    return `Seen ${history.length}×, ${correct} correct`;
   };
 
   // Remove leading and trailing quotes and whitespace
@@ -172,30 +174,8 @@ const WordCard = ({ mode, word, isFlipped, isHintDisplayed, handleMemorized, han
             {word.is_included ? 'Exclude' : 'Include'}
           </button>
 
-          <div className="recall-state" style={getRecallStateStyle(word.recall_state)}>
-            {loadingWord ? '⏳' : word.recall_state}
-          </div>
-
-          <div className="recall-history">
-            {word.recall_history.map((recall, index) => (
-              <div key={index} className="recall-item">
-                <div className="recall-item-time">{recall.recall_time}</div>
-                <div className="recall-item-guess">{recall.recall ? '✅' : '❌'}</div>
-                <div
-                  className="recall-item-old-state"
-                  style={getRecallStateStyle(recall.old_recall_state ?? 0)}
-                >
-                  {recall.old_recall_state ?? 0}
-                </div>
-                <div className="recall-item-transition">→</div>
-                <div
-                  className="recall-item-new-state"
-                  style={getRecallStateStyle(recall.new_recall_state)}
-                >
-                  {recall.new_recall_state}
-                </div>
-              </div>
-            ))}
+          <div className="mastery-indicator">
+            {loadingWord ? '⏳' : getMasterySummary(word)}
           </div>
         </div>) :
         (<></>)}
