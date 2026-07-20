@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import WordCard from './WordCard';
 import MiniWordCard from './MiniWordCard';
 import Completed from './Completed';
+import OnboardingOverlay from './OnboardingOverlay';
 import Timer from './Timer';
 import { useParams } from 'react-router-dom';
 import { useWordsetLoader } from '../hooks/useWordsetLoader';
@@ -66,6 +67,15 @@ const Game = () => {
   const [finalTimeElapsed, setFinalTimeElapsed] = useState(0);
   const [hintsDisplayed, setHintsDisplayed] = useState(false); // SUG-2: hints opt-in (toggle via "Show Hints")
   const [allFlipped, setAllFlipped] = useState(false);
+
+  // SUG-5: one-time first-run coach-mark explaining the game controls.
+  const [showOnboarding, setShowOnboarding] = useState(() => {
+    try { return !localStorage.getItem('lexitrail_onboarded'); } catch { return false; }
+  });
+  const dismissOnboarding = () => {
+    try { localStorage.setItem('lexitrail_onboarded', '1'); } catch { /* private mode — just close */ }
+    setShowOnboarding(false);
+  };
 
   // Optional callback to handle timer tick in parent (if you need the time in Game component)
   const handleTimerTick = useCallback((elapsedTime, isTimerBeingCleared = false) => {
@@ -317,6 +327,8 @@ const Game = () => {
 
   return (
     <div className="container">
+
+      {showOnboarding && <OnboardingOverlay mode={mode} onDismiss={dismissOnboarding} />}
 
       <div className="progress-stats">
         <div className="not-memorized">❌ {Object.keys(incorrectAttempts).length}</div>
