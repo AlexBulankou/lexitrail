@@ -31,10 +31,13 @@ const Wordsets = ({ profileDetails, login }) => {
 
   const handleWordsetClick = (wordsetId, mode) => {
     // Send Google Analytics event
-    if (mode === GameMode.PRACTICE || mode === GameMode.TEST) {
+    if (mode === GameMode.PRACTICE || mode === GameMode.TEST || mode === GameMode.DUE_TODAY) {
+      const label = mode === GameMode.PRACTICE
+        ? 'practice'
+        : mode === GameMode.TEST ? 'test' : 'due_today';
       window.gtag('event', 'wordset_click', {
         'event_category': 'game_start',
-        'event_label': mode === GameMode.PRACTICE ? 'practice' : 'test',
+        'event_label': label,
         'wordset_id': wordsetId
       });
     }
@@ -60,6 +63,13 @@ const Wordsets = ({ profileDetails, login }) => {
                   aria-label={`Practice ${wordset.description}`}
                 >
                   Practice
+                </button>
+
+                <button
+                  className="wordset-button wordset-button-due"
+                  onClick={() => handleWordsetClick(wordset.wordset_id, GameMode.DUE_TODAY)}
+                >
+                  Due Today
                 </button>
 
 

@@ -15,12 +15,13 @@ const GameMode = {
   PRACTICE: "PRACTICE",
   SHOW_EXCLUDED: "SHOW_EXCLUDED",
   TEST: "TEST",
+  DUE_TODAY: "DUE_TODAY",
 };
 
 
 const Game = () => {
   let { mode, wordsetId } = useParams();
-  const validMode = [GameMode.SHOW_EXCLUDED, GameMode.TEST].includes(mode || "")
+  const validMode = [GameMode.SHOW_EXCLUDED, GameMode.TEST, GameMode.DUE_TODAY].includes(mode || "")
     ? mode
     : GameMode.PRACTICE;
 
@@ -389,7 +390,7 @@ const Game = () => {
       </div>
 
 
-      {mode === GameMode.PRACTICE ? (
+      {(mode === GameMode.PRACTICE || mode === GameMode.DUE_TODAY) ? (
         <button
           className="mark-all-memorized-button"
           onClick={markAllAsMemorized}

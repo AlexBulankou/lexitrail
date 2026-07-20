@@ -3,6 +3,7 @@ import { getWordsByWordset } from '../services/wordsService';
 import { getUserWordsByWordset, updateUserWordRecall } from '../services/userService';
 import { formatDistanceToNow, max } from 'date-fns';
 import { GameMode } from '../components/Game';
+import { isDue } from '../utils/srs';
 
 console.log("header or useWordsetLoader.js");
 
@@ -26,9 +27,11 @@ const updateRecallState = (currentRecallState, isCorrect) => {
 const invalidateCache = (userId, wordsetId) => {
   const includedCacheKey = `${userId}-${wordsetId}-1`;
   const excludedCacheKey = `${userId}-${wordsetId}-0`;
+  const dueCacheKey = `${userId}-${wordsetId}-1-due`;
 
   delete userWordsetExcludedCache[includedCacheKey];
   delete userWordsetExcludedCache[excludedCacheKey];
+  delete userWordsetExcludedCache[dueCacheKey];
 };
 
 // Helper function to shuffle an array
@@ -73,7 +76,9 @@ export const useWordsetLoader = (wordsetId, userId, mode) => {
         throw new Error("wordsetId not defined");
 
       const includedFlag = mode == GameMode.SHOW_EXCLUDED ? 0 : 1;
-      const cacheKey = `${userId}-${wordsetId}-${includedFlag}`;
+      // DUE_TODAY shares the included set (flag 1) but shows a filtered subset,
+      // so it needs its own cache slot to avoid serving the full practice list.
+      const cacheKey = `${userId}-${wordsetId}-${includedFlag}${mode === GameMode.DUE_TODAY ? '-due' : ''}`;
 
       // Check cache first
       if (userWordsetExcludedCache[cacheKey]) {
@@ -155,6 +160,14 @@ export const useWordsetLoader = (wordsetId, userId, mode) => {
             // Exclude words with either quiz_word or special characters
             if (hasQuizWordInOptions || hasSpecialCharacters) return false;
             return true; // Keep all other words, regardless of inclusion status
+          } else if (mode === GameMode.DUE_TODAY) {
+            // Spaced-repetition queue: included words whose SRS interval has
+            // elapsed (or that have never been practiced).
+            if (!word.is_included) return false;
+            const lastRecall = word.recall_history.length > 0
+              ? word.recall_history[0].original_recall_time
+              : null;
+            return isDue(word.recall_state, lastRecall);
           } else {
             // Original filtering behavior for other modes
             return includedFlag ? word.is_included : !word.is_included;

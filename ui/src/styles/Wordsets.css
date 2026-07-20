@@ -69,8 +69,15 @@
 
 }
 
-.wordset-button-excluded {
+.wordset-button-due {
   grid-row:3;
+  grid-column: 1;
+  background-color: #8e24aa;
+
+}
+
+.wordset-button-excluded {
+  grid-row:4;
   grid-column: 1;
   background-color: black;
   font-size:0.5rem;
@@ -78,7 +85,7 @@
 }
 
 .wordset-button-test {
-  grid-row: 2 / 4;
+  grid-row: 2 / 5;
   grid-column: 2;
   background-color: green;
 
