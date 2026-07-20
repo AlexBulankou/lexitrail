@@ -302,3 +302,18 @@
 .try-button:hover {
   background-color: #357ae8;
 }
+
+/* NEW-1: keep the fixed navbar within narrow phone viewports.
+   The logged-in user email/name chip was the main horizontal-overflow
+   offender (measured to x=462 on a 390px screen) — collapse it to just
+   the avatar and tighten inter-item gaps under 480px. */
+@media (max-width: 480px) {
+  .navbar { padding: 0 0.25rem; }
+  .nav-left, .nav-center, .nav-right { gap: 0.5rem; }
+  .nav-left { margin-right: 0.25rem; }
+  .logo-text { font-size: 1rem; margin-right: 0.25rem; }
+  .user-info-compact { display: none; }
+  .user-dropdown-trigger { max-width: none; padding: 0 0.25rem; }
+  .dropdown-trigger { padding: 0 0.35rem; }
+  .nav-right a { padding: 0.25rem 0.35rem; }
+}
