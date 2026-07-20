@@ -144,8 +144,39 @@ class WordsTests(unittest.TestCase):
                     # Verify `def2` is marked as portioned
                     self.assertEqual(opt[2], "[quiz word]")
 
-    
-    
+    def test_get_words_by_wordset_prefers_real_corpus_distractors(self):
+        """SUG-3: when a wordset lacks same-length words, quiz options should be
+        real words of matching length pulled from the wider corpus (other
+        wordsets) rather than synthetic concatenations."""
+        with self.app.app_context():
+            # Wordset under test has a single 2-syllable word (no in-set peers).
+            target_wordset_id = TestUtils.create_test_wordset(db, description="Target")
+            TestUtils.create_test_words(db, target_wordset_id, [
+                ("你好", "nǐhǎo", "hello"),
+            ])
+            # A separate wordset supplies real 2-syllable distractor candidates.
+            other_wordset_id = TestUtils.create_test_wordset(db, description="Corpus")
+            TestUtils.create_test_words(db, other_wordset_id, [
+                ("多少", "duōshǎo", "how much"),
+                ("几个", "jǐgè", "several"),
+                ("我们", "wǒmen", "us"),
+                ("这里", "zhèlǐ", "here"),
+            ])
+            wordset = db.session.get(Wordset, target_wordset_id)
+
+        response = self.client.get(f'/wordsets/{wordset.wordset_id}/words')
+        self.assertEqual(response.status_code, 200)
+
+        words_data = response.get_json().get('data', [])
+        self.assertEqual(len(words_data), 1)
+        options = words_data[0]['quiz_options']
+        self.assertEqual(len(options), 3)
+        # All options are real words of matching length, none synthetic.
+        self.assertTrue(all(opt[2] != "[quiz word]" for opt in options))
+        self.assertTrue(all(len(opt[0]) == 2 for opt in options))
+        self.assertTrue(all(opt[0] != "你好" for opt in options))
+
+
     def test_get_words_by_wordset_with_randomness_seed(self):
         """Test retrieving words by wordset with a specific randomness seed."""
         with self.app.app_context():

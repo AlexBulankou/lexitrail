@@ -139,7 +139,9 @@
   justify-content: center;
   text-align: center;
   overflow: hidden;
-  word-break: break-all;
+  word-break: keep-all;
+  overflow-wrap: break-word;
+  /* Wrap between syllables, never mid-syllable (SUG-3) */
   flex-wrap: wrap;
   white-space: normal;
   /* Allows wrapping */
