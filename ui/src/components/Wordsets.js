@@ -57,6 +57,7 @@ const Wordsets = ({ profileDetails, login }) => {
                 <button
                   className="wordset-button wordset-button-practice"
                   onClick={() => handleWordsetClick(wordset.wordset_id, GameMode.PRACTICE)}
+                  aria-label={`Practice ${wordset.description}`}
                 >
                   Practice
                 </button>
@@ -65,6 +66,7 @@ const Wordsets = ({ profileDetails, login }) => {
                 <button
                   className="wordset-button wordset-button-excluded"
                   onClick={() => handleWordsetClick(wordset.wordset_id, GameMode.SHOW_EXCLUDED)}
+                  aria-label={`Show excluded words in ${wordset.description}`}
                 >
                   Show Excluded
                 </button>
@@ -72,6 +74,7 @@ const Wordsets = ({ profileDetails, login }) => {
                 <button
                   className="wordset-button wordset-button-test"
                   onClick={() => handleWordsetClick(wordset.wordset_id, GameMode.TEST)}
+                  aria-label={`Test ${wordset.description}`}
                 >
                   Test!
                 </button>

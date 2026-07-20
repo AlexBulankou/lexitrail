@@ -164,6 +164,18 @@ const WordCard = ({ mode, word, isFlipped, isHintDisplayed, handleMemorized, han
 
   return (
     <div className={`word-card ${feedbackClass}`}>
+      {/* SUG-7: non-color cue (shape + label) for correct/incorrect, so the
+          red/green border isn't the only signal for color-blind users. */}
+      {feedbackClass && (
+        <span
+          className={`feedback-indicator ${feedbackClass}`}
+          role="status"
+          aria-live="assertive"
+          aria-label={feedbackClass === 'success' ? 'Correct' : 'Incorrect'}
+        >
+          {feedbackClass === 'success' ? '✓' : '✗'}
+        </span>
+      )}
       {/* Metadata Section */}
 
       {mode !== GameMode.TEST ? (
@@ -218,7 +230,7 @@ const WordCard = ({ mode, word, isFlipped, isHintDisplayed, handleMemorized, han
           {loadingWord ?
             <p>⏳</p>
             :
-            <p style={{ fontSize: calculateFontSize(word.word, isHintDisplayed ? 5 : 6) }}>{word.word}</p>
+            <p lang="zh" style={{ fontSize: calculateFontSize(word.word, isHintDisplayed ? 5 : 6) }}>{word.word}</p>
 
           }
 
@@ -227,7 +239,7 @@ const WordCard = ({ mode, word, isFlipped, isHintDisplayed, handleMemorized, han
           {loadingWord ? '⏳ Loading...' :
             <div className="word-meaning">
               <div class="word-meaning-ref">
-                <div class="word-meaning-ref-text">
+                <div class="word-meaning-ref-text" lang="zh">
                 {word.word}
                 </div>
               </div>

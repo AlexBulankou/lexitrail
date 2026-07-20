@@ -47,7 +47,7 @@ const MiniWordCard = ({ mode, word }) => {
       {loadingWord ? '⏳' :
         <>
           <div className="mini-word-card-word">
-          <span style={{ fontSize: calculateFontSize(word.word, 3.2, 0.7) }}>
+          <span lang="zh" style={{ fontSize: calculateFontSize(word.word, 3.2, 0.7) }}>
             {word.word}
             </span>
             </div>
