@@ -413,6 +413,8 @@ export const useWordsetLoader = (wordsetId, userId, mode) => {
       // Async call to update the backend for each word
       updateUserWordRecall(userId, currentWord.word_id, newRecallState, true, currentWord.is_included)
         .catch((error) => console.error(`Error updating recall state for word ID ${currentWord.word_id}:`, error));
+
+      recordPractice(); // FEAT-1: batch-reviewed words count toward the streak too.
     });
 
 
