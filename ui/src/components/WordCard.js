@@ -3,6 +3,7 @@ import { getHint, regenerateHint } from '../services/hintService';
 import { GameMode } from './Game';
 import PinyinText from './PinyinText';
 import SpeakButton from './SpeakButton';
+import ExampleSentences from './ExampleSentences';
 import '../styles/WordCard.css';
 
 const WordCard = ({ mode, word, isFlipped, isHintDisplayed, handleMemorized, handleNotMemorized, toggleExclusion, feedbackClass, provideFeedback, setFlippedState }) => {
@@ -258,6 +259,8 @@ const WordCard = ({ mode, word, isFlipped, isHintDisplayed, handleMemorized, han
                   {removeQuotes(word.def2)}
                 </p>
               </div>
+              {/* FEAT-9: curated example sentences for this word (hides when none). */}
+              <ExampleSentences word={word.word} />
             </div>
           }
 
