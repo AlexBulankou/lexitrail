@@ -1,0 +1,33 @@
+/* FEAT-1 (ITP #21): nav-bar streak + daily-goal badge. */
+.streak-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  background: rgba(255, 138, 0, 0.12);
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #d9660b;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.streak-badge.goal-met {
+  background: rgba(46, 160, 67, 0.15);
+  color: #1f7a34;
+}
+
+.streak-flame {
+  font-size: 1rem;
+}
+
+.streak-count {
+  font-variant-numeric: tabular-nums;
+}
+
+.streak-goal {
+  font-size: 0.75rem;
+  font-weight: 500;
+  opacity: 0.85;
+}

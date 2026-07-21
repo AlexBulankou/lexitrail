@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { getWordsByWordset } from '../services/wordsService';
 import { getUserWordsByWordset, updateUserWordRecall } from '../services/userService';
+import { recordPractice } from '../services/streakStore';
 import { formatDistanceToNow, max } from 'date-fns';
 import { GameMode } from '../components/Game';
 import { isDue } from '../utils/srs';
@@ -378,6 +379,8 @@ export const useWordsetLoader = (wordsetId, userId, mode) => {
     // Async call to update the backend
     updateUserWordRecall(userId, currentWord.word_id, newRecallState, true, currentWord.is_included)
       .catch((error) => console.error('Error updating recall state for memorized word:', error));
+
+    recordPractice(); // FEAT-1: count today's practice toward the streak + goal.
   };
 
   // New function to handle correct memorization of multiple words
@@ -459,6 +462,8 @@ export const useWordsetLoader = (wordsetId, userId, mode) => {
     // Async call to update the backend
     updateUserWordRecall(userId, currentWord.word_id, newRecallState, false, currentWord.is_included)
       .catch((error) => console.error('Error updating recall state for not memorized word:', error));
+
+    recordPractice(); // FEAT-1: reviewing a word counts, right or wrong.
   };
 
 
