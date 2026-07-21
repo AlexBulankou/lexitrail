@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { getHint, regenerateHint } from '../services/hintService';
 import { GameMode } from './Game';
 import PinyinText from './PinyinText';
+import SpeakButton from './SpeakButton';
 import '../styles/WordCard.css';
 
 const WordCard = ({ mode, word, isFlipped, isHintDisplayed, handleMemorized, handleNotMemorized, toggleExclusion, feedbackClass, provideFeedback, setFlippedState }) => {
@@ -230,7 +231,10 @@ const WordCard = ({ mode, word, isFlipped, isHintDisplayed, handleMemorized, han
           {loadingWord ?
             <p>⏳</p>
             :
-            <p lang="zh" style={{ fontSize: calculateFontSize(word.word, isHintDisplayed ? 5 : 6) }}>{word.word}</p>
+            <>
+              <p lang="zh" style={{ fontSize: calculateFontSize(word.word, isHintDisplayed ? 5 : 6) }}>{word.word}</p>
+              <SpeakButton text={word.word} size="lg" />
+            </>
 
           }
 
@@ -242,6 +246,7 @@ const WordCard = ({ mode, word, isFlipped, isHintDisplayed, handleMemorized, han
                 <div class="word-meaning-ref-text" lang="zh">
                 {word.word}
                 </div>
+                <SpeakButton text={word.word} size="md" />
               </div>
               <div class="word-meaning-def1">
                 <p style={{ fontSize: calculateFontSize(word.def1, isHintDisplayed ? 6 : 7, 1.0) }}>
