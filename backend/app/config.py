@@ -12,7 +12,11 @@ class Config:
     DB_ROOT_PASSWORD = os.getenv('DB_ROOT_PASSWORD', 'default_password')
     DATABASE_NAME = os.getenv('DATABASE_NAME', 'test_db')
     GOOGLE_CLIENT_ID = os.getenv('GOOGLE_CLIENT_ID', 'default-client-id')
-    
+    # Guest ("try without sign-in") sessions mint UNAUTH_USER tokens whose email
+    # must live under this domain. Enforced server-side so a guest token cannot
+    # impersonate a real member. See AuthContext.tryWithoutSignin (frontend).
+    DEMO_EMAIL_DOMAIN = os.getenv('DEMO_EMAIL_DOMAIN', 'lexitrail.demo')
+
     PROJECT_ID = os.getenv('PROJECT_ID', 'your-default-project-id')
     LOCATION = os.getenv('LOCATION', 'us-central1')
     PARALLELISM_LIMIT = int(os.getenv('PARALLELISM_LIMIT', 5))  # Default to 5

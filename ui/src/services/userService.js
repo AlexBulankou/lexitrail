@@ -27,6 +27,13 @@ export const deleteUser = async (email) => {
   return await deleteData(`/users/${email}`);
 };
 
+// Migrate a guest/demo session's progress onto the authenticated member.
+// The target is the authenticated caller; only the source demo email is passed.
+export const migrateUser = async (fromEmail) => {
+  const data = { from_email: fromEmail };
+  return await postData('/users/migrate', data);
+};
+
 // Fetch userwords for a given user and wordset
 export const getUserWordsByWordset = async (userId, wordsetId) => {
   return await getData(`/userwords/query?user_id=${userId}&wordset_id=${wordsetId}`);

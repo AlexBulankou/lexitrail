@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useCallback } from 'react';
 import { googleLogout, useGoogleLogin } from '@react-oauth/google';
-import { createUser, getUserByEmail } from '../services/userService';
+import { createUser, getUserByEmail, migrateUser } from '../services/userService';
 import { generateUniqueString } from '../utils/stringUtils';
 import defaultAvatar from '../styles/assets/default-avatar.svg';
 
@@ -15,8 +15,18 @@ export const AuthProvider = ({ children }) => {
   const initUser = {
     onSuccess: async (tokenResponse) => {
       try {
+        // Capture any in-progress guest session before it is overwritten, so its
+        // practice data can be migrated onto the real account after sign-in.
+        let demoEmailToMigrate = null;
+        try {
+          const priorUser = JSON.parse(sessionStorage.getItem('user') || 'null');
+          if (priorUser?.email?.endsWith('@lexitrail.demo')) {
+            demoEmailToMigrate = priorUser.email;
+          }
+        } catch (_) { /* ignore malformed prior session */ }
+
         sessionStorage.setItem('access_token', tokenResponse.access_token);
-        
+
         const response = await fetch(`https://www.googleapis.com/oauth2/v3/userinfo?access_token=${tokenResponse.access_token}`, {
           method: 'GET',
           headers: {
@@ -37,6 +47,11 @@ export const AuthProvider = ({ children }) => {
           const existingUser = await getUserByEmail(data.email);
           if (!existingUser) {
             await createUser(data.email);
+          }
+          // Now authenticated as the real member: fold in the guest session's
+          // progress (uses the new Google token, so it migrates into this user).
+          if (demoEmailToMigrate && demoEmailToMigrate !== data.email) {
+            await migrateUser(demoEmailToMigrate);
           }
         } catch (error) {
           console.error('Error handling user in backend:', error);
