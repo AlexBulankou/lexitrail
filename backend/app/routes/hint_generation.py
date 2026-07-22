@@ -14,6 +14,8 @@ import base64
 from io import BytesIO
 from app.auth import authenticate_user  # Import from auth.py
 from google.cloud import aiplatform
+from google import genai
+from google.genai import types
 from ..models import db, UserWord, Word
 from ..utils import validate_user_access  # Import the shared validation function
 from datetime import datetime
@@ -127,10 +129,35 @@ def get_placeholder_image():
     
     return _placeholder_image.copy()
 
+# google-genai client + models (lexitrail#47): the old vertexai
+# GenerativeModel("gemini-1.5-flash-002") + ImageGenerationModel("imagen-3.0-*")
+# both 404 now (Google retired those models on Vertex). gemini-2.5-flash (text)
+# and gemini-2.5-flash-image (image) are the current models; both verified live
+# in the lexitrail project via the google-genai SDK at location "global".
+_genai_client = None
+TEXT_MODEL = "gemini-2.5-flash"
+IMAGE_MODEL = "gemini-2.5-flash-image"
+
+
+def _clean_text(s):
+    """Strip CR + surrounding whitespace from generated text (lexitrail#47:
+    hint_text carried a trailing \\r)."""
+    return (s or "").replace("\r", "").strip()
+
+
+def get_genai_client():
+    global _genai_client
+    if _genai_client is None:
+        try:
+            _genai_client = genai.Client(vertexai=True, project=Config.PROJECT_ID, location="global")
+        except Exception as e:
+            raise RuntimeError(f"Failed to initialize google-genai client: {str(e)}")
+    return _genai_client
+
+
 def generate_prompt(word, pinyin, translation):
-    model = get_llm_model()
-    chat = model.start_chat()
-    
+    client = get_genai_client()
+
     # Add more creative direction and randomness to the prompt
     prompt = f"""
     Create a unique and creative image generation prompt for the Chinese word "{word}" (pinyin: "{pinyin}", meaning: "{translation}").
@@ -147,68 +174,53 @@ def generate_prompt(word, pinyin, translation):
     Generate a completely new and unique prompt that has never been used before.
     """
 
-    response = chat.send_message(
-        [prompt],
-        generation_config={
-            "max_output_tokens": 8192,
-            "temperature": 1.0,      # Increased from default for more randomness
-            "top_p": 0.99,          # Slightly increased for more variety
-            "top_k": 40,            # Added to further control diversity
-            "candidate_count": 1,    # We only need one result
-        },
-        safety_settings=safety_settings
+    response = client.models.generate_content(
+        model=TEXT_MODEL,
+        contents=prompt,
+        config=types.GenerateContentConfig(
+            max_output_tokens=8192,
+            temperature=1.0,
+            top_p=0.99,
+            top_k=40,
+            candidate_count=1,
+        ),
     )
-    
-    generated_prompt = response.candidates[0].content.parts[0].text.strip()
-    
+
+    generated_prompt = _clean_text(response.text)
+
     # Clean up the prompt if needed
     if generated_prompt.lower().startswith(('prompt:', 'image prompt:', 'generate:')):
-        generated_prompt = generated_prompt.split(':', 1)[1].strip()
-    
+        generated_prompt = _clean_text(generated_prompt.split(':', 1)[1])
+
     logger.info("Generated prompt for word '%s': %s", word, generated_prompt)
-    
+
     return generated_prompt
 
 def generate_image(prompt):
-    model = get_image_generation_model()
-    
-    if IMAGE_MODEL_TYPE == "imagen":
-        logger.info("Generating image for %s with Imagen", prompt)
-        try:
-            images = model.generate_images(
-                prompt=prompt,
-                number_of_images=1,
-                aspect_ratio="4:3",
-                safety_filter_level="block_some"
-            )
-            
-            try:
-                return (images[0]._pil_image.resize((400, 300), PIL_Image.Resampling.LANCZOS), False)
-            except (IndexError, AttributeError) as e:
-                logger.warning("Failed to access generated image: %s", str(e))
-                return (get_placeholder_image(), True)
-                
-        except Exception as e:
-            logger.error("Failed to generate image: %s", str(e))
-            return (get_placeholder_image(), True)
-            
-    elif IMAGE_MODEL_TYPE == "stable_diffusion":
-        try:
-            logger.info("Generating image with Stable Diffusion")
-            response = model.generate_content(
-                prompt,
-                generation_config={
-                    "temperature": 0.9,
-                }
-            )
-            # Convert the response to PIL Image
-            image_bytes = response.candidates[0].image.image_bytes
-            image = PIL_Image.open(BytesIO(image_bytes))
-            # Resize the image to match our desired dimensions
-            return (image.resize((400, 300), PIL_Image.Resampling.LANCZOS), False)
-        except Exception as e:
-            logger.error("Failed to generate image with Stable Diffusion: %s", str(e))
-            return (get_placeholder_image(), True)
+    """Generate a hint image from the prompt via Gemini native image generation
+    (gemini-2.5-flash-image). Returns (PIL image, is_placeholder). On any failure
+    returns the placeholder + True so the caller degrades honestly."""
+    client = get_genai_client()
+    logger.info("Generating image for prompt: %s", prompt)
+    try:
+        response = client.models.generate_content(
+            model=IMAGE_MODEL,
+            contents=(
+                "Generate a single image (no text or characters in the image) "
+                f"based on this description: {prompt}"
+            ),
+            config=types.GenerateContentConfig(response_modalities=["TEXT", "IMAGE"]),
+        )
+        for part in response.candidates[0].content.parts:
+            inline = getattr(part, "inline_data", None)
+            if inline and getattr(inline, "data", None):
+                image = PIL_Image.open(BytesIO(inline.data)).convert("RGB")
+                return (image.resize((400, 300), PIL_Image.Resampling.LANCZOS), False)
+        logger.warning("No image part in %s response; using placeholder", IMAGE_MODEL)
+        return (get_placeholder_image(), True)
+    except Exception as e:
+        logger.error("Failed to generate image: %s", str(e))
+        return (get_placeholder_image(), True)
 
 def image_to_base64(image):
     buffered = BytesIO()
@@ -217,29 +229,23 @@ def image_to_base64(image):
 
 
 def process_single_hint(word, pinyin, translation):
+    # Text prompt (the hint description). Fall back to a template only if the
+    # TEXT model itself fails, so a working prompt is preserved even when the
+    # IMAGE step degrades (lexitrail#47 — the old code overwrote a good prompt
+    # with the template whenever image gen failed).
     try:
-        # Start timing for text generation
         start_text = time.time()
-        
-        # Generate the prompt
         prompt = generate_prompt(word, pinyin, translation)
-        text_time = time.time() - start_text  # Measure the time taken for text generation
-
-        # Start timing for image generation
-        start_image = time.time()
-        
-        # Generate the image from the prompt
-        image, is_placeholder = generate_image(prompt)
-        image_time = time.time() - start_image  # Measure the time taken for image generation
-
+        text_time = time.time() - start_text
     except Exception as e:
-        logger.error(f"Failed to generate hint: {str(e)}")
-        # If either prompt or image generation fails, return placeholder
-        image = get_placeholder_image()
+        logger.error("Failed to generate hint prompt: %s", str(e))
         prompt = f"A visual representation of the word '{word}' ({pinyin}), meaning '{translation}'"
-        is_placeholder = True
         text_time = 0
-        image_time = 0
+
+    # Image. generate_image never raises — it returns (placeholder, True) on failure.
+    start_image = time.time()
+    image, is_placeholder = generate_image(prompt)
+    image_time = time.time() - start_image
 
     # Convert the image to base64 format for return
     hint_image_base64 = image_to_base64(image)
@@ -247,7 +253,7 @@ def process_single_hint(word, pinyin, translation):
     # Return the result with all relevant information
     return {
         'word': word,
-        'hint_text': prompt,
+        'hint_text': _clean_text(prompt),  # strip trailing \r etc. (lexitrail#47)
         'hint_image': hint_image_base64,
         'text_generation_time': text_time,
         'image_generation_time': image_time,
@@ -414,15 +420,27 @@ def generate_hint():
                 
                 db.session.commit()
             
+            hint_data = {
+                'hint_text': hint_result['hint_text'],
+                'hint_image': hint_result['hint_image']
+            }
+            if hint_result.get('is_placeholder', False):
+                # Degraded: image gen failed → placeholder. Report success:false so
+                # the client can surface/retry instead of showing a broken placeholder
+                # as if it worked (lexitrail#47 defect 2). HTTP 200 + data so the
+                # client may still render the placeholder while knowing it's degraded.
+                return error_response(
+                    "Hint image generation is temporarily unavailable — showing a placeholder.",
+                    status_code=200,
+                    data=hint_data,
+                    is_placeholder=True
+                )
             return success_response(
-                data={
-                    'hint_text': hint_result['hint_text'],
-                    'hint_image': hint_result['hint_image']
-                },
-                is_placeholder=hint_result.get('is_placeholder', False),
-                message="Hint generation completed" if not hint_result.get('is_placeholder', False) else "Generation failed, hints cleared"
+                data=hint_data,
+                is_placeholder=False,
+                message="Hint generation completed"
             )
-        
+
         # Use word-level hints if they exist
         if word_entry.hint_text and word_entry.hint_img:
             logger.info("Using word-level hints")
@@ -435,16 +453,25 @@ def generate_hint():
                 message="Hint retrieved successfully from word"
             )
         
-        # If we get here, we need to generate a placeholder
-        logger.info("Using placeholder image")
-        placeholder_result = process_single_hint(word_entry.word, word_entry.def1, word_entry.def2)
+        # If we get here, generate the hint fresh.
+        logger.info("Generating hint (final path)")
+        result = process_single_hint(word_entry.word, word_entry.def1, word_entry.def2)
+        hint_data = {
+            'hint_text': result['hint_text'],
+            'hint_image': result['hint_image']
+        }
+        if result.get('is_placeholder', False):
+            # Honest degraded response (lexitrail#47 defect 2) — not success:true.
+            return error_response(
+                "Hint image generation is temporarily unavailable — showing a placeholder.",
+                status_code=200,
+                data=hint_data,
+                is_placeholder=True
+            )
         return success_response(
-            data={
-                'hint_text': placeholder_result['hint_text'],
-                'hint_image': placeholder_result['hint_image']
-            },
-            is_placeholder=True,
-            message="Using placeholder hint"
+            data=hint_data,
+            is_placeholder=False,
+            message="Hint generation completed"
         )
 
     except Exception as e:

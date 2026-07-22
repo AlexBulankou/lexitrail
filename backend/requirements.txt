@@ -17,5 +17,6 @@ google-auth==2.21.0
 
 # Additional dependencies for hint generation
 google-cloud-aiplatform==1.69.0 # For Vertex AI services
+google-genai==1.28.0 # gemini-2.5-flash + gemini-2.5-flash-image (lexitrail#47; old vertexai imagen/gemini-1.5 models retired)
 Pillow==10.2.0  # Updated from 9.2.0 for Python 3.13 compatibility
 cachetools==5.3.3  # For in-memory TTL caching
