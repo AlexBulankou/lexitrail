@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import Logo from './Logo';
+import StreakBadge from './StreakBadge';
 import '../styles/NavBar.css';
 import googleGIcon from '../styles/assets/google-g.svg';
 import { useAuth } from '../contexts/AuthContext';
@@ -84,6 +85,8 @@ const NavBar = () => {
         )}
       </div>
       <div className="nav-right">
+        {/* FEAT-1: daily streak + goal (renders only once there's a streak). */}
+        {user && <StreakBadge />}
         {/* About Dropdown */}
         <div className="dropdown" ref={legalDropdownRef}>
           <button 
