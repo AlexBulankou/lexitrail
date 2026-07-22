@@ -64,6 +64,13 @@ export const useWordsetLoader = (wordsetId, userId, mode) => {
       return; // Early exit if loading is already in progress
     }
 
+    // Declared here (not inside the try) so the catch block can reference it —
+    // `const`/`let` are block-scoped to the try, so a try-scoped cacheKey is
+    // NOT visible in catch. That made the catch throw `ReferenceError: cacheKey
+    // is not defined` on any load error, so setLoading('error') never ran and
+    // the game hung on 'Loading…' forever (R3-BUG-2, lexitrail#45).
+    let cacheKey = null;
+
     try {
 
       if (!mode)
@@ -78,7 +85,7 @@ export const useWordsetLoader = (wordsetId, userId, mode) => {
       const includedFlag = mode == GameMode.SHOW_EXCLUDED ? 0 : 1;
       // DUE_TODAY shares the included set (flag 1) but shows a filtered subset,
       // so it needs its own cache slot to avoid serving the full practice list.
-      const cacheKey = `${userId}-${wordsetId}-${includedFlag}${mode === GameMode.DUE_TODAY ? '-due' : ''}`;
+      cacheKey = `${userId}-${wordsetId}-${includedFlag}${mode === GameMode.DUE_TODAY ? '-due' : ''}`;
 
       // Check cache first
       if (userWordsetExcludedCache[cacheKey]) {
@@ -234,8 +241,9 @@ export const useWordsetLoader = (wordsetId, userId, mode) => {
     } catch (error) {
       console.error('Error loading words or userword metadata:', error);
 
-      // Reset the loading flag in case of error
-      userWordsetExcludedCache[cacheKey] = null;
+      // Reset the loading flag in case of error (guard: cacheKey may still be
+      // null if the error was thrown before it was assigned).
+      if (cacheKey) userWordsetExcludedCache[cacheKey] = null;
       setLoading({ status: 'error', error: error });
 
     } finally {
