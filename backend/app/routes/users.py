@@ -1,7 +1,7 @@
 from os import abort
 from flask import Blueprint, request, jsonify, abort
-from ..models import db, User
-from app.auth import authenticate_user  # Import from auth.py
+from ..models import db, User, UserWord, RecallHistory
+from app.auth import authenticate_user, is_demo_email  # Import from auth.py
 from ..utils import validate_user_access, error_response  # Import the shared validation function
 import logging
 
@@ -90,6 +90,72 @@ def delete_user(email):
     except Exception as e:
         logger.error(f"Error get_user: {e}", exc_info=True)
         return error_response(str(e), 500) 
+
+
+@bp.route('/migrate', methods=['POST'])
+@authenticate_user
+def migrate_user():
+    """Move a guest (demo) session's progress onto the now-authenticated member.
+
+    Called once, right after a real Google sign-in, when the user had been
+    practicing as a guest. Target is always the authenticated caller — the demo
+    account is supplied in the body — so a caller can only migrate INTO
+    themselves, never harvest another member's data."""
+    try:
+        data = request.json or {}
+        from_email = data.get('from_email')
+        to_email = request.user['email']  # authenticated real member
+
+        if not from_email:
+            return jsonify({"message": "from_email is required"}), 400
+        # Only a guest/demo session may be migrated, and only into a real member.
+        if not is_demo_email(from_email):
+            return jsonify({"message": "from_email must be a guest/demo account"}), 400
+        if is_demo_email(to_email):
+            return jsonify({"message": "Cannot migrate into a guest account"}), 400
+        if from_email == to_email:
+            return jsonify({"message": "from_email and target are the same"}), 400
+
+        from_user = db.session.get(User, from_email)
+        if from_user is None:
+            # Nothing to migrate — idempotent no-op (e.g. already migrated).
+            return jsonify({"message": "No demo data to migrate", "migrated_words": 0}), 200
+
+        # Ensure the target member row exists before we re-point rows onto it.
+        if db.session.get(User, to_email) is None:
+            db.session.add(User(email=to_email))
+            db.session.flush()
+
+        # word_ids the member already owns — re-pointing onto these would violate
+        # UNIQUE(user_id, word_id) on userwords, so keep the member's own progress.
+        existing_word_ids = {
+            uw.word_id for uw in UserWord.query.filter_by(user_id=to_email).all()
+        }
+
+        migrated = 0
+        for uw in UserWord.query.filter_by(user_id=from_email).all():
+            if uw.word_id in existing_word_ids:
+                continue
+            uw.user_id = to_email
+            migrated += 1
+        # Force the user_id UPDATEs out before the demo user is deleted, so the
+        # ON DELETE CASCADE does not sweep up the rows we just re-pointed.
+        db.session.flush()
+
+        # recall_history is an append-only log with no uniqueness — re-point all.
+        RecallHistory.query.filter_by(user_id=from_email).update(
+            {RecallHistory.user_id: to_email}, synchronize_session=False
+        )
+
+        # Any userwords still on the demo account (the conflicting ones) cascade away.
+        db.session.delete(from_user)
+        db.session.commit()
+
+        return jsonify({"message": "Migration complete", "migrated_words": migrated}), 200
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Error migrate_user: {e}", exc_info=True)
+        return error_response(str(e), 500)
 
 
 @bp.route('', methods=['GET'])

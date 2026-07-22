@@ -99,5 +99,24 @@ class TestAuthenticateUser(unittest.TestCase):
         self.assertEqual(response.status_code, 401)
         self.assertIn(b'Invalid access token', response.data)
 
+    def test_guest_token_demo_domain_allowed(self):
+        """A guest UNAUTH_USER token on the demo domain is accepted without Google validation."""
+        os.environ['TESTING'] = 'False'  # Simulate non-test mode
+
+        demo_email = f'abc12@{Config.DEMO_EMAIL_DOMAIN}'
+        self.headers['Authorization'] = f'Bearer UNAUTH_USER:{demo_email}'
+        response = self.client.get('/protected', headers=self.headers)
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(demo_email.encode(), response.data)
+
+    def test_guest_token_real_email_rejected(self):
+        """A guest UNAUTH_USER token spoofing a real (non-demo) email is rejected with 401."""
+        os.environ['TESTING'] = 'False'  # Simulate non-test mode
+
+        self.headers['Authorization'] = 'Bearer UNAUTH_USER:victim@gmail.com'
+        response = self.client.get('/protected', headers=self.headers)
+        self.assertEqual(response.status_code, 401)
+        self.assertIn(b'Invalid guest token', response.data)
+
 if __name__ == '__main__':
     unittest.main()

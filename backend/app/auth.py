@@ -9,6 +9,15 @@ logger = logging.getLogger(__name__)
 
 default_mock_user = "test@example.com"
 
+
+def is_demo_email(email):
+    """A guest (UNAUTH_USER) token is only valid for the demo domain, so it can
+    never impersonate a real member. Match case-insensitively on the exact
+    domain suffix."""
+    if not email or '@' not in email:
+        return False
+    return email.rsplit('@', 1)[1].lower() == Config.DEMO_EMAIL_DOMAIN.lower()
+
 def authenticate_user(func):
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
@@ -23,7 +32,8 @@ def authenticate_user(func):
                     if access_token.startswith('test_token_'):
                         email = access_token.replace('test_token_', '')
                         request.user = {"email": email}
-                    # Handle unauth token format
+                    # Handle unauth token format (TESTING mock — trusts the header;
+                    # the real demo-domain guard is enforced on the prod path below)
                     elif access_token.startswith('UNAUTH_USER:'):
                         email = access_token.split('UNAUTH_USER:')[1]
                         request.user = {"email": email}
@@ -48,6 +58,8 @@ def authenticate_user(func):
             # Check for unauthenticated user token format
             if access_token.startswith('UNAUTH_USER:'):
                 email = access_token.split('UNAUTH_USER:')[1]
+                if not is_demo_email(email):
+                    return jsonify({"message": "Invalid guest token"}), 401
                 request.user = {"email": email}
                 return func(*args, **kwargs)
 
