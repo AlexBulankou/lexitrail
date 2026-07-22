@@ -55,6 +55,13 @@ body, html {
   flex-shrink: 0;
 }
 
+/* NEW-6: don't render the missed-words rail as a big empty dark column
+   when there are no incorrect cards — it wasted ~45% of a phone screen in
+   Test/Show-Excluded. Collapse it entirely when it has no children. */
+.incorrect-cards-container:empty {
+  display: none;
+}
+
 .incorrect-cards-container > * {
   position: relative;
   transition: transform 0.2s ease;
@@ -387,4 +394,18 @@ body, html {
   justify-content: center;
   height: 100%;
   margin-top: 20%;
-} 
+}
+
+/* NEW-1: the 2rem stat boxes (✔️ score, timer, not-memorized) overran the
+   right edge on ~390px phones, clipping the score counter and timer. Shrink
+   them and allow wrapping under 480px so the whole HUD stays on-screen. */
+@media (max-width: 480px) {
+  .progress-stats {
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+  .not-memorized, .memorized, .timer {
+    font-size: 1.2rem;
+    padding: 0 6px;
+  }
+}
