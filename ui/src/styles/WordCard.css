@@ -319,11 +319,15 @@
   grid-template-rows: minmax(0, 20%) minmax(0, 1fr) minmax(0, 1fr);
 }
 
+/* lexitrail#52 bug 4: right-align the pronunciation (mic) button on the back
+   card. space-between keeps the word chip on the left and pushes the mic to the
+   right edge, giving it a clear, consistent, easy-to-find position. */
 .word-meaning-ref {
   font-size: 1rem;
   text-align: left;
   display: flex;
   align-items: center;
+  justify-content: space-between;
 }
 .word-meaning-ref-text{
   background-color: #333;
