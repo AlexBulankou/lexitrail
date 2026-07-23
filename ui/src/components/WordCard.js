@@ -4,6 +4,7 @@ import { GameMode } from './Game';
 import PinyinText from './PinyinText';
 import SpeakButton from './SpeakButton';
 import ExampleSentences from './ExampleSentences';
+import { buildHistoryTiles } from '../utils/historyTiles';
 import '../styles/WordCard.css';
 
 const WordCard = ({ mode, word, isFlipped, isHintDisplayed, handleMemorized, handleNotMemorized, toggleExclusion, feedbackClass, provideFeedback, setFlippedState }) => {
@@ -127,14 +128,35 @@ const WordCard = ({ mode, word, isFlipped, isHintDisplayed, handleMemorized, han
     }
   };
 
-  // SUG-1: learners were shown raw spaced-repetition internals (the numeric
-  // recall_state box + a full recall_history row). Replace with a plain-language
-  // mastery summary so the card stays focused on the word.
-  const getMasterySummary = (w) => {
-    const history = w.recall_history || [];
-    if (history.length === 0) return 'New word';
-    const correct = history.filter((r) => r.recall).length;
-    return `Seen ${history.length}×, ${correct} correct`;
+  // lexitrail#52 bug 2: the plain-text "Seen N×, M correct" summary (SUG-1) was
+  // hard to read at a glance. Revert to the past-history tiles view Alex wants —
+  // one small red/green tile per past answer (green = correct, red = wrong) —
+  // but keep the accessibility improvements from SUG-7: a screen-reader summary
+  // on the row and a small ✓/✗ glyph so the state isn't conveyed by color alone.
+  // Shows the most recent answers (newest on the right); older ones are clipped.
+  const renderHistoryTiles = (w) => {
+    const { tiles, correct, total } = buildHistoryTiles(w.recall_history);
+    if (total === 0) {
+      return <span className="history-empty">New</span>;
+    }
+    return (
+      <div
+        className="history-tiles"
+        role="img"
+        aria-label={`Past answers: ${correct} correct of ${total}`}
+      >
+        {tiles.map((t, i) => (
+          <span
+            key={i}
+            className={`history-tile ${t.correct ? 'correct' : 'wrong'}`}
+            title={`${t.correct ? 'Correct' : 'Wrong'}${t.time ? ' · ' + t.time : ''}`}
+            aria-hidden="true"
+          >
+            {t.correct ? '✓' : '✗'}
+          </span>
+        ))}
+      </div>
+    );
   };
 
   // Remove leading and trailing quotes and whitespace
@@ -197,7 +219,7 @@ const WordCard = ({ mode, word, isFlipped, isHintDisplayed, handleMemorized, han
           </button>
 
           <div className="mastery-indicator">
-            {loadingWord ? '⏳' : getMasterySummary(word)}
+            {loadingWord ? '⏳' : renderHistoryTiles(word)}
           </div>
         </div>) :
         (<></>)}
