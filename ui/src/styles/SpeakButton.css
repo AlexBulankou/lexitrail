@@ -27,10 +27,12 @@
   outline-offset: 2px;
 }
 
+/* lexitrail#52 bug 4: bump the back-card pronunciation button to a larger,
+   easier tap target (was 2rem/32px — below a comfortable touch size). */
 .speak-button-md {
-  width: 2rem;
-  height: 2rem;
-  font-size: 1rem;
+  width: 2.4rem;
+  height: 2.4rem;
+  font-size: 1.15rem;
 }
 
 .speak-button-lg {
