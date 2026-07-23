@@ -1,33 +1,51 @@
 // src/components/Wordsets.js
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { getWordsets } from '../services/wordsService'; // Assuming getWordsets is implemented in wordsService.js
 import { useNavigate } from 'react-router-dom';
 import '../styles/Wordsets.css'; // Create a CSS file for styling the wordsets grid
 import { GameMode } from './Game';
+import { resolveWordsetsView } from '../utils/wordsetsView';
+
+// lexitrail#52 bug 6: cache the wordset list across navigations. The list is
+// small and changes rarely, so returning to the picker (e.g. after a practice
+// session) should render the cached copy instantly and refresh silently in the
+// background instead of dropping the user back onto a loading state.
+const wordsetsCache = (window.__lexitrailWordsetsCache =
+  window.__lexitrailWordsetsCache || { data: null });
 
 const Wordsets = ({ profileDetails, login }) => {
-  const [wordsets, setWordsets] = useState([]);  // Initialize as empty array
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);  // Track errors if fetching fails
+  const [wordsets, setWordsets] = useState(wordsetsCache.data || []);
+  // 'loading' | 'loaded' | 'error'. Start 'loaded' if we have a cached list so
+  // the picker never shows a spinner on a revisit.
+  const [status, setStatus] = useState(wordsetsCache.data ? 'loaded' : 'loading');
   const navigate = useNavigate();
 
-  useEffect(() => {
-    // Fetch all wordsets when the component is mounted
-    getWordsets()
-      .then((response) => {
-        if (response && Array.isArray(response.data)) {
-          setWordsets(response.data);  // Access the data property
-        } else {
-          setWordsets([]);  // Fallback to empty array if data is not an array
-          console.error("Expected array but got:", response);
-        }
-      })
-      .catch(error => {
-        console.error('Error fetching wordsets:', error);
-        setWordsets([]);  // Handle the error case by setting it to an empty array
-      })
-      .finally(() => setLoading(false));
+  const fetchWordsets = useCallback(async ({ silent }) => {
+    // Only show the blocking loading state when we have nothing to show;
+    // background refreshes over a cached list stay silent.
+    if (!silent) setStatus('loading');
+    try {
+      const response = await getWordsets();
+      const data = response && Array.isArray(response.data) ? response.data : [];
+      wordsetsCache.data = data;
+      setWordsets(data);
+      setStatus('loaded');
+    } catch (error) {
+      console.error('Error fetching wordsets:', error);
+      // Keep any cached list on screen; only surface the error (with a retry)
+      // when there is nothing to show — never leave the user on an endless
+      // "Loading…" as the old code did.
+      if (!wordsetsCache.data) setStatus('error');
+    }
   }, []);
+
+  useEffect(() => {
+    // First load blocks with a loading state; if we already have a cached list,
+    // refresh in the background without interrupting the user.
+    fetchWordsets({ silent: Boolean(wordsetsCache.data) });
+  }, [fetchWordsets]);
+
+  const view = resolveWordsetsView(status, wordsets.length > 0);
 
   const handleWordsetClick = (wordsetId, mode) => {
     // Send Google Analytics event
@@ -48,9 +66,23 @@ const Wordsets = ({ profileDetails, login }) => {
 
   return (
     <div className="wordsets-container">
-      <div className="wordsets-grid">
-        {wordsets.length > 0 ? (
-          wordsets.map(wordset => (
+      {view === 'loading' ? (
+        <div className="wordsets-status" role="status">Loading wordsets…</div>
+      ) : view === 'error' ? (
+        <div className="wordsets-status wordsets-error" role="alert">
+          <p>Couldn't load your wordsets.</p>
+          <button
+            className="wordsets-retry"
+            onClick={() => fetchWordsets({ silent: false })}
+          >
+            Retry
+          </button>
+        </div>
+      ) : view === 'empty' ? (
+        <div className="wordsets-status">No wordsets available yet.</div>
+      ) : (
+        <div className="wordsets-grid">
+          {wordsets.map(wordset => (
             <div key={wordset.wordset_id} className="wordset-tile">
               <div className="wordset-button-group" >
                 <div className="wordset-header">
@@ -90,11 +122,9 @@ const Wordsets = ({ profileDetails, login }) => {
                 </button>
               </div>
             </div>
-          ))
-        ) : (
-          <p>Loading wordsets...</p>
-        )}
-      </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 };

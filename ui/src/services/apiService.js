@@ -10,12 +10,18 @@ console.log(`API_BASE_URL is: ${API_BASE_URL}`);
 const getAccessToken = () => sessionStorage.getItem('access_token');
 // const getAccessToken = ()=>useAuth.accessToken;
 
+// lexitrail#52 bug 6: axios has no default timeout, so a slow or hung backend
+// request never rejects and the caller's loading state can persist for minutes.
+// Cap requests so a stalled call surfaces as a (retryable) error instead.
+const DEFAULT_TIMEOUT_MS = 20000;
+
 // Function to handle any GET request
-export const getData = async (endpoint) => {
+export const getData = async (endpoint, { timeout = DEFAULT_TIMEOUT_MS } = {}) => {
   try {
     // console.log(`Requesting: ${API_BASE_URL}${endpoint}`);
     const accessToken = getAccessToken(); // Use the access token
     const response = await axios.get(`${API_BASE_URL}${endpoint}`, {
+      timeout,
       headers: {
         Authorization: `Bearer ${accessToken}`, // Use access token for backend authentication
       },

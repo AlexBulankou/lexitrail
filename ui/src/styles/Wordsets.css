@@ -155,3 +155,37 @@
 .login-button:hover {
   background: #1557b0;
 }
+
+/* lexitrail#52 bug 6: status / error / retry states for the wordset picker.
+   Previously an error or a hung request showed a permanent "Loading…" line;
+   these give the loading, empty, and (retryable) error states a real surface. */
+.wordsets-status {
+  width: 100%;
+  text-align: center;
+  padding: 32px 16px;
+  color: #555;
+  font-size: 1rem;
+}
+
+.wordsets-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.wordsets-retry {
+  padding: 10px 20px;
+  min-height: 44px;
+  border: none;
+  border-radius: 8px;
+  background-color: #4285f4;
+  color: #fff;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.wordsets-retry:hover {
+  background-color: #2c6cd3;
+}
