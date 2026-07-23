@@ -184,13 +184,22 @@
   margin-top: 2px;
 }
 
+/* lexitrail#52 bug 1: the exclude/include control was font-size 0.4rem with 1px
+   padding — effectively invisible and impossible to tap on mobile. Make it a
+   readable, clearly-tappable control (proper tap target) within the card. */
 .exclude-button {
-  padding: 1px;
+  padding: 6px 10px;
   border: none;
-  border-radius: 4px;
+  border-radius: 6px;
   cursor: pointer;
   color: white;
-  font-size: 0.4rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  line-height: 1;
+  min-height: 36px;
+  min-width: 68px;
+  white-space: nowrap;
+  font-family: inherit;
 }
 
 .red {
