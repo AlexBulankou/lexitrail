@@ -212,8 +212,45 @@
 
 .mastery-indicator {
   align-self: center;
-  text-align: right;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
   color: #555;
+  font-size: 0.55rem;
+  overflow: hidden;
+}
+
+/* lexitrail#52 bug 2: red/green past-answer history tiles. Newest on the right;
+   flex-end + overflow:hidden clips the oldest (left) if the row is too wide. */
+.history-tiles {
+  display: flex;
+  justify-content: flex-end;
+  gap: 2px;
+  overflow: hidden;
+}
+
+.history-tile {
+  flex: 0 0 auto;
+  width: 13px;
+  height: 13px;
+  border-radius: 3px;
+  color: #fff;
+  font-size: 9px;
+  line-height: 13px;
+  text-align: center;
+  font-weight: 700;
+}
+
+.history-tile.correct {
+  background-color: #2e7d32;
+}
+
+.history-tile.wrong {
+  background-color: #c62828;
+}
+
+.history-empty {
+  color: #888;
   font-size: 0.55rem;
   white-space: nowrap;
 }
