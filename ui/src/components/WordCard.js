@@ -254,11 +254,11 @@ const WordCard = ({ mode, word, isFlipped, isHintDisplayed, handleMemorized, han
           {loadingWord ?
             <p>⏳</p>
             :
-            <>
-              <p lang="zh" style={{ fontSize: calculateFontSize(word.word, isHintDisplayed ? 5 : 6) }}>{word.word}</p>
-              <SpeakButton text={word.word} size="lg" />
-            </>
-
+            /* lexitrail#52 bug 3: the pronunciation control belongs only on the
+               back (answer) card, not the front — hearing the word before you
+               try to recall it defeats the prompt. Removed from the front here;
+               kept on the back card below. */
+            <p lang="zh" style={{ fontSize: calculateFontSize(word.word, isHintDisplayed ? 5 : 6) }}>{word.word}</p>
           }
 
         </div>
