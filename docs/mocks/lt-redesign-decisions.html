@@ -1,0 +1,355 @@
+<title>Lexitrail — Redesign Decisions</title>
+<style>
+  :root {
+    --paper: #f6f8f7; --ink: #1f2725; --muted: #5f6d69; --line: #dde6e2;
+    --card: #ffffff; --accent: #2e7d6b; --accent-soft: #dcefe9;
+    --now: #2f7d54; --now-bg: #e3f1e8; --next: #9a7410; --next-bg: #f5ecd4;
+    --later: #566270; --later-bg: #e8ebee;
+    --mock: #e6efeb; --mock-line: #c4d5ce;
+    --sans: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+    --mono: ui-monospace, 'SF Mono', 'Cascadia Mono', Menlo, monospace;
+    --cjk: 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', system-ui, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --paper: #141917; --ink: #e6ece9; --muted: #93a49e; --line: #2a3330;
+      --card: #1c2320; --accent: #59bfa4; --accent-soft: #17302a;
+      --now: #63c489; --now-bg: #16281c; --next: #d3ac52; --next-bg: #2a2514;
+      --later: #94a3b1; --later-bg: #202528; --mock: #212a27; --mock-line: #384540;
+    }
+  }
+  :root[data-theme="light"] {
+    --paper: #f6f8f7; --ink: #1f2725; --muted: #5f6d69; --line: #dde6e2;
+    --card: #ffffff; --accent: #2e7d6b; --accent-soft: #dcefe9;
+    --now: #2f7d54; --now-bg: #e3f1e8; --next: #9a7410; --next-bg: #f5ecd4;
+    --later: #566270; --later-bg: #e8ebee; --mock: #e6efeb; --mock-line: #c4d5ce;
+  }
+  :root[data-theme="dark"] {
+    --paper: #141917; --ink: #e6ece9; --muted: #93a49e; --line: #2a3330;
+    --card: #1c2320; --accent: #59bfa4; --accent-soft: #17302a;
+    --now: #63c489; --now-bg: #16281c; --next: #d3ac52; --next-bg: #2a2514;
+    --later: #94a3b1; --later-bg: #202528; --mock: #212a27; --mock-line: #384540;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--paper); color: var(--ink); font-family: var(--sans);
+    line-height: 1.55; -webkit-font-smoothing: antialiased; }
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 3rem 1.5rem 5rem; }
+
+  header .eyebrow { font-family: var(--mono); font-size: .72rem; letter-spacing: .18em;
+    text-transform: uppercase; color: var(--accent); margin: 0 0 .6rem; }
+  header h1 { font-weight: 700; font-size: clamp(2.1rem, 5vw, 3rem); line-height: 1.06;
+    margin: 0 0 .5rem; text-wrap: balance; letter-spacing: -.02em; }
+  header h1 .zh { font-family: var(--cjk); font-weight: 600; color: var(--accent); }
+  header .sub { font-size: 1.08rem; color: var(--muted); max-width: 60ch; margin: 0 0 .4rem; }
+  header .meta { font-family: var(--mono); font-size: .78rem; color: var(--muted); margin-top: .9rem; }
+  header .meta b { color: var(--ink); font-weight: 600; }
+  .rule { height: 2px; background: linear-gradient(90deg, var(--accent), transparent); margin: 1.6rem 0 0; }
+
+  .rec-strip { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin: 2.2rem 0 2.6rem; }
+  .rec-col { border: 1px solid var(--line); border-radius: 12px; padding: 1.1rem 1.15rem; background: var(--card); }
+  .rec-col h3 { margin: 0 0 .1rem; font-size: .95rem; display: flex; align-items: center; gap: .5rem; }
+  .rec-col .dot { width: 9px; height: 9px; border-radius: 50%; }
+  .rec-col p { margin: .35rem 0 .7rem; font-size: .8rem; color: var(--muted); }
+  .rec-col ul { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: .35rem; }
+  .rec-col li { font-size: .86rem; font-weight: 500; }
+  .rec-col li span { color: var(--muted); font-weight: 400; }
+  .now h3 .dot { background: var(--now); } .next h3 .dot { background: var(--next); } .later h3 .dot { background: var(--later); }
+
+  .section-label { font-family: var(--mono); font-size: .74rem; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--muted); margin: 0 0 1.1rem; }
+
+  .cards { display: flex; flex-direction: column; gap: 1rem; }
+  .card { border: 1px solid var(--line); border-radius: 14px; background: var(--card);
+    display: grid; grid-template-columns: 1.5fr 150px 1fr; gap: 1.4rem; padding: 1.35rem 1.5rem;
+    align-items: start; transition: border-color .15s, box-shadow .15s; }
+  .card:hover { border-color: var(--accent); box-shadow: 0 4px 18px rgba(0,0,0,.05); }
+  .card .idx { font-family: var(--mono); font-size: .78rem; color: var(--accent); font-weight: 600; }
+  .card h2 { font-size: 1.2rem; margin: .15rem 0 .4rem; line-height: 1.15; font-weight: 700; letter-spacing: -.01em; }
+  .card .desc { font-size: .9rem; color: var(--muted); margin: 0; }
+  .card .why { font-size: .84rem; margin: .7rem 0 0; padding-top: .7rem; border-top: 1px dashed var(--line); }
+  .card .why b { color: var(--accent); font-weight: 600; }
+
+  .mock { background: var(--mock); border: 1px solid var(--mock-line); border-radius: 8px;
+    height: 108px; padding: 8px; overflow: hidden; position: relative; }
+  .mock .bar { background: var(--mock-line); border-radius: 3px; height: 7px; }
+
+  .metacol { display: flex; flex-direction: column; gap: .6rem; }
+  .chip { font-family: var(--mono); font-size: .72rem; display: flex; align-items: center; justify-content: space-between; gap: .5rem; }
+  .chip .k { color: var(--muted); letter-spacing: .04em; }
+  .chip .v { font-weight: 600; }
+  .effbar { height: 5px; border-radius: 3px; background: var(--line); margin-top: .3rem; overflow: hidden; }
+  .effbar i { display: block; height: 100%; background: var(--accent); }
+  .pill { display: inline-flex; align-items: center; gap: .4rem; font-family: var(--mono); font-size: .72rem;
+    font-weight: 700; letter-spacing: .05em; text-transform: uppercase; padding: .34rem .6rem; border-radius: 999px; width: fit-content; }
+  .pill.now { color: var(--now); background: var(--now-bg); } .pill.next { color: var(--next); background: var(--next-bg); }
+  .pill.later { color: var(--later); background: var(--later-bg); }
+  .savings { color: var(--now); font-weight: 700; }
+
+  footer { margin-top: 3rem; padding-top: 1.4rem; border-top: 1px solid var(--line); font-size: .82rem; color: var(--muted); }
+  footer b { color: var(--ink); }
+
+  @media (max-width: 720px) {
+    .rec-strip { grid-template-columns: 1fr; }
+    .card { grid-template-columns: 1fr; gap: 1rem; }
+    .mock { height: 92px; }
+  }
+</style>
+
+<div class="wrap">
+  <header>
+    <p class="eyebrow">Lexitrail · Redesign Decision Brief</p>
+    <h1>Ten redesigns to make Mandarin practice <span class="zh">粘住</span> — stick.</h1>
+    <p class="sub">Lexitrail drills HSK vocabulary with spaced repetition. These proposals rebuild the
+      core loop around a daily habit, honest mastery, and word depth — each grounded in a concrete
+      failure the ITP found. Scored on effort, cost, and my recommendation.</p>
+    <p class="meta">Source: <b>ITP round-3, lexitrail#44</b> (2026-07-22) · <b>10 proposals</b> (RD-1–RD-10) ·
+      effort in engineer-days · reviewer: <b>HCL</b></p>
+    <div class="rule"></div>
+  </header>
+
+  <section class="rec-strip">
+    <div class="rec-col now">
+      <h3><span class="dot"></span> Build now</h3>
+      <p>The daily-habit core; cheap, foundational retention.</p>
+      <ul>
+        <li>RD-3 <span>— "Today" daily-loop home (the habit anchor)</span></li>
+        <li>RD-2 <span>— Finishable micro-sessions (end the endless list)</span></li>
+        <li>RD-6 <span>— Honest mastery (retire blind "✔️ to all")</span></li>
+      </ul>
+    </div>
+    <div class="rec-col next">
+      <h3><span class="dot"></span> Next</h3>
+      <p>Strong learning gains; build on shipped foundations.</p>
+      <ul>
+        <li>RD-5 <span>— Word depth (mnemonics &gt; stock-photo hints)</span></li>
+        <li>RD-4 <span>— Audio-first (FEAT-3 audio is the base)</span></li>
+        <li>RD-8 <span>— Placement + demo→Google merge</span></li>
+        <li>RD-1 <span>— Trail progression map · RD-7 adaptive quiz</span></li>
+      </ul>
+    </div>
+    <div class="rec-col later">
+      <h3><span class="dot"></span> Later / big bet</h3>
+      <p>High value but a large architecture shift.</p>
+      <ul>
+        <li>RD-9 <span>— Offline-first (write outbox + PWA)</span></li>
+        <li>RD-10 <span>— Social decks &amp; duels (multiplayer)</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <p class="section-label">All ten, scored</p>
+  <div class="cards">
+
+    <!-- RD-3 -->
+    <article class="card">
+      <div>
+        <div class="idx">RD-3</div>
+        <h2>"Today" daily-loop home</h2>
+        <p class="desc">A home screen built around the day: today's due reviews, a streak, one clear "Start" — so opening the app has an obvious next action instead of a wordset list.</p>
+        <p class="why"><b>Why now:</b> spaced repetition only works if people come back daily. A Today home is the habit anchor the whole product depends on — and it pairs with the streaks (FEAT-1) just shipped.</p>
+      </div>
+      <div class="mock" aria-hidden="true"><div style="display:flex;flex-direction:column;height:100%;gap:6px;padding:2px 6px">
+        <div style="display:flex;justify-content:space-between;align-items:center"><div class="bar" style="width:30%;background:var(--accent)"></div><div style="font-family:var(--mono);font-size:.6rem;color:var(--accent)">🔥 6</div></div>
+        <div style="flex:1;background:var(--mock-line);border-radius:5px"></div>
+        <div style="height:16px;background:var(--accent);opacity:.75;border-radius:5px;width:100%"></div>
+      </div></div>
+      <div class="metacol">
+        <div class="chip"><span class="k">EFFORT</span><span class="v">M · 4–5d</span></div>
+        <div class="effbar"><i style="width:50%"></i></div>
+        <div class="chip"><span class="k">COST</span><span class="v">Low</span></div>
+        <span class="pill now">Build now</span>
+      </div>
+    </article>
+
+    <!-- RD-2 -->
+    <article class="card">
+      <div>
+        <div class="idx">RD-2</div>
+        <h2>Finishable micro-sessions</h2>
+        <p class="desc">Replace the open-ended list with bounded sessions (e.g. 10 cards) that have a start, a progress bar, and a satisfying "done" — so practice has a finish line, not an endless scroll.</p>
+        <p class="why"><b>Why now:</b> "finishable" is a core retention lever — a completable unit is what people come back for. It also sidesteps the endless-loading failure class (R3-BUG-2) by design.</p>
+      </div>
+      <div class="mock" aria-hidden="true"><div style="display:flex;flex-direction:column;height:100%;justify-content:center;gap:9px;padding:0 6px">
+        <div class="effbar" style="height:9px"><i style="width:60%"></i></div>
+        <div style="display:flex;gap:5px"><div class="bar" style="width:12%;background:var(--accent)"></div><div class="bar" style="width:12%;background:var(--accent)"></div><div class="bar" style="width:12%;background:var(--accent)"></div><div class="bar" style="width:12%"></div><div class="bar" style="width:12%"></div></div>
+        <div style="font-family:var(--mono);font-size:.6rem;color:var(--muted)">6 / 10</div>
+      </div></div>
+      <div class="metacol">
+        <div class="chip"><span class="k">EFFORT</span><span class="v">M · 3–4d</span></div>
+        <div class="effbar"><i style="width:42%"></i></div>
+        <div class="chip"><span class="k">COST</span><span class="v">Low</span></div>
+        <span class="pill now">Build now</span>
+      </div>
+    </article>
+
+    <!-- RD-6 -->
+    <article class="card">
+      <div>
+        <div class="idx">RD-6</div>
+        <h2>Honest mastery system</h2>
+        <p class="desc">Retire the blind "✔️ to all" shortcut and show real, earned mastery per word — so the recall history reflects what the learner actually knows, not a bulk tap.</p>
+        <p class="why"><b>Why now:</b> "✔️ to all" corrupts the spaced-repetition signal (it's behind the lost/duplicate recall writes in R3-BUG-3). Honest mastery is foundational — every other learning feature trusts this data.</p>
+      </div>
+      <div class="mock" aria-hidden="true"><div style="display:flex;height:100%;align-items:center;gap:9px;padding:0 8px">
+        <svg viewBox="0 0 60 60" width="52" height="52" aria-hidden="true">
+          <circle cx="30" cy="30" r="24" fill="none" stroke="var(--mock-line)" stroke-width="7"/>
+          <circle cx="30" cy="30" r="24" fill="none" stroke="var(--accent)" stroke-width="7" stroke-dasharray="150" stroke-dashoffset="60" stroke-linecap="round" transform="rotate(-90 30 30)"/>
+        </svg>
+        <div style="display:flex;flex-direction:column;gap:5px;flex:1"><div class="bar" style="width:70%"></div><div class="bar" style="width:45%"></div></div>
+      </div></div>
+      <div class="metacol">
+        <div class="chip"><span class="k">EFFORT</span><span class="v">M · 3–5d</span></div>
+        <div class="effbar"><i style="width:48%"></i></div>
+        <div class="chip"><span class="k">COST</span><span class="v">Low</span></div>
+        <span class="pill now">Build now</span>
+      </div>
+    </article>
+
+    <!-- RD-5 -->
+    <article class="card">
+      <div>
+        <div class="idx">RD-5</div>
+        <h2>Word depth</h2>
+        <p class="desc">Replace stock-photo "hints" with real learning content — character breakdowns, mnemonics, and example sentences — so each word card actually teaches, not just decorates.</p>
+        <p class="why"><b>Why next:</b> the strongest pedagogy upgrade, and it's already in motion — example sentences (FEAT-9) just shipped and the hint-gen backend was rebuilt (#47). Breakdowns/mnemonics need Gemini generation.</p>
+      </div>
+      <div class="mock" aria-hidden="true"><div style="display:flex;flex-direction:column;height:100%;justify-content:center;gap:6px;padding:0 8px">
+        <div style="font-family:var(--cjk);font-size:1.4rem;color:var(--accent);font-weight:600;line-height:1">天气</div>
+        <div class="bar" style="width:55%"></div><div class="bar" style="width:80%"></div>
+      </div></div>
+      <div class="metacol">
+        <div class="chip"><span class="k">EFFORT</span><span class="v">M–L · 5–7d</span></div>
+        <div class="effbar"><i style="width:66%"></i></div>
+        <div class="chip"><span class="k">COST</span><span class="v">Medium</span></div>
+        <span class="pill next">Next</span>
+      </div>
+    </article>
+
+    <!-- RD-4 -->
+    <article class="card">
+      <div>
+        <div class="idx">RD-4</div>
+        <h2>Audio-first Mandarin</h2>
+        <p class="desc">Lead with sound — tones, pronunciation, and listening drills front-and-center — because Mandarin is a spoken, tonal language that text-first practice under-serves.</p>
+        <p class="why"><b>Why next:</b> pedagogically strong and the foundation is live — FEAT-3 audio pronunciation just shipped. This builds the mode on top of it; low added cost (TTS exists).</p>
+      </div>
+      <div class="mock" aria-hidden="true"><div style="display:flex;height:100%;align-items:center;justify-content:center;gap:3px">
+        <div class="bar" style="width:4px;height:18px;background:var(--accent)"></div><div class="bar" style="width:4px;height:34px;background:var(--accent)"></div><div class="bar" style="width:4px;height:52px;background:var(--accent)"></div><div class="bar" style="width:4px;height:30px;background:var(--accent)"></div><div class="bar" style="width:4px;height:44px;background:var(--accent)"></div><div class="bar" style="width:4px;height:20px;background:var(--accent)"></div><div class="bar" style="width:4px;height:38px;background:var(--accent)"></div><div class="bar" style="width:4px;height:26px;background:var(--accent)"></div>
+      </div></div>
+      <div class="metacol">
+        <div class="chip"><span class="k">EFFORT</span><span class="v">M · 4–6d</span></div>
+        <div class="effbar"><i style="width:58%"></i></div>
+        <div class="chip"><span class="k">COST</span><span class="v">Low</span></div>
+        <span class="pill next">Next</span>
+      </div>
+    </article>
+
+    <!-- RD-8 -->
+    <article class="card">
+      <div>
+        <div class="idx">RD-8</div>
+        <h2>First-run placement + demo→Google merge</h2>
+        <p class="desc">A quick placement check drops new learners at the right level, and a seamless demo→Google account merge keeps the words they practiced before signing in.</p>
+        <p class="why"><b>Why next:</b> cuts first-run friction and rescues guest progress. The guest-session groundwork (#38) just shipped — this completes the merge path.</p>
+      </div>
+      <div class="mock" aria-hidden="true"><div style="display:flex;flex-direction:column;height:100%;justify-content:center;gap:8px;padding:0 8px">
+        <div class="effbar" style="height:6px"><i style="width:40%"></i></div>
+        <div style="display:flex;gap:6px;align-items:center"><div style="width:20px;height:20px;border-radius:50%;background:var(--mock-line)"></div><div style="font-family:var(--mono);font-size:.7rem;color:var(--muted)">→</div><div style="width:20px;height:20px;border-radius:50%;background:var(--accent);opacity:.7"></div></div>
+      </div></div>
+      <div class="metacol">
+        <div class="chip"><span class="k">EFFORT</span><span class="v">M · 4–6d</span></div>
+        <div class="effbar"><i style="width:58%"></i></div>
+        <div class="chip"><span class="k">COST</span><span class="v">Low</span></div>
+        <span class="pill next">Next</span>
+      </div>
+    </article>
+
+    <!-- RD-1 -->
+    <article class="card">
+      <div>
+        <div class="idx">RD-1</div>
+        <h2>Trail progression map</h2>
+        <p class="desc">A visual journey through the HSK levels — a "trail" that shows where you are, what's mastered, and what's next, giving long-term practice a sense of forward motion.</p>
+        <p class="why"><b>Why next:</b> a good macro-retention frame, but it reads best once the daily loop (RD-3) and honest mastery (RD-6) feed it real progress data.</p>
+      </div>
+      <div class="mock" aria-hidden="true"><svg viewBox="0 0 140 100" width="100%" height="100%" aria-hidden="true">
+        <path d="M14 82 Q50 70 60 50 T110 24" fill="none" stroke="var(--mock-line)" stroke-width="3" stroke-dasharray="4 5"/>
+        <circle cx="14" cy="82" r="6" fill="var(--accent)"/><circle cx="60" cy="50" r="6" fill="var(--accent)" opacity=".7"/><circle cx="110" cy="24" r="6" fill="var(--mock-line)"/>
+      </svg></div>
+      <div class="metacol">
+        <div class="chip"><span class="k">EFFORT</span><span class="v">M · 4–5d</span></div>
+        <div class="effbar"><i style="width:50%"></i></div>
+        <div class="chip"><span class="k">COST</span><span class="v">Low</span></div>
+        <span class="pill next">Next</span>
+      </div>
+    </article>
+
+    <!-- RD-7 -->
+    <article class="card">
+      <div>
+        <div class="idx">RD-7</div>
+        <h2>Adaptive quiz engine with reveals</h2>
+        <p class="desc">A quiz engine that adapts difficulty to the learner and always reveals the correct answer with an explanation after a miss — turning wrong answers into learning moments.</p>
+        <p class="why"><b>Why next:</b> a real learning-efficacy lever, but it's a bigger engine change than the daily-loop tier. Sequence after RD-2/RD-6, which give it clean mastery signal.</p>
+      </div>
+      <div class="mock" aria-hidden="true"><div style="display:flex;flex-direction:column;height:100%;justify-content:center;gap:6px;padding:0 8px">
+        <div class="bar" style="width:70%"></div>
+        <div style="display:flex;gap:5px"><div style="flex:1;height:16px;background:var(--now);opacity:.55;border-radius:4px"></div><div style="flex:1;height:16px;background:var(--mock-line);border-radius:4px"></div></div>
+        <div style="display:flex;gap:5px"><div style="flex:1;height:16px;background:var(--mock-line);border-radius:4px"></div><div style="flex:1;height:16px;background:var(--mock-line);border-radius:4px"></div></div>
+      </div></div>
+      <div class="metacol">
+        <div class="chip"><span class="k">EFFORT</span><span class="v">L · 7–10d</span></div>
+        <div class="effbar"><i style="width:82%"></i></div>
+        <div class="chip"><span class="k">COST</span><span class="v">Low–Med</span></div>
+        <span class="pill next">Next</span>
+      </div>
+    </article>
+
+    <!-- RD-9 -->
+    <article class="card">
+      <div>
+        <div class="idx">RD-9</div>
+        <h2>Offline-first reliability</h2>
+        <p class="desc">A local write outbox and a PWA shell so practice never loses a recall to a flaky network — writes queue locally and sync when back online, and the app installs to the home screen.</p>
+        <p class="why"><b>Why later:</b> directly fixes the silent lost-write class (R3-BUG-3), but a local-outbox + PWA is a substantial architecture shift. High value; sequence it deliberately.</p>
+      </div>
+      <div class="mock" aria-hidden="true"><div style="display:flex;height:100%;align-items:center;justify-content:center;gap:8px">
+        <svg viewBox="0 0 44 30" width="52" aria-hidden="true"><path d="M11 22 a7 7 0 0 1 1 -14 a9 9 0 0 1 17 3 a6 6 0 0 1 3 11 z" fill="none" stroke="var(--mock-line)" stroke-width="2.5"/></svg>
+        <div style="display:flex;flex-direction:column;gap:5px"><div class="bar" style="width:34px;background:var(--accent);opacity:.6"></div><div class="bar" style="width:22px"></div></div>
+      </div></div>
+      <div class="metacol">
+        <div class="chip"><span class="k">EFFORT</span><span class="v">L · 8–12d</span></div>
+        <div class="effbar"><i style="width:90%"></i></div>
+        <div class="chip"><span class="k">COST</span><span class="v">Low</span></div>
+        <span class="pill later">Later</span>
+      </div>
+    </article>
+
+    <!-- RD-10 -->
+    <article class="card">
+      <div>
+        <div class="idx">RD-10</div>
+        <h2>Social decks &amp; duels</h2>
+        <p class="desc">Shareable custom decks and head-to-head vocabulary duels — a social layer that turns solo drilling into something you do with friends or a class.</p>
+        <p class="why"><b>Why later / big bet:</b> the most differentiating idea and the heaviest — real-time multiplayer, sharing, and moderation. Transformative, but scope it on its own after the core loop lands.</p>
+      </div>
+      <div class="mock" aria-hidden="true"><div style="display:flex;height:100%;align-items:center;justify-content:center;gap:10px">
+        <div style="width:24px;height:24px;border-radius:50%;background:var(--accent);opacity:.7"></div>
+        <div style="font-family:var(--mono);font-weight:700;font-size:.7rem;color:var(--muted)">VS</div>
+        <div style="width:24px;height:24px;border-radius:50%;background:var(--mock-line)"></div>
+      </div></div>
+      <div class="metacol">
+        <div class="chip"><span class="k">EFFORT</span><span class="v">XL · 15–20d</span></div>
+        <div class="effbar"><i style="width:100%"></i></div>
+        <div class="chip"><span class="k">COST</span><span class="v">High</span></div>
+        <span class="pill later">Big bet</span>
+      </div>
+    </article>
+
+  </div>
+
+  <footer>
+    <p><b>My read:</b> Lexitrail's retention problem is the daily loop, so the "build now" tier is the loop itself — RD-3 (Today home), RD-2 (finishable sessions), RD-6 (honest mastery). Three of the "next" ideas ride foundations that <i>just shipped</i> this week — RD-5 on example sentences (FEAT-9) + the rebuilt hint backend, RD-4 on audio (FEAT-3), RD-8 on guest sessions (#38) — so they're cheap follow-through. RD-9 and RD-10 are the two real architecture bets; both are worth it, neither is a first move.</p>
+    <p style="margin-top:.6rem;color:var(--muted)">Effort = engineer-days, rough. Cost = ongoing infra/API, not build. Full rationale in <b>docs/feedback/website-exploration-2026-07-22.md</b>. — HCL, 2026-07-22</p>
+  </footer>
+</div>
