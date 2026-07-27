@@ -60,6 +60,35 @@ assumed nginx.
 file would make a deleted redirect silently shrink the test's own scope instead of
 failing it.
 
+## Bio links — added here, and the reason they matter most
+
+`serve.json` gained `/go/ig`, `/go/tiktok`, `/go/tt`, `/go/pinterest`, `/go/yt`.
+All five were **404ing in production** (200 + the 404 component) before this change,
+confirmed by navigation.
+
+These are the paths `SUAM-channel-provisioning.md` requires every profile bio to carry,
+and on Instagram and TikTok the bio link is the *only* tappable click path — captions
+are not linkified. So a 404 there was not a cosmetic gap: it made every bio click on
+those channels a lost, unattributed lead. Reported as P0 finding #1 of decipher#2494.
+
+They use `utm_campaign=bio` rather than a per-post value, because a profile bio is one
+link for the whole profile — per-campaign granularity is not physically available on
+that surface.
+
+**These will FAIL a production run until the app is redeployed.** That is the check
+being honest, and it doubles as the post-deploy acceptance test.
+
+## Running against a local build
+
+`--base http://localhost:3111` (with `npx serve -s ui/build`) verifies the redirects
+themselves, which are server-side and independent of what the app renders — I confirmed
+all 11 that way, real 302 with the right Location.
+
+It will **not** satisfy the controls unless `ui/build` is a current build of the
+production app. `ui/build` is gitignored, so it can be arbitrarily stale — mine held an
+old test-harness build, and the controls correctly reported that they could not
+discriminate rather than passing quietly. Rebuild before trusting a local control run.
+
 ## What this does NOT fix
 
 The redirects work; the **click path from IG and TikTok still doesn't exist**, for a

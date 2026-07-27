@@ -1,13 +1,65 @@
 {
   "redirects": [
-    { "source": "/go/ig-wod", "destination": "/?utm_source=instagram&utm_medium=social&utm_campaign=lt_wod", "type": 302 },
-    { "source": "/go/ig-streak", "destination": "/?utm_source=instagram&utm_medium=social&utm_campaign=lt_streak", "type": 302 },
-    { "source": "/go/ig-hsk", "destination": "/?utm_source=instagram&utm_medium=social&utm_campaign=lt_hsk", "type": 302 },
-    { "source": "/go/x-wod", "destination": "/?utm_source=x&utm_medium=social&utm_campaign=lt_wod", "type": 302 },
-    { "source": "/go/x-streak", "destination": "/?utm_source=x&utm_medium=social&utm_campaign=lt_streak", "type": 302 },
-    { "source": "/go/x-hsk", "destination": "/?utm_source=x&utm_medium=social&utm_campaign=lt_hsk", "type": 302 }
+    {
+      "source": "/go/ig-wod",
+      "destination": "/?utm_source=instagram&utm_medium=social&utm_campaign=lt_wod",
+      "type": 302
+    },
+    {
+      "source": "/go/ig-streak",
+      "destination": "/?utm_source=instagram&utm_medium=social&utm_campaign=lt_streak",
+      "type": 302
+    },
+    {
+      "source": "/go/ig-hsk",
+      "destination": "/?utm_source=instagram&utm_medium=social&utm_campaign=lt_hsk",
+      "type": 302
+    },
+    {
+      "source": "/go/x-wod",
+      "destination": "/?utm_source=x&utm_medium=social&utm_campaign=lt_wod",
+      "type": 302
+    },
+    {
+      "source": "/go/x-streak",
+      "destination": "/?utm_source=x&utm_medium=social&utm_campaign=lt_streak",
+      "type": 302
+    },
+    {
+      "source": "/go/x-hsk",
+      "destination": "/?utm_source=x&utm_medium=social&utm_campaign=lt_hsk",
+      "type": 302
+    },
+    {
+      "source": "/go/ig",
+      "destination": "/?utm_source=instagram&utm_medium=social&utm_campaign=bio",
+      "type": 302
+    },
+    {
+      "source": "/go/tiktok",
+      "destination": "/?utm_source=tiktok&utm_medium=social&utm_campaign=bio",
+      "type": 302
+    },
+    {
+      "source": "/go/tt",
+      "destination": "/?utm_source=tiktok&utm_medium=social&utm_campaign=bio",
+      "type": 302
+    },
+    {
+      "source": "/go/pinterest",
+      "destination": "/?utm_source=pinterest&utm_medium=social&utm_campaign=bio",
+      "type": 302
+    },
+    {
+      "source": "/go/yt",
+      "destination": "/?utm_source=youtube&utm_medium=social&utm_campaign=bio",
+      "type": 302
+    }
   ],
   "rewrites": [
-    { "source": "**", "destination": "/index.html" }
+    {
+      "source": "**",
+      "destination": "/index.html"
+    }
   ]
 }

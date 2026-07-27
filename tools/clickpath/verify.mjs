@@ -38,6 +38,22 @@ const MUST_REDIRECT = [
   { path: "/go/x-hsk", utm_source: "x", utm_campaign: "lt_hsk" },
   { path: "/go/x-wod", utm_source: "x", utm_campaign: "lt_wod" },
   { path: "/go/x-streak", utm_source: "x", utm_campaign: "lt_streak" },
+
+  // Bio-link paths. These are the ONLY tappable click path on Instagram and
+  // TikTok, because neither platform linkifies a caption URL — so a 404 here is
+  // not a cosmetic gap, it is every bio click on those channels becoming a lost,
+  // unattributed lead. Mandated by SUAM-channel-provisioning.md and reported
+  // 404ing in decipher#2494 finding #1; confirmed 404ing in production before
+  // this change added them to serve.json.
+  //
+  // utm_campaign=bio rather than a per-post value: a profile bio is one link for
+  // the whole profile, so per-campaign granularity is not physically available
+  // on this surface. Per-platform is the most we can attribute.
+  { path: "/go/ig", utm_source: "instagram", utm_campaign: "bio" },
+  { path: "/go/tiktok", utm_source: "tiktok", utm_campaign: "bio" },
+  { path: "/go/tt", utm_source: "tiktok", utm_campaign: "bio" },
+  { path: "/go/pinterest", utm_source: "pinterest", utm_campaign: "bio" },
+  { path: "/go/yt", utm_source: "youtube", utm_campaign: "bio" },
 ];
 
 /**
@@ -109,8 +125,13 @@ function checkBroken(r) {
   const healthy = !r.looksNotFound && r.chars >= MIN_REAL_CONTENT_CHARS;
   return healthy
     ? [`expected this path to render the 404 component, but it rendered ${r.chars} chars of real ` +
-       `content. Either the route now exists (update MUST_BE_BROKEN) or this verifier can no ` +
-       `longer tell a working link from a dead one — in which case every PASS above is worthless.`]
+       `content. Three causes, in the order worth checking:\n` +
+       `           (1) --base points at something that is not the production app. A stale ` +
+       `ui/build (it is gitignored, so it can be arbitrarily old) renders whatever it was built ` +
+       `from and will not produce the 404 component. Rebuild before reading a local run.\n` +
+       `           (2) the route now genuinely exists — update MUST_BE_BROKEN.\n` +
+       `           (3) this verifier can no longer tell a working link from a dead one, in which ` +
+       `case every PASS above is worthless.`]
     : [];
 }
 
