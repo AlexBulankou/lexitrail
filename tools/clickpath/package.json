@@ -1,0 +1,13 @@
+{
+  "name": "lexitrail-clickpath-verify",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Browser-navigation verification for the /go/* short links (lexitrail#64). Separate from ui/package.json so playwright stays out of the app's prod dependency tree.",
+  "scripts": {
+    "verify": "node verify.mjs"
+  },
+  "devDependencies": {
+    "playwright": "^1.62.0"
+  }
+}
