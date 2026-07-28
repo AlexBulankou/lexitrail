@@ -1,0 +1,30 @@
+{
+  "_comment": [
+    "Copy for the generated social creatives (lexitrail#63).",
+    "",
+    "PLACEHOLDER, pending sign-off. Every string here is derived from what the",
+    "site already says about itself — ui/public/index.html's og:title and",
+    "description, and the tagline set in ui/public/images/brand/logo-symbol.png",
+    "— so nothing is invented marketing claims. It is deliberately separate from",
+    "the template and the generator so the wording can be changed and",
+    "regenerated without touching the mechanism.",
+    "",
+    "Provenance of each string is in `_provenance` below."
+  ],
+
+  "badge": "HSK 1–5 · Free",
+  "wordmark": "Lexitrail",
+  "headline": "Remember every character.",
+  "mechanism": "Flashcards with image hints, audio, and instant recall scoring — so the words you nearly know stop slipping.",
+  "coverage": "HSK 1 · HSK 2 · HSK 3 · HSK 4 · HSK 5",
+
+  "_provenance": {
+    "badge": "HSK levels present in terraform/csv (HSK2-HSK6.csv + wordsets.csv); 'Free' — no paywall exists in the app.",
+    "wordmark": "ui/public/images/brand/logo-symbol.png wordmark.",
+    "headline": "New line. Closest existing phrasing is the logo tagline 'Master Chinese Vocabulary'; 'Remember every character' names the outcome rather than the activity, which is the shape FL's 'Read Your Ancestors' Handwriting' uses.",
+    "mechanism": "Composed from index.html's meta description ('interactive flashcards', 'AI-powered learning tools') plus the features visible in the app itself (image hints, audio on the answer card, recall scoring).",
+    "coverage": "wordsets.csv."
+  },
+
+  "_open_question_for_review": "The headline is the one string not traceable to existing copy. 'Remember every character.' is a claim about outcome; 'Master Chinese vocabulary' (the current tagline) is safer but weaker in a feed. Lead/Alex call — the generator does not depend on which is chosen."
+}

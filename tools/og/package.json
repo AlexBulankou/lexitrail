@@ -1,0 +1,14 @@
+{
+  "name": "lexitrail-og-generator",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Per-platform social/OG creative generator (lexitrail#63). Deliberately its own package, NOT part of ui/package.json — playwright in the app's dependency tree would slow every prod npm ci and inflate the served image, and ui/Dockerfile builds from the ui/ directory so this tree is outside its build context entirely.",
+  "scripts": {
+    "generate": "node generate.mjs",
+    "test": "node --test"
+  },
+  "devDependencies": {
+    "playwright": "^1.62.0"
+  }
+}

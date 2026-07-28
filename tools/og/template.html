@@ -1,0 +1,251 @@
+<!doctype html>
+<!--
+  Lexitrail social/OG creative template (lexitrail#63).
+
+  A DESIGNED asset, not an app screenshot. The creative it replaces was a raw
+  capture of the practice screen, so every impression carried the capture
+  environment with it: a demo-account email, "recalled 0 out of 149", two
+  zeroed score counters, a running timer, the nav bar, and a card that had not
+  finished loading. Nothing here is captured from the running app — the sample
+  cards are composed from the repo's own HSK vocabulary data, so they show real
+  content without showing a real session.
+
+  Sizing is in vmin/vmax so one layout serves every platform aspect. The script
+  sets `data-layout` (split for landscape, stack for square/portrait) and
+  injects copy + cards; it does not edit CSS.
+-->
+<html lang="en" data-layout="split">
+<head>
+<meta charset="utf-8">
+<style>
+  /* Brand: crimson #c70039 sampled from ui/public/images/brand/logo-symbol.png.
+     The blues elsewhere in the app are button chrome, not brand. */
+  :root {
+    --crimson: #c70039;
+    --crimson-deep: #a30030;
+    --ink: #1c1c1e;
+    --paper: #fffdfa;
+    --muted: rgba(255, 255, 255, 0.82);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html, body { width: 100%; height: 100%; }
+
+  body {
+    display: flex;
+    font-family: "Inter", "Helvetica Neue", Arial, "WenQuanYi Zen Hei", sans-serif;
+    background: var(--crimson);
+    color: #fff;
+    overflow: hidden;
+    /* Subtle depth so the field is not a flat block at thumbnail size. */
+    background-image:
+      radial-gradient(circle at 78% 18%, rgba(255,255,255,0.10), transparent 45%),
+      linear-gradient(160deg, var(--crimson) 0%, var(--crimson-deep) 100%);
+  }
+
+  #canvas {
+    display: flex;
+    width: 100%;
+    height: 100%;
+    gap: 0;
+  }
+
+  [data-layout="split"] #canvas { flex-direction: row; align-items: center; }
+  [data-layout="stack"] #canvas { flex-direction: column; }
+
+  /* ---------- text block ---------- */
+
+  .pitch {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+  [data-layout="split"] .pitch { flex: 0 0 52%; padding: 5vmin 3vmin 5vmin 6vmin; }
+  [data-layout="stack"] .pitch { flex: 0 0 auto; padding: 4.5vmin 6vmin 2.5vmin; text-align: center; align-items: center; }
+
+  .badge {
+    align-self: flex-start;
+    background: #fff;
+    color: var(--crimson);
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    border-radius: 100px;
+    padding: 1.15vmin 2.6vmin;
+    font-size: 2.5vmin;
+    white-space: nowrap;
+  }
+  [data-layout="stack"] .badge { align-self: center; }
+
+  .brandrow {
+    display: flex;
+    align-items: center;
+    gap: 2.2vmin;
+    margin-top: 2.6vmin;
+  }
+  [data-layout="stack"] .brandrow { justify-content: center; }
+
+  /* The ZH speech-bubble mark, rebuilt in CSS rather than loaded from
+     images/brand/. Both brand PNGs are the FULL lockup (mark + wordmark +
+     tagline), so embedding either printed "Lexitrail" twice — once as an
+     illegible thumbnail beside the real wordmark. Redrawing just the mark keeps
+     the brand signature, stays sharp at every canvas size, and removes an asset
+     dependency from the generator. */
+  .mark {
+    position: relative;
+    flex: 0 0 auto;
+    width: 9.6vmin;
+    height: 8.2vmin;
+    background: #fff;
+    border-radius: 2.1vmin;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .mark span {
+    color: var(--crimson);
+    font-weight: 800;
+    font-size: 4.3vmin;
+    letter-spacing: 0.02em;
+    line-height: 1;
+  }
+  /* Bubble tail, left of centre as in the logo. */
+  .mark::after {
+    content: "";
+    position: absolute;
+    bottom: -1.5vmin;
+    left: 2.6vmin;
+    width: 0;
+    height: 0;
+    border-left: 1.7vmin solid #fff;
+    border-right: 1.7vmin solid transparent;
+    border-top: 1.9vmin solid #fff;
+    border-bottom: 0;
+    border-bottom-left-radius: 0.4vmin;
+  }
+
+  .wordmark {
+    font-size: 9.2vmin;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    line-height: 1;
+  }
+
+  .headline {
+    margin-top: 2.6vmin;
+    font-size: 5.7vmin;
+    font-weight: 700;
+    line-height: 1.12;
+    letter-spacing: -0.015em;
+  }
+
+  .rule {
+    width: 12vmin;
+    height: 0.75vmin;
+    background: #fff;
+    border-radius: 1vmin;
+    margin: 2.4vmin 0;
+    opacity: 0.95;
+  }
+
+  .mechanism {
+    font-size: 3.35vmin;
+    line-height: 1.42;
+    color: var(--muted);
+    max-width: 46ch;
+  }
+
+  .coverage {
+    margin-top: 2.6vmin;
+    font-size: 2.9vmin;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    color: #fff;
+    opacity: 0.95;
+  }
+
+  /* ---------- sample cards ---------- */
+
+  .sample {
+    display: grid;
+    justify-content: stretch;
+    gap: 2.2vmin;
+    /* min-height:0 + auto-rows:1fr is what keeps this honest across five aspect
+       ratios: rows DIVIDE the space left over after the pitch block instead of
+       each sizing to its content and pushing the last row off the canvas. The
+       first version used content-sized rows and clipped the bottom row on both
+       ig-portrait and ig-square. */
+    min-height: 0;
+    grid-auto-rows: 1fr;
+  }
+  [data-layout="split"] .sample {
+    flex: 1 1 auto;
+    height: 100%;
+    padding: 5vmin 5vmin 5vmin 2vmin;
+    grid-template-columns: repeat(2, 1fr);
+    align-content: center;
+  }
+  [data-layout="stack"] .sample {
+    flex: 1 1 auto;
+    width: 100%;
+    padding: 1vmin 6vmin 6vmin;
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .card {
+    background: var(--paper);
+    color: var(--ink);
+    border-radius: 2.6vmin;
+    padding: calc(1.7vmin * var(--fit, 1)) 1.4vmin;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.45vmin;
+    box-shadow: 0 1.4vmin 3.4vmin rgba(0, 0, 0, 0.20);
+    min-width: 0;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .hanzi {
+    /* CJK first here — this is the one place the glyph font must win. */
+    font-family: "WenQuanYi Zen Hei", "Noto Sans CJK SC", "PingFang SC", sans-serif;
+    font-size: calc(min(9.2vmin, 8.2vh) * var(--fit, 1));
+    line-height: 1.04;
+    font-weight: 700;
+  }
+
+  .pinyin {
+    font-size: calc(2.7vmin * var(--fit, 1));
+    color: var(--crimson);
+    font-weight: 700;
+  }
+
+  .gloss {
+    font-size: calc(2.35vmin * var(--fit, 1));
+    color: #5b5b60;
+    text-align: center;
+    line-height: 1.25;
+    overflow-wrap: anywhere;
+  }
+</style>
+</head>
+<body>
+  <div id="canvas">
+    <div class="pitch">
+      <div class="badge" id="badge"></div>
+      <div class="brandrow">
+        <div class="mark" aria-hidden="true"><span>ZH</span></div>
+        <div class="wordmark" id="wordmark"></div>
+      </div>
+      <div class="headline" id="headline"></div>
+      <div class="rule"></div>
+      <div class="mechanism" id="mechanism"></div>
+      <div class="coverage" id="coverage"></div>
+    </div>
+    <div class="sample" id="sample"></div>
+  </div>
+</body>
+</html>
