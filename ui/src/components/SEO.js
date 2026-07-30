@@ -4,7 +4,7 @@ import { Helmet } from 'react-helmet';
 export const SEO = ({ 
   title = 'Lexitrail - Smart Chinese Learning',
   description = 'Master Chinese vocabulary with AI-powered learning tools, interactive flashcards, and personalized study paths.',
-  image = '/images/og/hsk2-practice.png',
+  image = '/images/og/generated/og-landscape.png',
   path = ''
 }) => {
   const baseUrl = 'https://lexitrail.com';
