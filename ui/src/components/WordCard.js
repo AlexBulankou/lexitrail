@@ -235,7 +235,8 @@ const WordCard = ({ mode, word, isFlipped, isHintDisplayed, handleMemorized, han
               hintImage && (
                 <div className="hint-image-wrapper">
                   <img src={`data:image/jpeg;base64,${hintImage}`} alt="Hint" className="hint-image" />
-                  <button className="regenerate-hint-button" onClick={handleRegenerateHint} disabled={loadingWord}>🔄</button>
+                  <button className="regenerate-hint-button" onClick={handleRegenerateHint}
+                          disabled={loadingWord} aria-label="Regenerate hint image">🔄</button>
                 </div>
               )
             )}

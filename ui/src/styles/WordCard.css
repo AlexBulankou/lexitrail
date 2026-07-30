@@ -202,7 +202,9 @@
   font-size: 0.72rem;
   font-weight: 600;
   line-height: 1;
-  min-height: 36px;
+  /* issue-52 bug #1, Alex's own words: "card top button (exclude) is so tiny
+     it is not visible". 36px was still under the 44px floor. */
+  min-height: 44px;
   min-width: 68px;
   white-space: nowrap;
   font-family: inherit;
@@ -306,8 +308,10 @@
   color: white;
   border: none;
   border-radius: 50%;
-  width: 30px;
-  height: 30px;
+  /* issue-52: was 30x30 — under the 44px floor on BOTH axes, the smallest
+     control on the card and smaller than the practice buttons ever were. */
+  width: 44px;
+  height: 44px;
   cursor: pointer;
   font-size: 1rem;
   line-height: 1;
