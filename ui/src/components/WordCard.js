@@ -290,10 +290,15 @@ const WordCard = ({ mode, word, isFlipped, isHintDisplayed, handleMemorized, han
       {
         mode !== GameMode.TEST ? (
           <div className="practice-buttons" onClick={stopPropagation}>
-            <button onClick={onNotMemorized} disabled={loadingWord}>
+            {/* issue-52: aria-label, not the emoji, is the accessible name.
+                Without it the name is "❌"/"✔️" — and it CHANGES to "⏳" while
+                loading, so any name-keyed selector breaks intermittently. */}
+            <button onClick={onNotMemorized} disabled={loadingWord}
+                    aria-label="Mark as not memorized">
               {loadingWord ? '⏳' : '❌'}
             </button>
-            <button onClick={onMemorized} disabled={loadingWord}>
+            <button onClick={onMemorized} disabled={loadingWord}
+                    aria-label="Mark as memorized">
               {loadingWord ? '⏳' : '✔️'}
             </button>
           </div>

@@ -110,8 +110,14 @@
   z-index: 1;
 }
 
+/* issue-52: measured 64 x 38px before this — width passed the 44px tap-target
+   floor, height failed. `max-height` caps but never sets a height, and with
+   `padding: 0` the box collapsed to the 2rem glyph's line box (~38px). The
+   min-* pair is what establishes the floor; the max-* pair still caps at 64. */
 .practice-buttons button {
   flex: 1;
+  min-width: 44px;
+  min-height: 44px;
   max-width: 4rem;
   max-height: 4rem;
   background-color: #4285f4;
