@@ -30,14 +30,17 @@
 /* lexitrail#52 bug 4: bump the back-card pronunciation button to a larger,
    easier tap target (was 2rem/32px — below a comfortable touch size). */
 .speak-button-md {
-  width: 2.4rem;
-  height: 2.4rem;
+  /* lexitrail#52: was 2.4rem (38.4px), under the 44px floor. */
+  width: var(--min-tap-target);
+  height: var(--min-tap-target);
   font-size: 1.15rem;
 }
 
 .speak-button-lg {
-  width: 2.75rem;
-  height: 2.75rem;
+  /* 2.75rem == 44px; expressed against the shared floor so it cannot drift
+     below it silently if the floor is raised. */
+  width: max(2.75rem, var(--min-tap-target));
+  height: max(2.75rem, var(--min-tap-target));
   font-size: 1.5rem;
   margin-top: 0.5rem;
 }
