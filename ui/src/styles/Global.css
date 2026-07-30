@@ -11,3 +11,45 @@ body, html {
     box-sizing: border-box;
   }
   
+/* lexitrail#52 bug 4 (tappability half) — shared minimum touch target.
+ *
+ * Alex's bug 4 was "make each button easy to find and tap". PR #58 shipped the
+ * ALIGNMENT half and was titled "larger tap target", but the control it moved
+ * is 2.4rem = 38.4px. So the half of the bug that Alex actually described —
+ * tappability — did not land, and the PR title reads as though it did.
+ *
+ * 44px is the WCAG 2.1 AA target-size floor (2.5.5) and the iOS HIG minimum.
+ * Declared once as a custom property so the number has one home: a per-control
+ * literal is how `.speak-button-lg` ended up at exactly 44px while its `md`
+ * sibling sat at 38.4px with nothing relating the two.
+ *
+ * Applied via min-width/min-height rather than width/height so it raises small
+ * controls to the floor WITHOUT shrinking anything already larger, and without
+ * disturbing the layout of controls that are wide-but-short (the nav triggers),
+ * which only need the vertical dimension raised.
+ *
+ * NOTE ON VERIFICATION: this pins the DECLARED minimum. It is not proof of the
+ * RENDERED box — a parent with a fixed height or an `align-items: center` can
+ * still constrain a child below its min-height. Render-level proof needs the
+ * E2E harness (lexitrail#52 item 3); `test_tap_targets.py` here pins the
+ * declaration only and says so.
+ */
+:root {
+  --min-tap-target: 44px;
+}
+
+.speak-button,
+.exclude-button,
+.dropdown-trigger,
+.wordsets-retry,
+.game-settings-button,
+.mark-all-memorized-button {
+  min-height: var(--min-tap-target);
+}
+
+/* Square icon-only controls get the horizontal floor too. Text controls are
+ * already wide enough, and forcing min-width on them would stretch short
+ * labels into oddly wide buttons. */
+.speak-button {
+  min-width: var(--min-tap-target);
+}
