@@ -2,7 +2,9 @@
 
 Meet Agones: the Kubernetes-native game server manager that’s perfectly built for powering multiplayer games on Google Kubernetes Engine (GKE) 🕹️. Designed with scaling and resilience in mind, Agones takes the heavy lifting out of managing game servers. Whether your game needs to handle hundreds of players at once 👥 or just a few hardcore fans 💪, Agones dynamically adjusts server resources to keep things smooth. It’s open-source 👐, easy to get started with 🛠️, and slots right into your Kubernetes setup like it was made for it (because it was!) 🔗. If you're hosting cloud-based games on GKE, Agones is hands-down one of the best ways to keep everything running at full speed 🏎️, no sweat 😅.
 
-To improve the responsiveness of our user interface (UI) and ensure high availability, we've introduced a middle layer servic, managed by Agones. This service acts as an intermediary between the UI and the backend database.
+To improve the responsiveness of our user interface (UI) and ensure high availability, we've introduced a middle layer service, designed to run under Agones. This service acts as an intermediary between the UI and the backend database.
+
+> **Deployment status:** the service *speaks* the Agones SDK (`middle_layer/app.py` uses `AGONES_SDK_HTTP_PORT` and the SDK's health/ready calls), and the Fleet + FleetAutoscaler templates exist under `terraform/k8s_templates/`. But the Terraform that provisions Agones is currently **disabled** (`terraform/agones.tf.disabled`, `terraform/agones-middle-layer.tf.disabled`) and no live `.tf` references `middle-layer-fleet`. So Agones management is the intended design, not the current deployed state.
 
 Here's how it works:
 
