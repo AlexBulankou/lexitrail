@@ -176,7 +176,8 @@
 
 .wordsets-retry {
   padding: 10px 20px;
-  min-height: 44px;
+  /* issue-52: 44px min-height removed — carried by the shared
+     --min-tap-target rule in Global.css so it tracks the floor. */
   border: none;
   border-radius: 8px;
   background-color: #4285f4;

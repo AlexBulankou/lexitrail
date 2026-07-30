@@ -203,8 +203,10 @@
   font-weight: 600;
   line-height: 1;
   /* issue-52 bug #1, Alex's own words: "card top button (exclude) is so tiny
-     it is not visible". 36px was still under the 44px floor. */
-  min-height: 44px;
+     it is not visible". The 44px min-height that lived here is now carried by
+     the shared --min-tap-target rule in Global.css, so this control follows the
+     floor if it is ever raised. min-width stays: it keeps the Exclude/Include
+     labels from changing width on toggle, which is a different job. */
   min-width: 68px;
   white-space: nowrap;
   font-family: inherit;

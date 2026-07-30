@@ -65,6 +65,48 @@ describe('shared touch-target floor', () => {
     expect(md[1]).toMatch(/var\(--min-tap-target\)/);
   });
 
+  test('the floor is single-sourced — no component CSS re-declares it', () => {
+    /* hc2@ on #73: `.exclude-button` (WordCard.css) and `.wordsets-retry`
+     * (Wordsets.css) each carried their own `min-height: 44px`, pre-dating this
+     * PR, alongside the new shared rule. Both were 44px so nothing rendered
+     * wrong — and every other assertion in this file passed, because they all
+     * check the VALUE and none checked the SOURCING.
+     *
+     * That gap is the bug this PR argues against, in the PR's own diff: the
+     * literals do not reference `--min-tap-target`, and component CSS loads
+     * AFTER Global.css at equal specificity, so it wins the tie. Raise the
+     * floor and those two silently hold the old value while their siblings
+     * follow.
+     *
+     * A control that genuinely needs a LARGER target should use the
+     * `max(Xrem, var(--min-tap-target))` form `.speak-button-lg` uses, so it
+     * still tracks the floor upward.
+     */
+    const files = fs.readdirSync(STYLES)
+      .filter((f) => f.endsWith('.css') && f !== 'Global.css');
+    const offenders = [];
+    for (const f of files) {
+      const css = read(f);
+      for (const sel of FLOOR_SELECTORS) {
+        const escaped = sel.replace('.', '\\.');
+        for (const r of css.matchAll(
+          new RegExp(`${escaped}[a-zA-Z0-9_-]*\\s*\\{([^}]*)\\}`, 'gs')
+        )) {
+          // min-height is shared for all six; min-width is shared for
+          // .speak-button only, so a min-width literal elsewhere (e.g.
+          // .exclude-button's 68px label width) is a different job and allowed.
+          const props = sel === '.speak-button'
+            ? /\bmin-(height|width):\s*[\d.]+(px|rem)/g
+            : /\bmin-height:\s*[\d.]+(px|rem)/g;
+          for (const d of r[1].matchAll(props)) {
+            offenders.push(`${f} ${sel}: ${d[0].trim()}`);
+          }
+        }
+      }
+    }
+    expect(offenders).toEqual([]);
+  });
+
   test('no control declares a fixed size below the floor', () => {
     // Regression guard in the direction that actually happened: someone writes
     // a literal px/rem size on a control and it lands under 44.
