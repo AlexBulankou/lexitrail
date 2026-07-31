@@ -53,6 +53,9 @@ IMAGE = "us-central1-docker.pkg.dev/lexitrail/lexitrail-repo/lexitrail-ui"
 SOURCE_ANNOTATION = "lexitrail.dev/source-sha"
 
 SITE = "https://lexitrail.com"
+PROJECT = "lexitrail"
+REGION = "us-central1"
+CONTAINER = "lexitrail-ui"
 
 EXIT_OK = 0             # nothing to do, or deployed AND verified
 EXIT_FAILED = 1         # a step failed outright
@@ -192,6 +195,12 @@ def main(argv=None) -> int:
         return _verdict_exit(verdict)
 
     print(f"[poll] main has moved -> deploy needed{' (DRY RUN, stopping here)' if args.dry_run else ''}")
+    # `--dry-run` returns HERE, before any mutation -- there is deliberately no
+    # second dry-run gate inside `_deploy_and_verify` (hc2@ Q1 on PR #79). A
+    # `dry_run` parameter that the body never reads is worse than none: the name
+    # promises the mutations are skipped, and in a function that runs
+    # `gcloud builds submit` + `kubectl patch` against production, that promise
+    # would be believed by whoever next wires this to a cron or a CLI flag.
     return EXIT_OK if args.dry_run else _deploy_and_verify(head)
 
 
@@ -209,9 +218,71 @@ def _fetch_served_asset():
         return None
 
 
+def build_succeeded(returncode: int, stdout: str) -> bool:
+    """A build is successful only if gcloud says SUCCESS *and* exits 0.
+
+    Both halves, because they fail independently: `gcloud builds submit` can exit
+    non-zero on a transport error after a build that actually succeeded, and --
+    the direction that matters -- a wrapper or a `| tee` can hand back 0 while the
+    build status text says FAILURE. Requiring the word SUCCESS in the output means
+    the exit code alone cannot green-light a deploy.
+    """
+    return returncode == 0 and "SUCCESS" in stdout.upper()
+
+
 def _deploy_and_verify(head: str) -> int:
-    print("[deploy] not yet wired -- build + patch land in the follow-up slice", file=sys.stderr)
-    return EXIT_INDETERMINATE
+    """Build from main, patch the deployment to the new digest, verify what SERVED.
+
+    Ordering is deliberate and not interchangeable: build -> resolve digest -> patch
+    -> re-verify the SERVED asset. The final step is the only one that speaks to
+    users; every earlier step can succeed while the site stays broken, which is the
+    entire history of #63.
+    """
+    print(f"[deploy] building {IMAGE}:latest from main ({head[:8]})")
+    b = _run(["gcloud", "builds", "submit", "--project", PROJECT, "--region", REGION,
+              "--tag", f"{IMAGE}:latest", "ui/"], timeout=1800)
+    if not build_succeeded(b.returncode, b.stdout + b.stderr):
+        print(f"[deploy] build FAILED (rc={b.returncode}) -- not patching", file=sys.stderr)
+        return EXIT_FAILED
+
+    digest = _run(["gcloud", "artifacts", "docker", "images", "list", IMAGE,
+                   "--include-tags", "--filter", "tags:latest",
+                   "--format", "value(version)", "--limit", "1"], timeout=300)
+    sha = digest.stdout.strip().splitlines()[0].strip() if digest.stdout.strip() else ""
+    # returncode checked explicitly (hc2@ Q2), matching build/patch/rollout above.
+    # The format guard alone would probably catch a failure -- gcloud errors go to
+    # stderr, leaving stdout empty -- but "probably empty" is implicit safety, and
+    # this is the step that decides which bytes reach production.
+    if digest.returncode != 0 or not sha.startswith("sha256:"):
+        # Refuse rather than patch `:latest` -- a tag can move under a running
+        # deployment, so a digest is the only reference that means one artifact.
+        print(f"[deploy] could not resolve a digest for :latest (got {sha!r})", file=sys.stderr)
+        return EXIT_INDETERMINATE
+
+    print(f"[deploy] patching {DEPLOYMENT} -> {sha[:19]}… (+source-sha annotation)")
+    patch = json.dumps({"spec": {"template": {
+        "metadata": {"annotations": {SOURCE_ANNOTATION: head}},
+        "spec": {"containers": [{"name": CONTAINER, "image": f"{IMAGE}@{sha}"}]},
+    }}})
+    pr = _run(["kubectl", "--context", CONTEXT, "-n", NAMESPACE, "patch", "deploy",
+               DEPLOYMENT, "--type", "strategic", "-p", patch], timeout=300)
+    if pr.returncode != 0:
+        print(f"[deploy] patch FAILED: {pr.stderr.strip()[:200]}", file=sys.stderr)
+        return EXIT_FAILED
+
+    ro = _run(["kubectl", "--context", CONTEXT, "-n", NAMESPACE, "rollout", "status",
+               f"deploy/{DEPLOYMENT}", "--timeout=300s"], timeout=400)
+    if ro.returncode != 0:
+        print(f"[deploy] rollout did not complete: {ro.stderr.strip()[:200]}", file=sys.stderr)
+        return EXIT_FAILED
+
+    # ⚠️ `rollout status` reporting success is NOT evidence users see the change --
+    # it says pods rolled, which is true even when the image never changed. The
+    # served re-check below is the only step that speaks to what shipped.
+    served = _fetch_served_asset()
+    verdict = classify_served(*served) if served else "indeterminate"
+    print(f"[deploy] post-rollout served asset -> {verdict} {served}")
+    return _verdict_exit(verdict)
 
 
 if __name__ == "__main__":

@@ -150,3 +150,30 @@ def test_verdict_exit_keeps_three_states_distinct():
     assert _verdict_exit("absent") == EXIT_FAILED
     assert _verdict_exit("indeterminate") == EXIT_INDETERMINATE
     assert len({_verdict_exit(v) for v in ("ok", "absent", "indeterminate")}) == 3
+
+
+# ── build_succeeded: exit code alone must not green-light a deploy ────────
+
+from poll_deploy import build_succeeded  # noqa: E402
+
+
+@pytest.mark.parametrize("rc, out, expected", [
+    (0, "Status: SUCCESS", True),
+    (0, "... STATUS: SUCCESS ...", True),
+    (0, "Status: FAILURE", False),   # THE case: exit 0 with a failed build
+    (0, "", False),                  # no status text at all -> not a success
+    (0, "TIMEOUT", False),
+    (1, "Status: SUCCESS", False),   # succeeded then died in transport -> don't trust
+    (1, "Status: FAILURE", False),
+])
+def test_build_succeeded_requires_both_halves(rc, out, expected):
+    assert build_succeeded(rc, out) is expected
+
+
+def test_exit_zero_with_failure_text_is_not_a_success():
+    """A wrapper, a `| tee`, or a retry shim can hand back 0 while the build
+    status says FAILURE. Requiring the word SUCCESS means the exit code alone
+    cannot authorise a production patch -- the same 'status answered an adjacent
+    question' shape as the served-asset 200."""
+    assert build_succeeded(0, "Status: FAILURE") is False
+    assert build_succeeded(0, "Status: SUCCESS") is True
