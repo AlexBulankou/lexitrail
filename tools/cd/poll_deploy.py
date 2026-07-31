@@ -195,7 +195,13 @@ def main(argv=None) -> int:
         return _verdict_exit(verdict)
 
     print(f"[poll] main has moved -> deploy needed{' (DRY RUN, stopping here)' if args.dry_run else ''}")
-    return EXIT_OK if args.dry_run else _deploy_and_verify(head, dry_run=False)
+    # `--dry-run` returns HERE, before any mutation -- there is deliberately no
+    # second dry-run gate inside `_deploy_and_verify` (hc2@ Q1 on PR #79). A
+    # `dry_run` parameter that the body never reads is worse than none: the name
+    # promises the mutations are skipped, and in a function that runs
+    # `gcloud builds submit` + `kubectl patch` against production, that promise
+    # would be believed by whoever next wires this to a cron or a CLI flag.
+    return EXIT_OK if args.dry_run else _deploy_and_verify(head)
 
 
 def _fetch_served_asset():
@@ -224,7 +230,7 @@ def build_succeeded(returncode: int, stdout: str) -> bool:
     return returncode == 0 and "SUCCESS" in stdout.upper()
 
 
-def _deploy_and_verify(head: str, dry_run: bool = False) -> int:
+def _deploy_and_verify(head: str) -> int:
     """Build from main, patch the deployment to the new digest, verify what SERVED.
 
     Ordering is deliberate and not interchangeable: build -> resolve digest -> patch
@@ -243,7 +249,11 @@ def _deploy_and_verify(head: str, dry_run: bool = False) -> int:
                    "--include-tags", "--filter", "tags:latest",
                    "--format", "value(version)", "--limit", "1"], timeout=300)
     sha = digest.stdout.strip().splitlines()[0].strip() if digest.stdout.strip() else ""
-    if not sha.startswith("sha256:"):
+    # returncode checked explicitly (hc2@ Q2), matching build/patch/rollout above.
+    # The format guard alone would probably catch a failure -- gcloud errors go to
+    # stderr, leaving stdout empty -- but "probably empty" is implicit safety, and
+    # this is the step that decides which bytes reach production.
+    if digest.returncode != 0 or not sha.startswith("sha256:"):
         # Refuse rather than patch `:latest` -- a tag can move under a running
         # deployment, so a digest is the only reference that means one artifact.
         print(f"[deploy] could not resolve a digest for :latest (got {sha!r})", file=sys.stderr)
