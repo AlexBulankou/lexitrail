@@ -103,12 +103,60 @@ def head_sha() -> Optional[str]:
     return r.stdout.strip() or None if r.returncode == 0 else None
 
 
+def extract_source_sha(deployment_json: str) -> Optional[str]:
+    r"""Pull the source-sha annotation out of `kubectl get deploy -o json`.
+
+    Deliberately NOT a `-o jsonpath=` expression (hc2@'s review of PR #78). The
+    annotation key contains BOTH a dot and a slash, and jsonpath's separator is the
+    **dot** -- so the dot needs escaping and the slash does not. I had escaped the
+    slash, which silently returns EMPTY for an annotation that exists and is set:
+
+        key.replace('/', r'\/')   -> ''                     (what I shipped)
+        key.replace('.', r'\.')   -> '2026-07-22T19:58:42Z'  (correct)
+
+    Verified live against this deployment's own `kubectl.kubernetes.io/restartedAt`,
+    same shape. Parsing JSON in Python has no escaping surface at all, so the class
+    cannot come back for a future key shape -- and, unlike the jsonpath form, it is a
+    pure function this file can actually test.
+
+    Why the bug survived a live run: `deployed=None` was the EXPECTED output that night
+    (the annotation genuinely did not exist yet) and is ALSO what the broken escaping
+    produces once it does. The check could not distinguish the two facts -- the same
+    defect class this module is written against, one layer up in its own tooling.
+    """
+    try:
+        doc = json.loads(deployment_json)
+    except (ValueError, TypeError):
+        return None
+    if not isinstance(doc, dict):
+        return None
+    annotations = (
+        doc.get("spec", {}).get("template", {}).get("metadata", {}).get("annotations")
+    )
+    if not isinstance(annotations, dict):
+        return None
+    value = annotations.get(SOURCE_ANNOTATION)
+    return value.strip() or None if isinstance(value, str) else None
+
+
 def deployed_source_sha() -> Optional[str]:
     r = _run([
         "kubectl", "--context", CONTEXT, "-n", NAMESPACE, "get", "deploy", DEPLOYMENT,
-        "-o", f"jsonpath={{.spec.template.metadata.annotations.{SOURCE_ANNOTATION.replace('/', '\\/')}}}",
+        "-o", "json",
     ], timeout=120)
-    return r.stdout.strip() or None if r.returncode == 0 else None
+    return extract_source_sha(r.stdout) if r.returncode == 0 else None
+
+
+def _verdict_exit(verdict: str) -> int:
+    """Map a served-asset verdict to an exit code, preserving all three states.
+
+    `absent` is a known-bad state (redeploy); `indeterminate` means the check itself
+    could not conclude (investigate). They want different responses, so they must not
+    share a code -- that is the whole reason EXIT_INDETERMINATE exists.
+    """
+    if verdict == "ok":
+        return EXIT_OK
+    return EXIT_FAILED if verdict == "absent" else EXIT_INDETERMINATE
 
 
 def main(argv=None) -> int:
@@ -124,11 +172,7 @@ def main(argv=None) -> int:
     print(f"[verify] served asset -> {verdict} (status/type/size: {served})")
 
     if args.verify_only:
-        if verdict == "ok":
-            return EXIT_OK
-        # NOT EXIT_OK, and deliberately distinct: "absent" is a known-bad state,
-        # "indeterminate" means the check itself could not conclude.
-        return EXIT_FAILED if verdict == "absent" else EXIT_INDETERMINATE
+        return _verdict_exit(verdict)
 
     head = head_sha()
     deployed = deployed_source_sha()
@@ -142,7 +186,10 @@ def main(argv=None) -> int:
         print("[poll] up to date; nothing to build")
         # Even with nothing to build, a bad SERVED state is still a failure -- the
         # #63 state was exactly "nothing to deploy" plus "the asset is not there".
-        return EXIT_OK if verdict == "ok" else EXIT_FAILED
+        # But keep the three states distinct here too (hc2@'s Q2): collapsing
+        # `indeterminate` into FAILED on this branch would contradict the whole point
+        # of having a third code, and it is the branch that runs on almost every poll.
+        return _verdict_exit(verdict)
 
     print(f"[poll] main has moved -> deploy needed{' (DRY RUN, stopping here)' if args.dry_run else ''}")
     return EXIT_OK if args.dry_run else _deploy_and_verify(head)

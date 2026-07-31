@@ -79,3 +79,74 @@ def test_content_type_is_the_discriminator_not_status():
     bad = classify_served(200, "text/html", 202155)
     assert ok == "ok" and bad == "absent"
     assert EXPECTED_CONTENT_TYPE_PREFIX == "image/"
+
+
+# ── extract_source_sha (issue-77 / PR #78 review) ────────────────────────
+#
+# These exist because the original implementation used a `-o jsonpath=` expression
+# with the SLASH escaped, when jsonpath's separator is the DOT. That returns EMPTY
+# for an annotation that exists and is set correctly -- so the poll could never
+# converge and would rebuild forever.
+#
+# It survived a live run because `deployed=None` was the EXPECTED output that night
+# (the annotation genuinely did not exist yet) and is ALSO what the broken escaping
+# produces once it does. The observation could not distinguish the two facts.
+#
+# The fixture below uses the REAL shape, read off the live deployment
+# (`spec.template.metadata.annotations`, confirmed to carry
+# `kubectl.kubernetes.io/restartedAt`) rather than an invented one.
+
+from poll_deploy import (  # noqa: E402
+    EXIT_FAILED,
+    EXIT_INDETERMINATE,
+    EXIT_OK,
+    SOURCE_ANNOTATION,
+    _verdict_exit,
+    extract_source_sha,
+)
+
+_REAL_SHAPE = """{
+  "spec": {"template": {"metadata": {"annotations": {
+      "kubectl.kubernetes.io/restartedAt": "2026-07-22T19:58:42Z",
+      "%s": "037eb048f3c9ca1d44f963a9ff954224b9c53393"
+  }}}}
+}""" % SOURCE_ANNOTATION
+
+
+def test_extracts_the_sha_when_the_annotation_is_present():
+    """THE regression. The jsonpath version returned '' here, which the caller mapped
+    to None -- indistinguishable from a genuinely absent annotation."""
+    assert extract_source_sha(_REAL_SHAPE) == "037eb048f3c9ca1d44f963a9ff954224b9c53393"
+
+
+def test_absent_annotation_is_none_not_empty_string():
+    payload = '{"spec":{"template":{"metadata":{"annotations":{"other/key":"x"}}}}}'
+    assert extract_source_sha(payload) is None
+
+
+@pytest.mark.parametrize("payload", [
+    "", "not json", "null", "[]", "{}",
+    '{"spec":{}}',
+    '{"spec":{"template":{"metadata":{}}}}',
+    '{"spec":{"template":{"metadata":{"annotations":null}}}}',
+])
+def test_malformed_payloads_are_none_never_raise(payload):
+    """A parse failure must read as 'unknown' (-> deploy), never crash the poll."""
+    assert extract_source_sha(payload) is None
+
+
+def test_whitespace_only_value_is_none():
+    payload = '{"spec":{"template":{"metadata":{"annotations":{"%s":"   "}}}}}' % SOURCE_ANNOTATION
+    assert extract_source_sha(payload) is None
+
+
+# ── _verdict_exit: all three states stay distinct ────────────────────────
+
+def test_verdict_exit_keeps_three_states_distinct():
+    """`absent` (redeploy) and `indeterminate` (investigate) want different
+    responses, so they must not share a code -- the reason EXIT_INDETERMINATE
+    exists at all."""
+    assert _verdict_exit("ok") == EXIT_OK
+    assert _verdict_exit("absent") == EXIT_FAILED
+    assert _verdict_exit("indeterminate") == EXIT_INDETERMINATE
+    assert len({_verdict_exit(v) for v in ("ok", "absent", "indeterminate")}) == 3
