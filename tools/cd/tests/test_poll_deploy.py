@@ -6,6 +6,7 @@ pinned in BOTH directions rather than on the happy path alone.
 """
 from __future__ import annotations
 
+import json
 import pathlib
 import sys
 
@@ -177,3 +178,108 @@ def test_exit_zero_with_failure_text_is_not_a_success():
     question' shape as the served-asset 200."""
     assert build_succeeded(0, "Status: FAILURE") is False
     assert build_succeeded(0, "Status: SUCCESS") is True
+
+
+# ── parse_http_response: a status we cannot read is not a status ─────────
+
+from poll_deploy import parse_http_response  # noqa: E402
+
+
+@pytest.mark.parametrize("raw, status, body", [
+    ('{"kind":"Deployment"}200', 200, '{"kind":"Deployment"}'),
+    ('{"reason":"Forbidden"}403', 403, '{"reason":"Forbidden"}'),
+    ("200", 200, ""),                       # empty body, status only
+])
+def test_parse_http_response_splits_trailing_status(raw, status, body):
+    assert parse_http_response(raw) == (status, body)
+
+
+def test_a_body_ending_in_digits_does_not_eat_the_status():
+    """curl writes the code AFTER the body, always three chars. A body that
+    itself ends in digits -- a replica count, a resourceVersion -- must not have
+    its own trailing digits read as the status."""
+    assert parse_http_response('{"replicas":3}200') == (200, '{"replicas":3}')
+
+
+@pytest.mark.parametrize("raw", ["", "ab", "no-status-here", '{"a":1}'])
+def test_unparseable_response_is_none_not_a_plausible_code(raw):
+    """The failure direction that matters: returning 0 or 200 for a reply we
+    could not read would let 'the call did not happen' pass as 'the server
+    answered'. None says which."""
+    assert parse_http_response(raw)[0] is None
+
+
+# ── newest_successful_build: tab-separated, never space-split ────────────
+
+from poll_deploy import newest_successful_build  # noqa: E402
+
+
+def test_newest_successful_build_splits_on_tab():
+    out = "a47c93d0-9a6d\tsha256:7e6ec8fd\n"
+    assert newest_successful_build(out) == ("a47c93d0-9a6d", "sha256:7e6ec8fd")
+
+
+def test_a_build_with_no_digest_yields_none_not_a_truncated_string():
+    """A build that produced no image still has an id. Returning '' for the
+    digest would sail past a truthiness check; None gives the caller's
+    sha256: guard something real to reject."""
+    assert newest_successful_build("a47c93d0-9a6d\t\n") == ("a47c93d0-9a6d", None)
+    assert newest_successful_build("a47c93d0-9a6d\n") == ("a47c93d0-9a6d", None)
+
+
+@pytest.mark.parametrize("out", ["", "   ", "\n"])
+def test_no_builds_at_all_is_none_none(out):
+    assert newest_successful_build(out) == (None, None)
+
+
+# ── rollout_complete: the generation guard is the load-bearing half ──────
+
+from poll_deploy import rollout_complete  # noqa: E402
+
+
+def _deployment(generation=5, observed=5, replicas=2, updated=2, available=2):
+    return json.dumps({
+        "metadata": {"generation": generation},
+        "spec": {"replicas": replicas},
+        "status": {"observedGeneration": observed, "replicas": replicas,
+                   "updatedReplicas": updated, "availableReplicas": available},
+    })
+
+
+def test_fully_rolled_out_is_true():
+    assert rollout_complete(_deployment()) is True
+
+
+def test_stale_generation_is_false_even_when_every_count_looks_healthy():
+    """THE case. Immediately after a patch the status block still describes the
+    PREVIOUS generation -- all replicas updated, all available, perfectly
+    healthy -- for the deployment we just replaced. Without the
+    observedGeneration guard this returns True instantly and the poll reports a
+    rollout that has not started."""
+    stale = _deployment(generation=6, observed=5, replicas=2, updated=2, available=2)
+    assert rollout_complete(stale) is False
+
+
+def test_mid_rollout_is_false():
+    assert rollout_complete(_deployment(updated=1, available=1)) is False
+    assert rollout_complete(_deployment(available=1)) is False
+
+
+@pytest.mark.parametrize("payload", [
+    "", "not json", "[]", "null", '"a string"',
+    '{"metadata":{},"spec":{},"status":{}}',            # no generation fields
+    '{"metadata":{"generation":5},"spec":{}}',           # no status block at all
+    '{"metadata":{"generation":"5"},"spec":{},"status":{"observedGeneration":5}}',
+])
+def test_unreadable_payload_is_none_never_false(payload):
+    """None ('cannot tell') must not collapse into False ('not yet'). False keeps
+    the poll waiting until timeout and then reports a rollout FAILURE that never
+    happened -- an unreadable reply misfiled as a known-bad state."""
+    assert rollout_complete(payload) is None
+
+
+def test_none_and_false_are_distinguishable_by_the_caller():
+    """The two are returned as different values precisely so `_await_rollout`'s
+    caller can map them to different exit codes."""
+    assert rollout_complete("not json") is None
+    assert rollout_complete(_deployment(generation=6, observed=5)) is False
