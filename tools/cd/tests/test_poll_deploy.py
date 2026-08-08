@@ -15,6 +15,7 @@ import pytest
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
 from poll_deploy import (  # noqa: E402
     EXPECTED_CONTENT_TYPE_PREFIX,
+    UI_DIR,
     classify_served,
     needs_deploy,
 )
@@ -283,3 +284,30 @@ def test_none_and_false_are_distinguishable_by_the_caller():
     caller can map them to different exit codes."""
     assert rollout_complete("not json") is None
     assert rollout_complete(_deployment(generation=6, observed=5)) is False
+
+
+# ── build source dir (issue-77) ──────────────────────────────────────────
+
+def test_ui_dir_is_absolute_and_does_not_depend_on_cwd(tmp_path, monkeypatch):
+    """The build source must be anchored to THIS FILE, not the caller's cwd.
+
+    This is the regression that killed the scheduled deploy for three fires: the
+    cron's cwd is the *my-hermes* clone, not this repo, so a relative "ui/"
+    named a directory that does not exist and `gcloud builds submit` could never
+    succeed from the scheduled path. It passed by hand only because a human runs
+    it from the repo root -- the happy path and the broken path differ ONLY in
+    cwd, which is why nothing caught it until production did.
+
+    Asserted on the resolved value rather than on a substring: a relative "ui/"
+    also "ends with ui", so an endswith check alone would stay green on the bug.
+    """
+    monkeypatch.chdir(tmp_path)
+    assert pathlib.Path(UI_DIR).is_absolute()
+    assert pathlib.Path(UI_DIR).name == "ui"
+    # cwd-invariance, measured rather than assumed
+    monkeypatch.chdir("/")
+    assert pathlib.Path(UI_DIR).is_absolute()
+    # and it points at THIS repo's ui/, not wherever we happen to stand
+    # parents[3] from THIS file: tests/ -> cd/ -> tools/ -> repo root.
+    # (poll_deploy.py itself is one level up, so it uses parents[2].)
+    assert UI_DIR == str(pathlib.Path(__file__).resolve().parents[3] / "ui")

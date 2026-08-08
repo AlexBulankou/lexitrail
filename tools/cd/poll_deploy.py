@@ -45,9 +45,17 @@ import subprocess
 import sys
 import tempfile
 import time
+from pathlib import Path
 from typing import Optional
 
 REPO = "AlexBulankou/lexitrail"
+# Anchored to THIS FILE, never to the cwd. The poll runs from a cron whose
+# working directory is the *my-hermes* clone (`workspace or project.repo_root`
+# in the orchestrator), not this repo -- so a relative "ui/" resolved to a
+# directory that does not exist and `builds submit` could never have worked
+# from the scheduled path. It worked by hand only because a human happens to
+# run it from the repo root. tools/cd/poll_deploy.py -> parents[2] == repo root.
+UI_DIR = str(Path(__file__).resolve().parents[2] / "ui")
 NAMESPACE = "lexitrail"
 DEPLOYMENT = "lexitrail-ui-deployment"
 # The cluster this deployment lives on is in a DIFFERENT project than the builds
@@ -429,7 +437,7 @@ def _deploy_and_verify(head: str) -> int:
 
     print(f"[deploy] building {IMAGE}:latest from main ({head[:8]})")
     b = _run(["gcloud", "builds", "submit", "--project", PROJECT, "--region", REGION,
-              "--tag", f"{IMAGE}:latest", "ui/"], timeout=1800)
+              "--tag", f"{IMAGE}:latest", UI_DIR], timeout=1800)
     if not build_succeeded(b.returncode, b.stdout + b.stderr):
         print(f"[deploy] build FAILED (rc={b.returncode}) -- not patching", file=sys.stderr)
         return EXIT_FAILED
