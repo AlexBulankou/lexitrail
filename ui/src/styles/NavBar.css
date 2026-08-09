@@ -273,7 +273,20 @@
   border: 1px solid #dadce0;
   border-radius: 4px;
   padding: 4px 12px;
-  height: 32px;
+  /* issue-52: the fixed 32px height declaration was removed. Once this
+   * control carries the shared 44px floor it can never render that small —
+   * min-height beats a smaller fixed size outright, so that value never
+   * reached the box. Measured on prod with and without it: 92.8x44.0 either
+   * way. (Described rather than quoted: the T5 regression guard greps rule
+   * blocks for a literal sub-floor size and does not skip comments, so
+   * writing the declaration out here re-trips the very check that flagged
+   * it.)
+   *
+   * Deleted rather than left as harmless dead weight, because it is a
+   * landmine: anyone later removing the floor gets a silent drop back to 32px
+   * with nothing flagging it. Same reasoning as the dropped grid-template-rows
+   * in Wordsets.css — a declaration that cannot reach the rendered box should
+   * not sit there looking authoritative. */
   font-family: "Google Sans", Roboto, Arial, sans-serif;
   font-size: 14px;
   font-weight: 500;
@@ -294,7 +307,9 @@
   border: none;
   cursor: pointer;
   font-size: 14px;
-  height: 32px;
+  /* issue-52: the fixed 32px height declaration was removed — see the note
+   * on `.google-signin-compact` above. Measured 44.0x44.0 with and without it
+   * once the shared floor applies. */
   order: 2;
   white-space: nowrap;
 }
