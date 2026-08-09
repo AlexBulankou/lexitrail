@@ -102,7 +102,10 @@ INTERACTIVE_SELECTOR = (
 VIEWPORTS = {
     "mobile": {"viewport": {"width": 390, "height": 844}, "is_mobile": True,
                "has_touch": True, "device_scale_factor": 3},
-    "desktop": {"viewport": {"width": 1280, "height": 800}},
+    # 1440x900 is doc 2.5's HARD RULE for desktop, and 390x844 is its iPhone 13
+    # mobile. Matching them exactly so a finding here is comparable to a finding
+    # from a manual ITP pass rather than needing a viewport caveat attached.
+    "desktop": {"viewport": {"width": 1440, "height": 900}},
 }
 
 
