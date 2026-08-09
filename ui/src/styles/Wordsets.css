@@ -31,7 +31,18 @@
   background-color: darkgray;
   border-radius: 10px;;
   grid-template-columns: repeat(2, 1fr);
-  grid-template-rows: repeat (3, 1fr);
+  /* issue-52: `grid-template-rows: repeat (3, 1fr)` used to sit here and was
+   * DEAD — CSS functional notation forbids a space before the paren, so the
+   * browser dropped the declaration. Measured on prod: computed
+   * `grid-template-rows` is `28.8125px 34px 34px 25px`, four content-sized
+   * rows, not three 1fr ones.
+   *
+   * Deleted rather than corrected, deliberately. "Fixing" the space would
+   * ACTIVATE a three-row template over four rows of content (header, practice,
+   * due, excluded) and change the layout — the typo is harmless precisely
+   * because it never applied. Removing a dropped declaration cannot change the
+   * computed value, so this is a provable no-op; auto rows are also what lets
+   * the shared 44px floor expand these buttons at all. */
   gap: 5px;
   padding:5px;
 }

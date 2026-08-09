@@ -34,6 +34,14 @@ const FLOOR_SELECTORS = [
   '.wordsets-retry',
   '.game-settings-button',
   '.mark-all-memorized-button',
+  // issue-52: these three were the gap made concrete. They were absent from
+  // this list, so this file stayed green while all three shipped under the
+  // floor on live prod — found by the E2E harness measuring the rendered box,
+  // not by anything here. Adding them closes the declaration half; the render
+  // half is `e2e/tap_targets.py`'s and always will be.
+  '.try-button',
+  '.google-signin-compact',
+  '.wordset-button',
 ];
 
 describe('shared touch-target floor', () => {

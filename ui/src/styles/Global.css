@@ -43,7 +43,16 @@ body, html {
 .dropdown-trigger,
 .wordsets-retry,
 .game-settings-button,
-.mark-all-memorized-button {
+.mark-all-memorized-button,
+/* issue-52: added once the E2E harness could measure the RENDERED box. These
+ * three were never in this list, so the declaration test above was green while
+ * every one of them shipped under the floor on live prod — 23 of 33 controls
+ * on mobile. `.wordset-button` is the shared class, so it covers the whole
+ * practice/due/excluded/test family in one selector; `test` already renders at
+ * 103px (it spans three grid rows) and a floor cannot shrink it. */
+.try-button,
+.google-signin-compact,
+.wordset-button {
   min-height: var(--min-tap-target);
 }
 
@@ -51,5 +60,13 @@ body, html {
  * already wide enough, and forcing min-width on them would stretch short
  * labels into oddly wide buttons. */
 .speak-button {
+  min-width: var(--min-tap-target);
+}
+
+/* `.try-button` is the one text control that also fails horizontally, and only
+ * just — it renders 43.7px wide against a 44px floor. Raising it by 0.3px is
+ * not the label-stretching the comment above warns about; leaving it is a
+ * WCAG 2.5.5 miss on a rounding error. */
+.try-button {
   min-width: var(--min-tap-target);
 }
