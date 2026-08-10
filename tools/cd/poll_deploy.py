@@ -51,7 +51,7 @@ The cost is real: lexitrail's budget is `daily_build_count = 5`, and this wasted
 one of them on 2026-08-10 (#96). It then caught a second agent within 15 minutes
 of being reported in chat, with that warning in front of them — which is why it
 lives HERE, where the command is typed, rather than only in a thread. The
-structural fix (refuse to submit while a build is already in flight) is #100.
+structural fix (refuse to submit while a build is already in flight) is #101.
 """
 from __future__ import annotations
 
