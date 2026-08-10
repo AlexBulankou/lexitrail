@@ -15,9 +15,15 @@ import pytest
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
 from poll_deploy import (  # noqa: E402
     EXPECTED_CONTENT_TYPE_PREFIX,
+    EXIT_FAILED,
+    EXIT_INDETERMINATE,
+    EXIT_OK,
+    SERVED_RETRY_WINDOW_S,
     UI_DIR,
+    _verdict_exit,
     classify_served,
     needs_deploy,
+    should_retry_served,
 )
 
 
@@ -311,3 +317,53 @@ def test_ui_dir_is_absolute_and_does_not_depend_on_cwd(tmp_path, monkeypatch):
     # parents[3] from THIS file: tests/ -> cd/ -> tools/ -> repo root.
     # (poll_deploy.py itself is one level up, so it uses parents[2].)
     assert UI_DIR == str(pathlib.Path(__file__).resolve().parents[3] / "ui")
+
+
+# ---------------------------------------------------------------------------
+# issue-96: the post-rollout served check retries for the LB window.
+#
+# A deploy that fully succeeded exited 3 (INDETERMINATE) because the served
+# asset was sampled once, immediately after `rollout status`, while GKE was
+# still re-registering the pod: 503 for ~70s, then 200. A check that reports
+# "could not verify" on the SUCCESS path trains its reader to discount the
+# code, and then it carries no information on the day a deploy really breaks.
+# ---------------------------------------------------------------------------
+
+def test_ok_never_retries_even_at_zero_elapsed():
+    # Once the asset is good the deploy is verified. Continuing to poll could
+    # catch an unrelated later blip and downgrade a verdict already earned.
+    assert should_retry_served("ok", 0.0) is False
+    assert should_retry_served("ok", 5.0) is False
+
+
+def test_non_ok_retries_inside_the_window():
+    # BUG SHAPE: this is the single-sample conclusion that produced the false
+    # INDETERMINATE. A 503 at t=0 must NOT be the final answer.
+    assert should_retry_served("indeterminate", 0.0) is True
+    assert should_retry_served("indeterminate", 60.0) is True
+    # `absent` retries too — right after a rollout it is indistinguishable
+    # from the LB not having caught up.
+    assert should_retry_served("absent", 10.0) is True
+
+
+def test_the_window_is_bounded():
+    # The retry must terminate; an unbounded wait would hang a deploy.
+    w = SERVED_RETRY_WINDOW_S
+    assert should_retry_served("indeterminate", w) is False
+    assert should_retry_served("indeterminate", w + 1) is False
+
+
+def test_window_covers_the_measured_lb_lag():
+    # Measured 2026-08-10: 503 at 22:03:29Z, 200 by 22:04:13Z (~70s after
+    # rollout). A window at or under that would re-introduce the defect.
+    assert SERVED_RETRY_WINDOW_S >= 120
+
+
+def test_three_states_still_distinct_after_the_retry():
+    # The retry gives classify_served more chances; it must not blur what the
+    # verdicts MEAN. A persistent bad state still exits non-zero, and `absent`
+    # and `indeterminate` still exit differently.
+    assert _verdict_exit("ok") == EXIT_OK
+    assert _verdict_exit("absent") == EXIT_FAILED
+    assert _verdict_exit("indeterminate") == EXIT_INDETERMINATE
+    assert EXIT_FAILED != EXIT_INDETERMINATE
