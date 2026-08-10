@@ -50,6 +50,20 @@ describe('inFlight de-duplication (lexitrail#52 bug 6)', () => {
     expect(() => endRequest(f, requestKey('u1', 'w1', 'PRACTICE'))).not.toThrow();
   });
 
+  // BUG SHAPE — hc2@'s PR #90 review. A separator-joined key is injective only
+  // if no field can contain the separator, and wordsetId arrives unvalidated
+  // from the route. This exact pair collided under the `${a}|${b}|${c}` form,
+  // and a collision strands a real request on `beginRequest === false` — the
+  // hang this module exists to prevent.
+  test('a field containing the separator cannot collide with another request', () => {
+    expect(requestKey('u1', 'w1|foo', 'PRACTICE'))
+      .not.toBe(requestKey('u1', 'w1', 'foo|PRACTICE'));
+
+    const f = makeInFlight();
+    expect(beginRequest(f, requestKey('u1', 'w1|foo', 'PRACTICE'))).toBe(true);
+    expect(beginRequest(f, requestKey('u1', 'w1', 'foo|PRACTICE'))).toBe(true);
+  });
+
   test('requestKey distinguishes every field it is keyed on', () => {
     const keys = new Set([
       requestKey('u1', 'w1', 'PRACTICE'),

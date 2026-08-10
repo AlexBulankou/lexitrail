@@ -27,11 +27,24 @@ export const makeInFlight = () => new Set();
 
 /**
  * Identity of a load request. Must contain every value the request's result
- * depends on — these are exactly `useWordsetLoader`'s callback deps. `|` is
- * the separator because none of the three values can contain it.
+ * depends on — these are exactly `useWordsetLoader`'s callback deps.
+ *
+ * JSON-encoded rather than joined on a separator (hc2@, PR #90 review). A
+ * `${a}|${b}|${c}` join is only injective if no field can contain the
+ * separator, and `wordsetId` arrives unvalidated from the route
+ * (`/game/:wordsetId/:mode?`), so `/game/w1%7Cfoo/PRACTICE` decodes to a
+ * wordsetId of `w1|foo` and collides with wordsetId `w1` + mode
+ * `foo|PRACTICE`. A collision is not a cosmetic problem here: it makes
+ * `beginRequest` return false for a genuinely different request, which
+ * strands the loading state — the exact hang this module exists to prevent.
+ * Encoding removes the assumption instead of documenting it.
+ *
+ * (`undefined` and `null` both encode to `null`. Deliberate: both mean "no
+ * value", and every such request throws inside the loader's `try` on the
+ * `!userId` / `!wordsetId` guards regardless of which one it was.)
  */
 export const requestKey = (userId, wordsetId, mode) =>
-  `${userId}|${wordsetId}|${mode}`;
+  JSON.stringify([userId, wordsetId, mode]);
 
 /**
  * Claim `key`. Returns false when an identical request is already running
