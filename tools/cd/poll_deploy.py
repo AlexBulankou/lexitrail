@@ -102,7 +102,18 @@ def needs_deploy(head_sha: Optional[str], deployed_sha: Optional[str]) -> bool:
 #: How long to keep re-checking the served asset after a rollout before
 #: concluding. GKE re-registers the new pod in its NEG and runs health checks
 #: AFTER `rollout status` reports success, so the site legitimately 503s for a
-#: while on a perfectly good deploy — measured at ~70s on 2026-08-10 (#96).
+#: while on a perfectly good deploy.
+#:
+#: PROVENANCE, because the two halves of this number have different standing and
+#: the measured half lends credibility to the half that never earned it:
+#:   ~70s   MEASURED, ONCE — 2026-08-10, 503 at 22:03:29Z, 200 by 22:04:13Z (#96)
+#:   150    A JUDGEMENT — roughly 2x that single observation. NOT derived. No
+#:          distribution of LB re-registration times has been characterised, and
+#:          n=1 supports no percentile.
+#: So treat this as a choice to revisit, not a threshold to preserve. If a real
+#: deploy ever exits INDETERMINATE with "still <verdict> after 150s -- not LB
+#: lag", that is the sample of two which should REPLACE this number rather than
+#: be explained away against it.
 SERVED_RETRY_WINDOW_S = 150
 SERVED_RETRY_INTERVAL_S = 10
 
