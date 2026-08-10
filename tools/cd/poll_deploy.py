@@ -34,6 +34,24 @@ was broken: the SPA catch-all serves `index.html` for unknown paths. Status code
 cannot distinguish deployed from missing here. Only content-type and size can, so
 `verify_served` keys on those and treats a 200 with the wrong content-type as a
 FAILURE rather than a pass.
+
+## 🔴 INVOCATION — this script outlives the default agent timeout
+
+A full run takes well over 2 minutes (the build alone is ~4). The Claude Code
+Bash tool's DEFAULT timeout is 2 minutes, so a bare invocation is killed
+mid-run — and the kill lands AFTER `gcloud builds submit` and BEFORE the
+deployment patch. That is the one window with no recovery: the build completes
+server-side, the patch never happens, and re-running submits a SECOND build.
+There is no patch-only flag.
+
+    OK    run with an explicit timeout (>= 900s), or detached / in background
+    NOT   a bare call — it will be killed between submit and patch
+
+The cost is real: lexitrail's budget is `daily_build_count = 5`, and this wasted
+one of them on 2026-08-10 (#96). It then caught a second agent within 15 minutes
+of being reported in chat, with that warning in front of them — which is why it
+lives HERE, where the command is typed, rather than only in a thread. The
+structural fix (refuse to submit while a build is already in flight) is #101.
 """
 from __future__ import annotations
 
