@@ -6,6 +6,7 @@ import { formatDistanceToNow, max } from 'date-fns';
 import { GameMode } from '../components/Game';
 import { isDue } from '../utils/srs';
 import { makeInFlight, requestKey, beginRequest, endRequest } from '../utils/inFlight';
+import { rawKey, viewKey, invalidateWordset } from '../utils/wordsetCache';
 
 console.log("header or useWordsetLoader.js");
 
@@ -26,15 +27,11 @@ const updateRecallState = (currentRecallState, isCorrect) => {
   }
 };
 
-const invalidateCache = (userId, wordsetId) => {
-  const includedCacheKey = `${userId}-${wordsetId}-1`;
-  const excludedCacheKey = `${userId}-${wordsetId}-0`;
-  const dueCacheKey = `${userId}-${wordsetId}-1-due`;
-
-  delete userWordsetExcludedCache[includedCacheKey];
-  delete userWordsetExcludedCache[excludedCacheKey];
-  delete userWordsetExcludedCache[dueCacheKey];
-};
+// Sweeps the raw payload plus EVERY derived view for this wordset. The old
+// version deleted three literal keys, so any mode without a hand-written entry
+// was never invalidated — which is how TEST went missing (#93).
+const invalidateCache = (userId, wordsetId) =>
+  invalidateWordset(userWordsetExcludedCache, userId, wordsetId);
 
 // Helper function to shuffle an array
 const shuffleArray = (array) => {
@@ -91,9 +88,11 @@ export const useWordsetLoader = (wordsetId, userId, mode) => {
         throw new Error("wordsetId not defined");
 
       const includedFlag = mode == GameMode.SHOW_EXCLUDED ? 0 : 1;
-      // DUE_TODAY shares the included set (flag 1) but shows a filtered subset,
-      // so it needs its own cache slot to avoid serving the full practice list.
-      cacheKey = `${userId}-${wordsetId}-${includedFlag}${mode === GameMode.DUE_TODAY ? '-due' : ''}`;
+      // Keyed on MODE, not on includedFlag. PRACTICE and TEST both compute
+      // includedFlag 1, so the old key gave them one slot while their
+      // derivations differ (TEST strips [quiz_word]/special-char words and caps
+      // at 20) — Test rendered the practice list with its filter skipped (#93).
+      cacheKey = viewKey(userId, wordsetId, mode);
 
       // Check cache first
       if (userWordsetExcludedCache[cacheKey]) {
@@ -114,17 +113,28 @@ export const useWordsetLoader = (wordsetId, userId, mode) => {
 
       console.log(`loadWordsForWordset: Key: ${cacheKey} not in cache. Loading words for wordset: ${wordsetId}. Mode: ${mode}`);
 
-      // Fetch words from the wordset
-      const response = await getWordsByWordset(wordsetId);
-      const loadedWords = response.data;
+      // #91: NEITHER fetch takes `mode` — `getWordsByWordset(wordsetId)` and
+      // `getUserWordsByWordset(userId, wordsetId)` are mode-independent, and
+      // only the client-side filter below varies by mode. So the mapped result
+      // is cached per (user, wordset) and a mode switch reuses it instead of
+      // refetching identical bytes. Measured before this: 4 fetch pairs per
+      // wordset across 4 modes; 18 of 25 data requests redundant.
+      const rawCacheKey = rawKey(userId, wordsetId);
+      let mappedWords = userWordsetExcludedCache[rawCacheKey];
 
-      // Fetch userword metadata (recall history, exclusion state) for each word
-      const userwordsResponse = await getUserWordsByWordset(userId, wordsetId);
-      const userWordsMetadata = userwordsResponse.data;
+      if (!mappedWords) {
+        // Fetch words from the wordset
+        const response = await getWordsByWordset(wordsetId);
+        const loadedWords = response.data;
 
-      // Map and filter data for display
-      var wordIndex = 0;
-      const convertedWords = loadedWords
+        // Fetch userword metadata (recall history, exclusion state) for each word
+        const userwordsResponse = await getUserWordsByWordset(userId, wordsetId);
+        const userWordsMetadata = userwordsResponse.data;
+
+        // Map raw rows into display shape. Mode-independent by construction —
+        // anything that varies by mode belongs in the filter below, not here.
+        var wordIndex = 0;
+        mappedWords = loadedWords
         .map((word) => {
           const userWord = userWordsMetadata.find(uw => uw.word_id === word.word_id);
 
@@ -161,8 +171,14 @@ export const useWordsetLoader = (wordsetId, userId, mode) => {
               recall_time: formatDistanceToNow(new Date(hist.recall_time), { addSuffix: true }) // Human-readable format
             })) : [],
           };
-        })
-        // Apply mode-specific filters and constraints
+        });
+        userWordsetExcludedCache[rawCacheKey] = mappedWords;
+      }
+
+      // Apply mode-specific filters and constraints. `.filter` returns a NEW
+      // array, so the in-place shuffle/sort below can never reorder the cached
+      // raw list.
+      const convertedWords = mappedWords
         .filter(word => {
           if (mode === GameMode.TEST) {
             // Remove words with "[quiz_word]" in any quiz option's def2
