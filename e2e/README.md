@@ -51,8 +51,21 @@ analytics abort installed on the context before the first navigation.
 
 ```bash
 python3 e2e/redundant_fetches.py --self-test   # validate the detector itself
-python3 e2e/redundant_fetches.py               # measure prod, guest journey
+python3 e2e/redundant_fetches.py               # measure prod (nav=click, default)
+python3 e2e/redundant_fetches.py --nav goto    # the deep-link/reload path
 ```
+
+### `--nav click` is the default because `goto` cannot see a caching fix
+
+`page.goto()` is a HARD navigation: it reloads the SPA and wipes
+`window.userWordsetExcludedCache` every view, so no in-memory caching fix can
+ever move its number. The first version of this harness used `goto` and
+reported an unchanged 18 redundant against a build that had **zero** duplicate
+loader payloads — a detector whose value was independent of the fact it
+reports. `--nav click` uses client-side routing, which is what a user does when
+switching mode, and is the only arm in which the cache can apply. `--nav goto`
+is kept because deep-links and reloads are a real path, but it grades a
+different thing.
 
 `useWordsetLoader`'s cache key carries `mode`; the payloads it caches do not
 (`getWordsByWordset(wordsetId)` and `getUserWordsByWordset(userId, wordsetId)`
@@ -60,6 +73,12 @@ take no mode — `mode` only drives a client-side `.filter()`). So every mode
 switch is a guaranteed cache miss on bytes already in memory. Measured on prod
 2026-08-10: 3 wordsets × 4 modes → **24 data requests, 7 distinct, 17
 redundant**, each wordset fetched 4×.
+
+⚠️ The data matcher is a REGEX anchored on the wordset id
+(`/wordsets/<id>/words`, `/userwords/`), not the substring `/words` — which
+also matches `/wordsets`, the LIST endpoint the home page refetches on every
+back-navigation. That one call accounted for all 12 apparent "redundant"
+requests on a build whose loader payloads were already clean.
 
 Same three-state exit as `tap_targets.py`, for the same reason — `BLIND` (2)
 exists so "I could not look" can never be reported as "no redundancy". Note

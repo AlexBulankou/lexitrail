@@ -64,10 +64,18 @@ from collections import Counter
 
 URL_DEFAULT = "https://lexitrail.com"
 
-# Substrings identifying the loader's two payloads. Deliberately NOT a full
-# URL match -- the query string carries the demo user id, which varies per
-# session, and pinning it would make the check silently measure nothing.
-DATA_KEYS = ("/words", "/userwords")
+# The loader's two payloads, matched by REGEX rather than substring.
+#
+# Deliberately not a full URL: the query string carries the demo user id, which
+# varies per session (t3vs6@, pap8f@, 057zh@ observed across runs), and pinning
+# it would make the check silently measure nothing.
+#
+# But `"/words"` as a substring ALSO matches `/wordsets` -- the wordset LIST
+# endpoint, which the home page refetches on every back-navigation. That is a
+# different call with a different lifetime, and counting it swamped the signal:
+# it alone accounted for all 12 remaining "redundant" requests on a build where
+# the loader's own payloads had ZERO duplicates. Anchor on the wordset id.
+DATA_RE = re.compile(r"/wordsets/[^/]+/words|/userwords/")
 
 MODES = ["PRACTICE", "DUE_TODAY", "SHOW_EXCLUDED", "TEST"]
 WORDSETS = [1, 2, 3]
@@ -80,12 +88,13 @@ ANALYTICS_RE = re.compile(
 EXIT_PASS, EXIT_FAIL, EXIT_BLIND = 0, 1, 2
 
 
-def redundant(urls, keys=DATA_KEYS):
+def redundant(urls, keys=None):
     """Pure core: given observed request URLs, return the redundancy report.
 
     Kept free of Playwright so `--self-test` can drive it directly.
     """
-    data = [u for u in urls if any(k in u for k in keys)]
+    matcher = keys or DATA_RE
+    data = [u for u in urls if matcher.search(u)]
     counts = Counter(data)
     dupes = {u: n for u, n in counts.items() if n > 1}
     return {
@@ -134,7 +143,7 @@ def self_test():
     return EXIT_PASS if ok else EXIT_FAIL
 
 
-def measure(url, settle_ms):
+def measure(url, settle_ms, nav):
     from playwright.sync_api import sync_playwright
 
     seen = []
@@ -171,10 +180,27 @@ def measure(url, settle_ms):
             ctx.close()
             return None, "no wordset controls found after Try"
 
-        for ws in WORDSETS:
-            for mode in MODES:
-                page.goto(f"{url}/game/{ws}/{mode}", wait_until="commit", timeout=20000)
-                page.wait_for_timeout(settle_ms)
+        if nav == "goto":
+            # Hard navigation. Reloads the SPA every view, so the in-memory
+            # cache is wiped each time — this arm measures the deep-link /
+            # reload path and is BLIND to any caching fix by construction.
+            for ws in WORDSETS:
+                for mode in MODES:
+                    page.goto(f"{url}/game/{ws}/{mode}",
+                              wait_until="commit", timeout=20000)
+                    page.wait_for_timeout(settle_ms)
+        else:
+            # Client-side routing — what a user actually does when switching
+            # mode, and the ONLY arm in which an in-memory cache can apply.
+            # The DOM is rebuilt after each back, so controls are re-queried.
+            for i in range(len(WORDSETS) * len(MODES)):
+                controls = page.query_selector_all(".wordset-button")
+                if i >= len(controls):
+                    break
+                controls[i].click()
+                page.wait_for_timeout(max(settle_ms, 1500))
+                page.go_back()
+                page.wait_for_timeout(1000)
 
         # report-only: does the final view ever finish loading?
         start = time.time()
@@ -198,6 +224,10 @@ def main():
     ap.add_argument("--url", default=URL_DEFAULT)
     ap.add_argument("--self-test", action="store_true",
                     help="validate the detector itself; touches no site")
+    ap.add_argument("--nav", choices=["click", "goto"], default="click",
+                    help="click = client-side routing (default; the only arm in which "
+                         "an in-memory cache can apply). goto = hard navigation, which "
+                         "wipes the cache every view and is blind to caching fixes.")
     ap.add_argument("--settle-ms", type=int, default=350,
                     help="pause per view; deliberately shorter than a load so a "
                          "new request is issued while the previous is in flight")
@@ -206,13 +236,14 @@ def main():
     if args.self_test:
         return self_test()
 
-    report, why_blind = measure(args.url, args.settle_ms)
+    report, why_blind = measure(args.url, args.settle_ms, args.nav)
     if report is None:
         print(f"BLIND: {why_blind}")
         return EXIT_BLIND
 
     views = len(WORDSETS) * len(MODES)
-    print(f"views navigated: {views}  ({len(WORDSETS)} wordsets x {len(MODES)} modes)")
+    print(f"views navigated: {views}  ({len(WORDSETS)} wordsets x {len(MODES)} modes)"
+          f"  | nav={args.nav}")
     print(f"data requests: {report['total']} | distinct: {report['distinct']} "
           f"| redundant: {report['redundant']}")
     print("loading cleared in: " +
