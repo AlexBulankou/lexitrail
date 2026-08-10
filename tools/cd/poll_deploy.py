@@ -99,6 +99,34 @@ def needs_deploy(head_sha: Optional[str], deployed_sha: Optional[str]) -> bool:
     return head_sha != deployed_sha
 
 
+#: How long to keep re-checking the served asset after a rollout before
+#: concluding. GKE re-registers the new pod in its NEG and runs health checks
+#: AFTER `rollout status` reports success, so the site legitimately 503s for a
+#: while on a perfectly good deploy — measured at ~70s on 2026-08-10 (#96).
+SERVED_RETRY_WINDOW_S = 150
+SERVED_RETRY_INTERVAL_S = 10
+
+
+def should_retry_served(verdict: str, elapsed_s: float,
+                        window_s: int = SERVED_RETRY_WINDOW_S) -> bool:
+    """Should the served-asset check be sampled again?
+
+    Pure, so the policy is testable without sleeping through a real window.
+
+    `ok` NEVER retries: once the asset is good the deploy is verified, and
+    continuing to poll could catch an unrelated later blip and downgrade a
+    verdict that was already earned.
+
+    Every non-`ok` verdict retries inside the window, `absent` included. That is
+    deliberate: immediately after a rollout, `absent` and `indeterminate` are
+    both indistinguishable from "the load balancer has not caught up", and the
+    whole defect this closes was concluding from one early sample.
+    """
+    if verdict == "ok":
+        return False
+    return elapsed_s < window_s
+
+
 def classify_served(status: int, content_type: str, size: int) -> str:
     """`ok` | `absent` | `indeterminate` for a fetched asset.
 
@@ -421,6 +449,26 @@ def _await_rollout(timeout_s: int = 300, interval_s: int = 5) -> Optional[bool]:
     return last
 
 
+def _await_served_ok(window_s: int = SERVED_RETRY_WINDOW_S,
+                     interval_s: int = SERVED_RETRY_INTERVAL_S):
+    """Sample the served asset until it is `ok` or the window closes.
+
+    Returns (verdict, elapsed_s, samples). The wait is REPORTED by the caller
+    rather than hidden inside this loop, so a slow re-registration stays visible
+    instead of being silently absorbed.
+    """
+    start = time.monotonic()
+    samples = 0
+    while True:
+        served = _fetch_served_asset()
+        verdict = classify_served(*served) if served else "indeterminate"
+        samples += 1
+        elapsed = time.monotonic() - start
+        if not should_retry_served(verdict, elapsed, window_s):
+            return verdict, elapsed, samples
+        time.sleep(interval_s)
+
+
 def _deploy_and_verify(head: str) -> int:
     """Build from main, patch the deployment to the new digest, verify what SERVED.
 
@@ -479,9 +527,12 @@ def _deploy_and_verify(head: str) -> int:
     # ⚠️ `rollout status` reporting success is NOT evidence users see the change --
     # it says pods rolled, which is true even when the image never changed. The
     # served re-check below is the only step that speaks to what shipped.
-    served = _fetch_served_asset()
-    verdict = classify_served(*served) if served else "indeterminate"
-    print(f"[deploy] post-rollout served asset -> {verdict} {served}")
+    verdict, waited, samples = _await_served_ok()
+    print(f"[deploy] post-rollout served asset -> {verdict} "
+          f"(waited {waited:.0f}s over {samples} sample(s) for the LB)")
+    if verdict != "ok":
+        print(f"[deploy] still {verdict} after {waited:.0f}s -- not LB lag",
+              file=sys.stderr)
     return _verdict_exit(verdict)
 
 
