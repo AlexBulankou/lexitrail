@@ -5,6 +5,7 @@ import { recordPractice } from '../services/streakStore';
 import { formatDistanceToNow, max } from 'date-fns';
 import { GameMode } from '../components/Game';
 import { isDue } from '../utils/srs';
+import { makeInFlight, requestKey, beginRequest, endRequest } from '../utils/inFlight';
 
 console.log("header or useWordsetLoader.js");
 
@@ -56,13 +57,19 @@ export const useWordsetLoader = (wordsetId, userId, mode) => {
   const [correctlyMemorized, setCorrectlyMemorized] = useState(new Set());
   const [totalToShow, setTotalToShow] = useState(0);
 
-  const isFetchingRef = useRef(false); // Ref to track if a fetch is in progress
+  // Keys of loads currently running. Replaces an `isFetchingRef` boolean that
+  // was read and reset but NEVER set to true, so its early return could not be
+  // taken and no de-duplication happened. Keyed rather than boolean because a
+  // boolean would block a mid-flight `mode` change and strand the loading
+  // state — see utils/inFlight.js.
+  const inFlightRef = useRef(makeInFlight());
 
 
   const loadWordsForWordset = useCallback(async () => {
 
-    if (isFetchingRef.current) {
-      return; // Early exit if loading is already in progress
+    const reqKey = requestKey(userId, wordsetId, mode);
+    if (!beginRequest(inFlightRef.current, reqKey)) {
+      return; // an IDENTICAL load is already running; a different one proceeds
     }
 
     // Declared here (not inside the try) so the catch block can reference it —
@@ -248,7 +255,9 @@ export const useWordsetLoader = (wordsetId, userId, mode) => {
       setLoading({ status: 'error', error: error });
 
     } finally {
-      isFetchingRef.current = false; // Reset loading in progress flag
+      // MUST pair with the beginRequest above on every exit path — an
+      // unreleased key locks that request out until the component remounts.
+      endRequest(inFlightRef.current, reqKey);
     }
   }, [wordsetId, userId, mode]);
 
