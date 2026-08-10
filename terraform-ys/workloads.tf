@@ -156,6 +156,17 @@ resource "kubernetes_deployment_v1" "backend" {
       spec[0].template[0].spec[0].security_context,
       spec[0].template[0].spec[0].container[0].security_context,
       spec[0].template[0].spec[0].toleration,
+      # issue-87: terraform does NOT own the image, so it must not assert one.
+      # Live is digest-pinned (@sha256:3519ee7c…) while this file declares a TAG,
+      # and nothing in this repo sets either: there is no deploy script, no
+      # `kubectl set image`, no cloudbuild.yaml and no build trigger. The digests
+      # were pinned by hand. Without this, every plan shows `~ container.image`
+      # and an apply would silently UN-PIN both Deployments onto a floating tag —
+      # against decipher#2616 (`reporter:alx`, pin ns-fl images by digest).
+      # Adopting the digest here instead was rejected: with no updater it
+      # re-drifts on the very next hand-deploy, which moves the problem rather
+      # than fixing it. The real fix is a deploy path (issue-87 option (c)).
+      spec[0].template[0].spec[0].container[0].image,
     ]
   }
 }
@@ -243,6 +254,9 @@ resource "kubernetes_deployment_v1" "ui" {
       spec[0].template[0].spec[0].security_context,
       spec[0].template[0].spec[0].container[0].security_context,
       spec[0].template[0].spec[0].toleration,
+      # issue-87 — same reasoning as the backend above. Live UI is
+      # @sha256:7449639f… at revision 14, all fourteen set by hand.
+      spec[0].template[0].spec[0].container[0].image,
     ]
   }
 }

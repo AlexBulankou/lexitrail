@@ -35,7 +35,16 @@ variable "lexitrail_repo_location" {
 #     SQL_NAMESPACE is the one D1-collapse adaptation and is derived from
 #     var.namespace, not hardcoded here) ---
 variable "image_tag" {
-  description = "Image tag for the backend + UI images in lexitrail-repo (live uses :latest)."
+  # issue-87: this is the CREATE-time floor ONLY. Both Deployments ignore
+  # `container[0].image` (workloads.tf), because terraform does not own the
+  # image — LexiTrail has no deploy script, no cloudbuild.yaml and no build
+  # trigger, and its live digests were pinned by hand. So this value is used
+  # when a Deployment is first created and never again; steady-state image
+  # changes come from outside terraform and are deliberately not reconciled.
+  # Measured 2026-08-09: `:latest` resolved to the same bytes both Deployments
+  # were already running, so the floor is currently correct — but that is
+  # incidental and holds only until someone pushes `:latest`.
+  description = "CREATE-time image tag for the backend + UI images in lexitrail-repo. Steady-state image is ignored by lifecycle (issue-87) — terraform does not own it."
   type        = string
   default     = "latest"
 }
