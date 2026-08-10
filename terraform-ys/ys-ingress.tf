@@ -33,7 +33,9 @@
 # the same objects (server-side apply adopts them); the old Ingress + FrontendConfig
 # resources are removed from this file, so apply also destroys their (already kubectl-
 # deleted) state entries as no-ops. If kubectl_manifest errors on an already-existing
-# object, `terraform import` the six objects first (2 Gateways + 4 HTTPRoutes).
+# object, `terraform import` the SEVEN objects first (2 Gateways + 5 HTTPRoutes).
+# Corrected from "six ... + 4 HTTPRoutes" (#1338): the count predated
+# lexitrail-ys-ui-www-redirect, which has run live since the #905 cutover.
 
 # ===== UI Gateway (lexitrail.com → reserved IP google_compute_global_address.ui) =====
 resource "kubectl_manifest" "ui_gateway" {
@@ -60,6 +62,20 @@ resource "kubectl_manifest" "ui_gateway" {
         protocol: HTTP
         port: 80
         hostname: lexitrail.com
+        allowedRoutes: {namespaces: {from: Same}}
+      # www.lexitrail.com (#1338): these two were added live and served for 39
+      # days before the source learned about them. Declared here to ADOPT the
+      # live shape, not to impose one -- www.lexitrail.com already 301s to the
+      # apex today and that is the behaviour we want.
+      - name: https-www
+        protocol: HTTPS
+        port: 443
+        hostname: www.lexitrail.com
+        allowedRoutes: {namespaces: {from: Same}}
+      - name: http-www
+        protocol: HTTP
+        port: 80
+        hostname: www.lexitrail.com
         allowedRoutes: {namespaces: {from: Same}}
   YAML
 }
@@ -101,6 +117,34 @@ resource "kubectl_manifest" "ui_redirect" {
       - filters:
         - type: RequestRedirect
           requestRedirect: {scheme: https, statusCode: 301}
+  YAML
+}
+
+# www.lexitrail.com -> https://lexitrail.com (#1338). Transcribed from the LIVE
+# object rather than composed: both parentRefs, the explicit PathPrefix match and
+# the hostname on the redirect are all present live, so declaring less would make
+# ADM's post-import plan a diff instead of a no-op.
+resource "kubectl_manifest" "ui_www_redirect" {
+  depends_on = [kubectl_manifest.ui_gateway]
+  yaml_body  = <<-YAML
+    apiVersion: gateway.networking.k8s.io/v1
+    kind: HTTPRoute
+    metadata:
+      name: lexitrail-ys-ui-www-redirect
+      namespace: ${var.namespace}
+    spec:
+      parentRefs:
+      - name: lexitrail-ys-ui-gw
+        sectionName: https-www
+      - name: lexitrail-ys-ui-gw
+        sectionName: http-www
+      hostnames: [www.lexitrail.com]
+      rules:
+      - matches:
+        - path: {type: PathPrefix, value: /}
+        filters:
+        - type: RequestRedirect
+          requestRedirect: {hostname: lexitrail.com, scheme: https, statusCode: 301}
   YAML
 }
 
