@@ -46,3 +46,42 @@ defect. The authenticated/guest journeys in
 `docs/itp-playwright-usability.md` are not covered yet. **Never** click
 "Sign in with Google" when extending this; use the guest path, and keep the
 analytics abort installed on the context before the first navigation.
+
+## `redundant_fetches.py` — mode switches refetch identical bytes (lexitrail#91)
+
+```bash
+python3 e2e/redundant_fetches.py --self-test   # validate the detector itself
+python3 e2e/redundant_fetches.py               # measure prod, guest journey
+```
+
+`useWordsetLoader`'s cache key carries `mode`; the payloads it caches do not
+(`getWordsByWordset(wordsetId)` and `getUserWordsByWordset(userId, wordsetId)`
+take no mode — `mode` only drives a client-side `.filter()`). So every mode
+switch is a guaranteed cache miss on bytes already in memory. Measured on prod
+2026-08-10: 3 wordsets × 4 modes → **24 data requests, 7 distinct, 17
+redundant**, each wordset fetched 4×.
+
+Same three-state exit as `tap_targets.py`, for the same reason — `BLIND` (2)
+exists so "I could not look" can never be reported as "no redundancy". Note
+the extra BLIND trigger: **zero data requests observed** means the probe never
+exercised the loader, which is not the same as the loader being efficient.
+
+### It reports the stall but never gates on it
+
+Item 6 in #52 is *"loading persisted several minutes"*. That is reported and
+never gated, because it did not reproduce on the guest journey (~1.0s on both
+arms). Gating on a symptom we cannot summon produces a check that is green for
+the wrong reason.
+
+### This one clicks, so the analytics abort is load-bearing
+
+`tap_targets.py` never clicks and so cannot fire a beacon. This harness clicks
+**Try**, which fires a GA4 `try_with_demo_account` event, so the abort is
+installed on the context before the first navigation and the run **fails** if
+any beacon completed. Measured 13 blocked / 0 completed.
+
+### Why it is not a PR gate yet
+
+Prod currently fails it (17 redundant). Same ordering as the tap-target floor:
+harness → fix (#91) → then gate. A gate that reds every PR gets overridden, and
+the override becomes the habit.
