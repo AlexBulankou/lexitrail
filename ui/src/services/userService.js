@@ -40,8 +40,17 @@ export const getUserWordsByWordset = async (userId, wordsetId) => {
 };
 
 // Update recall state for a word
-export const updateUserWordRecall = async (userId, wordId, recallState, recall, isIncluded) => {
+// `inclusionOnly` (#111): this call changes inclusion and is NOT a recall
+// event, so the backend must not append a RecallHistory row for it. Defaults
+// false, so every existing caller is unchanged.
+//
+// The flag travels in the body, which `callMiddleLayer` forwards verbatim
+// (`axios.post(url, data)`), so it survives that path too. A backend that
+// predates the flag ignores it and behaves exactly as today — i.e. the
+// old-server case degrades to the current bug, never to something worse.
+export const updateUserWordRecall = async (userId, wordId, recallState, recall, isIncluded, inclusionOnly = false) => {
   const data = { recall_state: recallState, recall, is_included: isIncluded };
+  if (inclusionOnly) data.inclusion_only = true;
   if (window.config.MIDDLE_LAYER_ADDRESS === undefined) {
     // If the middle layer is not ready, fall back to call backend directly
     return await putData(`/userwords/${userId}/${wordId}/recall`, data);

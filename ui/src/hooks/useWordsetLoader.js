@@ -425,7 +425,10 @@ export const useWordsetLoader = (wordsetId, userId, mode) => {
     // word no longer visible to redo it on. Revert by identity; see
     // utils/failedWriteRevert.js for why not by index.
     const priorWord = { ...currentWord };
-    updateUserWordRecall(userId, currentWord.word_id, currentWord.recall_state, false, newInclusionState)
+    // #111: `inclusionOnly=true` — this is an inclusion change, not a recall.
+    // The `false` above is the `recall` argument the signature demands, and
+    // writing it to history painted a RED tile the learner never earned.
+    updateUserWordRecall(userId, currentWord.word_id, currentWord.recall_state, false, newInclusionState, true)
       .catch((error) => {
         console.error('Error updating exclusion state:', error);
         // hc2 review of PR #104: `setTotalToShow` must NOT be called from inside
