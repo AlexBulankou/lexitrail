@@ -52,7 +52,17 @@ body, html {
  * 103px (it spans three grid rows) and a floor cannot shrink it. */
 .try-button,
 .google-signin-compact,
-.wordset-button {
+.wordset-button,
+/* issue-120: the "Word Sets" nav link, found by the E2E harness on the
+ * guest journey — 98.9x32.0 on live prod, both viewports. NavBar.css
+ * carries the matching `display: flex` + `box-sizing: border-box` needed
+ * to make min-height take effect correctly on an `<a>` (same split as
+ * `.dropdown-trigger` below: the numeric floor here, the component-specific
+ * layout that makes it render there). Named `.nav-wordsets-link` rather
+ * than the more obvious `.nav-link` — NavBar.css already has an unrelated,
+ * unused `.nav-link` rule (font-size 18px) left over from an earlier nav
+ * design, and reusing that name would have silently inherited it. */
+.nav-wordsets-link {
   min-height: var(--min-tap-target);
 }
 
@@ -60,6 +70,24 @@ body, html {
  * already wide enough, and forcing min-width on them would stretch short
  * labels into oddly wide buttons. */
 .speak-button {
+  min-width: var(--min-tap-target);
+}
+
+/* issue-120: .dropdown-trigger measured 35.2x44.0 on guest/mobile — the
+ * min-height above already clears the floor, but width did not.
+ *
+ * hcl@ corrected this comment's first draft: the 35.2px element is
+ * `.user-dropdown-trigger` (the avatar+name button, NavBar.js:118 — it
+ * carries BOTH classes), not "About". NavBar.css hides `.user-info-compact`
+ * (the name/email text) below 480px, so on mobile the button's only visible
+ * content is the 24px avatar image, plus the mobile media query's reduced
+ * padding (<=480px: 0 0.35rem = 5.6px/side): 24 + 5.6 + 5.6 = 35.2, exactly
+ * the measured value. "About" (text + arrow) is comfortably wider even at
+ * the reduced mobile padding and was never the failing element. Both share
+ * `.dropdown-trigger`, so the fix here covers whichever one it is either
+ * way — this correction is to the reasoning, not the rule. Desktop shows
+ * the full name/email text, which is why only guest/mobile was flagged. */
+.dropdown-trigger {
   min-width: var(--min-tap-target);
 }
 

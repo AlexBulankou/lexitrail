@@ -76,9 +76,9 @@ const NavBar = () => {
       </div>
       <div className="nav-center">
         {user && (
-          <Link 
-            to="/wordsets" 
-            className={location.pathname === '/wordsets' ? 'nav-link-active' : ''}
+          <Link
+            to="/wordsets"
+            className={`nav-wordsets-link${location.pathname === '/wordsets' ? ' nav-link-active' : ''}`}
           >
             Word Sets
           </Link>
