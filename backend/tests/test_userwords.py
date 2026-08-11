@@ -124,6 +124,99 @@ class UserWordTests(unittest.TestCase):
             self.assertEqual(recall_history.old_recall_state, None)  # No old recall state for new entry
             self.assertEqual(recall_history.recall, True)
 
+    # ---------------------------------------------------------------------
+    # #111 — an exclusion toggle must not be written as a failed recall
+    #
+    # THE BUG SHAPE. `toggleExclusion` reuses this endpoint and passes
+    # `recall=False` because the signature demands a value; the row was
+    # written unconditionally, and `historyTiles.js` renders every row as
+    # `correct: Boolean(r.recall)`. So excluding a word painted a RED tile on
+    # its history, indistinguishable from a wrong answer.
+    # ---------------------------------------------------------------------
+
+    def test_inclusion_only_writes_no_recall_history(self):
+        """The regression: no history row for an inclusion change."""
+        with self.app.app_context():
+            user, wordset, word = TestUtils.create_test_word(db)
+
+            response = self.client.put(
+                f'/userwords/{user.email}/{word.word_id}/recall',
+                json={'recall_state': 0, 'recall': False,
+                      'is_included': False, 'inclusion_only': True}
+            )
+            self.assertEqual(response.status_code, 200)
+
+            # The inclusion change itself MUST still persist -- suppressing the
+            # history row must not suppress the thing the user actually did.
+            userword = db.session.query(UserWord).filter_by(
+                user_id=user.email, word_id=word.word_id).first()
+            self.assertIsNotNone(userword)
+            self.assertEqual(userword.is_included, False)
+
+            rows = db.session.query(RecallHistory).filter_by(
+                user_id=user.email, word_id=word.word_id).all()
+            self.assertEqual(rows, [], "an exclusion toggle wrote a recall row")
+
+    def test_omitting_the_flag_still_writes_history(self):
+        """Back-compat: an older UI sends no flag and must behave as before.
+
+        This is the arm that makes the change safe to deploy independently of
+        the frontend -- the default has to be the OLD behaviour, not the new.
+        """
+        with self.app.app_context():
+            user, wordset, word = TestUtils.create_test_word(db)
+
+            response = self.client.put(
+                f'/userwords/{user.email}/{word.word_id}/recall',
+                json={'recall_state': 1, 'recall': True, 'is_included': True}
+            )
+            self.assertEqual(response.status_code, 200)
+
+            rows = db.session.query(RecallHistory).filter_by(
+                user_id=user.email, word_id=word.word_id).all()
+            self.assertEqual(len(rows), 1)
+
+    def test_inclusion_only_false_is_explicitly_the_old_behaviour(self):
+        """Sending the flag as False must not be read as truthy."""
+        with self.app.app_context():
+            user, wordset, word = TestUtils.create_test_word(db)
+
+            response = self.client.put(
+                f'/userwords/{user.email}/{word.word_id}/recall',
+                json={'recall_state': 1, 'recall': True,
+                      'is_included': True, 'inclusion_only': False}
+            )
+            self.assertEqual(response.status_code, 200)
+
+            rows = db.session.query(RecallHistory).filter_by(
+                user_id=user.email, word_id=word.word_id).all()
+            self.assertEqual(len(rows), 1)
+
+    def test_a_genuine_recall_still_writes_history_when_state_does_not_move(self):
+        """Why the SERVER must not infer this from an unchanged recall_state.
+
+        A correct answer on a word already floored at 0 leaves the state
+        unchanged -- identical to an inclusion toggle by that heuristic. It is
+        a real recall and must still be recorded, which is why the caller
+        declares intent rather than the server guessing.
+        """
+        with self.app.app_context():
+            user, wordset, word = TestUtils.create_test_word(db)
+            db.session.add(UserWord(user_id=user.email, word_id=word.word_id,
+                                    is_included=True, recall_state=0))
+            db.session.commit()
+
+            response = self.client.put(
+                f'/userwords/{user.email}/{word.word_id}/recall',
+                json={'recall_state': 0, 'recall': True, 'is_included': True}
+            )
+            self.assertEqual(response.status_code, 200)
+
+            rows = db.session.query(RecallHistory).filter_by(
+                user_id=user.email, word_id=word.word_id).all()
+            self.assertEqual(len(rows), 1, "a real recall was dropped")
+            self.assertEqual(rows[0].recall, True)
+
 
 if __name__ == '__main__':
     unittest.main()

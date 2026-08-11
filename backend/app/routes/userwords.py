@@ -4,6 +4,7 @@ from ..utils import to_dict, success_response, error_response, not_found_respons
 from datetime import datetime
 import logging
 from ..utils import validate_user_access  # Import the shared validation function
+from ..recall_policy import is_recall_event
 from app.auth import authenticate_user  # Import from auth.py
 import time
 
@@ -134,6 +135,16 @@ def update_recall_state(user_id, word_id):
     new_recall_state = data.get('recall_state')
     recall = data.get('recall')
     is_included = data.get('is_included')
+    # #111: the caller asserts this call is an inclusion change, NOT a recall
+    # event. Defaults False, so every existing caller (and an older UI talking
+    # to a newer backend) behaves exactly as before.
+    #
+    # WHY THE CALLER DECIDES rather than the server inferring it: the server
+    # could guess from "recall_state did not move", but a genuine recall that
+    # happens not to change the state (already floored at 0 and answered
+    # correctly) looks identical. That heuristic would silently drop real
+    # recalls, which is a worse failure than the one being fixed.
+    record_history = is_recall_event(data)
     userword_entry_exists = False
 
     # Validate input fields
@@ -168,18 +179,31 @@ def update_recall_state(user_id, word_id):
 
         db.session.commit()
 
-        # Add entry to RecallHistory (Always created)
-        recall_history = RecallHistory(
-            user_id=user_id,
-            word_id=word_id,
-            recall=recall,  # Read the recall value from the request
-            recall_time=datetime.utcnow(),
-            new_recall_state=new_recall_state,
-            old_recall_state=old_recall_state if userword_entry_exists else None,
-            is_included=is_included  # Save is_included in RecallHistory
-        )
-        db.session.add(recall_history)
-        db.session.commit()
+        # Add entry to RecallHistory -- unless the caller says this was not a
+        # recall (#111).
+        #
+        # THE BUG THIS CLOSES: `toggleExclusion` reuses this endpoint, passing
+        # `recall=False` because the signature demands a value. The row was
+        # written unconditionally, and `historyTiles.js` renders every row as
+        # `correct: Boolean(r.recall)` -- so excluding a word painted a RED
+        # tile on its history, indistinguishable from a wrong answer, on the
+        # surface whose whole job is to show the learner how they are doing.
+        if record_history:
+            recall_history = RecallHistory(
+                user_id=user_id,
+                word_id=word_id,
+                recall=recall,  # Read the recall value from the request
+                recall_time=datetime.utcnow(),
+                new_recall_state=new_recall_state,
+                old_recall_state=old_recall_state if userword_entry_exists else None,
+                is_included=is_included  # Save is_included in RecallHistory
+            )
+            db.session.add(recall_history)
+            db.session.commit()
+        else:
+            logger.info(
+                f"Inclusion-only update for user {user_id} word {word_id} "
+                f"(is_included={is_included}) -- no RecallHistory row written (#111)")
 
         return success_response(to_dict(userword), "Recall state and recall updated successfully")
 
