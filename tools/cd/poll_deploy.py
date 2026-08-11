@@ -50,8 +50,15 @@ There is no patch-only flag.
 The cost is real: lexitrail's budget is `daily_build_count = 5`, and this wasted
 one of them on 2026-08-10 (#96). It then caught a second agent within 15 minutes
 of being reported in chat, with that warning in front of them — which is why it
-lives HERE, where the command is typed, rather than only in a thread. The
-structural fix (refuse to submit while a build is already in flight) is #101.
+lives HERE, where the command is typed, rather than only in a thread.
+
+⚠️ The warning above is STILL the operative advice, and #101 did not retire it.
+#101 makes the *waste* impossible — a re-run after a kill now WAITS for the
+build already in flight instead of submitting a second one, so the recovery
+resumes rather than costing a unit. It does not make the kill itself harmless:
+a run killed mid-wait still leaves the deployment unpatched, and only an
+explicit timeout avoids that. Structural fix for the cost, unchanged advice for
+the interruption.
 """
 from __future__ import annotations
 
@@ -414,6 +421,82 @@ def newest_successful_build(stdout: str) -> tuple[Optional[str], Optional[str]]:
     return build_id, digest
 
 
+#: Cloud Build statuses that mean "a build is already running or about to".
+IN_FLIGHT_STATUSES = ("WORKING", "QUEUED")
+
+#: How often to re-ask a waited-on build for its status. A build is ~4 minutes,
+#: so this trades a handful of cheap API calls for not overshooting the finish.
+BUILD_POLL_INTERVAL_S = 15
+
+#: The three states of the in-flight question. `UNKNOWN` is load-bearing and is
+#: NOT collapsed into `NONE`: the whole point of this check is to avoid spending
+#: a build unit, and "I could not read the build list" is not evidence that the
+#: list is empty. Defaulting an unreadable state to "go ahead" would spend a unit
+#: on exactly the state we cannot reason about (#101 AC5).
+INFLIGHT_NONE = "none"
+INFLIGHT_YES = "in_flight"
+INFLIGHT_UNKNOWN = "unknown"
+
+
+def classify_ongoing_builds(returncode: int, stdout: str) -> tuple[str, Optional[str]]:
+    """`(state, build_id)` from a `gcloud builds list --ongoing` result.
+
+    Pure, so the policy is testable without a live build — the repo convention
+    that `needs_deploy` / `classify_served` / `should_retry_served` follow.
+
+    🔴 The discriminator is the EXIT STATUS, never the emptiness of stdout. Those
+    are two different facts wearing one appearance: a successful query with no
+    ongoing builds and a query that failed outright BOTH print nothing. Keying on
+    `not stdout` would report a broken gcloud, an expired credential, or a wrong
+    `--project` as "nothing in flight, go ahead" — the reassuring direction, and
+    the one that spends the unit this function exists to protect.
+    """
+    if returncode != 0:
+        return INFLIGHT_UNKNOWN, None
+    lines = [ln for ln in stdout.splitlines() if ln.strip()]
+    if not lines:
+        return INFLIGHT_NONE, None
+    # NB: do not strip the LINE before splitting -- a leading tab is an empty
+    # FIRST field (an unnamed row), and stripping it would promote the status
+    # into the id slot and report `("in_flight", "WORKING")`. Caught by the
+    # `"\tWORKING"` case in the table test.
+    build_id = lines[0].split("\t")[0].strip() or None
+    if build_id is None:
+        # A row exists, so something IS in flight, but we cannot name it — which
+        # means we cannot poll it either. Unknown, not none: there is more
+        # evidence of a build here than in the empty case, not less.
+        return INFLIGHT_UNKNOWN, None
+    return INFLIGHT_YES, build_id
+
+
+def _query_ongoing_build() -> tuple[str, Optional[str]]:
+    """Live `(state, build_id)` for an already-running build in this project."""
+    r = _run(["gcloud", "builds", "list", "--project", PROJECT, "--region", REGION,
+              "--ongoing", "--sort-by", "~createTime", "--limit", "1",
+              "--format", "value(id,status)"], timeout=300)
+    return classify_ongoing_builds(r.returncode, r.stdout)
+
+
+def _wait_for_build(build_id: str, timeout_s: int = 1800) -> Optional[str]:
+    """Poll `build_id` to a terminal status. Returns the status, or None if unreadable.
+
+    None is a third state on purpose, same reason as `INFLIGHT_UNKNOWN`: a build
+    whose status we stopped being able to read is not a build that failed and is
+    not one that succeeded.
+    """
+    deadline = time.monotonic() + timeout_s
+    while time.monotonic() < deadline:
+        r = _run(["gcloud", "builds", "describe", build_id, "--project", PROJECT,
+                  "--region", REGION, "--format", "value(status)"], timeout=300)
+        if r.returncode != 0:
+            return None
+        status = r.stdout.strip()
+        if status and status not in IN_FLIGHT_STATUSES:
+            return status
+        time.sleep(BUILD_POLL_INTERVAL_S)
+    return None
+
+
 def _query_newest_successful_build() -> tuple[Optional[str], Optional[str]]:
     """(build_id, digest) for the most recent SUCCESS build in this project.
 
@@ -512,12 +595,44 @@ def _deploy_and_verify(head: str) -> int:
     # changed is a direct observation and depends on nothing.
     before_id, _ = _query_newest_successful_build()
 
-    print(f"[deploy] building {IMAGE}:latest from main ({head[:8]})")
-    b = _run(["gcloud", "builds", "submit", "--project", PROJECT, "--region", REGION,
-              "--tag", f"{IMAGE}:latest", UI_DIR], timeout=1800)
-    if not build_succeeded(b.returncode, b.stdout + b.stderr):
-        print(f"[deploy] build FAILED (rc={b.returncode}) -- not patching", file=sys.stderr)
-        return EXIT_FAILED
+    # #101 -- do not submit while one is already in flight. This tool outlives the
+    # default agent timeout, and the kill lands between submit and patch, so the
+    # natural recovery (re-run) used to submit a SECOND build. Waiting converts
+    # that from "wastes a unit" into "resumes", which is what a re-run should
+    # always have meant. A warning did not close this: it caught a second agent
+    # within 15 minutes of being written, with the warning in front of them.
+    state, ongoing_id = _query_ongoing_build()
+    if state == INFLIGHT_UNKNOWN:
+        print("[deploy] could not determine whether a build is in flight"
+              " -- refusing to submit rather than risk a duplicate", file=sys.stderr)
+        return EXIT_INDETERMINATE
+
+    if state == INFLIGHT_YES:
+        print(f"[deploy] build {ongoing_id} is already in flight"
+              f" -- waiting for it instead of submitting a second one")
+        final = _wait_for_build(ongoing_id)
+        if final is None:
+            print(f"[deploy] lost track of build {ongoing_id} -- refusing to patch"
+                  " or to submit a replacement", file=sys.stderr)
+            return EXIT_INDETERMINATE
+        if final != "SUCCESS":
+            print(f"[deploy] in-flight build {ongoing_id} ended {final} -- not patching",
+                  file=sys.stderr)
+            return EXIT_FAILED
+        # That build may already carry main, in which case the right action is to
+        # patch (or do nothing), never to build again. Re-derive rather than assume.
+        if not needs_deploy(head, deployed_source_sha()):
+            print(f"[deploy] build {ongoing_id} already covers main ({head[:8]})"
+                  " -- nothing to deploy")
+            return EXIT_OK
+        print(f"[deploy] build {ongoing_id} succeeded; patching from it without rebuilding")
+    else:
+        print(f"[deploy] building {IMAGE}:latest from main ({head[:8]})")
+        b = _run(["gcloud", "builds", "submit", "--project", PROJECT, "--region", REGION,
+                  "--tag", f"{IMAGE}:latest", UI_DIR], timeout=1800)
+        if not build_succeeded(b.returncode, b.stdout + b.stderr):
+            print(f"[deploy] build FAILED (rc={b.returncode}) -- not patching", file=sys.stderr)
+            return EXIT_FAILED
 
     after_id, sha = _query_newest_successful_build()
     if after_id is None or after_id == before_id:

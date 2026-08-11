@@ -367,3 +367,162 @@ def test_three_states_still_distinct_after_the_retry():
     assert _verdict_exit("absent") == EXIT_FAILED
     assert _verdict_exit("indeterminate") == EXIT_INDETERMINATE
     assert EXIT_FAILED != EXIT_INDETERMINATE
+
+
+# ---------------------------------------------------------------------------
+# #101 -- refuse to submit a second build while one is already in flight.
+#
+# The pure half (`classify_ongoing_builds`) is tested directly; the wiring is
+# tested through `_deploy_and_verify` with every gcloud call stubbed, because
+# AC1/AC4 are claims about a call that must NOT happen, and only the caller can
+# demonstrate that.
+# ---------------------------------------------------------------------------
+from poll_deploy import (  # noqa: E402
+    INFLIGHT_NONE, INFLIGHT_UNKNOWN, INFLIGHT_YES, IN_FLIGHT_STATUSES,
+    classify_ongoing_builds,
+)
+
+
+@pytest.mark.parametrize("rc,out,expected_state,expected_id", [
+    (0, "", INFLIGHT_NONE, None),                       # queried fine, nothing running
+    (0, "\n  \n", INFLIGHT_NONE, None),                 # whitespace is still nothing
+    (0, "abc-123\tWORKING", INFLIGHT_YES, "abc-123"),   # one running
+    (0, "abc-123\tQUEUED", INFLIGHT_YES, "abc-123"),    # queued counts -- it will run
+    (1, "", INFLIGHT_UNKNOWN, None),                    # query FAILED, empty output
+    (1, "abc-123\tWORKING", INFLIGHT_UNKNOWN, None),    # rc wins over plausible output
+    (0, "\tWORKING", INFLIGHT_UNKNOWN, None),           # a row we cannot name
+])
+def test_classify_ongoing_builds_table(rc, out, expected_state, expected_id):
+    assert classify_ongoing_builds(rc, out) == (expected_state, expected_id)
+
+
+def test_a_failed_query_is_unknown_not_none():
+    """🔴 The load-bearing one (AC5).
+
+    A successful query with nothing running and a query that failed outright
+    both print NOTHING. If emptiness were the discriminator they would be the
+    same value, and the unreadable state would resolve to "go ahead" -- spending
+    a build unit on precisely the state we cannot reason about.
+
+    So this asserts the two are DIFFERENT, which is only possible because the
+    exit status, not the output, is what is keyed on.
+    """
+    broken, _ = classify_ongoing_builds(1, "")
+    empty, _ = classify_ongoing_builds(0, "")
+    assert broken == INFLIGHT_UNKNOWN
+    assert empty == INFLIGHT_NONE
+    assert broken != empty
+
+
+def test_queued_is_in_flight_not_merely_working():
+    # A QUEUED build has not started, but submitting alongside it still spends a
+    # second unit -- which is the resource this guard protects.
+    assert "QUEUED" in IN_FLIGHT_STATUSES
+    assert classify_ongoing_builds(0, "b\tQUEUED")[0] == INFLIGHT_YES
+
+
+class _Recorder:
+    """Stubs `_run`, recording every argv so a NON-call can be asserted."""
+
+    def __init__(self, responses):
+        self.responses = responses
+        self.calls = []
+
+    def __call__(self, cmd, timeout=900):
+        self.calls.append(cmd)
+        for match, resp in self.responses:
+            if match(cmd):
+                return resp
+        return _Result(0, "")
+
+    @property
+    def submitted(self):
+        return any("submit" in c for c in self.calls)
+
+
+class _Result:
+    def __init__(self, returncode, stdout, stderr=""):
+        self.returncode, self.stdout, self.stderr = returncode, stdout, stderr
+
+
+def _is(*words):
+    return lambda cmd: all(w in cmd for w in words)
+
+
+def _install(monkeypatch, rec, **overrides):
+    import poll_deploy as pd
+    monkeypatch.setattr(pd, "_run", rec)
+    monkeypatch.setattr(pd, "time", type("T", (), {
+        "monotonic": staticmethod(lambda: 0.0), "sleep": staticmethod(lambda s: None)}))
+    for name, value in overrides.items():
+        monkeypatch.setattr(pd, name, value)
+
+
+def test_does_not_submit_while_a_build_is_in_flight(monkeypatch):
+    """AC1 + AC4 -- the bug shape. Fails if the code submits anyway."""
+    import poll_deploy as pd
+    rec = _Recorder([
+        (_is("list", "--ongoing"), _Result(0, "inflight-1\tWORKING")),
+        (_is("describe", "inflight-1"), _Result(0, "SUCCESS")),
+        (_is("list", "--filter"), _Result(0, "inflight-1\tsha256:" + "a" * 64)),
+    ])
+    _install(monkeypatch, rec, deployed_source_sha=lambda: "deadbeef")
+    monkeypatch.setattr(pd, "_k8s", lambda *a, **k: (200, "{}"))
+    monkeypatch.setattr(pd, "_await_rollout", lambda *a, **k: True)
+    monkeypatch.setattr(pd, "_await_served_ok", lambda *a, **k: ("ok", 0.0, 1))
+
+    pd._deploy_and_verify("cafebabe")
+
+    assert not rec.submitted, (
+        "#101 AC1/AC4: a build was already in flight and the tool submitted "
+        "another one -- this is the exact 2-units-for-one-deploy waste")
+
+
+def test_unknown_in_flight_state_refuses_rather_than_submitting(monkeypatch):
+    """AC5 -- an unreadable state must not spend a unit."""
+    import poll_deploy as pd
+    rec = _Recorder([(_is("list", "--ongoing"), _Result(1, "", "boom"))])
+    _install(monkeypatch, rec)
+
+    rc = pd._deploy_and_verify("cafebabe")
+
+    assert rc == pd.EXIT_INDETERMINATE
+    assert not rec.submitted, "an unreadable build list must never green-light a submit"
+
+
+def test_waits_then_skips_the_patch_when_that_build_already_covers_main(monkeypatch):
+    """AC2 -- re-evaluate after waiting; do not blindly rebuild."""
+    import poll_deploy as pd
+    rec = _Recorder([
+        (_is("list", "--ongoing"), _Result(0, "inflight-1\tWORKING")),
+        (_is("describe", "inflight-1"), _Result(0, "SUCCESS")),
+    ])
+    # The in-flight build deployed main while we were waiting.
+    _install(monkeypatch, rec, deployed_source_sha=lambda: "cafebabe")
+
+    rc = pd._deploy_and_verify("cafebabe")
+
+    assert rc == pd.EXIT_OK
+    assert not rec.submitted
+
+
+def test_still_submits_when_nothing_is_in_flight(monkeypatch):
+    """The negative control: the guard must not become permanently-on.
+
+    Without this, a helper hardwired to report IN_FLIGHT would pass every test
+    above while making the tool incapable of ever deploying.
+    """
+    import poll_deploy as pd
+    rec = _Recorder([
+        (_is("list", "--ongoing"), _Result(0, "")),
+        (_is("submit"), _Result(0, "SUCCESS")),
+        (_is("list", "--filter"), _Result(0, "new-2\tsha256:" + "b" * 64)),
+    ])
+    _install(monkeypatch, rec, deployed_source_sha=lambda: "deadbeef")
+    monkeypatch.setattr(pd, "_k8s", lambda *a, **k: (200, "{}"))
+    monkeypatch.setattr(pd, "_await_rollout", lambda *a, **k: True)
+    monkeypatch.setattr(pd, "_await_served_ok", lambda *a, **k: ("ok", 0.0, 1))
+
+    pd._deploy_and_verify("cafebabe")
+
+    assert rec.submitted, "with nothing in flight the tool must still build"
