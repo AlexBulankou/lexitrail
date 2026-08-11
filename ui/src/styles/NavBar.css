@@ -168,6 +168,33 @@
     opacity: 0.7; /* Make them slightly less prominent */
 }
 
+/* issue-120: Word Sets (the only link inside .nav-center) measured 98.9x32.0
+ * on live prod, guest+member, both viewports — 12px under the 44px floor.
+ * The navbar's fixed 48px height and .nav-center's own `align-items: center`
+ * only POSITION the link, they don't raise its own box height.
+ *
+ * The numeric floor is declared once in Global.css (`.nav-wordsets-link`,
+ * alongside every other floor-bearing control) — this rule is the
+ * component-specific layout that's ALSO needed to make it take effect:
+ * min-height is a no-op on a plain `<a>` (default `display: inline`), same
+ * reason `.dropdown-trigger` carries its own `display: flex` here rather
+ * than in the shared block. Width is untouched — 98.9px already clears the
+ * floor.
+ *
+ * box-sizing: border-box matters here specifically because the link ALSO
+ * carries its own 0.5rem/1rem padding (above): with the default
+ * content-box, min-height applies to the content box only, so the 44px
+ * floor stacks on top of the 16px vertical padding and renders 60px tall —
+ * overflowing the navbar's fixed 48px height both above and below it.
+ * border-box makes the 44px floor include the padding, matching what the
+ * button-based floor controls get for free from the UA stylesheet
+ * (`<button>` defaults to border-box; `<a>` does not). */
+.nav-wordsets-link {
+    display: flex;
+    align-items: center;
+    box-sizing: border-box;
+}
+
 .nav-center {
     margin-right: auto; /* Push everything else to the right */
     padding-left: 0; /* Remove any left padding */

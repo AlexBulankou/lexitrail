@@ -42,6 +42,12 @@ const FLOOR_SELECTORS = [
   '.try-button',
   '.google-signin-compact',
   '.wordset-button',
+  // issue-120: found by the E2E harness on the guest journey.
+  // `.nav-wordsets-link` is the "Word Sets" nav link (98.9x32.0 on live
+  // prod); `.dropdown-trigger` (already above) also gained a min-width --
+  // its declared min-height alone wasn't enough, the mobile-media-query
+  // padding left it 35.2px wide.
+  '.nav-wordsets-link',
 ];
 
 describe('shared touch-target floor', () => {
@@ -100,10 +106,11 @@ describe('shared touch-target floor', () => {
         for (const r of css.matchAll(
           new RegExp(`${escaped}[a-zA-Z0-9_-]*\\s*\\{([^}]*)\\}`, 'gs')
         )) {
-          // min-height is shared for all six; min-width is shared for
-          // .speak-button only, so a min-width literal elsewhere (e.g.
-          // .exclude-button's 68px label width) is a different job and allowed.
-          const props = sel === '.speak-button'
+          // min-height is shared for all these; min-width is shared for
+          // .speak-button and .dropdown-trigger only, so a min-width literal
+          // elsewhere (e.g. .exclude-button's 68px label width) is a
+          // different job and allowed.
+          const props = (sel === '.speak-button' || sel === '.dropdown-trigger')
             ? /\bmin-(height|width):\s*[\d.]+(px|rem)/g
             : /\bmin-height:\s*[\d.]+(px|rem)/g;
           for (const d of r[1].matchAll(props)) {

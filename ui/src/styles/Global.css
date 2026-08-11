@@ -52,7 +52,17 @@ body, html {
  * 103px (it spans three grid rows) and a floor cannot shrink it. */
 .try-button,
 .google-signin-compact,
-.wordset-button {
+.wordset-button,
+/* issue-120: the "Word Sets" nav link, found by the E2E harness on the
+ * guest journey — 98.9x32.0 on live prod, both viewports. NavBar.css
+ * carries the matching `display: flex` + `box-sizing: border-box` needed
+ * to make min-height take effect correctly on an `<a>` (same split as
+ * `.dropdown-trigger` below: the numeric floor here, the component-specific
+ * layout that makes it render there). Named `.nav-wordsets-link` rather
+ * than the more obvious `.nav-link` — NavBar.css already has an unrelated,
+ * unused `.nav-link` rule (font-size 18px) left over from an earlier nav
+ * design, and reusing that name would have silently inherited it. */
+.nav-wordsets-link {
   min-height: var(--min-tap-target);
 }
 
@@ -60,6 +70,17 @@ body, html {
  * already wide enough, and forcing min-width on them would stretch short
  * labels into oddly wide buttons. */
 .speak-button {
+  min-width: var(--min-tap-target);
+}
+
+/* issue-120: .dropdown-trigger ("About") measured 35.2x44.0 on guest/mobile
+ * — the min-height above already clears the floor, but the mobile media
+ * query's reduced padding (NavBar.css, <=480px: 0 0.35rem) leaves the
+ * short text+arrow content under 44px wide. Desktop's default 0.5rem
+ * padding already clears it, so this is a floor for the narrow case
+ * rather than a visible change there. .user-dropdown-trigger (avatar +
+ * name) is already well over 44px wide and unaffected. */
+.dropdown-trigger {
   min-width: var(--min-tap-target);
 }
 
