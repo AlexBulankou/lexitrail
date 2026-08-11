@@ -73,13 +73,20 @@ body, html {
   min-width: var(--min-tap-target);
 }
 
-/* issue-120: .dropdown-trigger ("About") measured 35.2x44.0 on guest/mobile
- * — the min-height above already clears the floor, but the mobile media
- * query's reduced padding (NavBar.css, <=480px: 0 0.35rem) leaves the
- * short text+arrow content under 44px wide. Desktop's default 0.5rem
- * padding already clears it, so this is a floor for the narrow case
- * rather than a visible change there. .user-dropdown-trigger (avatar +
- * name) is already well over 44px wide and unaffected. */
+/* issue-120: .dropdown-trigger measured 35.2x44.0 on guest/mobile — the
+ * min-height above already clears the floor, but width did not.
+ *
+ * hcl@ corrected this comment's first draft: the 35.2px element is
+ * `.user-dropdown-trigger` (the avatar+name button, NavBar.js:118 — it
+ * carries BOTH classes), not "About". NavBar.css hides `.user-info-compact`
+ * (the name/email text) below 480px, so on mobile the button's only visible
+ * content is the 24px avatar image, plus the mobile media query's reduced
+ * padding (<=480px: 0 0.35rem = 5.6px/side): 24 + 5.6 + 5.6 = 35.2, exactly
+ * the measured value. "About" (text + arrow) is comfortably wider even at
+ * the reduced mobile padding and was never the failing element. Both share
+ * `.dropdown-trigger`, so the fix here covers whichever one it is either
+ * way — this correction is to the reasoning, not the rule. Desktop shows
+ * the full name/email text, which is why only guest/mobile was flagged. */
 .dropdown-trigger {
   min-width: var(--min-tap-target);
 }
