@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { revertWordWrite, wasWordRemoved } from '../utils/failedWriteRevert';
 import { getWordsByWordset } from '../services/wordsService';
 import { getUserWordsByWordset, updateUserWordRecall } from '../services/userService';
 import { recordPractice } from '../services/streakStore';
@@ -375,9 +376,21 @@ export const useWordsetLoader = (wordsetId, userId, mode) => {
       updatedWords[index] = { ...word, is_included: newInclusionState };
     }, maxWordsToShow, true);
 
-    // Async call to update the backend
+    // Async call to update the backend.
+    // R3-BUG-3 (#45): the update above is OPTIMISTIC and `removeWordAtIndex` has
+    // already dropped the word from the list. Before this, a rejected PUT only
+    // logged -- so the learner saw an exclusion the server never accepted, on a
+    // word no longer visible to redo it on. Revert by identity; see
+    // utils/failedWriteRevert.js for why not by index.
+    const priorWord = { ...currentWord };
     updateUserWordRecall(userId, currentWord.word_id, currentWord.recall_state, false, newInclusionState)
-      .catch((error) => console.error('Error updating exclusion state:', error));
+      .catch((error) => {
+        console.error('Error updating exclusion state:', error);
+        setToShow((prev) => {
+          if (wasWordRemoved(prev, priorWord)) setTotalToShow((n) => n + 1);
+          return revertWordWrite(prev, priorWord);
+        });
+      });
   };
 
   // Handle correct memorization asynchronously with functional state update
@@ -410,8 +423,14 @@ export const useWordsetLoader = (wordsetId, userId, mode) => {
     }, maxWordsToShow, true);
 
     // Async call to update the backend
+    const priorMemorized = { ...currentWord };
     updateUserWordRecall(userId, currentWord.word_id, newRecallState, true, currentWord.is_included)
-      .catch((error) => console.error('Error updating recall state for memorized word:', error));
+      .catch((error) => {
+        console.error('Error updating recall state for memorized word:', error);
+        // R3-BUG-3 (#45): put the word back rather than leaving a recall the
+        // server rejected showing as accepted.
+        setToShow((prev) => revertWordWrite(prev, priorMemorized));
+      });
 
     recordPractice(); // FEAT-1: count today's practice toward the streak + goal.
   };
@@ -444,8 +463,15 @@ export const useWordsetLoader = (wordsetId, userId, mode) => {
       updatedWords[index] = { ...currentWord, recall_state: newRecallState };
 
       // Async call to update the backend for each word
+      const priorBatchWord = { ...currentWord };
       updateUserWordRecall(userId, currentWord.word_id, newRecallState, true, currentWord.is_included)
-        .catch((error) => console.error(`Error updating recall state for word ID ${currentWord.word_id}:`, error));
+        .catch((error) => {
+          console.error(`Error updating recall state for word ID ${currentWord.word_id}:`, error);
+          // R3-BUG-3 (#45): revert PER WORD, never per batch. A partial failure
+          // is the common case here (N independent PUTs), so reverting the whole
+          // batch would discard writes that actually succeeded.
+          setToShow((prev) => revertWordWrite(prev, priorBatchWord));
+        });
 
       recordPractice(); // FEAT-1: batch-reviewed words count toward the streak too.
     });
