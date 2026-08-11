@@ -57,15 +57,3 @@ export function revertWordWrite(words, priorWord) {
   };
   return next;
 }
-
-/**
- * Was this word dropped from the visible list by the optimistic update?
- *
- * Callers need this to decide whether a counter (`totalToShow`) also has to be
- * put back — restoring the word without restoring the count leaves the two
- * disagreeing, which is its own quiet wrongness.
- */
-export function wasWordRemoved(words, priorWord) {
-  if (!Array.isArray(words) || !priorWord || priorWord.word_id === undefined) return false;
-  return !words.some((w) => w && w.word_id === priorWord.word_id);
-}

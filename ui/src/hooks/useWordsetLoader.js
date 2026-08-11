@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { revertWordWrite, wasWordRemoved } from '../utils/failedWriteRevert';
+import { revertWordWrite } from '../utils/failedWriteRevert';
 import { getWordsByWordset } from '../services/wordsService';
 import { getUserWordsByWordset, updateUserWordRecall } from '../services/userService';
 import { recordPractice } from '../services/streakStore';
@@ -386,10 +386,20 @@ export const useWordsetLoader = (wordsetId, userId, mode) => {
     updateUserWordRecall(userId, currentWord.word_id, currentWord.recall_state, false, newInclusionState)
       .catch((error) => {
         console.error('Error updating exclusion state:', error);
-        setToShow((prev) => {
-          if (wasWordRemoved(prev, priorWord)) setTotalToShow((n) => n + 1);
-          return revertWordWrite(prev, priorWord);
-        });
+        // hc2 review of PR #104: `setTotalToShow` must NOT be called from inside
+        // `setToShow`'s updater — React documents updaters as pure, and a
+        // double-invoked updater (StrictMode, which is commented out in index.js
+        // rather than absent) would double-increment. Introducing a fresh
+        // state-divergence risk inside a fix for state divergence is the exact
+        // shape this PR set out to remove.
+        //
+        // Unconditional, and that is not a simplification of the gate — it is the
+        // gate being unnecessary: the optimistic path above ALWAYS does
+        // `setTotalToShow(totalToShow - 1)` and ALWAYS passes removeWordAtIndex=true.
+        // So the revert always owes exactly one +1, and `wasWordRemoved` was
+        // guarding a condition that cannot be false here.
+        setToShow((prev) => revertWordWrite(prev, priorWord));
+        setTotalToShow((n) => n + 1);
       });
   };
 

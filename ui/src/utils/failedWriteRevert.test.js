@@ -1,4 +1,4 @@
-import { revertWordWrite, wasWordRemoved } from './failedWriteRevert';
+import { revertWordWrite } from './failedWriteRevert';
 
 const w = (id, extra = {}) => ({ word_id: id, word: `w${id}`, recall_state: 0, is_included: true, ...extra });
 
@@ -62,18 +62,5 @@ describe('revertWordWrite (lexitrail#45 R3-BUG-3)', () => {
     // render -- strictly worse than the bug it is fixing.
     expect(() => revertWordWrite(words, prior)).not.toThrow();
     expect(Array.isArray(revertWordWrite(words, prior))).toBe(true);
-  });
-});
-
-describe('wasWordRemoved', () => {
-  test('true when the optimistic update dropped it', () => {
-    expect(wasWordRemoved([w(1), w(3)], w(2))).toBe(true);
-  });
-  test('false when it is still present', () => {
-    expect(wasWordRemoved([w(1), w(2)], w(2))).toBe(false);
-  });
-  test('false on malformed input rather than a spurious counter bump', () => {
-    expect(wasWordRemoved(null, w(2))).toBe(false);
-    expect(wasWordRemoved([w(1)], null)).toBe(false);
   });
 });
