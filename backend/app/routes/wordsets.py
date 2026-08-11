@@ -5,7 +5,10 @@ from app import db
 import logging
 import random
 import time
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from concurrent.futures import TimeoutError as FuturesTimeoutError
+from ..cache_warm_policy import (CACHE_WARM_DEADLINE_S, WARM_OK,
+                                 warm_verdict)
 from functools import partial
 import multiprocessing
 from threading import Lock
@@ -17,7 +20,8 @@ logger = logging.getLogger(__name__)
 # Replace TTLCache with a regular dictionary
 cache = {}  # Indefinite in-memory cache
 cache_lock = Lock()
-cache_status = {"initialized": False, "progress": 0, "total": 0, "error": None}
+cache_status = {"initialized": False, "complete": False, "progress": 0, "total": 0, "error": None,
+                "state": "cold", "succeeded": 0, "unfinished": 0}
 
 def initialize_cache():
     """Initialize cache with all wordsets data."""
@@ -44,25 +48,63 @@ def initialize_cache():
         # Get the current app
         app = current_app._get_current_object()
         
+        succeeded = 0
         with ThreadPoolExecutor(max_workers=2) as executor:  # Limit to 2 workers to reduce load
             # Create futures for each wordset with app context
-            futures = [
-                executor.submit(init_wordset_cache, app, ws)
+            futures = {
+                executor.submit(init_wordset_cache, app, ws): ws.wordset_id
                 for ws in wordsets
-            ]
-            
-            # Wait for all futures to complete
-            for future in futures:
-                try:
-                    result = future.result(timeout=60)  # 60 second timeout per wordset
-                    if isinstance(result, tuple):  # Error response
-                        logger.error(f"Error initializing cache: {result[0]}")
-                except Exception as e:
-                    logger.error(f"Error initializing cache: {e}", exc_info=True)
-                    cache_status["error"] = str(e)
-                    
-        cache_status["initialized"] = True
-        logger.info("Cache initialization completed")
+            }
+
+            # #97: consume in COMPLETION order against one deadline for the whole
+            # warm. The old code iterated in SUBMISSION order and gave each future
+            # 60s from the moment the loop reached it, so a future still sitting in
+            # the queue was charged for waiting -- the timeouts were an artifact of
+            # queueing, not of slow work, and they cancelled nothing.
+            try:
+                for future in as_completed(futures, timeout=CACHE_WARM_DEADLINE_S):
+                    ws_id = futures[future]
+                    try:
+                        result = future.result()
+                        if isinstance(result, tuple):  # Error response
+                            logger.error(f"Cache warm FAILED for wordset {ws_id}: {result[0]}")
+                            cache_status["error"] = str(result[0])
+                        else:
+                            succeeded += 1
+                    except Exception as e:
+                        logger.error(f"Cache warm FAILED for wordset {ws_id}: {e}", exc_info=True)
+                        cache_status["error"] = str(e)
+            except FuturesTimeoutError:
+                # AC2: name the wordsets that never finished, and say so in words
+                # that cannot be confused with a wordset whose warm actually broke.
+                # Previously both produced the identical "Error initializing cache"
+                # line, so the logs could not tell a real failure from a queue.
+                unfinished = [ws_id for f, ws_id in futures.items() if not f.done()]
+                msg = (f"Cache warm DID NOT FINISH within {CACHE_WARM_DEADLINE_S}s -- "
+                       f"{len(unfinished)} wordset(s) still running or queued: {unfinished}. "
+                       "This is a deadline, NOT a per-wordset failure.")
+                logger.error(msg)
+                cache_status["error"] = msg
+
+        cache_status["succeeded"] = succeeded
+        cache_status["unfinished"] = max(cache_status["total"] - succeeded, 0)
+        cache_status["state"] = warm_verdict(cache_status["total"], succeeded)
+        # AC3: `initialized` now means "every wordset warmed", not "the function
+        # reached its end". A degraded warm leaves it False so a reader cannot
+        # mistake a partial cache for a complete one; `state` carries which.
+        #
+        # ⚠️ `complete` is separate ON PURPOSE, and is what a poller should wait
+        # on. Narrowing `initialized` without it would convert "the warm finished
+        # imperfectly" into "the warm never finished" for anyone blocking on that
+        # flag -- an unbounded wait, which is a worse failure than the dishonest
+        # True it replaces. Nothing in this repo reads the field and no k8s probe
+        # gates on it (both checked), but the endpoint is public, so the
+        # unblocking signal is provided rather than assumed unnecessary.
+        cache_status["complete"] = True
+        cache_status["initialized"] = cache_status["state"] == WARM_OK
+        logger.info(
+            f"Cache initialization completed: state={cache_status['state']} "
+            f"{succeeded}/{cache_status['total']} warmed")
     except Exception as e:
         logger.error(f"Error during cache initialization: {e}", exc_info=True)
         cache_status["error"] = str(e)
