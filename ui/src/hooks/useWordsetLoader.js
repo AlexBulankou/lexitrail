@@ -8,6 +8,7 @@ import { GameMode } from '../components/Game';
 import { isDue } from '../utils/srs';
 import { makeInFlight, requestKey, beginRequest, endRequest } from '../utils/inFlight';
 import { rawKey, viewKey, invalidateWordset } from '../utils/wordsetCache';
+import { makeRawRegistry, claimRawFetch } from '../utils/rawFetchRegistry';
 
 console.log("header or useWordsetLoader.js");
 
@@ -16,6 +17,14 @@ if (!window.userWordsetExcludedCache) {
   window.userWordsetExcludedCache = {};
 }
 const userWordsetExcludedCache = window.userWordsetExcludedCache;
+
+// lexitrail#95: in-flight registry for the RAW fetch. Window-scoped on purpose
+// — it must have the SAME lifetime as the cache it guards (above), or two
+// mounted hook instances sharing a cache slot would still double-fetch.
+if (!window.rawFetchRegistry) {
+  window.rawFetchRegistry = makeRawRegistry();
+}
+const rawFetchRegistry = window.rawFetchRegistry;
 
 // Function to abstract recall state logic
 const updateRecallState = (currentRecallState, isCorrect) => {
@@ -124,6 +133,16 @@ export const useWordsetLoader = (wordsetId, userId, mode) => {
       let mappedWords = userWordsetExcludedCache[rawCacheKey];
 
       if (!mappedWords) {
+        // lexitrail#95: join the raw fetch already in flight for this
+        // (user, wordset) instead of starting a second one. A mode switch
+        // mid-load is a DIFFERENT `inFlight` key, so it passes that guard and
+        // lands here with the cache still empty — two callers, two fetch pairs.
+        mappedWords = await claimRawFetch(rawFetchRegistry, rawCacheKey, async () => {
+        // Re-read inside the claim: between the check above and winning the
+        // claim, a concurrent load may have completed and populated the slot.
+        const alreadyCached = userWordsetExcludedCache[rawCacheKey];
+        if (alreadyCached) return alreadyCached;
+
         // Fetch words from the wordset
         const response = await getWordsByWordset(wordsetId);
         const loadedWords = response.data;
@@ -135,7 +154,7 @@ export const useWordsetLoader = (wordsetId, userId, mode) => {
         // Map raw rows into display shape. Mode-independent by construction —
         // anything that varies by mode belongs in the filter below, not here.
         var wordIndex = 0;
-        mappedWords = loadedWords
+        const mapped = loadedWords
         .map((word) => {
           const userWord = userWordsMetadata.find(uw => uw.word_id === word.word_id);
 
@@ -173,7 +192,9 @@ export const useWordsetLoader = (wordsetId, userId, mode) => {
             })) : [],
           };
         });
-        userWordsetExcludedCache[rawCacheKey] = mappedWords;
+          userWordsetExcludedCache[rawCacheKey] = mapped;
+          return mapped;
+        });
       }
 
       // Apply mode-specific filters and constraints. `.filter` returns a NEW
