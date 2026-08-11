@@ -226,3 +226,70 @@ def test_explicit_shutdown_releases_at_the_deadline():
     assert status_set_at < TIGHT_DEADLINE_S * 2, (
         f"status became visible at {status_set_at:.2f}s -- the deadline must bound "
         "the OBSERVABLE STATUS, not only the log line (hc2, PR #103)")
+
+
+# ---------------------------------------------------------------------------
+# #106 — a wordset whose warm RAISED must not count as warmed
+#
+# THE BUG SHAPE. `init_wordset_cache` used to swallow every exception and
+# `return None`; the consumer counted successes with `if isinstance(result,
+# tuple): ... else: succeeded += 1`, and `isinstance(None, tuple)` is False.
+# So a wordset that raised landed in the `else` and was counted as warmed —
+# `warm_verdict` then returned `ok` over a cache missing entries, which is the
+# failure-renders-as-success shape #97 exists to remove, on the one path that
+# does not signal its own failure.
+# ---------------------------------------------------------------------------
+
+classify_warm_result = _policy.classify_warm_result
+WARM_RESULT_OK = _policy.WARM_RESULT_OK
+WARM_RESULT_ERROR_RESPONSE = _policy.WARM_RESULT_ERROR_RESPONSE
+WARM_RESULT_NONE = _policy.WARM_RESULT_NONE
+
+
+def test_none_is_not_counted_as_a_successful_warm():
+    """THE regression. `None` is what the swallowed exception returned."""
+    assert classify_warm_result(None) != WARM_RESULT_OK
+    assert classify_warm_result(None) == WARM_RESULT_NONE
+
+
+def test_none_is_distinguishable_from_an_error_response():
+    """AC2/AC4 — the two failure kinds must not collapse onto one sentinel.
+
+    Merging them would leave a reader unable to tell a query failure from a
+    warm that returned nothing, which is the same 'one value, two meanings'
+    problem the deadline message is careful to avoid in words.
+    """
+    assert classify_warm_result(None) != classify_warm_result(("boom", 500))
+
+
+def test_an_error_response_tuple_is_still_a_failure():
+    """The path that already worked must keep working."""
+    assert classify_warm_result(("error", 500)) == WARM_RESULT_ERROR_RESPONSE
+
+
+@pytest.mark.parametrize("value", [
+    [{"word_id": 1}],   # the ordinary success
+    [],                 # DELIBERATE: an empty wordset warmed fine and has
+                        # nothing to show. Requiring truthiness here would
+                        # report it as a failed warm.
+    {"words": []},
+    "ok",
+    0,                  # falsy but not None — still a positive result
+])
+def test_positive_results_are_ok_including_falsy_ones(value):
+    assert classify_warm_result(value) == WARM_RESULT_OK
+
+
+def test_ok_is_a_positive_test_not_the_fallthrough():
+    """The `else` that adopted everything is why this bug existed.
+
+    Any value that is neither a recognised success nor a recognised failure
+    must land on a FAILURE, never on `ok` — the safe direction for a status
+    field whose job is to not overstate. Asserting the classifier's own shape
+    would just restate the implementation, so this asserts the CONSEQUENCE:
+    a warm of 1 wordset that returned None must not read as a clean warm.
+    """
+    outcome = classify_warm_result(None)
+    succeeded = 1 if outcome == WARM_RESULT_OK else 0
+    assert warm_verdict(1, succeeded) == WARM_FAILED, (
+        "a wordset that returned nothing rendered as a clean warm")

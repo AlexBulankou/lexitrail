@@ -8,7 +8,8 @@ import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from concurrent.futures import TimeoutError as FuturesTimeoutError
 from ..cache_warm_policy import (CACHE_WARM_DEADLINE_S, WARM_OK,
-                                 warm_verdict)
+                                 WARM_RESULT_ERROR_RESPONSE, WARM_RESULT_OK,
+                                 classify_warm_result, warm_verdict)
 from functools import partial
 import multiprocessing
 from threading import Lock
@@ -33,18 +34,28 @@ def initialize_cache():
         cache_status["progress"] = 0
         
         def init_wordset_cache(app, ws):
-            """Initialize cache for a single wordset with proper app context"""
-            try:
-                with app.app_context():
-                    result = get_words_by_wordset(ws.wordset_id, skip_cache=True)
-                    cache_status["progress"] += 1
-                    logger.info(f"Cache initialized for wordset {ws.wordset_id} ({cache_status['progress']}/{cache_status['total']})")
-                    return result
-            except Exception as e:
-                logger.error(f"Error initializing cache for wordset {ws.wordset_id}: {e}", exc_info=True)
-                cache_status["error"] = str(e)
-                return None
-        
+            """Initialize cache for a single wordset with proper app context.
+
+            #106: this deliberately does NOT catch. It used to swallow every
+            exception and `return None`, and the consumer below counted any
+            non-tuple as a success — so a wordset whose warm RAISED was counted
+            as warmed and the whole warm reported `ok`. The outer `except` fired
+            on things like `app.app_context()` itself failing: rare, and exactly
+            the infrastructure failure you most want visible.
+
+            Letting it propagate routes it into the consumer's own
+            `except Exception` around `future.result()`, which already logs and
+            does not increment. Per #106 AC4, the fix is NOT to return a tuple
+            here to satisfy the `isinstance` check — that would make the
+            sentinel carry two meanings and leave the reader unable to tell the
+            two failure kinds apart.
+            """
+            with app.app_context():
+                result = get_words_by_wordset(ws.wordset_id, skip_cache=True)
+                cache_status["progress"] += 1
+                logger.info(f"Cache initialized for wordset {ws.wordset_id} ({cache_status['progress']}/{cache_status['total']})")
+                return result
+
         # Get the current app
         app = current_app._get_current_object()
         
@@ -84,13 +95,30 @@ def initialize_cache():
                     ws_id = futures[future]
                     try:
                         result = future.result()
-                        if isinstance(result, tuple):  # Error response
-                            logger.error(f"Cache warm FAILED for wordset {ws_id}: {result[0]}")
+                        # #106: classify on a POSITIVE success signal. The old
+                        # `else: succeeded += 1` adopted every non-tuple value,
+                        # including the `None` the swallowing except returned.
+                        outcome = classify_warm_result(result)
+                        if outcome == WARM_RESULT_ERROR_RESPONSE:
+                            logger.error(
+                                f"Cache warm FAILED (error_response) for wordset {ws_id}: {result[0]}")
                             cache_status["error"] = str(result[0])
-                        else:
+                        elif outcome == WARM_RESULT_OK:
                             succeeded += 1
+                        else:
+                            # #106 AC2: a distinct line. A wordset that returned
+                            # nothing is not the same event as one whose query
+                            # failed, and merging them is what let this hide.
+                            msg = (f"Cache warm RETURNED NOTHING for wordset {ws_id} "
+                                   f"(outcome={outcome}) -- NOT counted as warmed.")
+                            logger.error(msg)
+                            cache_status["error"] = msg
                     except Exception as e:
-                        logger.error(f"Cache warm FAILED for wordset {ws_id}: {e}", exc_info=True)
+                        # #106 AC2: "RAISED", not "FAILED" -- a propagated
+                        # exception and a converted error_response are different
+                        # events with different causes, and the old code gave
+                        # them near-identical lines.
+                        logger.error(f"Cache warm RAISED for wordset {ws_id}: {e}", exc_info=True)
                         cache_status["error"] = str(e)
             except FuturesTimeoutError:
                 # AC2: name the wordsets that never finished, and say so in words
