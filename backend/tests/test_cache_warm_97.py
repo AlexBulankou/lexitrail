@@ -162,3 +162,67 @@ def test_the_new_pattern_still_has_a_bound():
             futures = [ex.submit(_slow) for _ in range(TASKS)]
             for f in as_completed(futures, timeout=TASK_S / 2):
                 f.result()
+
+
+# ---------------------------------------------------------------------------
+# hc2 review of PR #103 — the deadline must bound the OBSERVABLE STATUS, not
+# just the log line.
+#
+# `ThreadPoolExecutor.__exit__` calls `shutdown(wait=True)` unconditionally,
+# including when an exception was caught and handled inside the block. So code
+# placed after a `with` block does not run until every straggler finishes --
+# the deadline would bound what we SAY and not what we DO.
+# ---------------------------------------------------------------------------
+
+SLOW_TASK_S = 1.0
+TIGHT_DEADLINE_S = 0.3
+SLOW_TASK_COUNT = 3   # 3 x 1.0s on ONE worker = a ~3s drain vs a 0.3s deadline:
+                      # a 10x gap, which is all the demonstration needs. Kept small
+                      # deliberately -- the first version used 5 x 2.0s and cost the
+                      # suite 10 seconds to prove the same thing.
+
+
+def _very_slow():
+    time.sleep(SLOW_TASK_S)
+    return "warmed"
+
+
+def test_the_with_block_shape_defers_past_the_deadline():
+    """The bug shape. If this stops failing, `with` became safe and the fix is moot.
+
+    Asserts the DEFERRAL is real: with a `with` block, the first statement after
+    it runs only after the full drain, not at the deadline.
+    """
+    t0 = time.monotonic()
+    with ThreadPoolExecutor(max_workers=1) as ex:
+        futures = [ex.submit(_very_slow) for _ in range(SLOW_TASK_COUNT)]
+        try:
+            for f in as_completed(futures, timeout=TIGHT_DEADLINE_S):
+                pass
+        except FuturesTimeoutError:
+            caught_at = time.monotonic() - t0
+    after_block_at = time.monotonic() - t0
+
+    assert caught_at < TIGHT_DEADLINE_S * 2, "the deadline itself should fire on schedule"
+    assert after_block_at > SLOW_TASK_S, (
+        "the `with` shape no longer defers past the deadline -- if that is true, "
+        "re-evaluate whether the explicit-shutdown fix is still needed")
+
+
+def test_explicit_shutdown_releases_at_the_deadline():
+    """The fix: status-setting code runs AT the deadline, not after the drain."""
+    t0 = time.monotonic()
+    ex = ThreadPoolExecutor(max_workers=1)
+    futures = [ex.submit(_very_slow) for _ in range(SLOW_TASK_COUNT)]
+    status_set_at = None
+    try:
+        for f in as_completed(futures, timeout=TIGHT_DEADLINE_S):
+            pass
+    except FuturesTimeoutError:
+        ex.shutdown(wait=False, cancel_futures=True)
+        status_set_at = time.monotonic() - t0
+
+    assert status_set_at is not None
+    assert status_set_at < TIGHT_DEADLINE_S * 2, (
+        f"status became visible at {status_set_at:.2f}s -- the deadline must bound "
+        "the OBSERVABLE STATUS, not only the log line (hc2, PR #103)")

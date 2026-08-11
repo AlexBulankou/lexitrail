@@ -49,18 +49,36 @@ def initialize_cache():
         app = current_app._get_current_object()
         
         succeeded = 0
-        with ThreadPoolExecutor(max_workers=2) as executor:  # Limit to 2 workers to reduce load
+        # #97 — deliberately NOT a `with` block (hc2 review of PR #103).
+        # `ThreadPoolExecutor.__exit__` unconditionally calls `shutdown(wait=True)`,
+        # INCLUDING when an exception was caught and handled inside the block. So a
+        # `with` here would honour the deadline for the LOG LINE and then block on
+        # the full drain before any `cache_status` assignment could run — the
+        # deadline would bound what we SAY and not what we DO. Measured on a
+        # 5-task / 1-worker / 2s-each pool with a 0.5s deadline:
+        #
+        #     caught inside the with-block      t=0.50s   <- deadline honoured
+        #     first statement AFTER the block   t=10.00s  <- the full drain
+        #     explicit shutdown(wait=False)     t=0.50s   <- what we do now
+        #
+        # A caller polling /wordsets/cache-status during those 9.5s would see the
+        # pre-warm default (`initialized: False, complete: False`) rather than
+        # `degraded`/`failed` — i.e. AC2/AC3's observability would be missing in
+        # exactly the scenario they exist for, and `initialize_cache` itself would
+        # not return until every straggler finished. That is the unbounded wait
+        # this issue set out to remove, relabelled.
+        executor = ThreadPoolExecutor(max_workers=2)  # Limit to 2 workers to reduce load
+        try:
             # Create futures for each wordset with app context
             futures = {
                 executor.submit(init_wordset_cache, app, ws): ws.wordset_id
                 for ws in wordsets
             }
 
-            # #97: consume in COMPLETION order against one deadline for the whole
-            # warm. The old code iterated in SUBMISSION order and gave each future
-            # 60s from the moment the loop reached it, so a future still sitting in
-            # the queue was charged for waiting -- the timeouts were an artifact of
-            # queueing, not of slow work, and they cancelled nothing.
+            # Consume in COMPLETION order against one deadline for the whole warm.
+            # The old code iterated in SUBMISSION order and gave each future 60s
+            # from the moment the loop reached it, so a future still sitting in the
+            # queue was charged for waiting -- and the timeout cancelled nothing.
             try:
                 for future in as_completed(futures, timeout=CACHE_WARM_DEADLINE_S):
                     ws_id = futures[future]
@@ -85,6 +103,16 @@ def initialize_cache():
                        "This is a deadline, NOT a per-wordset failure.")
                 logger.error(msg)
                 cache_status["error"] = msg
+                # Release the deadline NOW. `cancel_futures=True` drops anything
+                # still QUEUED; the 1-2 already running cannot be cancelled, but
+                # `wait=False` means they finish in the background instead of
+                # holding this thread. Threads are daemon-managed by the pool, so
+                # nothing leaks beyond process lifetime.
+                executor.shutdown(wait=False, cancel_futures=True)
+        finally:
+            # Idempotent: a second shutdown after the one above is a no-op, and on
+            # the normal path this is the only one. Never `wait=True` -- see above.
+            executor.shutdown(wait=False)
 
         cache_status["succeeded"] = succeeded
         cache_status["unfinished"] = max(cache_status["total"] - succeeded, 0)
