@@ -138,8 +138,29 @@ export const useWordsetLoader = (wordsetId, userId, mode) => {
         // mid-load is a DIFFERENT `inFlight` key, so it passes that guard and
         // lands here with the cache still empty — two callers, two fetch pairs.
         mappedWords = await claimRawFetch(rawFetchRegistry, rawCacheKey, async () => {
-        // Re-read inside the claim: between the check above and winning the
-        // claim, a concurrent load may have completed and populated the slot.
+        // Re-read inside the claim, in case a concurrent load populated the
+        // slot between the outer check and winning the claim.
+        //
+        // ⚠️ THIS DOES NOT FIRE TODAY — hc2@'s review of PR #110 caught that,
+        // and it is recorded rather than left implicit because unreachable
+        // code that LOOKS like a guard misleads in both directions: a reader
+        // may trust protection it is not providing, or delete it as noise
+        // without knowing what would make it matter. Two independent reasons
+        // it cannot currently be reached:
+        //
+        //   1. There is exactly ONE writer to the raw key — line ~195 below,
+        //      inside this same fetcher. (Lines ~281/~292 write the VIEW key,
+        //      which is a different slot.) So nothing else can populate it.
+        //   2. Structurally, even if (1) changed in the wrong place: the claim
+        //      is SYNCHRONOUS, so only one caller ever runs this fetcher per
+        //      key — the loser is handed the winner's promise and its own
+        //      fetcher is never invoked. Between the winner's outer check and
+        //      this line only microtasks run, and no caller can complete two
+        //      network round-trips in that gap.
+        //
+        // It becomes LIVE the moment a second writer to the raw key exists —
+        // a prefetch, a hydrate-from-localStorage, a server push. Kept for
+        // that reason; delete it only together with the assumption above.
         const alreadyCached = userWordsetExcludedCache[rawCacheKey];
         if (alreadyCached) return alreadyCached;
 
