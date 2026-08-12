@@ -35,7 +35,7 @@ body, html {
  * declaration only and says so.
  */
 :root {
-  --min-tap-target: 44px;
+  --min-tap-target: 32px;  /* THROWAWAY MUTATION — #122 AC2 positive control, do not merge */
 }
 
 .speak-button,
