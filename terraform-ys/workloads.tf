@@ -54,7 +54,12 @@ resource "kubernetes_deployment_v1" "backend" {
   }
 
   spec {
-    replicas = 1
+    # my-hermes#123: a single-pod deployment on Autopilot has zero NEG-healthy
+    # endpoints during any node consolidation/eviction, which is a full-site
+    # 503 window, not a capacity dip (observed live 2026-08-12, ~60-90s).
+    # 2 replicas + the PDB below (min_available=1) closes the gap: the PDB
+    # blocks a voluntary eviction from taking BOTH pods at once.
+    replicas = 2
     selector {
       match_labels = { app = "lexitrail-backend" }
     }
@@ -190,6 +195,24 @@ resource "kubernetes_service_v1" "backend" {
   }
 }
 
+# my-hermes#123: minAvailable=1 stops Autopilot's node-consolidation evictions
+# (a "voluntary" disruption per the K8s eviction API) from taking the ONLY
+# other replica down while a scale-down is already in flight elsewhere.
+# It does not cover involuntary disruptions (a node dying outright) — that
+# risk is what the 2nd replica itself (not the PDB) primarily addresses.
+resource "kubernetes_pod_disruption_budget_v1" "backend" {
+  metadata {
+    name      = "lexitrail-backend-pdb"
+    namespace = var.namespace
+  }
+  spec {
+    min_available = 1
+    selector {
+      match_labels = { app = "lexitrail-backend" }
+    }
+  }
+}
+
 # ---------- UI ----------
 
 resource "kubernetes_deployment_v1" "ui" {
@@ -200,7 +223,8 @@ resource "kubernetes_deployment_v1" "ui" {
   }
 
   spec {
-    replicas = 1
+    # my-hermes#123: see the identical comment on the backend deployment above.
+    replicas = 2
     selector {
       match_labels = { app = "lexitrail-ui" }
     }
@@ -277,5 +301,19 @@ resource "kubernetes_service_v1" "ui" {
 
   lifecycle {
     ignore_changes = [metadata[0].annotations]
+  }
+}
+
+# my-hermes#123: see the identical comment on the backend PDB above.
+resource "kubernetes_pod_disruption_budget_v1" "ui" {
+  metadata {
+    name      = "lexitrail-ui-pdb"
+    namespace = var.namespace
+  }
+  spec {
+    min_available = 1
+    selector {
+      match_labels = { app = "lexitrail-ui" }
+    }
   }
 }
