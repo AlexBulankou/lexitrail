@@ -54,7 +54,7 @@ resource "kubernetes_deployment_v1" "backend" {
   }
 
   spec {
-    # my-hermes#123: a single-pod deployment on Autopilot has zero NEG-healthy
+    # lexitrail#123: a single-pod deployment on Autopilot has zero NEG-healthy
     # endpoints during any node consolidation/eviction, which is a full-site
     # 503 window, not a capacity dip (observed live 2026-08-12, ~60-90s).
     # 2 replicas + the PDB below (min_available=1) closes the gap: the PDB
@@ -195,7 +195,7 @@ resource "kubernetes_service_v1" "backend" {
   }
 }
 
-# my-hermes#123: minAvailable=1 stops Autopilot's node-consolidation evictions
+# lexitrail#123: minAvailable=1 stops Autopilot's node-consolidation evictions
 # (a "voluntary" disruption per the K8s eviction API) from taking the ONLY
 # other replica down while a scale-down is already in flight elsewhere.
 # It does not cover involuntary disruptions (a node dying outright) — that
@@ -223,7 +223,7 @@ resource "kubernetes_deployment_v1" "ui" {
   }
 
   spec {
-    # my-hermes#123: see the identical comment on the backend deployment above.
+    # lexitrail#123: see the identical comment on the backend deployment above.
     replicas = 2
     selector {
       match_labels = { app = "lexitrail-ui" }
@@ -304,7 +304,7 @@ resource "kubernetes_service_v1" "ui" {
   }
 }
 
-# my-hermes#123: see the identical comment on the backend PDB above.
+# lexitrail#123: see the identical comment on the backend PDB above.
 resource "kubernetes_pod_disruption_budget_v1" "ui" {
   metadata {
     name      = "lexitrail-ui-pdb"
