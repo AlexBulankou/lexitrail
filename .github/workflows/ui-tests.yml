@@ -1,0 +1,95 @@
+# lexitrail#122 — give the UI test suite a moment of execution.
+#
+# `ui/src/styles/tapTargets.test.js` guards the 44px tap-target floor and is a
+# good detector — mutation-tested on PR #121, it fires when the floor is removed
+# and stays quiet when it should. Nothing ran it. A guard with no moment of
+# execution is indistinguishable from no guard, and worse in one way: the merge
+# history stays green, so the floor reads as protected. #120 shipped two
+# controls back under the floor with nothing standing in the way.
+#
+# ─────────────────────────────────────────────────────────────────────────────
+# WHY GITHUB ACTIONS AND NOT CLOUD BUILD — a deliberate deviation, flagged
+# ─────────────────────────────────────────────────────────────────────────────
+# The fleet default for NET-NEW CI is Cloud Build, not Actions (ensemble#4492
+# and its market-mind sister). This goes the other way on purpose:
+#
+#   * lexitrail has NO Cloud Build triggers at all, and creating one is exactly
+#     what lexitrail#77 is blocked on — an Alex A/B/C decision about a
+#     cross-project identity that `builds submit` fails under. So a
+#     `cloudbuild.yaml` committed today would not run.
+#   * A CI config that cannot fire IS the defect #122 is about. Shipping one to
+#     satisfy the policy would reproduce the bug in the fix.
+#   * The policy's rationale is COST. This repo's Actions usage is ~zero (one
+#     Dependency Graph run in the last month) and this job is ~1.2s of test
+#     against a small install, so the cost argument does not bind here.
+#
+# ⇒ Actions now, because the alternative is an unguarded floor for as long as
+#   #77 stays open, and #77 has no ETA. **When #77 resolves, migrate this to
+#   Cloud Build** — that is a real follow-up, not a courtesy sentence.
+#
+# ─────────────────────────────────────────────────────────────────────────────
+# THE COMMAND IS `npm test`, NOT `npx jest` — this is load-bearing
+# ─────────────────────────────────────────────────────────────────────────────
+# #122 says the suite "only executes when a human types `npx jest` locally".
+# Measured: bare `npx jest` FAILS 8 of the 9 suites —
+#
+#     SyntaxError: Cannot use import statement outside a module
+#
+# — because it does not apply CRA's babel transform. Only `tapTargets.test.js`
+# survives it, which is why that one suite looked like the whole story. Via
+# react-scripts, all 9 pass:
+#
+#     CI=true npx jest                     8 failed / 1 passed   (14 tests)
+#     CI=true npm test -- --watchAll=false 9 passed / 9 total    (64 tests, 1.2s)
+#
+# So the local escape hatch was not merely unrun, it was misleading: a developer
+# following the issue's own command would see 8 failures and could reasonably
+# conclude the suite was broken and ignore it.
+name: ui-tests
+
+on:
+  pull_request:
+    paths:
+      - 'ui/**'
+      - '.github/workflows/ui-tests.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'ui/**'
+      - '.github/workflows/ui-tests.yml'
+
+# A second push to the same PR makes the first run irrelevant.
+concurrency:
+  group: ui-tests-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  jest:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ui
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          # package.json declares no `engines`; 20 is the LTS the suite was
+          # verified on locally (node v20.20.2, react-scripts 5.0.1).
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: ui/package-lock.json
+
+      # `ci` not `install`: it installs from the lockfile exactly and fails if
+      # package.json and the lock have drifted, so the suite runs against the
+      # dependency set we actually committed.
+      - run: npm ci
+
+      # CI=true makes react-scripts non-interactive; --watchAll=false is belt
+      # and braces so this can never hang waiting for input on a runner.
+      - run: npm test -- --watchAll=false
+        env:
+          CI: true
