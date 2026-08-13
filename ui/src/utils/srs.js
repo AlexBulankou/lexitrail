@@ -73,13 +73,12 @@ export const dueCount = (words, now = new Date()) =>
 // The SAME `now` spans every wordset, not merely every word within one. A
 // clock bound per wordset would let the first and last set be counted against
 // different instants, so the total would not equal the session Start opens.
-export const dueAcrossWordsets = (entries, now = new Date()) => {
-  const perWordset = (entries || []).map((entry) => ({
-    wordsetId: entry && entry.wordsetId,
-    due: dueCount(entry && entry.words, now),
-  }));
-  return {
-    total: perWordset.reduce((sum, e) => sum + e.due, 0),
-    perWordset,
-  };
-};
+//
+// Returns a bare total, not a per-wordset breakdown. The first version returned
+// `{ total, perWordset }` on the guess that a Today view would want a
+// "which set to practice" affordance; @ensemble-hc2 asked for it to go, and
+// they are right — nothing consumes it, and an unused return field later reads
+// as a contract someone must preserve. Re-add it when a caller needs it, at
+// which point the shape can be chosen against a real use rather than a guess.
+export const dueAcrossWordsets = (wordLists, now = new Date()) =>
+  (wordLists || []).reduce((sum, words) => sum + dueCount(words, now), 0);

@@ -143,12 +143,8 @@ describe('the clock is read once per count, not once per word', () => {
   it('dueAcrossWordsets reads the clock once for ALL wordsets', () => {
     // Reds at 4 if each wordset binds its own `now`, which would let the first
     // and last set be counted against different instants.
-    const entries = [
-      { wordsetId: 1, words: manyWords },
-      { wordsetId: 2, words: manyWords },
-      { wordsetId: 3, words: manyWords },
-    ];
-    expect(countBareNowCalls(() => dueAcrossWordsets(entries))).toBe(1);
+    const lists = [manyWords, manyWords, manyWords];
+    expect(countBareNowCalls(() => dueAcrossWordsets(lists))).toBe(1);
   });
 
   it('counts a boundary word consistently while the clock ADVANCES mid-count', () => {
@@ -195,28 +191,19 @@ describe('the clock is read once per count, not once per word', () => {
 });
 
 describe('dueAcrossWordsets', () => {
-  it('totals across wordsets and reports the per-wordset breakdown', () => {
-    const entries = [
-      { wordsetId: 7, words: [word(), word({ is_included: false })] },   // 1 due
-      { wordsetId: 9, words: [word(), word({ recall_history: [] })] },   // 2 due
+  it('totals across wordsets rather than answering for one', () => {
+    const lists = [
+      [word(), word({ is_included: false })],   // 1 due
+      [word(), word({ recall_history: [] })],   // 2 due
     ];
-    expect(dueAcrossWordsets(entries, NOW)).toEqual({
-      total: 3,
-      perWordset: [
-        { wordsetId: 7, due: 1 },
-        { wordsetId: 9, due: 2 },
-      ],
-    });
+    expect(dueAcrossWordsets(lists, NOW)).toBe(3);
   });
 
   it('reports zero rather than throwing on empty or missing input', () => {
     // The Today home renders this number on first paint, before any fetch has
     // resolved. Throwing here would blank the home screen the habit depends on.
-    expect(dueAcrossWordsets([], NOW)).toEqual({ total: 0, perWordset: [] });
-    expect(dueAcrossWordsets(undefined, NOW)).toEqual({ total: 0, perWordset: [] });
-    expect(dueAcrossWordsets([{ wordsetId: 1 }], NOW)).toEqual({
-      total: 0,
-      perWordset: [{ wordsetId: 1, due: 0 }],
-    });
+    expect(dueAcrossWordsets([], NOW)).toBe(0);
+    expect(dueAcrossWordsets(undefined, NOW)).toBe(0);
+    expect(dueAcrossWordsets([undefined], NOW)).toBe(0);
   });
 });
