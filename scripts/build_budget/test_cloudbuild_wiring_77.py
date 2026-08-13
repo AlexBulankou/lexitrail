@@ -115,3 +115,52 @@ def test_layer_cache_is_wired_and_tolerates_a_cold_start():
     pull = _step(cfg, "pull-cache")
     assert "|| true" in " ".join(pull["args"]), "first build has nothing to pull"
     assert "--cache-from" in _step(cfg, "backend-build")["args"]
+
+
+# ── the trap that is NOT in cloudbuild.yaml ──────────────────────────────────
+CFG = Path(__file__).resolve().parents[2] / "config" / "build-budget.json"
+
+
+def _lexitrail_cfg():
+    import json
+    return json.loads(CFG.read_text())["projects"]["lexitrail"]
+
+
+def test_gate_triggers_is_not_empty_while_enforcing():
+    """The second inert-gate trap, and the only one this repo's yaml cannot show.
+
+    `gate.py`: "a trigger not in `gate_triggers` is never touched, whatever the
+    balance." So `enforcing: true` beside an empty list is enforcement in NAME
+    ONLY -- the build is counted and can never be refused, and a green build is
+    byte-identical either way. lexitrail shipped exactly that pair (gate.py names
+    it as the live instance), which is why this is mechanical rather than a note.
+
+    Pinned as the PAIR, not as two facts: either is individually legitimate
+    (enforcing=false with no triggers is an honest shadow config), and it is
+    only their combination that claims a property the config cannot deliver.
+    """
+    c = _lexitrail_cfg()
+    if not c.get("enforcing", False):
+        pytest.skip("enforcing=false -- an empty gate_triggers is honest here")
+    assert c.get("gate_triggers"), (
+        "lexitrail declares enforcing=true with an empty `gate_triggers` -- "
+        "nothing can ever be refused. Either list the deploy trigger's name or "
+        "set enforcing=false; it DEBITS either way, so what is lost is the "
+        "refusal, not the accounting."
+    )
+
+
+def test_gated_trigger_name_matches_the_state_bucket_project():
+    """A name in `gate_triggers` that no real trigger carries is inert in the
+    quiet direction: `gate.py` fails open on every ambiguity, so a typo here
+    disables enforcement and reports nothing. Nothing in this repo can see the
+    live trigger list, so this pins the weaker invariant that IS checkable --
+    the gated name is lexitrail's, not a copy-paste from a sibling project."""
+    names = _lexitrail_cfg().get("gate_triggers") or []
+    assert names, "covered by the test above; this one assumes non-empty"
+    for n in names:
+        assert n.startswith("lexitrail-"), (
+            f"gated trigger {n!r} is not a lexitrail trigger -- the vendored "
+            "config was copied from a sibling project and gates someone else's "
+            "builds while lexitrail's own run ungated."
+        )
