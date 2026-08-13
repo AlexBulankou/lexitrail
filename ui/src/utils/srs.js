@@ -49,5 +49,36 @@ export const isWordDue = (word, now = new Date()) => {
 };
 
 // How many of these userwords are due — the Today home's headline number.
+//
+// `now` is bound ONCE here and threaded into every `isWordDue`, rather than
+// letting each element read its own clock. That is deliberate and is pinned by
+// test: with a per-element `new Date()` a word sitting exactly on its interval
+// boundary can be counted differently from its neighbours within a single
+// count, so the headline number would not correspond to any one instant.
 export const dueCount = (words, now = new Date()) =>
   (words || []).filter((w) => isWordDue(w, now)).length;
+
+// The Today home is cross-wordset by definition, so it needs one number over
+// every wordset rather than the per-wordset count `useWordsetLoader` produces.
+//
+// Client-side on purpose (issue-107 recommendation (a)): `getWordsets()`
+// already hides the test/HSK7 sets so N is small, and a backend endpoint would
+// make this issue undeployable for reasons unrelated to its merits — lexitrail
+// has no Cloud Build trigger, so backend deploys are the blocked half (#77)
+// while the UI ships today.
+//
+// Takes already-fetched lists rather than fetching, so the aggregation stays
+// pure and testable and the caller keeps control of request fan-out.
+//
+// The SAME `now` spans every wordset, not merely every word within one. A
+// clock bound per wordset would let the first and last set be counted against
+// different instants, so the total would not equal the session Start opens.
+//
+// Returns a bare total, not a per-wordset breakdown. The first version returned
+// `{ total, perWordset }` on the guess that a Today view would want a
+// "which set to practice" affordance; @ensemble-hc2 asked for it to go, and
+// they are right — nothing consumes it, and an unused return field later reads
+// as a contract someone must preserve. Re-add it when a caller needs it, at
+// which point the shape can be chosen against a real use rather than a guess.
+export const dueAcrossWordsets = (wordLists, now = new Date()) =>
+  (wordLists || []).reduce((sum, words) => sum + dueCount(words, now), 0);
