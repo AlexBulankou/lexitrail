@@ -1,0 +1,190 @@
+{
+  "_comment": [
+    "issue-7947 / goal 1.1 \u2014 per-project Cloud Build budget, dollar-denominated.",
+    "",
+    "THIS FILE IS THE CONTROL SURFACE. Alex asked explicitly that allowances be",
+    "FLEXIBLE: changing ensemble from 2.00 to 3.00 must be an EDIT AND A RELOAD \u2014",
+    "no deploy, no PR, no code change. Nothing here may be duplicated in code as a",
+    "default that silently wins; the loader fails LOUD if this file is unreadable",
+    "rather than falling back to a built-in table (a fallback that is also a",
+    "legitimate value is the failure mode we keep paying for).",
+    "",
+    "STAGE STATUS \u2014 2026-08-09: STAGE 2. Every `enforcing` flag below is TRUE,",
+    "stopbystop included. This paragraph used to read 'STAGE 1 IS SHADOW: every",
+    "`enforcing` flag below is false' and was left behind when the flags were",
+    "flipped, so the prose said nothing was enforcing while all five projects",
+    "were. CORRECTED, not appended to: both readings survive an append and the",
+    "stale one is the reassuring one.",
+    "",
+    "\ud83d\udd34 IF YOU CHANGE A FLAG, CHANGE THIS PARAGRAPH IN THE SAME COMMIT.",
+    "`enforcing` is the one field here whose stale description is indistinguishable",
+    "from a live one \u2014 nothing downstream reads this prose, so nothing will ever",
+    "contradict it. Stage 2 still flips one project at a time, never all five at",
+    "once. (issue-8159 is the general form of this failure.)",
+    "",
+    "stopbystop IS enforcing, deliberately. Alex 2026-08-09 via zz1: Cloud Build",
+    "limits INCLUDE the SBL crew \u2014 the earlier hands-off instruction was about",
+    "SBL's project GOALS, not its costs. At ~34% of the bill, exempting it would",
+    "leave a third of the spend outside the only control we have. The superseded",
+    "guidance was 'enforcement stays FALSE until Alex says otherwise'; he has.",
+    "2026-08-09 REGION COMPLETENESS: `regions` was a hand-kept list and was SHORT for three projects \u2014 familylore and lexitrail and ensemble all have builds in `global` against sweeps that never asked about it. \u26a0\ufe0f CORRECTED FROM MY OWN FIRST CLAIM: this hid NO current spend. The lookback is 6h and the newest unswept build is familylore 08-05, lexitrail 07-27, ensemble 06-10 \u2014 days to months old. I first wrote that lexitrail 'reads $0.01/day because its builds are invisible'; that is FALSE, it reads $0.01/day because it genuinely builds little. The list was still wrong and the next build landing there would have been free and silent, so this is a PREVENTIVE fix and must not be cited as recovered spend. reconcile.py now probes unlisted regions and marks the project UNMEASURED rather than charging a partial sweep, which is the guard that makes the list self-correcting instead of hand-kept.",
+    "2026-08-09 THE $5 IS NOW A DECLARED KEY, NOT A NUMBER IN PROSE (#7970). Alex's goal is '$5/day across all repos'. That figure lived in issue titles, in the README and in my head; the per-project ratchet targets summed to it by coincidence and nothing checked. Two representations with no shared source agree until one is edited. `load_config` now ASSERTS sum(ratchet.target_usd_per_day) == fleet_target_usd_per_day and refuses to load on drift, so lowering one project's target without re-deriving the rest is a loud failure instead of a fleet cap that quietly stopped meaning $5.",
+    "2026-08-09 ALEX: halve familylore and lexitrail, move the freed budget to stopbystop (aka withby/WB \u2014 same GCP project). Expressed as DOLLAR TARGETS, not as build counts, deliberately: counts are DERIVED by calibrate.py from target/p90, so editing counts directly would be silently reverted on the next calibration run. Moving the target moves the count and keeps one source of truth. Fleet total is unchanged at $5.00 and the load_config assertion still holds.",
+    "2026-08-09 `daily_build_count` IS THE FIELD YOU EDIT. Alex: \"going forward it should be easy to adjust the build count as we discover what it costs per day.\" calibrate.py is an ADVISOR: report-only unless --write, and --write SKIPS any project with count_pinned=true while still printing what it would have advised. Without the pin an operator's tuned number would be reverted by the next calibration \u2014 the edit that looks authoritative being the one the machine silently overwrites."
+  ],
+  "version": 1,
+  "burst_cap_days": 3.0,
+  "projects": {
+    "ensemble": {
+      "gcp_project": "yojowa-ensemble",
+      "allowance_usd_per_day": 8.0,
+      "enforcing": true,
+      "regions": [
+        "us-west1",
+        "global"
+      ],
+      "ratchet": {
+        "target_usd_per_day": 2.0,
+        "step_pct": 12,
+        "step_every_hours": 24,
+        "anchor_utc": "2026-08-08T16:00:00Z"
+      },
+      "gate_triggers": [
+        "ensemble-pytest-pr",
+        "ensemble-pytest-push"
+      ],
+      "trigger_region": "us-west1",
+      "daily_build_count": 24,
+      "required_contexts": [
+        "ensemble-pytest-pr",
+        "ensemble-build-orch-pr"
+      ],
+      "_required_contexts_source": "MEASURED 2026-08-11 from GitHub branch protection on main (required_status_checks.contexts), read with Alex's own credential \u2014 the only identity that can read it; every agent App is 403. A required context can never be trigger-closed: a closed trigger emits NO check-run, so the PR and its revert both become unmergeable."
+    },
+    "stopbystop": {
+      "gcp_project": "stopbystop",
+      "allowance_usd_per_day": 4.6,
+      "enforcing": true,
+      "_id_fix": "2026-08-08: was 'yojowa-stopbystop', which does not exist. gcloud builds list returned rc=1 'Project not found or deleted', so reconcile.py read this project as ZERO BUILDS while it billed ~$4-5/day \u2014 the single largest spender in the fleet, invisible. UNMEASURED is not zero.",
+      "regions": [
+        "us-west1"
+      ],
+      "ratchet": {
+        "target_usd_per_day": 1.75,
+        "step_pct": 12,
+        "step_every_hours": 24,
+        "anchor_utc": "2026-08-08T16:00:00Z"
+      },
+      "gate_triggers": [
+        "stopbystop-pr-tests",
+        "stopbystop-main-tests"
+      ],
+      "trigger_region": "us-west1",
+      "daily_build_count": 30,
+      "required_contexts_unknown": true,
+      "_required_contexts_source": "UNMEASURABLE 2026-08-11: branch protection returns 403 for every identity we hold, INCLUDING Alex's own token (repo lives in the stopbystop org). Until someone with admin there states which contexts are required, NO trigger here is closed \u2014 closing a required one strands every PR with no recovery path. The in-build quota step still refuses builds (23 refusals on 08-11), so spend is still enforced."
+    },
+    "market-explorations": {
+      "gcp_project": "yojowa-market-explorations",
+      "allowance_usd_per_day": 4.0,
+      "enforcing": true,
+      "regions": [
+        "us-central1",
+        "global"
+      ],
+      "_region_fix": "2026-08-08: `region` was a scalar and this project spends in TWO \u2014 us-central1 (triggered) and global (gcloud builds submit). The global builds were structurally invisible.",
+      "ratchet": {
+        "target_usd_per_day": 1.0,
+        "step_pct": 12,
+        "step_every_hours": 24,
+        "anchor_utc": "2026-08-08T16:00:00Z"
+      },
+      "gate_triggers": [
+        "market-mind-pr-tests",
+        "market-mind-portal-playwright",
+        "market-mind-portal-smoke",
+        "market-mind-portal-e2e-image",
+        "MarketMindTrigger"
+      ],
+      "trigger_region": "us-central1",
+      "daily_build_count": 30,
+      "required_contexts": [
+        "market-mind-pr-tests",
+        "market-mind-portal-build"
+      ],
+      "_required_contexts_source": "MEASURED 2026-08-11 from GitHub branch protection on main (required_status_checks.contexts), read with Alex's own credential \u2014 the only identity that can read it; every agent App is 403. A required context can never be trigger-closed: a closed trigger emits NO check-run, so the PR and its revert both become unmergeable."
+    },
+    "familylore": {
+      "gcp_project": "familylore",
+      "allowance_usd_per_day": 0.4,
+      "enforcing": true,
+      "regions": [
+        "us-west1",
+        "us-central1",
+        "global"
+      ],
+      "ratchet": {
+        "target_usd_per_day": 0.2,
+        "step_pct": 12,
+        "step_every_hours": 24,
+        "anchor_utc": "2026-08-08T16:00:00Z"
+      },
+      "gate_triggers": [
+        "decipher-pytest-pr",
+        "decipher-pytest-push"
+      ],
+      "trigger_region": "us-west1",
+      "daily_build_count": 8,
+      "required_contexts": [
+        "decipher-pytest-pr"
+      ],
+      "_required_contexts_source": "MEASURED 2026-08-11 from GitHub branch protection on main (required_status_checks.contexts), read with Alex's own credential \u2014 the only identity that can read it; every agent App is 403. A required context can never be trigger-closed: a closed trigger emits NO check-run, so the PR and its revert both become unmergeable.",
+      "_exempt_configs": {
+        "cloudbuild-e2e.yaml": "terraform builds.tf:133 null_resource.e2e_runner_build, on_failure=fail",
+        "cloudbuild-api.yaml": "terraform builds.tf:78",
+        "cloudbuild-web.yaml": "terraform builds.tf:103",
+        "_why": "PERMANENTLY EXEMPT FROM REFUSAL \u2014 hcl@ decision 2026-08-11, measured at origin/main. These are NOT PR test paths: no trigger fires them, `terraform apply` does, via local-exec with on_failure=fail. A quota refusal fails step 0, aborts the apply mid-run, and the image feeding the live marketing/IG crons goes stale. zz1 had recorded cloudbuild-e2e.yaml as 'the only genuinely ungated config' and as a GAP; it is three configs, they are one class, and the class is deliberately exempt.",
+        "_but": "THE COUNTER CANNOT SEE THEM, AND THAT IS THE REAL PROBLEM (hcl@, measured): the gate increments only on builds running quota-gate in cloudbuild.yaml, so these three never reach it. On 08-11 the Cloud Build API showed familylore at 10 builds while the counter store read 5 \u2014 e2e alone was 3. So roughly half of familylore's real spend is invisible to the number the gate enforces against, and the gated PR path is refused against a denominator that cannot see the largest consumer. Exempt from REFUSAL is not the same as exempt from COUNTING, and today they are both."
+      }
+    },
+    "lexitrail": {
+      "gcp_project": "lexitrail",
+      "allowance_usd_per_day": 0.2,
+      "enforcing": true,
+      "regions": [
+        "us-central1",
+        "global"
+      ],
+      "ratchet": {
+        "target_usd_per_day": 0.05,
+        "step_pct": 12,
+        "step_every_hours": 24,
+        "anchor_utc": "2026-08-08T16:00:00Z"
+      },
+      "gate_triggers": [],
+      "trigger_region": "us-central1",
+      "daily_build_count": 5,
+      "count_pinned": true,
+      "_count_reason": "EXPLICIT FLOOR, not derived. lexitrail ran 1 build in the 168h calibration window, far below the 20 samples a p90 needs, so calibrate.py correctly refused to invent a number \u2014 and left the field ABSENT while `enforcing` stayed true. hcl@ caught that on #8199: a project claiming enforcement with no count is exactly the 'fallback that is also a legitimate value' hazard this file's own comment names. 5/day is ~35x its observed rate (0.14/day) and costs $0.03/day at its measured $0.0061/build, inside its $0.05 target. Pinned so calibration does not overwrite a deliberate floor with a number derived from one sample."
+    }
+  },
+  "_rates_comment": "2026-08-08 \u2014 RATE RAISE REVERTED, and the reason is the whole lesson. I first raised these ~2x because the ledger under-read the invoice. But I ALSO corrected cost_of_build's span from startTime..finishTime to createTime..finishTime in the same change. Those were TWO fixes for ONE symptom: the rates were derived as (SKU dollars / minutes_SHORT), so applying them to the now-longer span computes SKU_dollars x (minutes_LONG / minutes_SHORT) and double-counts. Queue time is ~30% of stopbystop's bill and ~16.5% of ensemble's, so the compounded error runs +20% to +43% HOT per project; costed over all 613 real 08-07 builds it was $30.74 against a $24.30 invoice, +26.5%. With these original rates and the corrected span it is $24.78, +2.0%. A ledger that reads 26% hot refuses builds a quarter earlier than the real budget requires \u2014 under enforcement that is a CI outage caused by an accounting error. KEEP THE SPAN FIX; the rates were never the defect.",
+  "machine_rates_usd_per_min": {
+    "UNSPECIFIED": 0.003,
+    "E2_MEDIUM": 0.003,
+    "E2_HIGHCPU_8": 0.016,
+    "E2_HIGHCPU_32": 0.064,
+    "N1_HIGHCPU_8": 0.016,
+    "N1_HIGHCPU_32": 0.064,
+    "E2_STANDARD_2": 0.003,
+    "E2_STANDARD_4": 0.006,
+    "E2_STANDARD_8": 0.012,
+    "E2_STANDARD_16": 0.024,
+    "E2_STANDARD_32": 0.048
+  },
+  "unknown_machine_rate_usd_per_min": 0.064,
+  "_allowance_comment": "2026-08-08 \u2014 RAISE AND RATCHET, per Alex: 'Raise and ratchet down.' Allowances start at roughly TODAY'S MEASURED ACTUAL (24h, this repo's own cost_of_build with the corrected span: ensemble $7.99, stopbystop $4.52, market-explorations $3.84, familylore $0.06, lexitrail $0.00 = $16.42/day) so enforcement binds from today WITHOUT stopping CI, then tightens 12% per day toward the $5.00/day fleet target. THE RATCHET IS DATA, NOT A REMINDER: reconcile.py derives today's allowance from anchor_utc + step_pct + target, so it tightens whether or not anyone remembers to tighten it, and it floors at target rather than overshooting. Alex also transferred the enforcing decision: 'enforcing flag - yes and don't ask me, your decision fully going forward, until i say otherwise' \u2014 so the stopbystop _hold is lifted and every project ships enforcing=true.",
+  "_gate_comment": "2026-08-08 \u2014 WHICH TRIGGERS THE HOURLY GATE MAY CLOSE, and the exclusions are the safety property. Alex: 'build such system that opens gate every hour, allows the builds that can be done within quota and then closes it again for an hour if necessary.' The gate closes TEST triggers only. DELIBERATELY NEVER GATED, because closing them breaks shipping rather than saving money: \u26a0\ufe0f REMOVED 2026-08-10 \u2014 this entry named `ensemble-build-epod-push`, A TRIGGER THAT DOES NOT EXIST. Verified from three seats (adm@, mpl@, mcl@) and again here, both regions, with a control: `grep -c epod` = 0 while `grep -c ensemble-build-orch-push` = 1, so the probe works. This is the SELF-SUPPRESSING kind of wrong \u2014 a reader who looks for it finds nothing and concludes THEY searched badly, so it never generates a report. It survived a commit whose subject was literally 'correct a never-gate exemption', because I fixed the defect I had been told about and did not re-read the sentence around it. The epod build configs are exempt on their own merits (deploy/cloudbuild-build-epod.yaml, terraform-invoked); no trigger-name exemption is needed or valid, ensemble-build-orch-push / -pr and ensemble-build-ci-base-push (orchestrator and CI base image), market-mind-portal-build \u2014 \u26a0\ufe0f CORRECTED 2026-08-10: this is NOT the portal deploy, it is a REQUIRED PR TEST context under branch protection. mpl@ derived it and mcl@ verified independently: `grep -ci terraform cloudbuild-portal-build.yaml` = 0, control `cloudbuild.yaml` = 1 so the grep can find terraform; the actual deploy is terraform/07_kubernetes/builds.tf:613 running portal-ui-build.yaml. The exemption protected a TEST as a DEPLOY, and it cost: during the 08-10 closure it was the only trigger left open, so every push spent our highest-volume trigger (92 of 184 builds/day) and bought no required check, because the check it provides was itself disabled. It is GATED as of #8093. The gated set is also where the money is: market-mind-pr-tests $3.00/day, stopbystop-pr-tests $2.91/day and stopbystop-main-tests $2.11/day are three of the four largest line items in the fleet, so gating tests alone reaches the spend without ever blocking a deploy. ensemble-pytest-push and decipher-pytest-push are already disabled upstream and are not ours to re-enable; MarketMindTrigger likewise.",
+  "_trigger_region_comment": "2026-08-08 \u2014 `regions` and `trigger_region` are DIFFERENT THINGS and conflating them was a real defect caught in the first dry-run. `regions` is where BUILDS LAND and must be swept for costing (market-explorations bills in us-central1 AND global). `trigger_region` is where the TRIGGER OBJECT lives, and there is exactly one. Gating across `regions` tried to disable market-mind-pr-tests in `global`, where no such trigger exists \u2014 every hour, forever. It would have failed open so nothing would break, which is precisely why it could have run for weeks as noise nobody read.",
+  "fleet_target_usd_per_day": 5.0
+}
