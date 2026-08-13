@@ -1,4 +1,4 @@
-import { srsIntervalMs, isDue, lastRecallTimeOf, isWordDue, dueCount } from './srs';
+import { srsIntervalMs, isDue, lastRecallTimeOf, isWordDue, dueCount, dueAcrossWordsets } from './srs';
 
 const DAY = 24 * 60 * 60 * 1000;
 const NOW = new Date('2026-08-13T12:00:00Z');
@@ -93,5 +93,130 @@ describe('dueCount', () => {
   it('handles an empty or missing list', () => {
     expect(dueCount([], NOW)).toBe(0);
     expect(dueCount(undefined, NOW)).toBe(0);
+  });
+});
+
+// --- the clock snapshot -------------------------------------------------
+//
+// hc2 found on #130 that `dueCount` binds `now` ONCE and threads it, that the
+// choice is deliberate, and that NOTHING PINNED IT: every test above passes an
+// explicit NOW, so a regression to a per-element `new Date()` leaves all of
+// them green. These tests are that missing pin, and they are written to fail
+// on exactly that change.
+//
+// They count ZERO-ARGUMENT `new Date()` constructions. One-argument
+// constructions are the parse of a stored timestamp (`new Date(lastRecallTime)`
+// inside `isDue`) and happen once per word by design, so counting those too
+// would make the assertion track the input length instead of the clock.
+const countBareNowCalls = (fn) => {
+  const RealDate = Date;
+  const FIXED = NOW.getTime();
+  let bare = 0;
+  class CountingDate extends RealDate {
+    constructor(...args) {
+      if (args.length === 0) {
+        bare += 1;
+        super(FIXED);
+      } else {
+        super(...args);
+      }
+    }
+    static now() { return FIXED; }
+  }
+  global.Date = CountingDate;
+  try {
+    fn();
+  } finally {
+    global.Date = RealDate;
+  }
+  return bare;
+};
+
+describe('the clock is read once per count, not once per word', () => {
+  const manyWords = [word(), word(), word(), word(), word()];
+
+  it('dueCount reads the clock exactly once regardless of list length', () => {
+    // Reds at 6 (its own default + one per word) if the threading is dropped.
+    expect(countBareNowCalls(() => dueCount(manyWords))).toBe(1);
+  });
+
+  it('dueAcrossWordsets reads the clock once for ALL wordsets', () => {
+    // Reds at 4 if each wordset binds its own `now`, which would let the first
+    // and last set be counted against different instants.
+    const entries = [
+      { wordsetId: 1, words: manyWords },
+      { wordsetId: 2, words: manyWords },
+      { wordsetId: 3, words: manyWords },
+    ];
+    expect(countBareNowCalls(() => dueAcrossWordsets(entries))).toBe(1);
+  });
+
+  it('counts a boundary word consistently while the clock ADVANCES mid-count', () => {
+    // The behavioural half of the same property: the counting test above shows
+    // the clock is read once, this shows why that matters. Every word here sits
+    // EXACTLY on its 1-day boundary, so a clock that advances between elements
+    // flips them from not-due to due partway through the list and the count
+    // lands somewhere between 0 and 5 depending on iteration order.
+    const RealDate = Date;
+    const boundary = () => word({
+      recall_state: 2,
+      recall_history: [{ original_recall_time: new RealDate(NOW.getTime() - DAY).toISOString() }],
+    });
+    const onTheLine = [boundary(), boundary(), boundary(), boundary(), boundary()];
+    // Each bare read is 1 ms later than the last, STARTING 2 ms before the
+    // boundary. The offset is load-bearing and was chosen by running the
+    // mutation, not by eye: `dueCount` evaluates its own default `now` first,
+    // so that unused read consumes tick 0. Starting at NOW-1 (the obvious
+    // choice) therefore hands the five words NOW..NOW+4 — all past the
+    // boundary, all due, count 5 — which is a NON-split value this assertion
+    // accepts, and the test passed under the very mutation it exists to catch.
+    // Starting at NOW-2 puts the boundary in the MIDDLE of the list: the words
+    // read NOW-1..NOW+3, so a per-element clock yields 4 and reds.
+    let tick = 0;
+    const advancing = () => NOW.getTime() - 2 + (tick++);
+    class AdvancingDate extends RealDate {
+      constructor(...args) {
+        if (args.length === 0) {
+          super(advancing());
+        } else {
+          super(...args);
+        }
+      }
+      static now() { return advancing(); }
+    }
+    global.Date = AdvancingDate;
+    try {
+      // One clock read => all five share it => all-or-nothing, never a split.
+      expect([0, 5]).toContain(dueCount(onTheLine));
+    } finally {
+      global.Date = RealDate;
+    }
+  });
+});
+
+describe('dueAcrossWordsets', () => {
+  it('totals across wordsets and reports the per-wordset breakdown', () => {
+    const entries = [
+      { wordsetId: 7, words: [word(), word({ is_included: false })] },   // 1 due
+      { wordsetId: 9, words: [word(), word({ recall_history: [] })] },   // 2 due
+    ];
+    expect(dueAcrossWordsets(entries, NOW)).toEqual({
+      total: 3,
+      perWordset: [
+        { wordsetId: 7, due: 1 },
+        { wordsetId: 9, due: 2 },
+      ],
+    });
+  });
+
+  it('reports zero rather than throwing on empty or missing input', () => {
+    // The Today home renders this number on first paint, before any fetch has
+    // resolved. Throwing here would blank the home screen the habit depends on.
+    expect(dueAcrossWordsets([], NOW)).toEqual({ total: 0, perWordset: [] });
+    expect(dueAcrossWordsets(undefined, NOW)).toEqual({ total: 0, perWordset: [] });
+    expect(dueAcrossWordsets([{ wordsetId: 1 }], NOW)).toEqual({
+      total: 0,
+      perWordset: [{ wordsetId: 1, due: 0 }],
+    });
   });
 });
