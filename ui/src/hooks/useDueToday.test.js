@@ -1,0 +1,109 @@
+import { loadDueToday } from './useDueToday';
+import { getWordsets } from '../services/wordsService';
+import { getUserWordsByWordset } from '../services/userService';
+
+// Factory mocks, not automocks: an automock still LOADS the real module to
+// derive its shape, and `apiService` reads `window.config.API_BASE_URL` at
+// import time, which is undefined under jest. The factory replaces the module
+// outright so nothing in that chain executes.
+jest.mock('../services/wordsService', () => ({ getWordsets: jest.fn() }));
+jest.mock('../services/userService', () => ({ getUserWordsByWordset: jest.fn() }));
+
+const DAY = 24 * 60 * 60 * 1000;
+const ago = (ms) => new Date(Date.now() - ms).toISOString();
+
+// A userword row in the shape `getUserWordsByWordset` returns. Defaults to a
+// word that IS due (state 2 = 1-day interval, last reviewed 30 days ago).
+const uw = (over = {}) => ({
+  word_id: 1,
+  is_included: true,
+  recall_state: 2,
+  recall_history: [{ original_recall_time: ago(30 * DAY) }],
+  ...over,
+});
+
+beforeEach(() => {
+  jest.clearAllMocks();
+});
+
+describe('loadDueToday', () => {
+  it('totals due words ACROSS wordsets, not just the first', async () => {
+    // The whole point: a per-wordset answer already exists in useWordsetLoader.
+    // Two sets with due words must sum.
+    getWordsets.mockResolvedValue({ data: [{ wordset_id: 7 }, { wordset_id: 9 }] });
+    getUserWordsByWordset.mockImplementation((userId, wordsetId) =>
+      Promise.resolve({ data: wordsetId === 7 ? [uw()] : [uw(), uw({ word_id: 2 })] })
+    );
+
+    await expect(loadDueToday('user-1')).resolves.toBe(3);
+  });
+
+  it('excludes opted-out and resting words from the total', async () => {
+    getWordsets.mockResolvedValue({ data: [{ wordset_id: 1 }] });
+    getUserWordsByWordset.mockResolvedValue({
+      data: [
+        uw(),                                    // due
+        uw({ word_id: 2, is_included: false }),  // opted out -> never due
+        uw({ word_id: 3, recall_state: 0,        // mastered, rested 1 day of 7
+             recall_history: [{ original_recall_time: ago(1 * DAY) }] }),
+      ],
+    });
+
+    await expect(loadDueToday('user-1')).resolves.toBe(1);
+  });
+
+  it('REJECTS when a fetch fails, so the caller can show an error', async () => {
+    // Load-bearing: resolving to 0 here would read as "you are all caught up".
+    // A learner with reviews waiting would be told there is nothing to do and
+    // would have no way to tell that from the truth. The hook turns this
+    // rejection into status 'error', never into a total of 0.
+    getWordsets.mockRejectedValue(new Error('network'));
+
+    await expect(loadDueToday('user-1')).rejects.toThrow('network');
+  });
+
+  it('propagates a per-wordset failure instead of silently undercounting', async () => {
+    // One set failing while others succeed is the subtler version of the same
+    // trap: Promise.all rejects, so we surface an error rather than return a
+    // total that is quietly missing a wordset.
+    getWordsets.mockResolvedValue({ data: [{ wordset_id: 1 }, { wordset_id: 2 }] });
+    getUserWordsByWordset.mockImplementation((userId, wordsetId) =>
+      wordsetId === 2
+        ? Promise.reject(new Error('boom'))
+        : Promise.resolve({ data: [uw()] })
+    );
+
+    await expect(loadDueToday('user-1')).rejects.toThrow('boom');
+  });
+
+  it('does not fetch the word rows — only the userwords', async () => {
+    // Pins the halved fan-out: `is_included`, `recall_state` and
+    // `recall_history` all live on the userword, so a `getWordsByWordset` call
+    // would be pure cost. Asserts the call COUNT, because an unused import is
+    // not what costs a request.
+    getWordsets.mockResolvedValue({ data: [{ wordset_id: 1 }, { wordset_id: 2 }] });
+    getUserWordsByWordset.mockResolvedValue({ data: [uw()] });
+
+    await loadDueToday('user-1');
+
+    expect(getUserWordsByWordset).toHaveBeenCalledTimes(2);
+    expect(getWordsets).toHaveBeenCalledTimes(1);
+  });
+
+  it('tolerates a wordset with no userwords, and an empty wordset list', async () => {
+    // A newly added set the learner has never opened returns an empty list.
+    getWordsets.mockResolvedValue({ data: [{ wordset_id: 1 }] });
+    getUserWordsByWordset.mockResolvedValue({ data: [] });
+    await expect(loadDueToday('user-1')).resolves.toBe(0);
+
+    getWordsets.mockResolvedValue({ data: [] });
+    await expect(loadDueToday('user-1')).resolves.toBe(0);
+  });
+
+  it('tolerates a response with no data envelope rather than throwing', async () => {
+    // Defensive on the shape, not on the network: a 204 or a changed envelope
+    // should render "0 due", not blank the home screen with a TypeError.
+    getWordsets.mockResolvedValue(undefined);
+    await expect(loadDueToday('user-1')).resolves.toBe(0);
+  });
+});
