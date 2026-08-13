@@ -1,0 +1,122 @@
+# cloudbuild.yaml — lexitrail's FIRST CI/deploy build config (issue-77).
+#
+# WHY THIS EXISTS: no Cloud Build trigger has ever existed on the `lexitrail`
+# project, and no backend image has ever been built — all 6 builds in the
+# project's history are manual `gcloud builds submit` of the UI. The live
+# backend ReplicaSet has been running the same 2026-07-22 digest for weeks, so
+# every merged backend fix (#103, #114, #115, #38, #48) is absent from prod.
+# That is worse than a delay: a merged-but-unbuilt fix is indistinguishable
+# from a fix that does not work, and it manufactures re-diagnosis of correct
+# work on every backend merge.
+#
+# AUTHORIZED by Alex 2026-08-13 via zz1, verbatim: "yes authorized but make
+# sure Cloud Builds are wired into $5 per day rule with enforcements, this
+# should should not change it." The fleet is running ~$8-9/day against a $5.00
+# target, so this is being added to a budget ALREADY OVER. Every cost decision
+# below is a constraint from that authorization, not a preference:
+#
+#   1. main-only deploy trigger, no per-PR image build   (trigger-side)
+#   2. includedFiles path filters                        (trigger-side)
+#   3. layer caching — see `pull-cache` + `--cache-from` (here)
+#   4. DEFAULT machineType — deliberately NOT specified  (here, by omission)
+#   5. visible to the same daily budget enforcement      (here, step 0)
+#
+# 🔴 SCOPE: this BUILDS AND PUSHES the backend image. It does not roll the
+# deployment. The live spec is `:latest` with `imagePullPolicy: Always` on a
+# cluster in ANOTHER project (ys-autopilot / yojowa-claw / ns lexitrail), so a
+# rollout needs cross-project credentials and is a separate, riskier change.
+# Pods cycle daily and re-pull `:latest`, so a push reaches prod within a day
+# on its own; `kubectl rollout restart deployment/lexitrail-backend -n lexitrail`
+# forces it sooner.
+
+substitutions:
+  # Default empty so ordinary builds are unaffected; only a deliberate re-run
+  # with --substitutions=_BREAK_GLASS=1 overrides the quota gate. The override
+  # is still COUNTED — an override nobody counts becomes the habit.
+  _BREAK_GLASS: ''
+  _IMAGE: 'us-central1-docker.pkg.dev/lexitrail/lexitrail-repo/lexitrail-backend'
+
+steps:
+
+  # ─── goal 1.1 — BUILD-COUNT QUOTA, ENFORCING ────────────────────────────────
+  # 🔴 THIS STEP MUST BE ABLE TO REFUSE, AND THREE THINGS ARE LOAD-BEARING.
+  # Each of them fails toward "the gate is present and enforces nothing", which
+  # is the worst outcome here because it reads as compliance with constraint 5
+  # while creating an uncapped spending path.
+  #
+  # (a) `--trigger-name=$TRIGGER_NAME` (issue-8237). A Cloud Build step gets no
+  #     ambient environment, so without the flag the trigger name reads EMPTY,
+  #     empty is treated as ungated, and `inbuild.py`'s per-trigger downgrade
+  #     turns enforcement off while leaving counting on. Silent.
+  #
+  # (b) The `env:` block below. The refusal message tells a blocked engineer to
+  #     re-run with `_BREAK_GLASS=1`; without this wiring that variable never
+  #     reaches the process and the hatch the message names does not exist. A
+  #     documented, unreachable escape hatch is worse than none — it is
+  #     specific, reads as actionable, and burns the one person already having
+  #     a bad build.
+  #
+  # (c) Every other step says `waitFor: ['quota-gate']`. In Cloud Build,
+  #     `waitFor: ['-']` means START AT t=0 REGARDLESS OF FILE POSITION, so a
+  #     gate at the top of a file whose steps all say `['-']` gates ZERO of
+  #     them. Note this is NOT "delete the dashes": a step with no `waitFor`
+  #     waits for the one above it, which serialises everything. Point them AT
+  #     the gate.
+  #
+  # ⚠️ ALSO REQUIRED, and NOT in this file: `lexitrail`'s `gate_triggers` in
+  # config/build-budget.json is `[]`, and an empty list means NOTHING CAN EVER
+  # BE REFUSED (`gate.py` names lexitrail as the live instance of exactly this:
+  # "enforcing=TRUE but `gate_triggers` is EMPTY — nothing can ever be refused
+  # here"). The trigger's name must be added to that list in the same change
+  # that creates the trigger, or this step counts and never blocks.
+  - name: 'python:3.11-slim'
+    id: 'quota-gate'
+    entrypoint: 'python3'
+    args:
+      - 'scripts/build_budget/inbuild.py'
+      - '--repo=lexitrail'
+      - '--state-uri=gs://lexitrail-build-budget/count-lexitrail.json'
+      - '--build-id=$BUILD_ID'
+      - '--trigger-name=$TRIGGER_NAME'
+    env:
+      - 'ENSEMBLE_BUILD_QUOTA_BREAK_GLASS=${_BREAK_GLASS}'
+    waitFor: ['-']
+
+  # ─── layer cache: pull the previous image, tolerate its absence ─────────────
+  # `|| true` because the FIRST build has nothing to pull — and a missing cache
+  # must not be a build failure. An uncached image rebuild is the single most
+  # expensive thing this file can do, which is why the pull is worth a step.
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'pull-cache'
+    entrypoint: 'bash'
+    args: ['-c', 'docker pull ${_IMAGE}:latest || true']
+    waitFor: ['quota-gate']
+
+  # ─── build ─────────────────────────────────────────────────────────────────
+  # No `machineType` anywhere in this file, deliberately (constraint 4): the
+  # default is the cheap one, and specifying a larger one is a silent cost
+  # increase that no reviewer of a later PR would think to look for.
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'backend-build'
+    args:
+      - 'build'
+      - '--cache-from'
+      - '${_IMAGE}:latest'
+      - '-t'
+      - '${_IMAGE}:latest'
+      - '-t'
+      - '${_IMAGE}:$SHORT_SHA'
+      - './backend'
+    waitFor: ['pull-cache']
+
+# Both tags are pushed. `:latest` is what the live Deployment pulls
+# (`imagePullPolicy: Always`); `:$SHORT_SHA` exists so a running pod can be
+# traced back to a commit — the absence of that is why "is this fix deployed?"
+# has needed ReplicaSet archaeology rather than a lookup.
+images:
+  - '${_IMAGE}:latest'
+  - '${_IMAGE}:$SHORT_SHA'
+
+# 20m: the backend image is a small python:3.9-slim + pip install. The default
+# is 10m and an uncached first build (no cache to pull) is the slow case.
+timeout: '1200s'
