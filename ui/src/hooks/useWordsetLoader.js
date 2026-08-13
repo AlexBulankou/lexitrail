@@ -5,7 +5,7 @@ import { getUserWordsByWordset, updateUserWordRecall } from '../services/userSer
 import { recordPractice } from '../services/streakStore';
 import { formatDistanceToNow, max } from 'date-fns';
 import { GameMode } from '../components/Game';
-import { isDue } from '../utils/srs';
+import { isWordDue } from '../utils/srs';
 import { makeInFlight, requestKey, beginRequest, endRequest } from '../utils/inFlight';
 import { rawKey, viewKey, invalidateWordset } from '../utils/wordsetCache';
 import { makeRawRegistry, claimRawFetch } from '../utils/rawFetchRegistry';
@@ -236,12 +236,12 @@ export const useWordsetLoader = (wordsetId, userId, mode) => {
             return true; // Keep all other words, regardless of inclusion status
           } else if (mode === GameMode.DUE_TODAY) {
             // Spaced-repetition queue: included words whose SRS interval has
-            // elapsed (or that have never been practiced).
-            if (!word.is_included) return false;
-            const lastRecall = word.recall_history.length > 0
-              ? word.recall_history[0].original_recall_time
-              : null;
-            return isDue(word.recall_state, lastRecall);
+            // elapsed (or that have never been practiced). issue-107: the
+            // inclusion check + last-recall extraction moved into
+            // `isWordDue` so the Today home counts with the SAME rule this
+            // session filters by -- two copies is how a headline count and
+            // the session it starts end up disagreeing.
+            return isWordDue(word);
           } else {
             // Original filtering behavior for other modes
             return includedFlag ? word.is_included : !word.is_included;
