@@ -66,6 +66,54 @@ describe('lastRecallTimeOf', () => {
   });
 });
 
+describe('lastRecallTimeOf reads BOTH row shapes', () => {
+  // The bug this file did not catch the first time: `useDueToday` passes RAW
+  // `/userwords/query` rows, which carry `recall_histories[].recall_time`, and
+  // this only read the MAPPED `recall_history[].original_recall_time`. It
+  // returned null for every live row, `isDue(state, null)` is true, and the
+  // Today home silently counted every included word as due.
+  const RAW = { recall_histories: [{ recall_time: ago(3 * DAY) }] };
+  const MAPPED = { recall_history: [{ original_recall_time: ago(3 * DAY) }] };
+
+  it('reads the RAW backend shape (recall_histories / recall_time)', () => {
+    expect(lastRecallTimeOf(RAW)).toBe(ago(3 * DAY));
+  });
+
+  it('still reads the MAPPED loader shape', () => {
+    expect(lastRecallTimeOf(MAPPED)).toBe(ago(3 * DAY));
+  });
+
+  it('agrees across the two shapes, so one screen cannot disagree with the other', () => {
+    // The Today home counts raw rows; the DUE_TODAY session filters mapped
+    // ones. If these ever differ, the headline and the session it opens
+    // disagree about what is due -- which is the whole reason this rule was
+    // extracted into one function.
+    expect(isWordDue({ is_included: true, recall_state: 2, ...RAW }, NOW))
+      .toBe(isWordDue({ is_included: true, recall_state: 2, ...MAPPED }, NOW));
+  });
+
+  it('returns the NEWEST review, not the first element', () => {
+    // Nothing sorts these -- the backend appends per result row. With `[0]` an
+    // unsorted history names an arbitrary review, which can mark a rested word
+    // due or hide a word that is.
+    const unsorted = { recall_histories: [
+      { recall_time: ago(30 * DAY) },
+      { recall_time: ago(1 * DAY) },   // newest, in the middle
+      { recall_time: ago(10 * DAY) },
+    ] };
+    expect(lastRecallTimeOf(unsorted)).toBe(ago(1 * DAY));
+    // A mastered word reviewed yesterday is RESTING (7-day interval); reading
+    // the 30-day-old entry instead would wrongly call it due.
+    expect(isWordDue({ is_included: true, recall_state: 0, ...unsorted }, NOW)).toBe(false);
+  });
+
+  it('skips unusable entries rather than throwing or trusting them', () => {
+    expect(lastRecallTimeOf({ recall_histories: [{}, null, { recall_time: ago(2 * DAY) }] }))
+      .toBe(ago(2 * DAY));
+    expect(lastRecallTimeOf({ recall_histories: [{ recall_time: 'not-a-date' }] })).toBeNull();
+  });
+});
+
 describe('isWordDue', () => {
   it('is due when the interval has elapsed', () => {
     expect(isWordDue(word(), NOW)).toBe(true);
