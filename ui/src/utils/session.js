@@ -148,3 +148,33 @@ export const nextSessionBinding = (
 
   return { key, keys: bindSession(words, budget) };
 };
+
+
+// Is any word of THIS session currently on screen? (lexitrail#137)
+//
+// The session's terminal condition used to be "the queue's FRONT is outside the
+// session", which loses `maxCardsToShow` cards at the end and does it silently.
+// Measured, driving a 12-word queue with a 10-card budget:
+//
+//     2 cards visible -> "8 of 10 cards done"
+//     1 card  visible -> "9 of 10 cards done"
+//
+// The loss tracks the WINDOW SIZE, which is the tell. As the captured words run
+// out, the loader pulls the next unseen (uncaptured) word into the window; it
+// lands in slot 0, the front-check fires, and the session ends while captured
+// words are still sitting in slot 1.
+//
+// So the question is not "is the front card mine" but "is ANY visible card
+// mine". The learner can still finish every card they were promised, and the
+// session still cannot run past its budget — it ends as soon as nothing on
+// screen belongs to it.
+//
+// ⚠️ The honest cost: while a captured card shares the window with an uncaptured
+// one, the uncaptured card is tappable. That is a card OUTSIDE the session
+// being practisable, which the front-check prevented — but the front-check paid
+// for it by dropping cards INSIDE the session, and silently. Losing promised
+// cards is worse than offering an extra one, and #137 records the trade.
+export const windowHasSessionWord = (visibleWords, sessionKeys) => {
+  if (!sessionKeys) return true;   // not a session: never terminal on this rule
+  return (visibleWords || []).some((w) => sessionKeys.has(wordKey(w)));
+};

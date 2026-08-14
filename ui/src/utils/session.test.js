@@ -1,7 +1,7 @@
 import {
   SESSION_BUDGET, SESSION_MODES, isSessionMode, wordKey,
   bindSession, sessionRemaining, sessionProgress, sessionOutcome, SessionOutcome,
-  nextSessionBinding, sessionBindingKey, EMPTY_BINDING,
+  nextSessionBinding, sessionBindingKey, EMPTY_BINDING, windowHasSessionWord,
 } from './session';
 import { DEFAULT_GOAL } from './streak';
 
@@ -226,5 +226,38 @@ describe('nextSessionBinding — the read-time gate hc2 caught missing on #134',
   it('tolerates a missing previous binding', () => {
     expect(nextSessionBinding(undefined, practice).keys.size).toBe(10);
     expect(nextSessionBinding(null, { ...practice, mode: 'SHOW_EXCLUDED' })).toEqual(EMPTY_BINDING);
+  });
+});
+
+
+describe('windowHasSessionWord — issue-137, the cards the front-check dropped', () => {
+  const keys = bindSession(many(10), 10);   // word_ids 1..10 captured
+
+  it('🔴 stays TRUE when a session word is visible but not FIRST', () => {
+    // THE BUG, as a test. The old rule asked only about `displayWords[0]`, so
+    // an uncaptured word arriving in slot 0 ended the session while a captured
+    // word sat in slot 1 — losing exactly `maxCardsToShow` cards, silently.
+    // Measured before the fix: 2 cards visible -> "8 of 10", 1 card -> "9 of 10".
+    const visible = [w(99), w(9)];          // uncaptured first, captured second
+    expect(windowHasSessionWord(visible, keys)).toBe(true);
+  });
+
+  it('goes false only when NOTHING visible belongs to the session', () => {
+    expect(windowHasSessionWord([w(99), w(98)], keys)).toBe(false);
+  });
+
+  it('is true for a session word in the first slot, as before', () => {
+    expect(windowHasSessionWord([w(3), w(99)], keys)).toBe(true);
+  });
+
+  it('never ends a NON-session mode on this rule', () => {
+    // sessionKeys is null for browse/test; the window rule must not fire there
+    // or the excluded-words view would terminate on its own first card.
+    expect(windowHasSessionWord([w(99)], null)).toBe(true);
+  });
+
+  it('tolerates an empty or missing window', () => {
+    expect(windowHasSessionWord([], keys)).toBe(false);
+    expect(windowHasSessionWord(undefined, keys)).toBe(false);
   });
 });
