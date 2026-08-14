@@ -152,7 +152,15 @@ def game_userword(i):
     }
 
 
-GAME_SCENARIOS = {"short": 3, "full": 12}
+# issue-137: the HEIGHT is part of the scenario, not scenery. The card count a
+# layout shows is what the session's terminal rule reads, and the two defects
+# this harness measured were both invisible at one height and visible at
+# another -- 390x844 gives 2 slots, 390x600 gives 1, and the 1-slot case is
+# where the window rule degenerates to the front rule it replaced. Measured on
+# the pre-fix build: 2 slots -> "All 10 cards done" but TWELVE taps; 1 slot ->
+# "9 of 10 cards done". Running only the first height would have shown a green
+# headline for a session that both overran its budget and lost a card.
+GAME_SCENARIOS = {("short", 844): 3, ("full", 844): 12, ("full-1card", 600): 12}
 
 
 
@@ -180,10 +188,10 @@ def run_game(browser, base, out, unexpected, failures):
     """Drive a bounded session end to end and shoot both surfaces."""
     from playwright.sync_api import Error as PlaywrightError
 
-    for scenario, n_due in GAME_SCENARIOS.items():
+    for (scenario, vp_h), n_due in GAME_SCENARIOS.items():
         words = [game_word(i) for i in range(1, n_due + 1)]
         userwords = [game_userword(i) for i in range(1, n_due + 1)]
-        ctx = browser.new_context(viewport={"width": 390, "height": 844})
+        ctx = browser.new_context(viewport={"width": 390, "height": vp_h})
 
         def route(r):
             url = r.request.url
@@ -243,12 +251,14 @@ def run_game(browser, base, out, unexpected, failures):
         # Drive it: flip, mark memorized, repeat. Bounded by the BUDGET, not by
         # the queue — if the session failed to bound itself this loop would run
         # past `expect_total` and the assertion below catches it.
-        for _ in range(expect_total + 2):
+        taps = 0
+        for _ in range(expect_total + 4):
             if page.query_selector(".completed-session-title"):
                 break
             try:
                 page.click(".word-card-inner", timeout=4000)
                 page.click('[aria-label="Mark as memorized"]', timeout=4000)
+                taps += 1
             except PlaywrightError:
                 break
             page.wait_for_timeout(350)
@@ -263,6 +273,30 @@ def run_game(browser, base, out, unexpected, failures):
         want = "Session complete" if n_due >= 10 else "All caught up"
         if want not in title:
             failures.append(f"game/{scenario}: terminal headline {title!r}, expected {want!r}")
+
+        # issue-137: the headline alone said "Session complete" on a run that
+        # had lost a card AND on one that had practised two past its budget, so
+        # it is not the assertion. Both directions, because they fail
+        # oppositely and only one of them is visible in the completion text:
+        #
+        #   taps <  expect_total  -> cards the learner was promised, dropped
+        #                            (the completion screen SAYS "9 of 10")
+        #   taps >  expect_total  -> cards outside the session, practised
+        #                            (the completion screen still says "All 10
+        #                            cards done" -- silent, and the reason a
+        #                            headline check could never catch it)
+        body = page.inner_text("body")
+        if n_due >= 10:
+            if taps != expect_total:
+                failures.append(
+                    f"game/{scenario}: {taps} card(s) practised for a "
+                    f"{expect_total}-card session -- "
+                    + ("session ran PAST its budget" if taps > expect_total
+                       else "session finished SHORT"))
+            if f"All {expect_total} cards done" not in body:
+                failures.append(
+                    f"game/{scenario}: completion text does not read "
+                    f"'All {expect_total} cards done' -- got {body[:120]!r}")
 
         shot = os.path.join(out, f"session-{scenario}-done-mobile.png")
         page.screenshot(path=shot, full_page=True)

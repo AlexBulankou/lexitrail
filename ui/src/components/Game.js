@@ -4,7 +4,7 @@ import MiniWordCard from './MiniWordCard';
 import Completed from './Completed';
 import {
   SESSION_BUDGET, sessionRemaining, sessionProgress, sessionOutcome,
-  nextSessionBinding, windowHasSessionWord, EMPTY_BINDING,
+  nextSessionBinding, sessionVisibleIndices, EMPTY_BINDING,
 } from '../utils/session';
 import OnboardingOverlay from './OnboardingOverlay';
 import Timer from './Timer';
@@ -113,10 +113,24 @@ const Game = () => {
   // Asking whether ANY VISIBLE card belongs to the session keeps the property
   // the front-check was for — the session cannot outlive its own words — while
   // letting the learner finish the cards they were promised.
-  const visible = displayWords.slice(0, maxCardsToShow);
-  const sessionOver =
-    Boolean(sessionKeys) &&
-    (sessionWords.length === 0 || !windowHasSessionWord(visible, sessionKeys));
+  // issue-137: the window is filled from SESSION words first, so a captured
+  // word can never be stranded behind an uncaptured one -- at ANY window size,
+  // including one card, where the previous window-rule degenerated to the
+  // front-rule it replaced.
+  //
+  // These are indices into `displayWords`, not words. The recall handlers do
+  // `toShow[index]`, so the index a card carries must be its position in the
+  // loader's list; a filtered list would desynchronise every handler from the
+  // word it marks. Card-local UI state (flip, feedback) keeps its own 0..N-1
+  // index below -- two indices, two jobs, and conflating them is the bug this
+  // shape exists to avoid.
+  const visibleIndices = sessionVisibleIndices(displayWords, sessionKeys, maxCardsToShow);
+  // With the window filled that way, "no captured word is on screen" and "no
+  // captured word remains" are the same statement, so the second clause the
+  // previous fix needed is gone: the session now ends on its own terms rather
+  // than on a proxy for them. It still cannot run past the budget -- when
+  // `sessionWords` is empty there is nothing left to render, structurally.
+  const sessionOver = Boolean(sessionKeys) && sessionWords.length === 0;
   const [flippedStates, setFlippedStates] = useState({});
   const [feedbackClasses, setFeedbackClasses] = useState({});
   const [finalTimeElapsed, setFinalTimeElapsed] = useState(0);
@@ -271,6 +285,12 @@ const Game = () => {
     callback();
   };
 
+  // issue-137: `index` here is the LOADER-LIST position, which is what
+  // `handleMemorized`/`handleNotMemorized` index (`toShow[index]`). It used to
+  // be the same number as the on-screen slot because the visible set was a
+  // prefix; it is not any more. Nothing in this function is slot-keyed --
+  // `provideFeedback` and `setFlippedState` are wired with the slot directly
+  // at the call site -- so no second argument is threaded here.
   const handleCardGuessed = (index, isCorrect) => {
     // Send Google Analytics event for single recall attempt
     window.gtag('event', 'recall', {
@@ -320,7 +340,7 @@ const Game = () => {
     loadWordsForWordset();
   }
 
-  const wordsToRender = displayWords.slice(0, maxCardsToShow);
+  const wordsToRender = visibleIndices.map((i) => ({ word: displayWords[i], wordIndex: i }));
 
   if (loading.status === 'loading') {
     return (
@@ -407,17 +427,22 @@ const Game = () => {
           ))}
         </div>
         <div className={`cards-container ${layoutClass}`}>
-          {wordsToRender.map((word, index) => (
+          {wordsToRender.map(({ word, wordIndex }, index) => (
             <WordCard
               mode={mode}
               key={index}
               word={{ ...word, user_id: user.email, index: word.word_index }} // Ensure user_id is passed correctly
               isHintDisplayed={hintsDisplayed}
+              // issue-137: `index` is the SLOT (card-local UI state — flip,
+              // feedback, and the 0..N-1 loop in toggleFlipStates).
+              // `wordIndex` is the position in the loader's list, which is what
+              // every recall handler indexes. They coincided while the visible
+              // set was a prefix; they do not now.
               isFlipped={flippedStates[index]} // The flipped state for this card
               feedbackClass={feedbackClasses[index]}
-              handleMemorized={() => handleCardGuessed(index, true)}
-              handleNotMemorized={() => handleCardGuessed(index, false)}
-              toggleExclusion={() => handleCardInclusionStateChanged(index, word.is_included)}  // Pass toggleExclusion to WordCard
+              handleMemorized={() => handleCardGuessed(wordIndex, true)}
+              handleNotMemorized={() => handleCardGuessed(wordIndex, false)}
+              toggleExclusion={() => handleCardInclusionStateChanged(wordIndex, word.is_included)}  // Pass toggleExclusion to WordCard
               setFlippedState={(isFlipped) => setFlippedState(index, isFlipped)}
               provideFeedback={(isSuccess, callback) => provideFeedback(index, isSuccess, callback)}
             />
