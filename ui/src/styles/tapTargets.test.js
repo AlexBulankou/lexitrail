@@ -48,6 +48,9 @@ const FLOOR_SELECTORS = [
   // its declared min-height alone wasn't enough, the mobile-media-query
   // padding left it 35.2px wide.
   '.nav-wordsets-link',
+  // issue-107: the Today home's Start button, listed as it shipped rather than
+  // after prod measured it short.
+  '.today-start',
 ];
 
 describe('shared touch-target floor', () => {

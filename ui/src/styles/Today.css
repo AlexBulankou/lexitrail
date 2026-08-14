@@ -1,0 +1,91 @@
+/* issue-107 (RD-3) — the Today home.
+ *
+ * Deliberately small: one column, one dominant number, one button. The screen's
+ * whole job is that the next action is unmissable, so anything competing with
+ * the Start control for attention is a regression here rather than a flourish.
+ *
+ * NOTE the touch-target floor for `.today-start` is NOT declared in this file.
+ * It lives in Global.css with the rest of the floor selectors — a component
+ * stylesheet loads AFTER Global.css at equal specificity, so a local
+ * `min-height` here would silently hold the old value when the shared floor is
+ * raised. That is the exact defect `tapTargets.test.js`'s single-sourcing test
+ * exists to catch, and it would catch this.
+ */
+
+.today {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 3rem 1rem;
+  text-align: center;
+}
+
+.today-headline {
+  margin: 0;
+  font-size: 1.5rem;
+  color: #333;
+}
+
+.today-count {
+  font-size: 3.5rem;
+  font-weight: bold;
+  line-height: 1;
+  color: #007bff;
+  display: block;
+}
+
+.today-done {
+  font-size: 2rem;
+  font-weight: bold;
+  color: #28a745;
+}
+
+.today-sub,
+.today-streak,
+.today-target {
+  margin: 0;
+  color: #666;
+  font-size: 0.95rem;
+}
+
+.today-streak {
+  font-weight: bold;
+}
+
+.today-start {
+  margin-top: 0.5rem;
+  padding: 1rem 3rem;
+  background: #007bff;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 1.25rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.today-start:hover {
+  background: #0056b3;
+}
+
+.today-secondary {
+  color: #007bff;
+  text-decoration: none;
+  font-size: 0.95rem;
+}
+
+.today-secondary:hover {
+  text-decoration: underline;
+}
+
+.today-status {
+  margin: 0;
+  color: #666;
+}
+
+.today-error {
+  color: #b00020;
+  font-weight: bold;
+}

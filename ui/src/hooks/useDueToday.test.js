@@ -35,7 +35,7 @@ describe('loadDueToday', () => {
       Promise.resolve({ data: wordsetId === 7 ? [uw()] : [uw(), uw({ word_id: 2 })] })
     );
 
-    await expect(loadDueToday('user-1')).resolves.toBe(3);
+    await expect(loadDueToday('user-1')).resolves.toMatchObject({ total: 3 });
   });
 
   it('excludes opted-out and resting words from the total', async () => {
@@ -49,7 +49,7 @@ describe('loadDueToday', () => {
       ],
     });
 
-    await expect(loadDueToday('user-1')).resolves.toBe(1);
+    await expect(loadDueToday('user-1')).resolves.toMatchObject({ total: 1 });
   });
 
   it('REJECTS when a fetch fails, so the caller can show an error', async () => {
@@ -94,16 +94,37 @@ describe('loadDueToday', () => {
     // A newly added set the learner has never opened returns an empty list.
     getWordsets.mockResolvedValue({ data: [{ wordset_id: 1 }] });
     getUserWordsByWordset.mockResolvedValue({ data: [] });
-    await expect(loadDueToday('user-1')).resolves.toBe(0);
+    await expect(loadDueToday('user-1')).resolves.toMatchObject({ total: 0 });
 
     getWordsets.mockResolvedValue({ data: [] });
-    await expect(loadDueToday('user-1')).resolves.toBe(0);
+    await expect(loadDueToday('user-1')).resolves.toMatchObject({ total: 0 });
+  });
+
+  it('returns the per-set breakdown Start opens, keyed to the wordset', async () => {
+    // issue-107: the total alone cannot drive Start -- the practice route is
+    // `/game/:wordsetId/:mode`, so the home has to know WHICH set. Pinning the
+    // id and description together because a breakdown carrying the count but
+    // not the id would render a correct number over a Start that cannot fire.
+    getWordsets.mockResolvedValue({
+      data: [{ wordset_id: 7, description: 'HSK 1' }, { wordset_id: 9, description: 'HSK 2' }],
+    });
+    getUserWordsByWordset.mockImplementation((userId, wordsetId) =>
+      Promise.resolve({ data: wordsetId === 7 ? [uw()] : [uw(), uw({ word_id: 2 })] })
+    );
+
+    await expect(loadDueToday('user-1')).resolves.toEqual({
+      total: 3,
+      sets: [
+        { wordsetId: 7, description: 'HSK 1', due: 1 },
+        { wordsetId: 9, description: 'HSK 2', due: 2 },
+      ],
+    });
   });
 
   it('tolerates a response with no data envelope rather than throwing', async () => {
     // Defensive on the shape, not on the network: a 204 or a changed envelope
     // should render "0 due", not blank the home screen with a TypeError.
     getWordsets.mockResolvedValue(undefined);
-    await expect(loadDueToday('user-1')).resolves.toBe(0);
+    await expect(loadDueToday('user-1')).resolves.toMatchObject({ total: 0 });
   });
 });

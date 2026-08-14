@@ -3,11 +3,14 @@ import { Link } from 'react-router-dom';
 import '../styles/Home.css';
 import Logo from './Logo';
 import WordSets from './Wordsets';
+import Today from './Today';
+import { useAuth } from '../contexts/AuthContext';
 import { SEO } from '../components/SEO';
 import { JsonLd } from '../components/JsonLd';
 import { OptimizedImage } from '../components/OptimizedImage';
 
 const Home = () => {
+  const { user } = useAuth();
   const structuredData = {
     "@context": "https://schema.org",
     "@type": "WebApplication",
@@ -30,6 +33,25 @@ const Home = () => {
       />
       <JsonLd data={structuredData} />
       
+      {/* issue-107 (RD-3): signed in, `/` is the Today home — the day's due
+          count, the streak, one Start. Signed out it stays the marketing page
+          below, unchanged.
+
+          Branching HERE rather than adding a `/today` route, on purpose: the
+          habit surface has to be what the app OPENS on. A separate route makes
+          Today a place you can navigate to, which is what the wordset list
+          already was, and leaves `/` still answering with a list.
+
+          The SEO tag and structured data stay outside the branch: crawlers are
+          signed out, so they keep getting the marketing description either way,
+          and this cannot regress the landing page's indexing. */}
+      {user ? (
+        <div className="page-wrapper">
+          <div className="page-container">
+            <Today userId={user.email} />
+          </div>
+        </div>
+      ) : (
       <div className="page-wrapper">
         <div className="page-container">
           <div className="centered-content">
@@ -84,6 +106,7 @@ const Home = () => {
           </div>
         </div>
       </div>
+      )}
     </>
   );
 };

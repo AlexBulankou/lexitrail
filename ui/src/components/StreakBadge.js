@@ -1,22 +1,16 @@
-import React, { useState, useEffect } from 'react';
-import { getSnapshot, STREAK_EVENT } from '../services/streakStore';
+import React from 'react';
+import { useStreakSnapshot } from '../hooks/useStreakSnapshot';
 import '../styles/StreakBadge.css';
 
 // FEAT-1 (ITP #21): compact streak + daily-goal indicator for the nav bar.
 // Reads the streak snapshot and refreshes when a practice event fires.
 const StreakBadge = () => {
-  const [snap, setSnap] = useState(() => getSnapshot());
-
-  useEffect(() => {
-    const refresh = () => setSnap(getSnapshot());
-    window.addEventListener(STREAK_EVENT, refresh);
-    // Also refresh on focus (a new calendar day may have started).
-    window.addEventListener('focus', refresh);
-    return () => {
-      window.removeEventListener(STREAK_EVENT, refresh);
-      window.removeEventListener('focus', refresh);
-    };
-  }, []);
+  // issue-107: this subscribe/refresh glue moved to `useStreakSnapshot` when
+  // the Today home became its second consumer. Behaviour is unchanged — the
+  // hook is this code, verbatim, including the focus listener for an overnight
+  // day rollover. Sharing it is what stops the badge and the headline
+  // underneath it from disagreeing about the streak on the same page.
+  const snap = useStreakSnapshot();
 
   // Nothing to celebrate yet — don't clutter the bar with a 0-day streak.
   if (snap.streak === 0 && snap.today === 0) return null;

@@ -1,4 +1,7 @@
-import { srsIntervalMs, isDue, lastRecallTimeOf, isWordDue, dueCount, dueAcrossWordsets } from './srs';
+import {
+  srsIntervalMs, isDue, lastRecallTimeOf, isWordDue, dueCount,
+  dueByWordset, totalDue, pickStartSet,
+} from './srs';
 
 const DAY = 24 * 60 * 60 * 1000;
 const NOW = new Date('2026-08-13T12:00:00Z');
@@ -140,11 +143,20 @@ describe('the clock is read once per count, not once per word', () => {
     expect(countBareNowCalls(() => dueCount(manyWords))).toBe(1);
   });
 
-  it('dueAcrossWordsets reads the clock once for ALL wordsets', () => {
+  it('dueByWordset reads the clock once for ALL wordsets', () => {
     // Reds at 4 if each wordset binds its own `now`, which would let the first
     // and last set be counted against different instants.
-    const lists = [manyWords, manyWords, manyWords];
-    expect(countBareNowCalls(() => dueAcrossWordsets(lists))).toBe(1);
+    //
+    // issue-107: carried over from `dueAcrossWordsets` when that function was
+    // replaced. This is the STRONGER of the two clock assertions in this file
+    // -- it counts actual reads rather than comparing counts -- so it is the
+    // one that had to survive the rename.
+    const sets = [
+      { wordsetId: 1, words: manyWords },
+      { wordsetId: 2, words: manyWords },
+      { wordsetId: 3, words: manyWords },
+    ];
+    expect(countBareNowCalls(() => dueByWordset(sets))).toBe(1);
   });
 
   it('counts a boundary word consistently while the clock ADVANCES mid-count', () => {
@@ -190,20 +202,76 @@ describe('the clock is read once per count, not once per word', () => {
   });
 });
 
-describe('dueAcrossWordsets', () => {
-  it('totals across wordsets rather than answering for one', () => {
-    const lists = [
-      [word(), word({ is_included: false })],   // 1 due
-      [word(), word({ recall_history: [] })],   // 2 due
+const setOf = (wordsetId, words, description = `set ${wordsetId}`) =>
+  ({ wordsetId, description, words });
+
+// These first two carry over from `dueAcrossWordsets` (deleted in issue-107 when
+// Today's Start action needed the per-set breakdown). A replaced function must
+// not take its coverage with it, so both of its invariants are re-pinned here
+// against the new shape rather than left behind with the old name.
+describe('dueByWordset', () => {
+  it('counts each wordset separately rather than answering for one', () => {
+    const sets = [
+      setOf(7, [word(), word({ is_included: false })]),   // 1 due
+      setOf(9, [word(), word({ recall_history: [] })]),   // 2 due
     ];
-    expect(dueAcrossWordsets(lists, NOW)).toBe(3);
+    expect(dueByWordset(sets, NOW)).toEqual([
+      { wordsetId: 7, description: 'set 7', due: 1 },
+      { wordsetId: 9, description: 'set 9', due: 2 },
+    ]);
+    expect(totalDue(dueByWordset(sets, NOW))).toBe(3);
   });
 
   it('reports zero rather than throwing on empty or missing input', () => {
     // The Today home renders this number on first paint, before any fetch has
     // resolved. Throwing here would blank the home screen the habit depends on.
-    expect(dueAcrossWordsets([], NOW)).toBe(0);
-    expect(dueAcrossWordsets(undefined, NOW)).toBe(0);
-    expect(dueAcrossWordsets([undefined], NOW)).toBe(0);
+    expect(dueByWordset([], NOW)).toEqual([]);
+    expect(dueByWordset(undefined, NOW)).toEqual([]);
+    expect(dueByWordset([undefined], NOW)).toEqual(
+      [{ wordsetId: undefined, description: '', due: 0 }]
+    );
+    expect(totalDue(undefined)).toBe(0);
+    expect(totalDue([undefined])).toBe(0);
+  });
+
+
+
+});
+
+describe('pickStartSet', () => {
+  it('opens the set with the most due words', () => {
+    const chosen = pickStartSet([
+      { wordsetId: 1, due: 2 }, { wordsetId: 2, due: 9 }, { wordsetId: 3, due: 4 },
+    ]);
+    expect(chosen.wordsetId).toBe(2);
+  });
+
+  it('returns null when nothing is due, rather than an empty session', () => {
+    // Load-bearing: a Start button that opens a session with no words is worse
+    // than no Start button -- it reads as broken rather than as finished.
+    expect(pickStartSet([{ wordsetId: 1, due: 0 }])).toBeNull();
+    expect(pickStartSet([])).toBeNull();
+    expect(pickStartSet(undefined)).toBeNull();
+  });
+
+  it('breaks ties on the lowest id, INDEPENDENT of the order they arrive in', () => {
+    // hc2 on #133: the first version broke ties on arrival order and claimed
+    // that was stable. It is not -- `Wordset.query.all()` has no ORDER BY, so
+    // the response order is not a contract. Both orderings must pick the SAME
+    // set, or two sets at 5 due each swap which session Start opens whenever
+    // the backend happens to return them differently.
+    const tied = [{ wordsetId: 1, due: 5 }, { wordsetId: 2, due: 5 }];
+    expect(pickStartSet(tied).wordsetId).toBe(1);
+    expect(pickStartSet([...tied].reverse()).wordsetId).toBe(1);
+  });
+
+  it('still prefers a higher count over a lower id', () => {
+    // The tie-break must not outrank the count itself -- guards the shape where
+    // the id comparison is applied unconditionally rather than only on a tie.
+    expect(pickStartSet([{ wordsetId: 9, due: 7 }, { wordsetId: 1, due: 2 }]).wordsetId).toBe(9);
+  });
+
+  it('ignores malformed entries instead of opening an undefined wordset', () => {
+    expect(pickStartSet([null, { due: undefined }, { wordsetId: 4, due: 1 }]).wordsetId).toBe(4);
   });
 });
