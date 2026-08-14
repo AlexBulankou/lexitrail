@@ -3,8 +3,8 @@ import WordCard from './WordCard';
 import MiniWordCard from './MiniWordCard';
 import Completed from './Completed';
 import {
-  SESSION_BUDGET, isSessionMode, bindSession, sessionRemaining,
-  sessionProgress, sessionOutcome, wordKey,
+  SESSION_BUDGET, sessionRemaining, sessionProgress, sessionOutcome, wordKey,
+  nextSessionBinding, EMPTY_BINDING,
 } from '../utils/session';
 import OnboardingOverlay from './OnboardingOverlay';
 import Timer from './Timer';
@@ -65,24 +65,24 @@ const Game = () => {
     mode
   );
 
-  // issue-108 (RD-2): bind the session ONCE, on the first loaded queue.
+  // issue-108 (RD-2): bind the session ONCE per (wordset, mode).
   //
-  // A ref rather than state, and read via `sessionKeys` below, because this
-  // must NOT re-derive on re-render: `displayWords` shrinks as words are
-  // memorized, so any expression that recomputes the first N pulls unseen
-  // words in behind them and the session never ends. `utils/session.js` has
-  // the argument in full; the test that pins it is "does not refill as the
-  // live queue drains".
-  const sessionRef = useRef(null);
-  if (
-    sessionRef.current === null &&
-    isSessionMode(mode) &&
-    loading.status === 'loaded' &&
-    displayWords.length > 0
-  ) {
-    sessionRef.current = bindSession(displayWords, SESSION_BUDGET);
-  }
-  const sessionKeys = sessionRef.current;
+  // A ref rather than state because this must NOT re-derive on re-render:
+  // `displayWords` shrinks as words are memorized, so any expression that
+  // recomputes the first N pulls unseen words in behind them and the session
+  // never ends. `utils/session.js` holds the whole rule — including the
+  // read-time mode gate hc2 caught missing on #134, where a bound practice
+  // session survived an in-place toggle into the excluded-words browse view
+  // and collapsed it to the completion screen.
+  const sessionRef = useRef(EMPTY_BINDING);
+  sessionRef.current = nextSessionBinding(sessionRef.current, {
+    wordsetId,
+    mode,
+    loaded: loading.status === 'loaded',
+    words: displayWords,
+    budget: SESSION_BUDGET,
+  });
+  const sessionKeys = sessionRef.current.keys;
 
   // Non-session modes (SHOW_EXCLUDED browse, TEST's own 20-cap) keep the full
   // queue — `sessionKeys` stays null and this is the identity function.
@@ -311,7 +311,7 @@ const Game = () => {
     // Clear the binding so the next loaded queue starts a FRESH session.
     // Without this, "practice again" would re-enter a session whose words are
     // all already done and land straight back on the completion screen.
-    sessionRef.current = null;
+    sessionRef.current = EMPTY_BINDING;
     navigate(`/game/${wordsetId}/${mode}`);
     loadWordsForWordset();
   }

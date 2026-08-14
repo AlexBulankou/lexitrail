@@ -100,3 +100,51 @@ export const sessionOutcome = (sessionKeys, budget = SESSION_BUDGET) => {
   if (total === 0) return SessionOutcome.EMPTY;
   return total >= budget ? SessionOutcome.COMPLETE : SessionOutcome.CLEARED;
 };
+
+// ─── binding lifecycle ──────────────────────────────────────────────────────
+//
+// @ensemble-hc2 on #134: checking `isSessionMode` at BIND time and never at
+// READ time leaves a live hole. `Game` is one component instance across a
+// param-only route change (React Router v6 does not remount `/game/:wordsetId/
+// :mode?` without a `key`), and `toggleWordsetFilter` navigates PRACTICE ⇄
+// SHOW_EXCLUDED in place without touching the ref. So a bound practice session
+// survived into the excluded-words browse view and filtered it down to nothing
+// — rendering the completion screen instead of the list, which is the exact
+// outcome the `SESSION_MODES` whitelist comment promises cannot happen.
+//
+// The rule now lives here rather than in the component: no component in this
+// repo has a test, so a fix expressed in `Game.js` could only be argued, not
+// pinned. Expressed as a pure transition it is testable, and the component is
+// left holding one assignment.
+export const EMPTY_BINDING = { key: null, keys: null };
+
+// A binding belongs to ONE (wordset, mode) pair. The wordset half is not
+// speculative padding: it is the same class of gap, costs nothing here, and a
+// binding that outlived a wordset change would silently filter one set's queue
+// by another set's word ids.
+export const sessionBindingKey = (wordsetId, mode) => `${wordsetId}|${mode}`;
+
+export const nextSessionBinding = (
+  previous,
+  { wordsetId, mode, loaded, words, budget = SESSION_BUDGET }
+) => {
+  const prev = previous || EMPTY_BINDING;
+
+  // Not a session mode: unbound, ALWAYS — this is the read-time gate, and it
+  // must clear rather than merely decline to bind, or the stale set survives.
+  if (!isSessionMode(mode)) return EMPTY_BINDING;
+
+  const key = sessionBindingKey(wordsetId, mode);
+
+  // Already bound to this exact pair: return the SAME object. Identity matters
+  // — this runs every render, and a fresh Set each time would re-bind the
+  // session against the shrinking queue, which is the endless-list bug wearing
+  // a different hat.
+  if (prev.key === key) return prev;
+
+  // Nothing loaded yet: stay unbound. Returning `prev` here would let a
+  // previous pair's set apply to this one for as long as the fetch takes.
+  if (!loaded || !(words && words.length > 0)) return EMPTY_BINDING;
+
+  return { key, keys: bindSession(words, budget) };
+};

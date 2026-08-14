@@ -1,6 +1,7 @@
 import {
   SESSION_BUDGET, SESSION_MODES, isSessionMode, wordKey,
   bindSession, sessionRemaining, sessionProgress, sessionOutcome, SessionOutcome,
+  nextSessionBinding, sessionBindingKey, EMPTY_BINDING,
 } from './session';
 import { DEFAULT_GOAL } from './streak';
 
@@ -154,5 +155,76 @@ describe('sessionOutcome — the AC-mandated distinction', () => {
     const s = bindSession(many(25), 10);
     expect(sessionOutcome(s, 10)).toBe(SessionOutcome.COMPLETE);
     expect(sessionOutcome(s, 10)).toBe(SessionOutcome.COMPLETE);
+  });
+});
+
+describe('nextSessionBinding — the read-time gate hc2 caught missing on #134', () => {
+  const practice = { wordsetId: 1, mode: 'PRACTICE', loaded: true, words: many(25), budget: 10 };
+
+  it('binds on a session mode with a loaded queue', () => {
+    const b = nextSessionBinding(EMPTY_BINDING, practice);
+    expect(b.key).toBe('1|PRACTICE');
+    expect(b.keys.size).toBe(10);
+  });
+
+  it('🔴 CLEARS when the mode changes to a browse view in place', () => {
+    // THE REGRESSION. `Game` is one instance across a param-only route change
+    // (React Router v6 does not remount `/game/:wordsetId/:mode?` without a
+    // `key`), and `toggleWordsetFilter` navigates PRACTICE -> SHOW_EXCLUDED
+    // without touching the ref. Gating only at bind time left the practice
+    // session's ids filtering the excluded-words list -- near-empty for a
+    // typical case, so the browse view rendered the COMPLETION screen.
+    const bound = nextSessionBinding(EMPTY_BINDING, practice);
+    const after = nextSessionBinding(bound, { ...practice, mode: 'SHOW_EXCLUDED' });
+
+    expect(after.keys).toBeNull();
+    expect(after).toEqual(EMPTY_BINDING);
+  });
+
+  it('does not bind TEST either, which caps itself at 20', () => {
+    expect(nextSessionBinding(EMPTY_BINDING, { ...practice, mode: 'TEST' }).keys).toBeNull();
+  });
+
+  it('rebinds a FRESH session on the way back from the browse view', () => {
+    const bound = nextSessionBinding(EMPTY_BINDING, practice);
+    const browsing = nextSessionBinding(bound, { ...practice, mode: 'SHOW_EXCLUDED' });
+    const back = nextSessionBinding(browsing, practice);
+
+    expect(back.key).toBe('1|PRACTICE');
+    expect(back.keys.size).toBe(10);
+    expect(back).not.toBe(bound); // a new session, not the old set resurrected
+  });
+
+  it('returns the SAME OBJECT while the pair is unchanged', () => {
+    // Identity, not just equality: this runs on every render, and a fresh Set
+    // each time would re-bind against the SHRINKING queue -- the endless-list
+    // bug wearing a different hat.
+    const bound = nextSessionBinding(EMPTY_BINDING, practice);
+    const rerender = nextSessionBinding(bound, { ...practice, words: many(20, 6) });
+
+    expect(rerender).toBe(bound);
+  });
+
+  it('rebinds when the WORDSET changes under the same instance', () => {
+    const bound = nextSessionBinding(EMPTY_BINDING, practice);
+    const other = nextSessionBinding(bound, { ...practice, wordsetId: 2, words: many(25, 100) });
+
+    expect(other.key).toBe('2|PRACTICE');
+    expect(other.keys.has(100)).toBe(true);
+    expect(other.keys.has(1)).toBe(false);
+  });
+
+  it('stays unbound until the queue is loaded, without carrying a stale pair', () => {
+    const bound = nextSessionBinding(EMPTY_BINDING, practice);
+    // Navigating to another wordset whose fetch is still in flight: the old
+    // pair's set must NOT apply for the duration of the fetch.
+    const loading = nextSessionBinding(bound, { ...practice, wordsetId: 2, loaded: false, words: [] });
+
+    expect(loading).toEqual(EMPTY_BINDING);
+  });
+
+  it('tolerates a missing previous binding', () => {
+    expect(nextSessionBinding(undefined, practice).keys.size).toBe(10);
+    expect(nextSessionBinding(null, { ...practice, mode: 'SHOW_EXCLUDED' })).toEqual(EMPTY_BINDING);
   });
 });
