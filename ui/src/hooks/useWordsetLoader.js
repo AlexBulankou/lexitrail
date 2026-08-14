@@ -494,68 +494,11 @@ export const useWordsetLoader = (wordsetId, userId, mode) => {
     if (creditsStreak(mode)) recordPractice(); // FEAT-1: today's practice toward the streak + goal.
   };
 
-  // New function to handle correct memorization of multiple words
-  const handleMemorizedMultiple = (indices, maxWordsToShow) => {
-    invalidateCache(userId, wordsetId);
-
-    const newFirstTimeCorrect = [];
-    const updatedCorrectlyMemorized = new Set(correctlyMemorized);
-    const updatedWords = [...toShow];
-    const newIncorrectWords = incorrectWords;
-
-    indices.forEach((index) => {
-      const currentWord = updatedWords[index];
-      const newRecallState = updateRecallState(currentWord.recall_state, true);
-
-      // Update firstTimeCorrect only if the word has no incorrect attempts
-      if (!incorrectAttempts[currentWord.word]) {
-        newFirstTimeCorrect.push(currentWord);
-      }
-
-      // Remove the word from incorrect words, if it was guessed correctly
-      delete newIncorrectWords[currentWord.word];
-
-      // Add the word to correctlyMemorized set
-      updatedCorrectlyMemorized.add(currentWord.word);
-
-      // Update the word's recall state in the updatedWords array
-      updatedWords[index] = { ...currentWord, recall_state: newRecallState };
-
-      // Async call to update the backend for each word
-      const priorBatchWord = { ...currentWord };
-      updateUserWordRecall(userId, currentWord.word_id, newRecallState, true, currentWord.is_included)
-        .catch((error) => {
-          console.error(`Error updating recall state for word ID ${currentWord.word_id}:`, error);
-          // R3-BUG-3 (#45): revert PER WORD, never per batch. A partial failure
-          // is the common case here (N independent PUTs), so reverting the whole
-          // batch would discard writes that actually succeeded.
-          setToShow((prev) => revertWordWrite(prev, priorBatchWord));
-        });
-
-      if (creditsStreak(mode)) recordPractice(); // FEAT-1: batch-reviewed words count too (issue-112).
-    });
-
-
-    setIncorrectWords((prevIncorrectWords) => {
-      return newIncorrectWords;
-    });
-
-    // Update firstTimeCorrect, correctlyMemorized, and toShow states with new values
-    setFirstTimeCorrect((prevFirstTimeCorrect) => [
-      ...prevFirstTimeCorrect,
-      ...newFirstTimeCorrect,
-    ]);
-
-    setCorrectlyMemorized(updatedCorrectlyMemorized);
-
-    setToShow((prevToShow) =>
-      updateWordListAfterMultipleActions(indices, maxWordsToShow, updatedWords, true)
-    );
-  };
-
-
-
-  // Handle incorrect memorization asynchronously
+  // issue-109 (RD-6): `handleMemorizedMultiple` is DELETED along with the
+  // "✔️ to all" control it existed for. It wrote a full recall event per word
+  // — same call, same fields, same streak credit as a real answer — for words
+  // the learner never answered. Keeping the writer without its button would
+  // leave the corrupting path one line of JSX from being live again.
   const handleNotMemorized = (index, maxWordsToShow) => {
 
     invalidateCache(userId, wordsetId);
@@ -599,6 +542,5 @@ export const useWordsetLoader = (wordsetId, userId, mode) => {
     toggleExclusion, //10
     handleMemorized, //11
     handleNotMemorized, //12
-    handleMemorizedMultiple
   };
 };

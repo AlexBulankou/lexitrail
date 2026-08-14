@@ -33,7 +33,15 @@ const FLOOR_SELECTORS = [
   '.dropdown-trigger',
   '.wordsets-retry',
   '.game-settings-button',
-  '.mark-all-memorized-button',
+  // issue-109 (RD-6): `.mark-all-memorized-button` REMOVED from this list
+  // because the control itself was retired -- the blind "✔️ to all" shortcut
+  // and both functions behind it are deleted, and its rule is gone from
+  // Game.css and from the shared floor above.
+  //
+  // Removing an entry from a detector's list is normally the shape that
+  // silently blinds it, so the check is stated rather than assumed: the
+  // selector must appear NOWHERE in ui/src, which the assertion below pins.
+  // If it ever comes back, it comes back with a floor.
   // issue-52: these three were the gap made concrete. They were absent from
   // this list, so this file stayed green while all three shipped under the
   // floor on live prod — found by the E2E harness measuring the rendered box,
@@ -146,6 +154,39 @@ describe('shared touch-target floor', () => {
         }
       }
     }
+    expect(offenders).toEqual([]);
+  });
+});
+
+describe('retired controls stay retired (issue-109)', () => {
+  test('.mark-all-memorized-button exists nowhere in the tree', () => {
+    // The blind bulk-tick wrote a full recall event per word -- same call,
+    // same fields, same streak credit as a genuine answer -- so its history is
+    // indistinguishable from earned recall downstream. It was removed from
+    // this file's floor list, and this is what stops that removal from being a
+    // blinded detector: the control is gone, not merely unlisted.
+    const root = path.join(STYLES, '..');
+    const offenders = [];
+    const walk = (dir) => {
+      for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+        if (entry.name === 'node_modules') continue;
+        const full = path.join(dir, entry.name);
+        if (entry.isDirectory()) { walk(full); continue; }
+        if (!/\.(js|css)$/.test(entry.name)) continue;
+        if (full === __filename) continue;   // this file names it on purpose
+        const text = fs.readFileSync(full, 'utf8');
+        // Ignore the explanatory comments the removal left behind; what must
+        // not exist is a live selector or handler.
+        const live = text
+          .split('\n')
+          .filter((l) => !/^\s*(\/\/|\*|\/\*)/.test(l))
+          .join('\n');
+        if (/mark-all-memorized|markAllAsMemorized|handleMemorizedMultiple/.test(live)) {
+          offenders.push(path.relative(root, full));
+        }
+      }
+    };
+    walk(root);
     expect(offenders).toEqual([]);
   });
 });
