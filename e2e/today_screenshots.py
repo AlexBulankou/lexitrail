@@ -45,6 +45,7 @@ import functools
 import http.server
 import json
 import os
+import re
 import socketserver
 import sys
 import threading
@@ -152,7 +153,15 @@ def game_userword(i):
     }
 
 
-GAME_SCENARIOS = {"short": 3, "full": 12}
+# issue-137: the HEIGHT is part of the scenario, not scenery. The card count a
+# layout shows is what the session's terminal rule reads, and the two defects
+# this harness measured were both invisible at one height and visible at
+# another -- 390x844 gives 2 slots, 390x600 gives 1, and the 1-slot case is
+# where the window rule degenerates to the front rule it replaced. Measured on
+# the pre-fix build: 2 slots -> "All 10 cards done" but TWELVE taps; 1 slot ->
+# "9 of 10 cards done". Running only the first height would have shown a green
+# headline for a session that both overran its budget and lost a card.
+GAME_SCENARIOS = {("short", 844): 3, ("full", 844): 12, ("full-1card", 600): 12}
 
 
 
@@ -180,10 +189,11 @@ def run_game(browser, base, out, unexpected, failures):
     """Drive a bounded session end to end and shoot both surfaces."""
     from playwright.sync_api import Error as PlaywrightError
 
-    for scenario, n_due in GAME_SCENARIOS.items():
+    for (scenario, vp_h), n_due in GAME_SCENARIOS.items():
         words = [game_word(i) for i in range(1, n_due + 1)]
         userwords = [game_userword(i) for i in range(1, n_due + 1)]
-        ctx = browser.new_context(viewport={"width": 390, "height": 844})
+        recall_writes = []
+        ctx = browser.new_context(viewport={"width": 390, "height": vp_h})
 
         def route(r):
             url = r.request.url
@@ -196,7 +206,19 @@ def run_game(browser, base, out, unexpected, failures):
             if "/userwords/query" in url:
                 return r.fulfill(status=200, content_type="application/json",
                                  body=json.dumps({"data": userwords}))
-            # Recall updates (PUT/POST /userwords...) — accept and discard. The
+            # issue-137: the recall write is
+            # `PUT /userwords/<user>/<word_id>/recall`, so the word it names is
+            # in the URL. Recording it is what lets the drive loop below check
+            # that the handler marked the word the LEARNER SAW -- a property
+            # that used to hold for free (the visible set was a prefix, so slot
+            # index == loader index) and now holds because the card carries
+            # both indices deliberately.
+            m_recall = re.search(r"/userwords/[^/]+/(\d+)/recall", url)
+            if m_recall:
+                recall_writes.append(int(m_recall.group(1)))
+                return r.fulfill(status=200, content_type="application/json",
+                                 body=json.dumps({"data": {}}))
+            # Other /userwords + /users calls — accept and discard. The
             # session's progress is client-side, so a stubbed 200 is enough;
             # what matters is that nothing reaches the real API.
             if "/userwords" in url or "/users" in url:
@@ -243,15 +265,26 @@ def run_game(browser, base, out, unexpected, failures):
         # Drive it: flip, mark memorized, repeat. Bounded by the BUDGET, not by
         # the queue — if the session failed to bound itself this loop would run
         # past `expect_total` and the assertion below catches it.
-        for _ in range(expect_total + 2):
+        taps, marked_wrong = 0, []
+        for _ in range(expect_total + 4):
             if page.query_selector(".completed-session-title"):
                 break
             try:
-                page.click(".word-card-inner", timeout=4000)
+                page.click(".word-card-inner", timeout=4000)   # flip: def1 is on the back
+                page.wait_for_timeout(200)
+                shown = page.inner_text(".word-meaning-def1")
+                before = len(recall_writes)
                 page.click('[aria-label="Mark as memorized"]', timeout=4000)
+                taps += 1
             except PlaywrightError:
                 break
             page.wait_for_timeout(350)
+            m_shown = re.search(r"(\d+)", shown)
+            if m_shown and len(recall_writes) > before:
+                want = int(m_shown.group(1))
+                got = recall_writes[-1]
+                if got != want:
+                    marked_wrong.append((want, got))
 
         title_el = page.query_selector(".completed-session-title")
         if not title_el:
@@ -263,6 +296,43 @@ def run_game(browser, base, out, unexpected, failures):
         want = "Session complete" if n_due >= 10 else "All caught up"
         if want not in title:
             failures.append(f"game/{scenario}: terminal headline {title!r}, expected {want!r}")
+
+        # issue-137: the headline alone said "Session complete" on a run that
+        # had lost a card AND on one that had practised two past its budget, so
+        # it is not the assertion. Both directions, because they fail
+        # oppositely and only one of them is visible in the completion text:
+        #
+        #   taps <  expect_total  -> cards the learner was promised, dropped
+        #                            (the completion screen SAYS "9 of 10")
+        #   taps >  expect_total  -> cards outside the session, practised
+        #                            (the completion screen still says "All 10
+        #                            cards done" -- silent, and the reason a
+        #                            headline check could never catch it)
+        # issue-137: the handler must mark the word the learner was looking at.
+        # 🔴 Checked to the END of the session on purpose. Early on, the slot
+        # index and the loader index COINCIDE -- the loader has a session word
+        # in front -- so a short drive reports clean even with the indices
+        # deliberately crossed (measured: a 6-step probe missed it entirely,
+        # a full-length one caught 2 per viewport). The divergence lives in the
+        # same tail the original card-loss bug lived in.
+        if marked_wrong:
+            failures.append(
+                f"game/{scenario}: {len(marked_wrong)} recall write(s) named a "
+                f"word the learner was not looking at: "
+                + ", ".join(f"showed {w}, wrote {g}" for w, g in marked_wrong))
+
+        body = page.inner_text("body")
+        if n_due >= 10:
+            if taps != expect_total:
+                failures.append(
+                    f"game/{scenario}: {taps} card(s) practised for a "
+                    f"{expect_total}-card session -- "
+                    + ("session ran PAST its budget" if taps > expect_total
+                       else "session finished SHORT"))
+            if f"All {expect_total} cards done" not in body:
+                failures.append(
+                    f"game/{scenario}: completion text does not read "
+                    f"'All {expect_total} cards done' -- got {body[:120]!r}")
 
         shot = os.path.join(out, f"session-{scenario}-done-mobile.png")
         page.screenshot(path=shot, full_page=True)

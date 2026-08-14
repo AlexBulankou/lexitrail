@@ -174,7 +174,57 @@ export const nextSessionBinding = (
 // being practisable, which the front-check prevented — but the front-check paid
 // for it by dropping cards INSIDE the session, and silently. Losing promised
 // cards is worse than offering an extra one, and #137 records the trade.
+// ⚠️ SUPERSEDED by `sessionVisibleIndices` below — NO CALL SITES as of #137's
+// second half. Kept, not deleted, for two reasons: its tests are the record of
+// the 2-card measurement that produced it, and an unused export is safer here
+// than a deleted one, because the shape it encodes ("decide terminal from
+// whatever the loader happened to put on screen") is the thing a future fix
+// would otherwise reinvent. Do not re-wire it: it cannot be correct at a
+// window size of one, which is the case #137 was left open for.
 export const windowHasSessionWord = (visibleWords, sessionKeys) => {
   if (!sessionKeys) return true;   // not a session: never terminal on this rule
   return (visibleWords || []).some((w) => sessionKeys.has(wordKey(w)));
+};
+
+// issue-137, the 1-card layout — and the retirement of BOTH costs above.
+//
+// `windowHasSessionWord` fixed 2+ card layouts and could not fix one card: with
+// a single slot the window rule IS the front rule, so a captured word sitting
+// behind an uncaptured one is still unreachable (measured: 1 card -> 9 of 10,
+// unchanged by that fix).
+//
+// The reason both rules had to make a trade is that the visible set was
+// `displayWords.slice(0, N)` — a PREFIX. Whatever the loader put in front, the
+// learner got. Choosing the visible set by SESSION MEMBERSHIP instead removes
+// the dilemma rather than picking a side of it:
+//
+//   * no captured word is ever skipped, at any window size, because the window
+//     is filled from captured words first — so the 1-card case has nothing
+//     special about it;
+//   * no uncaptured word is ever tappable while captured ones remain, which is
+//     the leak `windowHasSessionWord`'s own comment records as its honest cost;
+//   * "cannot run past the budget" stops being a guard and becomes structural:
+//     when no captured word remains there is nothing to render, and
+//     `sessionRemaining` is already empty, so the session is over on its own
+//     terms rather than on a proxy for them.
+//
+// Returns INDICES into `words`, not the words themselves, because the recall
+// handlers index the loader's list positionally (`toShow[index]`). Handing back
+// filtered words would desynchronise every handler from the word it marks —
+// the exact hazard the front-check was introduced to avoid, so this is the
+// piece that makes avoiding it unnecessary.
+//
+// Not a session (`sessionKeys` null): the plain prefix, unchanged. SHOW_EXCLUDED
+// browse and TEST's own cap must keep seeing the queue as the loader orders it.
+export const sessionVisibleIndices = (words, sessionKeys, windowSize) => {
+  const list = words || [];
+  const size = Math.max(0, windowSize || 0);
+  if (!sessionKeys) {
+    return list.slice(0, size).map((_, i) => i);
+  }
+  const out = [];
+  for (let i = 0; i < list.length && out.length < size; i += 1) {
+    if (sessionKeys.has(wordKey(list[i]))) out.push(i);
+  }
+  return out;
 };

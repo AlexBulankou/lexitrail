@@ -1,4 +1,5 @@
 import {
+  sessionVisibleIndices,
   SESSION_BUDGET, SESSION_MODES, isSessionMode, wordKey,
   bindSession, sessionRemaining, sessionProgress, sessionOutcome, SessionOutcome,
   nextSessionBinding, sessionBindingKey, EMPTY_BINDING, windowHasSessionWord,
@@ -259,5 +260,63 @@ describe('windowHasSessionWord — issue-137, the cards the front-check dropped'
   it('tolerates an empty or missing window', () => {
     expect(windowHasSessionWord([], keys)).toBe(false);
     expect(windowHasSessionWord(undefined, keys)).toBe(false);
+  });
+});
+
+
+// --- issue-137: the 1-card layout, and the two costs this retires -----------
+
+describe('sessionVisibleIndices', () => {
+  const keys = bindSession(many(10), 10);   // word_ids 1..10 captured
+
+  it('🔴 fills a ONE-card window from the session, not from the front', () => {
+    // THE BUG this closes. `windowHasSessionWord` fixed 2+ card layouts and
+    // could not fix this one: with a single slot the window rule IS the front
+    // rule, so a captured word behind an uncaptured one stayed unreachable
+    // (measured: 1 card -> 9 of 10, unchanged by that fix). Choosing the
+    // visible set by membership makes the window size irrelevant.
+    const queue = [w(99), w(4)];            // uncaptured first, captured second
+    expect(sessionVisibleIndices(queue, keys, 1)).toEqual([1]);
+  });
+
+  it('returns INDICES into the original list, not the words', () => {
+    // Load-bearing: the recall handlers do `toShow[index]`, so a filtered list
+    // would desynchronise every handler from the word it marks.
+    const queue = [w(99), w(98), w(7)];
+    expect(sessionVisibleIndices(queue, keys, 2)).toEqual([2]);
+  });
+
+  it('never offers an uncaptured card while captured ones remain', () => {
+    // The leak `windowHasSessionWord`'s own comment records as its honest
+    // cost: an uncaptured card sharing the window was tappable, i.e. a card
+    // outside the session being practisable. It cannot be selected now.
+    const queue = [w(1), w(99), w(2), w(98)];
+    expect(sessionVisibleIndices(queue, keys, 4)).toEqual([0, 2]);
+  });
+
+  it('returns fewer than the window when the session is nearly done', () => {
+    // Two captured left, three slots: two indices, not three padded with
+    // uncaptured words. This is what makes "cannot run past the budget"
+    // structural rather than a guard.
+    const queue = [w(99), w(5), w(98), w(6), w(97)];
+    expect(sessionVisibleIndices(queue, keys, 3)).toEqual([1, 3]);
+  });
+
+  it('returns EMPTY when no captured word remains, at any window size', () => {
+    expect(sessionVisibleIndices([w(99), w(98)], keys, 5)).toEqual([]);
+  });
+
+  it('is the plain prefix for a NON-session mode', () => {
+    // SHOW_EXCLUDED browse and TEST's own cap must keep seeing the queue as
+    // the loader orders it.
+    const queue = [w(99), w(98), w(97)];
+    expect(sessionVisibleIndices(queue, null, 2)).toEqual([0, 1]);
+  });
+
+  it('tolerates an empty/missing list and a zero or missing window', () => {
+    expect(sessionVisibleIndices([], keys, 3)).toEqual([]);
+    expect(sessionVisibleIndices(undefined, keys, 3)).toEqual([]);
+    expect(sessionVisibleIndices(many(3), keys, 0)).toEqual([]);
+    expect(sessionVisibleIndices(many(3), keys, undefined)).toEqual([]);
   });
 });
