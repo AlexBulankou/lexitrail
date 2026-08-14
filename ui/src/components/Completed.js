@@ -11,7 +11,19 @@ import '../styles/Completed.css';
 // omitted entirely there rather than inventing a neutral one: those modes never
 // promised a finish line, so claiming one would be the wrong feedback.
 const SESSION_HEADLINES = {
-  COMPLETE: { title: 'Session complete', sub: (d, t) => `All ${t} cards done.` },
+  // 🔴 Reports what was DONE, not the budget. The first version said
+  // `All ${t} cards done` unconditionally, and the driven screenshot caught it
+  // lying: the session ended at 8 recalls (two captured cards left the queue
+  // via the boundary rule) and the screen still claimed all 10 were done,
+  // directly contradicting the streak badge reading 8/10 two inches above it.
+  //
+  // COMPLETE means "this was a full-budget session", which is a fact about the
+  // session you STARTED. How much of it you finished is a different number and
+  // has to be printed as one.
+  COMPLETE: {
+    title: 'Session complete',
+    sub: (d, t) => (d >= t ? `All ${t} cards done.` : `${d} of ${t} cards done.`),
+  },
   // Deliberately NOT phrased as a shortfall. For a due-today queue this is the
   // best possible outcome — there was nothing more owed — and "only 4 of 10"
   // would read as failure for doing everything that was asked.

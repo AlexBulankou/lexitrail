@@ -98,6 +98,64 @@ SCENARIOS = {
 VIEWPORTS = {"desktop": (1440, 900), "mobile": (390, 844)}
 
 
+# ─── issue-108 (RD-2) — the game route, so a SESSION can be driven ──────────
+# The card view and the completion screen are the two surfaces RD-2 changes,
+# and neither is reachable from the Today home alone. Shapes here come from the
+# BACKEND serializers, not from what the consumer expects:
+#   /wordsets/<id>/words -> {"data": [{word_id, wordset_id, word, def1, def2,
+#                                      quiz_options: [[w, pinyin, def2] x3]}]}
+#   /userwords/query     -> {"data": [{..., recall_histories: [{recall_time}]}]}
+# Getting the second of those wrong is exactly what lexitrail#135 was.
+def game_word(i):
+    return {
+        "word_id": i,
+        "wordset_id": 1,
+        "word": "记",
+        "def1": f"jì {i}",
+        "def2": f"to remember ({i})",
+        "quiz_options": [["忆", "yì", "memory"],
+                         ["书", "shū", "book"],
+                         ["水", "shuǐ", "water"]],
+    }
+
+
+# Two sessions worth looking at:
+#   short  3 due words  -> CLEARED  ("you finished everything available")
+#   full  12 due words  -> COMPLETE ("all 10 cards done") with 2 left over,
+#                          which is the case that proves the budget BOUNDS the
+#                          queue rather than the queue bounding itself.
+# 🔴 The GAME path needs the RAW backend shape, which is NOT the shape
+# `due_word()` above produces, and the difference is a live bug rather than a
+# harness quirk: `/userwords/query` returns `recall_histories[].recall_time`
+# (see `backend/app/routes/userwords.py`), while `due_word()` above emits the
+# MAPPED `recall_history[].original_recall_time` that `useWordsetLoader`
+# produces downstream. `useWordsetLoader` calls `userWord.recall_histories.map`,
+# so feeding it the mapped shape throws and the game renders "Error loading
+# data" — which is how this got noticed here.
+#
+# The consumer-side half of the same confusion is lexitrail#135 (the Today home
+# read the mapped shape off raw rows and counted every included word as due).
+# Once #136 lands, `due_word()` should collapse into this one; both are kept
+# separate until then so this harness is honest about which shape each surface
+# is currently being fed.
+def game_userword(i):
+    import datetime
+    ago = datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(days=30)
+    return {
+        "user_id": USER["email"],
+        "word_id": i,
+        "is_included": True,
+        "recall_state": 2,
+        "recall_histories": [{"recall": True, "recall_time": ago.isoformat(),
+                              "new_recall_state": 2, "old_recall_state": 3,
+                              "is_included": True}],
+    }
+
+
+GAME_SCENARIOS = {"short": 3, "full": 12}
+
+
+
 class SPAHandler(http.server.SimpleHTTPRequestHandler):
     """Static server with SPA fallback -- unknown paths serve index.html."""
 
@@ -116,6 +174,100 @@ def serve(build_dir):
     httpd = socketserver.TCPServer(("127.0.0.1", 0), handler)
     threading.Thread(target=httpd.serve_forever, daemon=True).start()
     return httpd, httpd.server_address[1]
+
+
+def run_game(browser, base, out, unexpected, failures):
+    """Drive a bounded session end to end and shoot both surfaces."""
+    from playwright.sync_api import Error as PlaywrightError
+
+    for scenario, n_due in GAME_SCENARIOS.items():
+        words = [game_word(i) for i in range(1, n_due + 1)]
+        userwords = [game_userword(i) for i in range(1, n_due + 1)]
+        ctx = browser.new_context(viewport={"width": 390, "height": 844})
+
+        def route(r):
+            url = r.request.url
+            if "/words" in url and "/wordsets/" in url:
+                return r.fulfill(status=200, content_type="application/json",
+                                 body=json.dumps({"data": words}))
+            if url.rstrip("/").endswith("/wordsets"):
+                return r.fulfill(status=200, content_type="application/json",
+                                 body=json.dumps({"data": WORDSETS}))
+            if "/userwords/query" in url:
+                return r.fulfill(status=200, content_type="application/json",
+                                 body=json.dumps({"data": userwords}))
+            # Recall updates (PUT/POST /userwords...) — accept and discard. The
+            # session's progress is client-side, so a stubbed 200 is enough;
+            # what matters is that nothing reaches the real API.
+            if "/userwords" in url or "/users" in url:
+                return r.fulfill(status=200, content_type="application/json",
+                                 body=json.dumps({"data": {}}))
+            unexpected.append(url)
+            return r.abort()
+
+        ctx.route(f"{API_ORIGIN}/**", route)
+        ctx.route("**/*google-analytics*/**", lambda r: r.abort())
+        ctx.route("**/*googletagmanager*/**", lambda r: r.abort())
+        page = ctx.new_page()
+        # gtag is called unguarded by Game.handleCardGuessed; without a stub the
+        # first recall throws and the session cannot be driven at all.
+        page.add_init_script("window.gtag = window.gtag || function () {};")
+        # The first-run "How to play" dialog is modal and intercepts every
+        # pointer event, so a fresh context cannot reach a card at all. Marking
+        # the flag the component itself reads (`Game.js`: `showOnboarding`
+        # initialises from `localStorage.lexitrail_onboarded`) reproduces a
+        # RETURNING learner, which is who a habit screen is for. The overlay is
+        # a real first-session surface and deserves its own shot, but not one
+        # that hides the thing under test.
+        page.add_init_script("try { localStorage.setItem('lexitrail_onboarded', '1'); } catch (e) {}")
+        page.goto(base, wait_until="domcontentloaded")
+        page.evaluate("u => sessionStorage.setItem('user', JSON.stringify(u))", USER)
+        page.goto(f"{base}/game/1/DUE_TODAY", wait_until="networkidle")
+
+        try:
+            page.wait_for_selector(".progress-info", timeout=15000)
+        except PlaywrightError:
+            failures.append(f"game/{scenario}: card view never rendered")
+            ctx.close()
+            continue
+
+        info = page.inner_text(".progress-info")
+        expect_total = min(n_due, 10)
+        if f"of {expect_total}" not in info:
+            failures.append(f"game/{scenario}: progress reads {info!r}, expected 'of {expect_total}'")
+
+        shot = os.path.join(out, f"session-{scenario}-card-mobile.png")
+        page.screenshot(path=shot, full_page=True)
+        print(f"captured {shot}  [{info}]")
+
+        # Drive it: flip, mark memorized, repeat. Bounded by the BUDGET, not by
+        # the queue — if the session failed to bound itself this loop would run
+        # past `expect_total` and the assertion below catches it.
+        for _ in range(expect_total + 2):
+            if page.query_selector(".completed-session-title"):
+                break
+            try:
+                page.click(".word-card-inner", timeout=4000)
+                page.click('[aria-label="Mark as memorized"]', timeout=4000)
+            except PlaywrightError:
+                break
+            page.wait_for_timeout(350)
+
+        title_el = page.query_selector(".completed-session-title")
+        if not title_el:
+            failures.append(f"game/{scenario}: never reached a terminal state")
+            ctx.close()
+            continue
+
+        title = title_el.inner_text()
+        want = "Session complete" if n_due >= 10 else "All caught up"
+        if want not in title:
+            failures.append(f"game/{scenario}: terminal headline {title!r}, expected {want!r}")
+
+        shot = os.path.join(out, f"session-{scenario}-done-mobile.png")
+        page.screenshot(path=shot, full_page=True)
+        print(f"captured {shot}  [{title}]")
+        ctx.close()
 
 
 def main():
@@ -207,6 +359,7 @@ def main():
                     page.screenshot(path=path, full_page=True)
                     print(f"captured {path}")
                     ctx.close()
+            run_game(browser, base, args.out, unexpected, failures)
             browser.close()
     finally:
         httpd.shutdown()
