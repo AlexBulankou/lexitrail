@@ -3,8 +3,8 @@ import WordCard from './WordCard';
 import MiniWordCard from './MiniWordCard';
 import Completed from './Completed';
 import {
-  SESSION_BUDGET, sessionRemaining, sessionProgress, sessionOutcome, wordKey,
-  nextSessionBinding, EMPTY_BINDING,
+  SESSION_BUDGET, sessionRemaining, sessionProgress, sessionOutcome,
+  nextSessionBinding, windowHasSessionWord, EMPTY_BINDING,
 } from '../utils/session';
 import OnboardingOverlay from './OnboardingOverlay';
 import Timer from './Timer';
@@ -88,30 +88,35 @@ const Game = () => {
   const sessionWords = sessionKeys ? sessionRemaining(displayWords, sessionKeys) : displayWords;
   const progress = sessionProgress(sessionKeys, sessionWords.length);
 
-  // The session is over when its captured words are done — OR when the queue's
-  // front has rotated outside the session.
-  //
-  // 🔴 The second clause is what makes "cannot silently run past the budget"
-  // true rather than merely usually-true. The card view renders
-  // `displayWords.slice(0, maxCardsToShow)` and the recall handlers take that
-  // POSITION as their index into the loader's list, so rendering a filtered
-  // list here would desynchronise every handler from the word it marks. Rather
-  // than re-index the whole card path — untestable at this layer, since no
-  // component in this repo has a test — the session ENDS at the boundary
-  // instead of showing a card it does not own.
-  //
-  // Consequence, stated because it is a real trade: if `handleNotMemorized`
-  // rotates an unrecalled word behind an unseen one, the session can finish a
-  // card or two short, reporting e.g. 8 of 10. That is a visible, honest
-  // undercount. The alternative — silently practising card 11 — is the exact
-  // endlessness RD-2 exists to end. Filed as a follow-up rather than guessed
-  // at here.
-  const frontInSession =
-    !sessionKeys || (displayWords.length > 0 && sessionKeys.has(wordKey(displayWords[0])));
-  const sessionOver = Boolean(sessionKeys) && (sessionWords.length === 0 || !frontInSession);
+
 
   const [layoutClass, setLayoutClass] = useState('layout1c1r');
   const [maxCardsToShow, setMaxCardsToShow] = useState(1);
+
+  // NB placed AFTER `maxCardsToShow`'s declaration on purpose: it reads that
+  // state, and `const` is in the temporal dead zone until its own line, so
+  // computing this next to the other session values (above) throws at render
+  // and the component mounts nothing. The E2E harness caught exactly that —
+  // `.progress-info` never appeared — which a unit test on the pure helper
+  // could not have, since the helper was fine and the CALL SITE was not.
+  // The session is over when none of its words remain — or when none of them
+  // is still ON SCREEN.
+  //
+  // 🔴 issue-137: this used to check only `displayWords[0]`, and that dropped
+  // `maxCardsToShow` cards at the end of every session, silently. Measured on a
+  // 12-word queue with a 10-card budget: 2 cards visible reported "8 of 10", 1
+  // card visible reported "9 of 10" — the loss tracked the WINDOW SIZE, which
+  // is what identified the cause. As captured words run out the loader pulls an
+  // uncaptured word into slot 0, the front-check fired, and captured words
+  // still sitting in slot 1 were never offered.
+  //
+  // Asking whether ANY VISIBLE card belongs to the session keeps the property
+  // the front-check was for — the session cannot outlive its own words — while
+  // letting the learner finish the cards they were promised.
+  const visible = displayWords.slice(0, maxCardsToShow);
+  const sessionOver =
+    Boolean(sessionKeys) &&
+    (sessionWords.length === 0 || !windowHasSessionWord(visible, sessionKeys));
   const [flippedStates, setFlippedStates] = useState({});
   const [feedbackClasses, setFeedbackClasses] = useState({});
   const [finalTimeElapsed, setFinalTimeElapsed] = useState(0);
