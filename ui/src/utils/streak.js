@@ -56,3 +56,32 @@ export function todayProgress(state, today) {
 export function goalMet(state, today, goal = DEFAULT_GOAL) {
   return todayProgress(state, today) >= goal;
 }
+
+
+// Which modes credit the daily streak (lexitrail#112).
+//
+// Measured on live code: the recall handlers are gated on exactly one mode
+// (`WordCard.js`: `mode === GameMode.TEST ? undefined : handleCardClick`) and
+// neither `handleMemorized` nor `handleNotMemorized` checks the mode at all.
+// So reviewing a card in SHOW_EXCLUDED credited the streak — for words the
+// learner had explicitly removed from their practice set.
+//
+// The streak is a claim about a HABIT, and the habit is the practice set. A
+// number that counts words you opted out of overstates it, and the overstated
+// number is the one shown next to a goal the learner is trying to meet.
+//
+// 🔴 A WHITELIST, and TEST IS DELIBERATELY IN IT. TEST credits the streak
+// today; keeping it is *unchanged behaviour*, not an oversight, and it belongs
+// in the list explicitly so nobody later reads its presence as an accident and
+// "tidies" it out. What the whitelist buys is the other direction: a mode added
+// later has to opt IN, because a new browse-shaped view silently inflating the
+// streak is the failure that cannot be seen from here.
+//
+// 🔴 What this does NOT decide, and deliberately: whether SHOW_EXCLUDED should
+// still move `recall_state` or append recall history. Both are backend writes
+// through one call, and splitting them needs a backend change that cannot ship
+// (lexitrail#77 — no Cloud Build trigger, no backend image since 2026-07-22).
+// #112 stays open for that half rather than being closed by this one.
+export const STREAK_CREDIT_MODES = ['PRACTICE', 'DUE_TODAY', 'TEST'];
+
+export const creditsStreak = (mode) => STREAK_CREDIT_MODES.includes(mode);
