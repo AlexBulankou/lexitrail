@@ -3,7 +3,26 @@ import { useNavigate } from 'react-router-dom';
 import PinyinText from './PinyinText';
 import '../styles/Completed.css';
 
-const Completed = ({ timeElapsed, firstTimeCorrect, incorrectAttempts, incorrectWords = {}, resetGame }) => {
+// issue-108 (RD-2): the AC-mandated distinction between finishing the session
+// you set out to do and running out of cards. Same screen, different sentence
+// — collapsing the two is what leaves practice without a completion signal.
+//
+// `outcome` is null outside a session (browse / test), and the headline is
+// omitted entirely there rather than inventing a neutral one: those modes never
+// promised a finish line, so claiming one would be the wrong feedback.
+const SESSION_HEADLINES = {
+  COMPLETE: { title: 'Session complete', sub: (d, t) => `All ${t} cards done.` },
+  // Deliberately NOT phrased as a shortfall. For a due-today queue this is the
+  // best possible outcome — there was nothing more owed — and "only 4 of 10"
+  // would read as failure for doing everything that was asked.
+  CLEARED: { title: 'All caught up', sub: (d, t) => `You finished every card available (${t}).` },
+  EMPTY: { title: 'Nothing to practice', sub: () => 'This set has no cards due right now.' },
+};
+
+const Completed = ({
+  timeElapsed, firstTimeCorrect, incorrectAttempts, incorrectWords = {}, resetGame,
+  outcome = null, sessionDone = 0, sessionTotal = 0,
+}) => {
   const totalWords = firstTimeCorrect.length + Object.keys(incorrectAttempts).length;
   const memorizedPercentage = totalWords > 0 ? (firstTimeCorrect.length / totalWords) * 100 : 0;
   const navigate = useNavigate();
@@ -30,6 +49,14 @@ const Completed = ({ timeElapsed, firstTimeCorrect, incorrectAttempts, incorrect
 
   return (
     <div className="container completed">
+      {outcome && SESSION_HEADLINES[outcome] && (
+        <div className="completed-session">
+          <div className="completed-session-title">{SESSION_HEADLINES[outcome].title}</div>
+          <div className="completed-session-sub">
+            {SESSION_HEADLINES[outcome].sub(sessionDone, sessionTotal)}
+          </div>
+        </div>
+      )}
       <div className="completed-time">{timeLabel}</div>
       <div className="completed-stats">{Math.round(memorizedPercentage)}%</div>
 
