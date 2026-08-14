@@ -57,7 +57,6 @@ const Game = () => {
     toggleExclusion, //10
     handleMemorized, //11
     handleNotMemorized, //12
-    handleMemorizedMultiple,
 
   } = useWordsetLoader(
     wordsetId,
@@ -316,31 +315,6 @@ const Game = () => {
     loadWordsForWordset();
   }
 
-  const markAllAsMemorized = () => {
-    const indicesToMark = [];
-
-    // Send Google Analytics event for bulk recall
-    window.gtag('event', 'recall', {
-      'event_category': 'learning',
-      'event_label': 'correct',
-      'wordset_id': wordsetId,
-      'mode': mode,
-      'cards_count': maxCardsToShow
-    });
-
-    // Collect all indices up to maxCardsToShow
-    for (let i = 0; i < maxCardsToShow; i++) {
-      provideFeedback(i, true, () => {
-        setFlippedState(i, false);
-        indicesToMark.push(i);
-      });
-    }
-    setAllFlipped(false);
-
-    // Call handleMemorizedMultiple with the collected indices
-    handleMemorizedMultiple(indicesToMark, maxCardsToShow);
-  };
-
   const wordsToRender = displayWords.slice(0, maxCardsToShow);
 
   if (loading.status === 'loading') {
@@ -447,15 +421,24 @@ const Game = () => {
       </div>
 
 
-      {(mode === GameMode.PRACTICE || mode === GameMode.DUE_TODAY) ? (
-        <button
-          className="mark-all-memorized-button"
-          onClick={markAllAsMemorized}
-        >
-          ✔️ to all {maxCardsToShow}
-        </button>
-      ) : (<></>)
-      }
+      {/* issue-109 (RD-6): the blind "✔️ to all" control is RETIRED.
+          It wrote the same recall signal as a genuine answer, so the two are
+          indistinguishable downstream and every scheduling decision built on
+          that history is computed from data that cannot tell knowing from
+          tapping. A shortcut that costs one tap and corrupts the input to the
+          whole SRS is not a convenience.
+
+          Deleted rather than hidden. The click handler was the control's only
+          caller, and the loader's bulk-write function was that handler's only
+          caller, so leaving either in place would keep a reachable bulk-write
+          path one line of JSX from being live again — and a hidden control is
+          not a guard.
+
+          The identifiers are described rather than named here on purpose:
+          `tapTargets.test.js` pins that the retired symbols appear NOWHERE in
+          ui/src, and it caught this comment when it spelled them out. Which is
+          the detector working — a retirement that a comment can satisfy is not
+          a retirement. */}
 
       {/* issue-108: inside a session the bar tracks position within THE
           SESSION, not within the wordset. Denominating on `totalToShow` (149
