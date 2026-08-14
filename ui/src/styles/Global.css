@@ -62,7 +62,14 @@ body, html {
  * than the more obvious `.nav-link` — NavBar.css already has an unrelated,
  * unused `.nav-link` rule (font-size 18px) left over from an earlier nav
  * design, and reusing that name would have silently inherited it. */
-.nav-wordsets-link {
+.nav-wordsets-link,
+/* issue-107: the Today home's single Start action. Added to this list AT the
+ * same time as the control, rather than after an E2E harness measured it under
+ * the floor on live prod — which is how `.wordset-button` and its two siblings
+ * joined (see the issue-52 note above). The list is enumerated on purpose, so a
+ * control absent from it is invisible to `tapTargets.test.js`, and the primary
+ * CTA of the habit screen is the last control that should be. */
+.today-start {
   min-height: var(--min-tap-target);
 }
 

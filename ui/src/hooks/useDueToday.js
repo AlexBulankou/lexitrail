@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { getWordsets } from '../services/wordsService';
 import { getUserWordsByWordset } from '../services/userService';
-import { dueAcrossWordsets } from '../utils/srs';
+import { dueByWordset, totalDue } from '../utils/srs';
 
 // issue-107: the cross-wordset "due today" number the Today home is built on.
 //
@@ -33,49 +33,68 @@ export const loadDueToday = async (userId) => {
   const wordsetsResponse = await getWordsets();
   const wordsets = (wordsetsResponse && wordsetsResponse.data) || [];
 
-  const wordLists = await Promise.all(
+  const entries = await Promise.all(
     wordsets.map(async (ws) => {
       const userwords = await getUserWordsByWordset(userId, ws.wordset_id);
-      return (userwords && userwords.data) || [];
+      return {
+        wordsetId: ws.wordset_id,
+        description: ws.description,
+        words: (userwords && userwords.data) || [],
+      };
     })
   );
 
-  // One clock for the whole aggregation — see `dueAcrossWordsets`. The fan-out
+  // One clock for the whole aggregation — see `dueByWordset`. The fan-out
   // above is concurrent and its responses arrive in any order, so binding the
   // clock per response would be binding it in arrival order.
-  return dueAcrossWordsets(wordLists);
+  //
+  // Returns the per-set breakdown AND the total derived from it, rather than a
+  // bare total: Today's single Start action has to open ONE wordset, because
+  // the practice route is `/game/:wordsetId/:mode`. Deriving the total from the
+  // same array Start chooses from is what keeps the headline number and the
+  // session it opens from disagreeing.
+  const sets = dueByWordset(entries);
+  return { total: totalDue(sets), sets };
 };
 
 export const useDueToday = (userId) => {
-  const [state, setState] = useState({ status: 'loading', total: 0 });
+  const [state, setState] = useState({ status: 'loading', total: 0, sets: [] });
+  // Bumping this re-runs the effect. The error path below is otherwise
+  // terminal — a learner whose first load hit a flaky network would have no
+  // way back to their reviews short of a full page reload.
+  const [attempt, setAttempt] = useState(0);
+  const reload = useCallback(() => setAttempt((n) => n + 1), []);
 
   useEffect(() => {
     // Signed out: there is no due set, and that is a real answer rather than a
     // failure — 'idle' so the caller can render a signed-out home instead of an
     // error or a spinner that never resolves.
     if (!userId) {
-      setState({ status: 'idle', total: 0 });
+      setState({ status: 'idle', total: 0, sets: [] });
       return undefined;
     }
 
     let cancelled = false;
+    // Re-entering 'loading' on retry, so the retry has visible feedback rather
+    // than looking like a dead button while the fan-out is in flight.
+    setState((prev) => (prev.status === 'loading' ? prev : { ...prev, status: 'loading' }));
 
     loadDueToday(userId)
-      .then((total) => {
-        if (!cancelled) setState({ status: 'ready', total });
+      .then(({ total, sets }) => {
+        if (!cancelled) setState({ status: 'ready', total, sets });
       })
       .catch(() => {
         // Fail to an explicit error rather than to 0. A silent 0 is
         // indistinguishable from "you are all caught up" — it would tell a
         // learner with reviews waiting that there is nothing to do, which is
         // the one wrong answer this screen must never give.
-        if (!cancelled) setState({ status: 'error', total: 0 });
+        if (!cancelled) setState({ status: 'error', total: 0, sets: [] });
       });
 
     return () => {
       cancelled = true;
     };
-  }, [userId]);
+  }, [userId, attempt]);
 
-  return state;
+  return { ...state, reload };
 };

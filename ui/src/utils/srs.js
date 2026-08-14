@@ -67,18 +67,57 @@ export const dueCount = (words, now = new Date()) =>
 // has no Cloud Build trigger, so backend deploys are the blocked half (#77)
 // while the UI ships today.
 //
-// Takes already-fetched lists rather than fetching, so the aggregation stays
+// Takes already-fetched entries rather than fetching, so the aggregation stays
 // pure and testable and the caller keeps control of request fan-out.
 //
 // The SAME `now` spans every wordset, not merely every word within one. A
 // clock bound per wordset would let the first and last set be counted against
 // different instants, so the total would not equal the session Start opens.
 //
-// Returns a bare total, not a per-wordset breakdown. The first version returned
-// `{ total, perWordset }` on the guess that a Today view would want a
-// "which set to practice" affordance; @ensemble-hc2 asked for it to go, and
-// they are right — nothing consumes it, and an unused return field later reads
-// as a contract someone must preserve. Re-add it when a caller needs it, at
-// which point the shape can be chosen against a real use rather than a guess.
-export const dueAcrossWordsets = (wordLists, now = new Date()) =>
-  (wordLists || []).reduce((sum, words) => sum + dueCount(words, now), 0);
+// 🔴 This REPLACES `dueAcrossWordsets`, which returned a bare total. That
+// function was written that way on hc2's review of #131 — it had returned
+// `{ total, perWordset }` on the GUESS that a Today view would want a
+// "which set" affordance, and an unused return field reads as a contract
+// someone must preserve. The right condition for re-adding it was named there:
+// "when a caller needs it, at which point the shape can be chosen against a
+// real use rather than a guess." That caller is now real — `Today`'s single
+// Start action has to open ONE wordset, because the practice route is
+// `/game/:wordsetId/:mode`. So the shape is chosen against that use: the
+// per-set breakdown, and the total derived from it rather than counted twice.
+//
+// Both invariants the old function was pinned on are carried over to this one
+// by test (one clock across all sets; empty/missing input reports zero rather
+// than throwing) — a replaced function must not take its coverage with it.
+export const dueByWordset = (entries, now = new Date()) =>
+  (entries || []).map((entry) => ({
+    wordsetId: entry && entry.wordsetId,
+    description: (entry && entry.description) || '',
+    due: dueCount(entry && entry.words, now),
+  }));
+
+// The headline number, derived from the breakdown rather than counted again.
+//
+// Deliberately a sum over the SAME array the Start button chooses from: if this
+// counted independently, the home could show "12 due" and open a session with
+// a different set of words, which is the one inconsistency a habit screen
+// cannot survive.
+export const totalDue = (sets) =>
+  (sets || []).reduce((sum, s) => sum + ((s && s.due) || 0), 0);
+
+// Which wordset the single Start action opens: the one with the most due words.
+//
+// Returns null when nothing is due, so the caller renders "all caught up"
+// rather than a Start button that opens an empty session.
+//
+// Ties keep the EARLIER set (strict `>`), so the order `getWordsets()` returns
+// is the tiebreak rather than an arbitrary one. That matters for the habit:
+// two sets at 5 due each must open the same session today and tomorrow, or
+// Start becomes unpredictable.
+export const pickStartSet = (sets) => {
+  let best = null;
+  for (const s of sets || []) {
+    if (!s || !(s.due > 0)) continue;
+    if (!best || s.due > best.due) best = s;
+  }
+  return best;
+};
