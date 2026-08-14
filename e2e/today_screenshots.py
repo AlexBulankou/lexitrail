@@ -270,6 +270,116 @@ def run_game(browser, base, out, unexpected, failures):
         ctx.close()
 
 
+
+
+def run_start_flow(browser, base, unexpected, failures):
+    """The one thing screenshots cannot show: that Start actually STARTS it.
+
+    issue-107's AC asks for a green Playwright E2E. The screenshot pass proves
+    each screen RENDERS; it says nothing about the transition between them, and
+    the transition is where the contract lives — Start has to open a session on
+    the wordset the home names, in DUE_TODAY mode, with the count it promised.
+
+    Asserts, in the learner's order:
+      1. the Today home names a due count and a target set
+      2. clicking Start navigates to /game/<that wordset>/DUE_TODAY
+      3. the session that opens is bounded, and its size matches what Today
+         said was in that set
+
+    (3) is the load-bearing one. A home that says "8 of them in HSK 2" and then
+    opens a 4-card session is two features that each work and a product that
+    lies, which is exactly the disagreement `totalDue` deriving from
+    `dueByWordset` exists to prevent — and nothing until now tested it ACROSS
+    the two screens.
+    """
+    from playwright.sync_api import Error as PlaywrightError
+
+    # Two sets, so Start has to CHOOSE: 3 due in set 1, 8 due in set 2.
+    # pickStartSet must open set 2, and a bug that opens "the first set" or
+    # "the whole list" fails visibly rather than plausibly.
+    words_by_set = {1: [game_word(i) for i in range(1, 4)],
+                    2: [game_word(i) for i in range(101, 109)]}
+    uw_by_set = {1: [game_userword(i) for i in range(1, 4)],
+                 2: [game_userword(i) for i in range(101, 109)]}
+
+    ctx = browser.new_context(viewport={"width": 390, "height": 844})
+
+    def route(r):
+        url = r.request.url
+        if "/words" in url and "/wordsets/" in url:
+            wid = int(url.split("/wordsets/")[1].split("/")[0])
+            return r.fulfill(status=200, content_type="application/json",
+                             body=json.dumps({"data": words_by_set.get(wid, [])}))
+        if url.rstrip("/").endswith("/wordsets"):
+            return r.fulfill(status=200, content_type="application/json",
+                             body=json.dumps({"data": WORDSETS}))
+        if "/userwords/query" in url:
+            wid = int(url.split("wordset_id=")[1].split("&")[0])
+            return r.fulfill(status=200, content_type="application/json",
+                             body=json.dumps({"data": uw_by_set.get(wid, [])}))
+        if "/userwords" in url or "/users" in url:
+            return r.fulfill(status=200, content_type="application/json",
+                             body=json.dumps({"data": {}}))
+        unexpected.append(url)
+        return r.abort()
+
+    ctx.route(f"{API_ORIGIN}/**", route)
+    ctx.route("**/*google-analytics*/**", lambda r: r.abort())
+    ctx.route("**/*googletagmanager*/**", lambda r: r.abort())
+
+    page = ctx.new_page()
+    page.add_init_script("window.gtag = window.gtag || function () {};")
+    page.add_init_script("try { localStorage.setItem('lexitrail_onboarded', '1'); } catch (e) {}")
+    page.goto(base, wait_until="domcontentloaded")
+    page.evaluate("u => sessionStorage.setItem('user', JSON.stringify(u))", USER)
+    page.goto(base, wait_until="networkidle")
+
+    try:
+        page.wait_for_selector(".today-headline", timeout=15000)
+    except PlaywrightError:
+        failures.append("start-flow: Today home never rendered")
+        ctx.close()
+        return
+
+    home_text = page.inner_text(".today")
+    if "11" not in home_text:
+        failures.append(f"start-flow: home should total 11 due (3+8), got {home_text!r}")
+    if "HSK 2" not in home_text:
+        failures.append(f"start-flow: home should name HSK 2 as the target, got {home_text!r}")
+
+    try:
+        page.click(".today-start", timeout=8000)
+        page.wait_for_url("**/game/**", timeout=10000)
+    except PlaywrightError:
+        failures.append("start-flow: Start did not navigate")
+        ctx.close()
+        return
+
+    # The set Today NAMED, and the mode that means "today's due", not the whole
+    # wordset. A Start that opened /game/1/PRACTICE would still "work".
+    if "/game/2/DUE_TODAY" not in page.url:
+        failures.append(f"start-flow: expected /game/2/DUE_TODAY, landed on {page.url}")
+
+    try:
+        page.wait_for_selector(".progress-info", timeout=15000)
+    except PlaywrightError:
+        failures.append("start-flow: session never rendered after Start")
+        ctx.close()
+        return
+
+    info = page.inner_text(".progress-info")
+    # 8 due in that set, under a 10-card budget -> an 8-card session. If the
+    # home and the session disagreed, this is where it would show.
+    if "of 8" not in info:
+        failures.append(f"start-flow: session should hold the 8 the home promised, reads {info!r}")
+
+    if not failures:
+        print("start-flow OK: home 11 due -> Start -> /game/2/DUE_TODAY -> "
+              f"session {info!r}")
+    ctx.close()
+
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--build", default="ui/build")
@@ -360,6 +470,7 @@ def main():
                     print(f"captured {path}")
                     ctx.close()
             run_game(browser, base, args.out, unexpected, failures)
+            run_start_flow(browser, base, unexpected, failures)
             browser.close()
     finally:
         httpd.shutdown()
