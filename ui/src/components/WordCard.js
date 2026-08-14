@@ -206,7 +206,18 @@ const WordCard = ({ mode, word, isFlipped, isHintDisplayed, handleMemorized, han
           {/* THIS IS FOR DEBUGGING
         <span>{word.index}</span>
         */}
+          {/* issue-144: a STABLE accessible name, unlike the visible text.
+              The two recall buttons above already have one (issue-52: "the
+              aria-label, not the emoji, is the accessible name"); this
+              control kept the flipping text as its only handle, so anything
+              referring to it by name -- a test, a script, a spoken
+              instruction -- had to know the word's state first. It also made
+              the control invisible to the obvious search: grepping this file
+              for `aria-label` returned two hits, and I concluded the
+              exclusion path was undrivable from a session. It was not.
+              The VISIBLE text still flips; that is what it is for. */}
           <button
+            aria-label="Toggle whether this word is in your practice set"
             className={`exclude-button ${word.is_included ? 'red' : 'green'}`}
             onClick={(e) => {
               stopPropagation(e);

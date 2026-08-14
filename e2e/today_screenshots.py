@@ -163,6 +163,12 @@ def game_userword(i):
 # headline for a session that both overran its budget and lost a card.
 GAME_SCENARIOS = {("short", 844): 3, ("full", 844): 12, ("full-1card", 600): 12}
 
+# issue-144: the exclude/include control's STABLE accessible name. Kept as a
+# constant because the harness and `WordCard.js` have to agree on it, and a
+# string duplicated across two files with no test between them is how the
+# runbook/parser pair in my-hermes#1462 nearly drifted.
+EXCLUDE_CONTROL_LABEL = "Toggle whether this word is in your practice set"
+
 
 
 class SPAHandler(http.server.SimpleHTTPRequestHandler):
@@ -252,6 +258,21 @@ def run_game(browser, base, out, unexpected, failures):
             failures.append(f"game/{scenario}: card view never rendered")
             ctx.close()
             continue
+
+        # issue-144: the exclusion control must be reachable BY ITS ACCESSIBLE
+        # NAME, not by a class. Presence only -- clicking it removes a word and
+        # would perturb the session this scenario is measuring. Selecting by
+        # name is the point: before #144 the control's only handle was its
+        # visible text, which FLIPS with state ("Exclude"/"Include"), so a
+        # driver had to know the word's state before it could find the button.
+        # That is also how I came to report the exclusion path undrivable when
+        # it was not -- I grepped WordCard.js for `aria-label`, got two hits,
+        # and believed them.
+        if not page.query_selector(f'[aria-label="{EXCLUDE_CONTROL_LABEL}"]'):
+            failures.append(
+                f"game/{scenario}: no control named {EXCLUDE_CONTROL_LABEL!r} "
+                "-- the exclude button lost its aria-label (#144), so the only "
+                "way to select it is the class or its state-dependent text")
 
         info = page.inner_text(".progress-info")
         expect_total = min(n_due, 10)
