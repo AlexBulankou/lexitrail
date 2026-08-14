@@ -109,15 +109,31 @@ export const totalDue = (sets) =>
 // Returns null when nothing is due, so the caller renders "all caught up"
 // rather than a Start button that opens an empty session.
 //
-// Ties keep the EARLIER set (strict `>`), so the order `getWordsets()` returns
-// is the tiebreak rather than an arbitrary one. That matters for the habit:
-// two sets at 5 due each must open the same session today and tomorrow, or
-// Start becomes unpredictable.
+// Ties break on the LOWEST wordsetId, not on arrival order.
+//
+// @ensemble-hc2 caught the first version of this resting on an assumption it
+// could not support: it broke ties by keeping whichever set arrived first, and
+// the comment claimed that made Start stable day to day because the order
+// `getWordsets()` returns is stable. Nothing guarantees that order — the
+// backend route is `Wordset.query.all()` with no ORDER BY
+// (`backend/app/routes/wordsets.py`), so the ordering is whatever the engine
+// returns and may vary between calls.
+//
+// That is the exact failure the tie-break exists to prevent: with two sets at
+// 5 due each, a reordered response would silently swap which one Start opens.
+// Sorting on a value the ROW carries rather than on its position makes the
+// property hold whatever order the backend chooses, so this no longer depends
+// on an unwritten backend contract.
+//
+// Sets missing an id sort last: `undefined < n` is false, so a malformed row
+// can never displace a well-formed one.
 export const pickStartSet = (sets) => {
   let best = null;
   for (const s of sets || []) {
     if (!s || !(s.due > 0)) continue;
-    if (!best || s.due > best.due) best = s;
+    if (!best) { best = s; continue; }
+    if (s.due > best.due) { best = s; continue; }
+    if (s.due === best.due && s.wordsetId < best.wordsetId) best = s;
   }
   return best;
 };

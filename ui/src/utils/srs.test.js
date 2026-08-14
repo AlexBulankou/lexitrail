@@ -254,13 +254,21 @@ describe('pickStartSet', () => {
     expect(pickStartSet(undefined)).toBeNull();
   });
 
-  it('keeps the EARLIER set on a tie, so Start is predictable day to day', () => {
-    // Strict `>` is what makes this stable. With `>=` the last tied set wins,
-    // and two sets at 5 due each would swap which one Start opens whenever the
-    // wordset list came back in a different order.
+  it('breaks ties on the lowest id, INDEPENDENT of the order they arrive in', () => {
+    // hc2 on #133: the first version broke ties on arrival order and claimed
+    // that was stable. It is not -- `Wordset.query.all()` has no ORDER BY, so
+    // the response order is not a contract. Both orderings must pick the SAME
+    // set, or two sets at 5 due each swap which session Start opens whenever
+    // the backend happens to return them differently.
     const tied = [{ wordsetId: 1, due: 5 }, { wordsetId: 2, due: 5 }];
     expect(pickStartSet(tied).wordsetId).toBe(1);
-    expect(pickStartSet([...tied].reverse()).wordsetId).toBe(2);
+    expect(pickStartSet([...tied].reverse()).wordsetId).toBe(1);
+  });
+
+  it('still prefers a higher count over a lower id', () => {
+    // The tie-break must not outrank the count itself -- guards the shape where
+    // the id comparison is applied unconditionally rather than only on a tie.
+    expect(pickStartSet([{ wordsetId: 9, due: 7 }, { wordsetId: 1, due: 2 }]).wordsetId).toBe(9);
   });
 
   it('ignores malformed entries instead of opening an undefined wordset', () => {
