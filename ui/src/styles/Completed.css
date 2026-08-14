@@ -132,3 +132,21 @@
 .completed-button:hover {
   background-color: #2c6cd3;
 }
+/* issue-108 (RD-2): the session's terminal state. Sits ABOVE the time and
+   percentage, because the first thing a finished session should say is that it
+   is finished — the stats are how it went, not whether it ended. */
+.completed-session {
+  text-align: center;
+  margin-bottom: 0.5rem;
+}
+
+.completed-session-title {
+  font-size: 1.75rem;
+  font-weight: bold;
+  color: #28a745;
+}
+
+.completed-session-sub {
+  color: #666;
+  font-size: 0.95rem;
+}

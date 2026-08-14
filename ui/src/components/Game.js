@@ -2,6 +2,10 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import WordCard from './WordCard';
 import MiniWordCard from './MiniWordCard';
 import Completed from './Completed';
+import {
+  SESSION_BUDGET, sessionRemaining, sessionProgress, sessionOutcome, wordKey,
+  nextSessionBinding, EMPTY_BINDING,
+} from '../utils/session';
 import OnboardingOverlay from './OnboardingOverlay';
 import Timer from './Timer';
 import { useParams } from 'react-router-dom';
@@ -60,6 +64,52 @@ const Game = () => {
     user.email,
     mode
   );
+
+  // issue-108 (RD-2): bind the session ONCE per (wordset, mode).
+  //
+  // A ref rather than state because this must NOT re-derive on re-render:
+  // `displayWords` shrinks as words are memorized, so any expression that
+  // recomputes the first N pulls unseen words in behind them and the session
+  // never ends. `utils/session.js` holds the whole rule — including the
+  // read-time mode gate hc2 caught missing on #134, where a bound practice
+  // session survived an in-place toggle into the excluded-words browse view
+  // and collapsed it to the completion screen.
+  const sessionRef = useRef(EMPTY_BINDING);
+  sessionRef.current = nextSessionBinding(sessionRef.current, {
+    wordsetId,
+    mode,
+    loaded: loading.status === 'loaded',
+    words: displayWords,
+    budget: SESSION_BUDGET,
+  });
+  const sessionKeys = sessionRef.current.keys;
+
+  // Non-session modes (SHOW_EXCLUDED browse, TEST's own 20-cap) keep the full
+  // queue — `sessionKeys` stays null and this is the identity function.
+  const sessionWords = sessionKeys ? sessionRemaining(displayWords, sessionKeys) : displayWords;
+  const progress = sessionProgress(sessionKeys, sessionWords.length);
+
+  // The session is over when its captured words are done — OR when the queue's
+  // front has rotated outside the session.
+  //
+  // 🔴 The second clause is what makes "cannot silently run past the budget"
+  // true rather than merely usually-true. The card view renders
+  // `displayWords.slice(0, maxCardsToShow)` and the recall handlers take that
+  // POSITION as their index into the loader's list, so rendering a filtered
+  // list here would desynchronise every handler from the word it marks. Rather
+  // than re-index the whole card path — untestable at this layer, since no
+  // component in this repo has a test — the session ENDS at the boundary
+  // instead of showing a card it does not own.
+  //
+  // Consequence, stated because it is a real trade: if `handleNotMemorized`
+  // rotates an unrecalled word behind an unseen one, the session can finish a
+  // card or two short, reporting e.g. 8 of 10. That is a visible, honest
+  // undercount. The alternative — silently practising card 11 — is the exact
+  // endlessness RD-2 exists to end. Filed as a follow-up rather than guessed
+  // at here.
+  const frontInSession =
+    !sessionKeys || (displayWords.length > 0 && sessionKeys.has(wordKey(displayWords[0])));
+  const sessionOver = Boolean(sessionKeys) && (sessionWords.length === 0 || !frontInSession);
 
   const [layoutClass, setLayoutClass] = useState('layout1c1r');
   const [maxCardsToShow, setMaxCardsToShow] = useState(1);
@@ -258,6 +308,10 @@ const Game = () => {
   };
 
   const resetGame = () => {
+    // Clear the binding so the next loaded queue starts a FRESH session.
+    // Without this, "practice again" would re-enter a session whose words are
+    // all already done and land straight back on the completion screen.
+    sessionRef.current = EMPTY_BINDING;
     navigate(`/game/${wordsetId}/${mode}`);
     loadWordsForWordset();
   }
@@ -307,7 +361,7 @@ const Game = () => {
     );
   }
 
-  if (displayWords.length === 0 && loading.status === 'loaded') {
+  if ((displayWords.length === 0 || sessionOver) && loading.status === 'loaded') {
 
     if (mode === GameMode.SHOW_EXCLUDED) {
       return <div>No excluded words in this wordset.</div>;
@@ -322,6 +376,9 @@ const Game = () => {
         incorrectAttempts={incorrectAttempts}
         incorrectWords={incorrectWords}
         resetGame={resetGame}
+        outcome={sessionKeys ? sessionOutcome(sessionKeys, SESSION_BUDGET) : null}
+        sessionDone={progress.done}
+        sessionTotal={progress.total}
       />
     );
   }
@@ -400,13 +457,28 @@ const Game = () => {
       ) : (<></>)
       }
 
+      {/* issue-108: inside a session the bar tracks position within THE
+          SESSION, not within the wordset. Denominating on `totalToShow` (149
+          for HSK 2) is what made practice feel endless: ten cards in, the bar
+          has moved 7% and the finish line is invisible. Outside a session
+          (browse / test) the wordset-wide numbers are still the right answer,
+          so that rendering is unchanged. */}
       <div className="progress-bar-container">
         <div className="progress-bar">
-          <div className="progress" style={{ width: totalToShow ? `${(correctlyMemorized.size / totalToShow) * 100}%` : '0%' }}></div>
+          <div
+            className="progress"
+            style={{
+              width: sessionKeys
+                ? `${progress.percent}%`
+                : (totalToShow ? `${(correctlyMemorized.size / totalToShow) * 100}%` : '0%'),
+            }}
+          ></div>
 
         </div>
         <div className="progress-info">
-          recalled {correctlyMemorized.size} out of {totalToShow}
+          {sessionKeys
+            ? `card ${Math.min(progress.done + 1, progress.total)} of ${progress.total}`
+            : `recalled ${correctlyMemorized.size} out of ${totalToShow}`}
         </div>
       </div>
 
