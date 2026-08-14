@@ -12,13 +12,23 @@ jest.mock('../services/userService', () => ({ getUserWordsByWordset: jest.fn() }
 const DAY = 24 * 60 * 60 * 1000;
 const ago = (ms) => new Date(Date.now() - ms).toISOString();
 
-// A userword row in the shape `getUserWordsByWordset` returns. Defaults to a
-// word that IS due (state 2 = 1-day interval, last reviewed 30 days ago).
+// A userword row in the shape `/userwords/query` ACTUALLY returns -- taken
+// from the serializer in `backend/app/routes/userwords.py`, not from what the
+// consumer happened to expect.
+//
+// 🔴 The first version of this factory used `recall_history` /
+// `original_recall_time` (the MAPPED shape `useWordsetLoader` produces). That
+// made every test here pass over a consumer that could not read the real
+// payload at all: `lastRecallTimeOf` returned null for every live row, and
+// `isDue(state, null)` is true, so the Today home counted every included word
+// as due. The mock agreed with the code and both were wrong about the server.
 const uw = (over = {}) => ({
+  user_id: 'user-1',
   word_id: 1,
   is_included: true,
   recall_state: 2,
-  recall_history: [{ original_recall_time: ago(30 * DAY) }],
+  recall_histories: [{ recall: true, recall_time: ago(30 * DAY),
+                       new_recall_state: 2, old_recall_state: 3, is_included: true }],
   ...over,
 });
 
@@ -45,7 +55,7 @@ describe('loadDueToday', () => {
         uw(),                                    // due
         uw({ word_id: 2, is_included: false }),  // opted out -> never due
         uw({ word_id: 3, recall_state: 0,        // mastered, rested 1 day of 7
-             recall_history: [{ original_recall_time: ago(1 * DAY) }] }),
+             recall_histories: [{ recall_time: ago(1 * DAY) }] }),
       ],
     });
 

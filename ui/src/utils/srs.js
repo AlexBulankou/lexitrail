@@ -34,8 +34,43 @@ export const isDue = (recallState, lastRecallTime, now = new Date()) => {
 // the practice loop end up disagreeing about what is due -- a disagreement
 // that would show as a count that does not match the session it starts.
 export const lastRecallTimeOf = (word) => {
-  const history = (word && word.recall_history) || [];
-  return history.length > 0 ? history[0].original_recall_time : null;
+  // TWO SHAPES REACH THIS, and the first version only handled one.
+  //
+  //   MAPPED  (`useWordsetLoader`'s DUE_TODAY filter, where this was extracted
+  //           from): `recall_history[].original_recall_time`, a Date.
+  //   RAW     (`useDueToday`, the Today home): `/userwords/query` returns
+  //           `recall_histories[].recall_time` -- plural key, different field,
+  //           an ISO string. Confirmed against the serializer in
+  //           `backend/app/routes/userwords.py`, which builds exactly that.
+  //
+  // Reading only the mapped shape made this return null for EVERY raw row, and
+  // `isDue(state, null)` is TRUE by design (a never-practiced word is due). So
+  // the Today home counted every included word as due — the headline silently
+  // became "words in your sets", inflated for anyone with any history, and it
+  // fails toward MORE work rather than an error anybody would report.
+  //
+  // My unit tests could not catch this: they mock the row shape, and I mocked
+  // the shape I assumed rather than the one the backend sends.
+  const history =
+    (word && (word.recall_history || word.recall_histories)) || [];
+
+  // The MOST RECENT review, not `history[0]`.
+  //
+  // Nothing sorts these. The mapped path builds them in the backend's append
+  // order and the raw payload appends per result row, so `[0]` is "whichever
+  // the query returned first". Taking the max is shape-agnostic and correct
+  // whatever the order; with an unsorted history, `[0]` could name an older
+  // review and mark a rested word due (or the reverse).
+  let newest = null;
+  let newestMs = -Infinity;
+  for (const entry of history) {
+    const value = entry && (entry.original_recall_time || entry.recall_time);
+    if (!value) continue;
+    const ms = new Date(value).getTime();
+    if (Number.isNaN(ms)) continue;
+    if (ms > newestMs) { newestMs = ms; newest = value; }
+  }
+  return newest;
 };
 
 // Is this userword due for review right now?
