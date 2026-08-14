@@ -5,8 +5,7 @@ import {
   advance,
   currentStreak,
   todayProgress,
-  goalMet,
-} from './streak';
+  goalMet, creditsStreak, STREAK_CREDIT_MODES } from './streak';
 
 describe('streak util (FEAT-1)', () => {
   test('daysBetween counts whole days, null on bad input', () => {
@@ -61,5 +60,36 @@ describe('streak util (FEAT-1)', () => {
     expect(todayProgress(s, '2026-07-22')).toBe(0);
     expect(goalMet(s, '2026-07-21', 10)).toBe(false);
     expect(goalMet({ ...s, todayCount: 10 }, '2026-07-21', 10)).toBe(true);
+  });
+});
+
+describe('creditsStreak — which modes count toward the habit (issue-112)', () => {
+  it('credits the practice modes', () => {
+    expect(creditsStreak('PRACTICE')).toBe(true);
+    expect(creditsStreak('DUE_TODAY')).toBe(true);
+  });
+
+  it('🔴 does NOT credit SHOW_EXCLUDED', () => {
+    // The bug: the recall handlers check no mode at all, so reviewing a card in
+    // the excluded-words browse view advanced the streak for words the learner
+    // explicitly removed from their practice set. The streak is a claim about a
+    // habit, and it was counting the opposite of one.
+    expect(creditsStreak('SHOW_EXCLUDED')).toBe(false);
+  });
+
+  it('keeps TEST crediting — unchanged behaviour, listed on purpose', () => {
+    // In the whitelist explicitly so its presence is not later read as an
+    // accident and removed as tidying. Changing TEST is not #112's scope.
+    expect(creditsStreak('TEST')).toBe(true);
+    expect(STREAK_CREDIT_MODES).toContain('TEST');
+  });
+
+  it('does not credit an unknown or missing mode', () => {
+    // Whitelist, not blacklist: a mode added later must opt in. A new
+    // browse-shaped view silently inflating the streak is the failure that
+    // cannot be seen from the place it would be introduced.
+    expect(creditsStreak('SOME_FUTURE_BROWSE_VIEW')).toBe(false);
+    expect(creditsStreak(undefined)).toBe(false);
+    expect(creditsStreak(null)).toBe(false);
   });
 });

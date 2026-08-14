@@ -3,6 +3,7 @@ import { revertWordWrite } from '../utils/failedWriteRevert';
 import { getWordsByWordset } from '../services/wordsService';
 import { getUserWordsByWordset, updateUserWordRecall } from '../services/userService';
 import { recordPractice } from '../services/streakStore';
+import { creditsStreak } from '../utils/streak';
 import { formatDistanceToNow, max } from 'date-fns';
 import { GameMode } from '../components/Game';
 import { isWordDue } from '../utils/srs';
@@ -487,7 +488,10 @@ export const useWordsetLoader = (wordsetId, userId, mode) => {
         setToShow((prev) => revertWordWrite(prev, priorMemorized));
       });
 
-    recordPractice(); // FEAT-1: count today's practice toward the streak + goal.
+    // issue-112: SHOW_EXCLUDED does not credit the streak — the learner opted
+    // these words out of their practice set, so counting them overstates the
+    // habit the number claims to measure.
+    if (creditsStreak(mode)) recordPractice(); // FEAT-1: today's practice toward the streak + goal.
   };
 
   // New function to handle correct memorization of multiple words
@@ -528,7 +532,7 @@ export const useWordsetLoader = (wordsetId, userId, mode) => {
           setToShow((prev) => revertWordWrite(prev, priorBatchWord));
         });
 
-      recordPractice(); // FEAT-1: batch-reviewed words count toward the streak too.
+      if (creditsStreak(mode)) recordPractice(); // FEAT-1: batch-reviewed words count too (issue-112).
     });
 
 
@@ -579,7 +583,7 @@ export const useWordsetLoader = (wordsetId, userId, mode) => {
     updateUserWordRecall(userId, currentWord.word_id, newRecallState, false, currentWord.is_included)
       .catch((error) => console.error('Error updating recall state for not memorized word:', error));
 
-    recordPractice(); // FEAT-1: reviewing a word counts, right or wrong.
+    if (creditsStreak(mode)) recordPractice(); // FEAT-1: right or wrong counts (issue-112).
   };
 
 
