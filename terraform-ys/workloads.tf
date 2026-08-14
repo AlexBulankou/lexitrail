@@ -74,7 +74,7 @@ resource "kubernetes_deployment_v1" "backend" {
         service_account_name = "lexitrail-backend"
 
         container {
-          name  = "lexitrail-backend"
+          name = "lexitrail-backend"
           # Registry hostname is the AR repo's LOCATION (lexitrail-side), NOT the
           # ys region — same decoupling as the iam.tf AR grant (HC2 #15/#16 catch).
           image = "${var.lexitrail_repo_location}-docker.pkg.dev/${var.lexitrail_project_id}/lexitrail-repo/lexitrail-backend:${var.image_tag}"
@@ -235,7 +235,7 @@ resource "kubernetes_deployment_v1" "ui" {
       }
       spec {
         container {
-          name  = "lexitrail-ui"
+          name = "lexitrail-ui"
           # Registry hostname = repo location (lexitrail-side), not ys_region (HC2 #16).
           image = "${var.lexitrail_repo_location}-docker.pkg.dev/${var.lexitrail_project_id}/lexitrail-repo/lexitrail-ui:${var.image_tag}"
 
@@ -266,7 +266,42 @@ resource "kubernetes_deployment_v1" "ui" {
               "ephemeral-storage" = "1Gi"
             }
           }
+
+          # issue-124: keep serving while the load balancer stops routing here.
+          #
+          # #123 gave this Deployment 2 replicas and a PDB, and deleting one pod
+          # STILL produced ~10s of 503s from lexitrail.com while the surviving
+          # replica was Ready throughout. That is the container-native LB drain
+          # gap, not a capacity gap: the pod enters Terminating and stops
+          # serving IMMEDIATELY, while the GCLB's NEG still has its endpoint
+          # programmed and keeps sending it traffic for a few more seconds.
+          # Adding replicas cannot fix it — the dying endpoint is still in the
+          # NEG. The measured asymmetry says the same thing: the same test
+          # against lexitrail-backend dropped 0 of 20 requests, and the backend
+          # is not fronted by a NEG.
+          #
+          # So the pod must OUTLIVE its own deprogramming. `preStop` runs before
+          # SIGTERM, so the container keeps answering for the sleep's duration
+          # while the NEG drops it.
+          #
+          # 30s against a ~10s measured blip is deliberate margin, not a guess
+          # at the exact number: NEG propagation varies with LB state and being
+          # 20s generous costs a slower rollout, while being 2s short costs
+          # user-visible 503s on every deploy. Tune DOWN only against a measured
+          # run, never up-front.
+          lifecycle {
+            pre_stop {
+              exec {
+                command = ["/bin/sleep", "30"]
+              }
+            }
+          }
         }
+
+        # Must exceed the preStop sleep, or the kubelet SIGKILLs the pod
+        # mid-drain and the sleep buys nothing. 45 = 30 + headroom for the
+        # container's own shutdown.
+        termination_grace_period_seconds = 45
       }
     }
   }
