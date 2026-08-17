@@ -1,0 +1,104 @@
+# cloudbuild-ui-test.yaml — runs `ui`'s jest suite on PRs targeting main (issue-122).
+#
+# WHY THIS EXISTS: `ui/src/styles/tapTargets.test.js` guards the 44px WCAG
+# tap-target floor for ten controls and is a good detector — but nothing runs
+# it. Until this file has a trigger, the suite executes only when a human types
+# `npx jest` locally, so the merge history stays green whether the floor holds
+# or not. A guard with no moment of execution is worse than no guard: it reads
+# as protection. #120 shipped two controls back over the floor with nothing
+# standing in the way.
+#
+# 🔴 THIS FILE ALONE CHANGES NOTHING. It is inert until a Cloud Build trigger
+# points at it (issue-77, blocked-by-alex on an auth decision). Do NOT close
+# issue-122 on this file landing — shipping an unwired config and calling the
+# gap closed is the exact defect that issue is about. What this buys is that
+# the config is reviewed and correct *before* the authorization arrives, so the
+# trigger works the hour it is created rather than starting a debug cycle then.
+#
+# COST, stated rather than left to a later reviewer to discover: this is a NEW
+# per-PR spend path on a budget the issue-77 authorization already records as
+# over target (~$8-9/day against $5.00). `cloudbuild.yaml` deliberately has no
+# per-PR image build for that reason. This is not an image build — it is one
+# `npm ci && jest` on the default machine type, minutes not tens of minutes —
+# but "cheaper than the thing we refused" is not the same as free, and the
+# trigger that turns this on is a cost decision, not a wiring detail.
+
+substitutions:
+  # Default empty so ordinary builds are unaffected; only a deliberate re-run
+  # with --substitutions=_BREAK_GLASS=1 overrides the quota gate. The override
+  # is still COUNTED — an override nobody counts becomes the habit.
+  _BREAK_GLASS: ''
+
+steps:
+
+  # ─── BUILD-COUNT QUOTA, ENFORCING ──────────────────────────────────────────
+  # Same three load-bearing details as `cloudbuild.yaml`, and for the same
+  # reason: each of them fails toward "the gate is present and enforces
+  # nothing", which reads as compliance while creating an uncapped spend path.
+  #
+  # (a) `--trigger-name=$TRIGGER_NAME` (ensemble issue-8237) — a step gets no
+  #     ambient environment, and an EMPTY trigger name is treated as ungated:
+  #     counting stays on, enforcement silently goes off.
+  # (b) the `env:` block — without it the `_BREAK_GLASS` hatch the refusal
+  #     message names does not exist, and it burns the one person already
+  #     having a bad build.
+  # (c) every later step says `waitFor: ['quota-gate']` — `['-']` means START
+  #     AT t=0 REGARDLESS OF POSITION, so a gate above steps that all say
+  #     `['-']` gates none of them.
+  #
+  # ⚠️ AND NOT IN THIS FILE: whatever trigger runs this must be added to
+  # `lexitrail`'s `gate_triggers` in ensemble's config/build-budget.json, which
+  # is `[]` today. An empty list means nothing can ever be refused — the gate
+  # counts and never blocks.
+  - name: 'python:3.11-slim'
+    id: 'quota-gate'
+    entrypoint: 'python3'
+    args:
+      - 'scripts/build_budget/inbuild.py'
+      - '--repo=lexitrail'
+      - '--state-uri=gs://lexitrail-build-budget/count-lexitrail.json'
+      - '--build-id=$BUILD_ID'
+      - '--trigger-name=$TRIGGER_NAME'
+    env:
+      - 'ENSEMBLE_BUILD_QUOTA_BREAK_GLASS=${_BREAK_GLASS}'
+    waitFor: ['-']
+
+  # ─── install ───────────────────────────────────────────────────────────────
+  # `npm ci`, not `npm install`: it installs the lockfile exactly, so a green
+  # check here is a statement about the tree under review rather than about
+  # whatever the registry resolved this morning. node:16 matches ui/Dockerfile.
+  - name: 'node:16'
+    id: 'ui-install'
+    entrypoint: 'npm'
+    args: ['ci']
+    dir: 'ui'
+    waitFor: ['quota-gate']
+
+  # ─── the actual point of the file ──────────────────────────────────────────
+  # 🔑 `CI=true` is load-bearing, not decoration: without it `react-scripts
+  # test` starts in WATCH mode, which never exits — the step would hang to the
+  # timeout instead of reporting. Measured with the mutation control below.
+  #
+  # POSITIVE CONTROL, run locally 2026-08-17 before this file was written —
+  # a green run on an unmutated tree proves nothing here (issue-122 AC2):
+  #   unmutated                                15 passed          rc=0
+  #   --min-tap-target: 44px -> 32px           1 failed, 14 passed rc=1   <- FIRES
+  #   restored (cmp vs backup)                 identical
+  # The rc=1 is what makes the step able to turn a check red; a suite that
+  # fails while exiting 0 is a detector with no consequence.
+  - name: 'node:16'
+    id: 'ui-jest'
+    entrypoint: 'npm'
+    args: ['test', '--', '--watchAll=false']
+    dir: 'ui'
+    env:
+      - 'CI=true'
+    waitFor: ['ui-install']
+
+# No `images:` — this build produces no artifact. It is a check, and its only
+# output is its exit status.
+
+# 10m is the Cloud Build default and is ample: the suite itself runs in under a
+# second; `npm ci` is the whole cost. Stated explicitly so a later "it timed
+# out, raise it" reads as the signal it would be.
+timeout: '600s'
