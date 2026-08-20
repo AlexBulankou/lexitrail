@@ -128,6 +128,38 @@ describe('isWordDue', () => {
   it('a never-practiced included word is due', () => {
     expect(isWordDue(word({ recall_history: [] }), NOW)).toBe(true);
   });
+
+  // #112: re-inclusion does not resurrect a word as not-due on a stale answer.
+  //
+  // The open question on #112 was whether answers given in SHOW_EXCLUDED should
+  // COUNT once a word comes back. They do -- a real answer is a real answer,
+  // which is #109's own principle. The hazard that question was standing in for
+  // is AGE, not provenance: a word excluded for months, carrying a best-case
+  // answer from month one, coming back not-due on quarter-old evidence.
+  //
+  // It cannot happen, and the reason is worth pinning rather than re-deriving:
+  // `isDue` compares elapsed time against the interval, and the LONGEST
+  // interval any state earns is 7 days (INTERVAL_DAYS[0]). So every exclusion
+  // longer than a week makes the word due on re-inclusion whatever its state.
+  // Pinned because the next reader meets #112's QUESTION before this predicate,
+  // and "discard excluded-mode answers on re-inclusion" is the plausible fix
+  // for a problem that does not exist.
+  it('a long-excluded word is due the moment it is re-included, whatever its state', () => {
+    const mastered = { recall_state: 0, recall_history: [{ original_recall_time: ago(90 * DAY) }] };
+    expect(isWordDue({ ...mastered, is_included: false }, NOW)).toBe(false);
+    expect(isWordDue({ ...mastered, is_included: true }, NOW)).toBe(true);
+  });
+
+  it('and the boundary is the 7-day cap, not the exclusion', () => {
+    // Negative control for the test above: a RECENT answer on a mastered word
+    // still rests. Without this, the pin passes for a version of `isDue` that
+    // ignores the interval entirely and calls everything due.
+    const fresh = { is_included: true, recall_state: 0,
+                    recall_history: [{ original_recall_time: ago(1 * DAY) }] };
+    expect(isWordDue(fresh, NOW)).toBe(false);
+    expect(isWordDue({ ...fresh, recall_history: [{ original_recall_time: ago(8 * DAY) }] }, NOW))
+      .toBe(true);
+  });
 });
 
 describe('dueCount', () => {
