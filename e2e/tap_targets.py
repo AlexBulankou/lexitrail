@@ -61,7 +61,7 @@ is added later this file should give way to it.
 
 USAGE
     python3 e2e/tap_targets.py --self-test          # validate the instrument
-    python3 e2e/tap_targets.py                      # measure prod, both viewports
+    python3 e2e/tap_targets.py                      # measure prod, ALL viewports
     python3 e2e/tap_targets.py --url http://localhost:3000
     python3 e2e/tap_targets.py --viewport mobile --json
 """
@@ -106,6 +106,16 @@ VIEWPORTS = {
     # mobile. Matching them exactly so a finding here is comparable to a finding
     # from a manual ITP pass rather than needing a viewport caveat attached.
     "desktop": {"viewport": {"width": 1440, "height": 900}},
+    # issue-45 / R3-BUG-4: the ITP reported "landscape practice renders one
+    # card". Until now the matrix was PORTRAIT-ONLY (390x844 and 1440x900 are
+    # both taller than wide), so that half of the bug was not merely unfixed --
+    # it was structurally unmeasurable, and a green run said nothing about it.
+    # 844x390 is the SAME iPhone 13 device rotated, deliberately: a difference
+    # between this row and `mobile` is then attributable to orientation alone
+    # and not to a second device's dimensions.
+    "mobile_landscape": {"viewport": {"width": 844, "height": 390},
+                         "is_mobile": True, "has_touch": True,
+                         "device_scale_factor": 3},
 }
 
 
@@ -370,7 +380,15 @@ def main() -> int:
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--url", default="https://lexitrail.com/",
                     help="page to measure (default: live site)")
-    ap.add_argument("--viewport", choices=[*VIEWPORTS, "both"], default="both")
+    # "all" replaces "both", which stopped being true when a third viewport
+    # landed (issue-45). "both" is still ACCEPTED and means every viewport, so
+    # an existing caller keeps working -- but it would now silently mean three,
+    # so the help text says so rather than letting a script author assume two.
+    ap.add_argument("--viewport", choices=[*VIEWPORTS, "all", "both"],
+                    default="all",
+                    help="which viewport(s) to measure. Default: all "
+                         f"({len(VIEWPORTS)} today). 'both' is a deprecated "
+                         "alias for 'all' and does NOT mean exactly two.")
     ap.add_argument("--route", choices=[*ROUTES, "all"], default="all",
                     help="which journey to measure (#85). Default: all.")
     ap.add_argument("--self-test", action="store_true",
@@ -384,7 +402,8 @@ def main() -> int:
             if args.self_test:
                 return self_test(browser)
 
-            names = list(VIEWPORTS) if args.viewport == "both" else [args.viewport]
+            names = (list(VIEWPORTS) if args.viewport in ("all", "both")
+                     else [args.viewport])
             routes = list(ROUTES) if args.route == "all" else [args.route]
             worst = EXIT_PASS
             payload: dict = {"url": args.url, "floor_px": FLOOR_PX, "routes": {}}
