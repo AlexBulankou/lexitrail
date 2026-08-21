@@ -48,6 +48,18 @@ resource "google_certificate_manager_dns_authorization" "backend" {
   domain  = "api.lexitrail.com"
 }
 
+# www (my-hermes#1338): live since 2026-07-01 and declared NOWHERE until now.
+# `grep www ys-tls.tf` returned zero hits while `lexitrail-ys-www-{cert,entry,
+# dnsauth}` were all ACTIVE in yojowa-claw -- so the #1338 instruction to
+# "import 3 www TLS objects" could not be followed: there was no source to
+# import INTO. This block is that source, transcribed from the live objects so
+# the import lands as a no-op rather than a diff.
+resource "google_certificate_manager_dns_authorization" "www" {
+  project = var.ys_project_id
+  name    = "lexitrail-ys-www-dnsauth"
+  domain  = "www.lexitrail.com"
+}
+
 # ---------- DNS-authorized managed certificates ----------
 resource "google_certificate_manager_certificate" "ui" {
   project = var.ys_project_id
@@ -64,6 +76,15 @@ resource "google_certificate_manager_certificate" "backend" {
   managed {
     domains            = ["api.lexitrail.com"]
     dns_authorizations = [google_certificate_manager_dns_authorization.backend.id]
+  }
+}
+
+resource "google_certificate_manager_certificate" "www" {
+  project = var.ys_project_id
+  name    = "lexitrail-ys-www-cert"
+  managed {
+    domains            = ["www.lexitrail.com"]
+    dns_authorizations = [google_certificate_manager_dns_authorization.www.id]
   }
 }
 
@@ -90,13 +111,42 @@ resource "google_certificate_manager_certificate_map_entry" "backend" {
   hostname     = "api.lexitrail.com"
 }
 
+resource "google_certificate_manager_certificate_map_entry" "www" {
+  project      = var.ys_project_id
+  name         = "lexitrail-ys-www-entry"
+  map          = google_certificate_manager_certificate_map.lexitrail.name
+  certificates = [google_certificate_manager_certificate.www.id]
+  hostname     = "www.lexitrail.com"
+}
+
 # ---------- Outputs: the exact CNAME records for the operator to add at TopDNS ----------
 # `terraform output -json dns_auth_records` after apply → hand these to Alex.
+# my-hermes#1338 (adm@ review on #152): this output enumerated TWO dns_authorizations
+# while three exist -- a hand-maintained list that does not grow when a resource is
+# added, so the omission is silent and shows up as a missing CNAME during the next
+# cert provision rather than as an error here.
+#
+# Halved rather than removed, and the remaining half is deliberate. The keys were a
+# SECOND hand-maintained copy (the domain strings, duplicating each resource's own
+# `domain`); those are now derived, so a wrong domain in this output is no longer
+# expressible. The membership list stays hand-written because the mechanical form --
+# `for_each` over a map of domains -- would re-address all three resources from
+# `...dns_authorization.ui` to `...["ui"]`, and the two already in state would need a
+# `state mv` before anything could plan. Doing that inside the PR whose whole safety
+# argument is "the import must land as a no-op" would be the wrong trade.
+locals {
+  ys_dns_authorizations = {
+    ui      = google_certificate_manager_dns_authorization.ui
+    backend = google_certificate_manager_dns_authorization.backend
+    www     = google_certificate_manager_dns_authorization.www
+  }
+}
+
 output "dns_auth_records" {
   description = "CNAME records to add at TopDNS so the Cert Manager certs provision BEFORE cutover."
   value = {
-    "lexitrail.com"     = google_certificate_manager_dns_authorization.ui.dns_resource_record
-    "api.lexitrail.com" = google_certificate_manager_dns_authorization.backend.dns_resource_record
+    for _k, auth in local.ys_dns_authorizations :
+    auth.domain => auth.dns_resource_record
   }
 }
 
