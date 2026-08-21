@@ -148,6 +148,43 @@ resource "kubectl_manifest" "ui_www_redirect" {
   YAML
 }
 
+# ===== FrontendConfig — ADOPTED, not authored (my-hermes#1338) =====
+# `lexitrail-ys-frontend` has been live in the cluster since 2026-06-30 and was in
+# NO source: it is in the tf state, so `terraform apply` currently plans to DESTROY
+# a live object. This block is the source it never had, transcribed from the live
+# manifest so the (already-recorded) state entry becomes a no-op instead of a
+# deletion.
+#
+# ⚠️ It is almost certainly DEAD WEIGHT, and that is deliberately not resolved here.
+# A FrontendConfig is reachable ONLY from an Ingress annotation; there are no
+# Ingresses in this namespace (`kubectl get ingress -n lexitrail` -> empty at rc=0,
+# checked on exit status because an empty stdout and a failed call look identical),
+# and `kubectl get ingress,service -A -o json | grep -c lexitrail-ys-frontend` is 0
+# cluster-wide (adm@, independently). Its one job -- redirectToHttps -- is now done
+# by ui_redirect / backend_redirect / ui_www_redirect above. It survived the
+# `55ac599` Gateway-API cutover by accident, alongside the two Ingresses that WERE
+# deleted.
+#
+# Adopted rather than `state rm`'d on adm@'s argument (review of #152): `state rm`
+# yields an object live-and-declared-nowhere, which is precisely the condition
+# #1338 exists to repair -- it would hand the next census the same afternoon this
+# one just spent. Adoption is reversible and costs one stale block; the deletion is
+# then its own step, taken once someone has WATCHED the HTTPRoutes serve the
+# redirect rather than reasoned that they must. Zero referents is measured; serving
+# is not, and those are different claims. Retirement tracked separately.
+resource "kubectl_manifest" "frontend_config" {
+  yaml_body = <<-YAML
+    apiVersion: networking.gke.io/v1beta1
+    kind: FrontendConfig
+    metadata:
+      name: lexitrail-ys-frontend
+      namespace: ${var.namespace}
+    spec:
+      redirectToHttps:
+        enabled: true
+  YAML
+}
+
 # ===== Backend Gateway (api.lexitrail.com → reserved IP ...backend) =====
 resource "kubectl_manifest" "backend_gateway" {
   yaml_body = <<-YAML
