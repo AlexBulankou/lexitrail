@@ -8,7 +8,7 @@ design, per `docs/itp-playwright-usability.md` §2.4.
 
 ```bash
 python3 e2e/tap_targets.py --self-test      # validate the detector itself
-python3 e2e/tap_targets.py                  # measure prod, mobile + desktop
+python3 e2e/tap_targets.py                  # measure prod, ALL viewports (mobile, desktop, mobile_landscape)
 python3 e2e/tap_targets.py --url http://localhost:3000 --viewport mobile
 ```
 
