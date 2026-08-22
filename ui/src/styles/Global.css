@@ -68,6 +68,18 @@ body, html {
  * joined (see the issue-52 note above). The list is enumerated on purpose, so a
  * control absent from it is invisible to `tapTargets.test.js`, and the primary
  * CTA of the habit screen is the last control that should be. */
+/* issue-85: the onboarding overlay's dismiss button, measured on live prod at
+ * 314x43 (mobile), 360x43 (mobile landscape) and 360x43 (desktop) — one pixel
+ * under the floor in every viewport, stable across repeat runs. Found only
+ * once the E2E harness was driven PAST the landing page into
+ * /game/:id/PRACTICE; the matrix's `guest` route authenticates in place and
+ * never navigates, so all six of its cells were measuring the homepage and
+ * this control had never been in any population it sampled.
+ *
+ * 43 = 1.25rem text (~23px line box) + 10px padding top and bottom. It is the
+ * FIRST control a new learner must tap, which is the reason to fix a 1px miss
+ * rather than round it away. */
+.onboarding-button,
 .today-start {
   min-height: var(--min-tap-target);
 }

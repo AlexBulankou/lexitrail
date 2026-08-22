@@ -58,6 +58,11 @@ const FLOOR_SELECTORS = [
   '.nav-wordsets-link',
   // issue-107: the Today home's Start button, listed as it shipped rather than
   // after prod measured it short.
+  // issue-85: the onboarding overlay's dismiss button. Found on live prod at
+  // 43px in all three viewports, by the E2E harness driven past the landing
+  // page — the `guest` route never left the homepage, so this control was
+  // absent from every population the matrix had ever sampled.
+  '.onboarding-button',
   '.today-start',
 ];
 
