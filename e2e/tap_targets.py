@@ -71,7 +71,13 @@ import argparse
 import json
 import re
 import sys
-from dataclasses import dataclass, asdict
+from dataclasses import asdict
+
+# lexitrail#163: the pure-measurement half lives in its own module so this
+# file has room for the next route (#85). One-way import; see lt_measure.
+from lt_measure import (  # noqa: E402  (sys.path shim is the caller's)
+    EXIT_PASS, EXIT_FAIL, EXIT_BLIND, _OUTCOME, FLOOR_PX,
+    INTERACTIVE_SELECTOR, VIEWPORTS, Control, _measure)
 
 try:
     from playwright.sync_api import sync_playwright, Error as PlaywrightError
@@ -80,13 +86,6 @@ except ImportError:  # pragma: no cover - environment guard
           "(pip install playwright && playwright install chromium)", file=sys.stderr)
     raise SystemExit(2)
 
-EXIT_PASS, EXIT_FAIL, EXIT_BLIND = 0, 1, 2
-_OUTCOME = {EXIT_PASS: "PASS", EXIT_FAIL: "FAIL", EXIT_BLIND: "BLIND"}
-
-#: The shared floor. Mirrors `--min-tap-target` in ui/src/styles/Global.css and
-#: FLOOR_PX in tapTargets.test.js. Kept as a plain number here on purpose: this
-#: harness must be able to disagree with the CSS, which is the entire point.
-FLOOR_PX = 44.0
 
 #: Regex, NOT a glob — see the module docstring and doc 2.3. Substring-matches
 #: the full request URL, so it catches www./region1. subdomains that a glob
@@ -94,76 +93,6 @@ FLOOR_PX = 44.0
 ANALYTICS_RE = re.compile(
     r"googletagmanager\.com|google-analytics\.com|analytics\.google\.com")
 
-#: What counts as a control the user is expected to hit.
-INTERACTIVE_SELECTOR = (
-    "button, a[href], [role=button], input[type=submit], "
-    "input[type=button], input[type=checkbox], input[type=radio], select")
-
-VIEWPORTS = {
-    "mobile": {"viewport": {"width": 390, "height": 844}, "is_mobile": True,
-               "has_touch": True, "device_scale_factor": 3},
-    # 1440x900 is doc 2.5's HARD RULE for desktop, and 390x844 is its iPhone 13
-    # mobile. Matching them exactly so a finding here is comparable to a finding
-    # from a manual ITP pass rather than needing a viewport caveat attached.
-    "desktop": {"viewport": {"width": 1440, "height": 900}},
-    # issue-45 / R3-BUG-4: the ITP reported "landscape practice renders one
-    # card". Until now the matrix was PORTRAIT-ONLY (390x844 and 1440x900 are
-    # both taller than wide), so that half of the bug was not merely unfixed --
-    # it was structurally unmeasurable, and a green run said nothing about it.
-    # 844x390 is the SAME iPhone 13 device rotated, deliberately: a difference
-    # between this row and `mobile` is then attributable to orientation alone
-    # and not to a second device's dimensions.
-    "mobile_landscape": {"viewport": {"width": 844, "height": 390},
-                         "is_mobile": True, "has_touch": True,
-                         "device_scale_factor": 3},
-}
-
-
-@dataclass
-class Control:
-    """One measured control. `key` groups repeats (a wordset grid renders the
-    same button once per set), so the report names a defect once with a count
-    rather than seven times."""
-    key: str
-    tag: str
-    text: str
-    width: float
-    height: float
-
-    @property
-    def undersized(self) -> bool:
-        return self.width < FLOOR_PX or self.height < FLOOR_PX
-
-    @property
-    def short_side(self) -> float:
-        return min(self.width, self.height)
-
-
-def _measure(page) -> list[Control]:
-    """Measure every VISIBLE interactive control's rendered box.
-
-    Invisible elements are skipped rather than counted as passing: an element
-    with no box has no tap target, and scoring it as compliant would be the
-    reassuring-direction failure this harness exists to remove.
-    """
-    out: list[Control] = []
-    for el in page.query_selector_all(INTERACTIVE_SELECTOR):
-        try:
-            if not el.is_visible():
-                continue
-            box = el.bounding_box()
-            if not box:
-                continue
-            cls = (el.get_attribute("class") or "").strip()
-            tag = el.evaluate("n => n.tagName.toLowerCase()")
-            text = (el.inner_text() or "").strip().replace("\n", " ")[:40]
-            key = f"{tag}.{cls}" if cls else f"{tag}[{text[:20]}]"
-            out.append(Control(key, tag, text, box["width"], box["height"]))
-        except PlaywrightError:
-            # The node went away mid-measure (re-render). Not a verdict either
-            # way — skip it rather than record a value we did not observe.
-            continue
-    return out
 
 
 # --------------------------------------------------------------------------
@@ -185,6 +114,11 @@ def _measure(page) -> list[Control]:
 # What does change: `Sign in` / `Try` disappear and `Word Sets` appears. We
 # assert `Sign in` is GONE, which fails loudly if the click silently no-ops.
 # --------------------------------------------------------------------------
+# ⚠️ SCOPE (#85): the "never assert on the URL" rule above is about GUEST entry
+# specifically, where the URL genuinely does not move. `enter_practice` below
+# asserts on page.url and must -- it navigates to /game/, which the landing page
+# cannot reach. Reading this as a blanket rule is what left the guest route
+# measuring the homepage for six cells.
 GUEST_ENTRY_RE = re.compile(r"^\s*Try\s*$", re.I)
 SIGNED_OUT_MARKER = "Sign in"
 
