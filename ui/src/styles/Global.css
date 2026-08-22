@@ -35,7 +35,7 @@ body, html {
  * declaration only and says so.
  */
 :root {
-  --min-tap-target: 44px;
+  --min-tap-target: 1px; /* CI POSITIVE CONTROL — issue-122 AC2. NEVER MERGE. */
 }
 
 .speak-button,
