@@ -235,8 +235,8 @@ def enter_practice(page) -> None:
     The assertion is on NAVIGATION, not session state: a state-moved check is
     satisfied by authenticating without going anywhere, which makes BLIND
     unreachable by construction, and a verdict that cannot be reached is not a
-    verdict. Clicks the in-app links rather than page.goto()-ing -- the session
-    is client-side and a hard navigation is NOT established to preserve it.
+    verdict. Clicks the in-app links, not page.goto(): a hard nav DOES preserve
+    the session (measured), but skips the nav -- #120 found a defect in it.
     """
     enter_guest(page)
     try:
