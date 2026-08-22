@@ -20,6 +20,15 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+# lexitrail#163 review (hc2): `_measure` catches PlaywrightError, and an import
+# does NOT carry across a module boundary -- each module has its own globals. The
+# extraction left this name undefined here, so the detach/re-render race stopped
+# degrading gracefully and started raising NameError, masking the original error.
+# Not a purity violation: this is the Playwright API, the same category as the
+# module already requiring `page` to be a Playwright page. Site knowledge is what
+# stays out, not the driver.
+from playwright.sync_api import Error as PlaywrightError
+
 EXIT_PASS, EXIT_FAIL, EXIT_BLIND = 0, 1, 2
 _OUTCOME = {EXIT_PASS: "PASS", EXIT_FAIL: "FAIL", EXIT_BLIND: "BLIND"}
 
@@ -98,3 +107,46 @@ def _measure(page) -> list[Control]:
             # way — skip it rather than record a value we did not observe.
             continue
     return out
+
+
+def selftest_detach() -> list[str]:
+    """The detach/re-render race, exercised deterministically. Returns failures.
+
+    lexitrail#163 review: the split under-tested exactly one path -- the
+    `except PlaywrightError` in `_measure` -- and neither mutation control nor
+    `--self-test` nor a prod run reaches it, because by design it only fires
+    when a node vanishes mid-measure.
+
+    hc2 suggested a `data:` fixture that removes a node on a short timer. This
+    uses a fake page instead, deliberately: a timing fixture has to win a race
+    to fail, so it would flake, and a control that flakes gets muted -- which
+    would leave this branch untested again, by a slower route. A fake page
+    tests the same branch with no clock in it.
+
+    ⚠️ What it does NOT cover: that a REAL detached node raises PlaywrightError
+    rather than something else. That is Playwright's contract, not ours.
+    """
+    failures: list[str] = []
+
+    class _DetachedEl:
+        def is_visible(self):
+            raise PlaywrightError("Node is detached from document")
+
+    class _DetachingPage:
+        def query_selector_all(self, selector):
+            return [_DetachedEl()]
+
+    try:
+        out = _measure(_DetachingPage())
+    except NameError as e:
+        failures.append(f"_measure raised NameError on the detach path ({e}) — "
+                        "the graceful skip is not reachable")
+        return failures
+    except Exception as e:  # noqa: BLE001 - any escape is the failure
+        failures.append(f"_measure let {type(e).__name__} escape the detach path: {e}")
+        return failures
+    if out:
+        failures.append(f"_measure counted {len(out)} detached control(s); a node "
+                        "that vanished mid-measure must be skipped, not recorded")
+    return failures
+

@@ -77,7 +77,7 @@ from dataclasses import asdict
 # file has room for the next route (#85). One-way import; see lt_measure.
 from lt_measure import (  # noqa: E402  (sys.path shim is the caller's)
     EXIT_PASS, EXIT_FAIL, EXIT_BLIND, _OUTCOME, FLOOR_PX,
-    INTERACTIVE_SELECTOR, VIEWPORTS, Control, _measure)
+    INTERACTIVE_SELECTOR, VIEWPORTS, Control, _measure, selftest_detach)
 
 try:
     from playwright.sync_api import sync_playwright, Error as PlaywrightError
@@ -352,6 +352,11 @@ def self_test(browser) -> int:
         pass
     ctx.close()
 
+    # --- detach/re-render race (#163 review) -------------------------------
+    # Deterministic, no browser: see lt_measure.selftest_detach for why a fake
+    # page rather than a timing fixture.
+    failures.extend(selftest_detach())
+
     if failures:
         print("SELF-TEST FAILED — the instrument cannot be trusted:")
         for f in failures:
@@ -360,7 +365,8 @@ def self_test(browser) -> int:
     print("SELF-TEST PASS — detector fires on short AND narrow, stays silent on "
           "compliant, skips invisible; guest entry raises on a no-op click and "
           "stays quiet when the state moves; practice entry refuses a route "
-          "that authenticated without navigating.")
+          "that authenticated without navigating; a detached node is skipped, "
+          "not counted and not raised.")
     return EXIT_PASS
 
 
