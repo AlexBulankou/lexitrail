@@ -221,8 +221,41 @@ def enter_guest(page) -> None:
             "the click did not change state")
 
 
+PRACTICE_URL_MARKER = "/game/"
+
+
+def enter_practice(page) -> None:
+    """Guest, then navigate to the practice card view. Raises -> BLIND.
+
+    issue-85: `enter_guest` alone authenticates IN PLACE and never leaves the
+    landing page, so `guest` measured the homepage and reported it as a second
+    route. The tell was `landing` and `guest` returning an IDENTICAL control
+    count in all six cells; nothing failed.
+
+    The assertion is on NAVIGATION, not session state: a state-moved check is
+    satisfied by authenticating without going anywhere, which makes BLIND
+    unreachable by construction, and a verdict that cannot be reached is not a
+    verdict. Clicks the in-app links, not page.goto(): a hard nav DOES preserve
+    the session (measured), but skips the nav -- #120 found a defect in it.
+    """
+    enter_guest(page)
+    try:
+        page.get_by_role("link", name="Word Sets").first.click(timeout=10_000)
+        page.wait_for_timeout(4_000)
+        page.get_by_text("Practice", exact=True).first.click(timeout=10_000)
+        page.wait_for_timeout(8_000)
+    except PlaywrightError as e:
+        raise RuntimeError(f"could not reach the practice view: {e}") from e
+    if PRACTICE_URL_MARKER not in page.url:
+        raise RuntimeError(
+            f"clicked through to practice but the URL is {page.url!r}, carrying "
+            f"no {PRACTICE_URL_MARKER!r} -- still on the page we started from, "
+            "which is the #85 failure itself")
+
+
 #: name -> entry callable (None = measure the page as landed)
-ROUTES: dict[str, object] = {"landing": None, "guest": enter_guest}
+ROUTES: dict[str, object] = {"landing": None, "guest": enter_guest,
+                             "practice": enter_practice}
 
 
 def run_viewport(browser, url: str, name: str, route: str = "landing"
@@ -317,6 +350,17 @@ _GUEST_FIXTURE_STUCK = """data:text/html,
 </body></html>"""
 
 
+# issue-85: HAS the links enter_practice clicks, so the click succeeds and only
+# the URL assertion can refuse it. Without them it raises on the click instead,
+# and the arm passes with the URL check deleted -- what v1 of this test did.
+_PRACTICE_FIXTURE_NO_NAV = """data:text/html,
+<html><body style="margin:0">
+  <button onclick="document.getElementById('so').remove()">Try</button>
+  <span id="so"><button>Sign in</button></span>
+  <a href="javascript:void(0)">Word Sets</a><button>Practice</button>
+</body></html>"""
+
+
 def self_test(browser) -> int:
     ctx = browser.new_context(**VIEWPORTS["desktop"])
     page = ctx.new_page()
@@ -362,6 +406,16 @@ def self_test(browser) -> int:
                         "an unreachable route would report as measured")
     except RuntimeError:
         pass
+    # --- practice-route URL assertion (#85) --------------------------------
+    # Moves state without navigating -- the exact shape that made the old guest
+    # route report the homepage as measured. enter_practice must refuse it.
+    page.goto(_PRACTICE_FIXTURE_NO_NAV)
+    try:
+        enter_practice(page)
+        failures.append("practice entry did NOT raise on a page that moves "
+                        "state without navigating — the #85 failure exactly")
+    except RuntimeError:
+        pass
     ctx.close()
 
     if failures:
@@ -371,7 +425,8 @@ def self_test(browser) -> int:
         return EXIT_FAIL
     print("SELF-TEST PASS — detector fires on short AND narrow, stays silent on "
           "compliant, skips invisible; guest entry raises on a no-op click and "
-          "stays quiet when the state moves.")
+          "stays quiet when the state moves; practice entry refuses a route "
+          "that authenticated without navigating.")
     return EXIT_PASS
 
 
