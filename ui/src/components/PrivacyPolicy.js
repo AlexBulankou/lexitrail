@@ -57,7 +57,7 @@ const PrivacyPolicy = () => {
 
           <section>
             <h2>Contact</h2>
-            <p>If you have any questions about this Privacy Policy, please contact us at: support@yojowa.com</p>
+            <p>If you have any questions about this Privacy Policy, please contact us at: support@lexitrail.com</p>
           </section>
         </div>
       </div>
