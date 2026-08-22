@@ -155,7 +155,35 @@ def enter_guest(page) -> None:
             "the click did not change state")
 
 
+WORDSETS_URL_MARKER = "/wordsets"
 PRACTICE_URL_MARKER = "/game/"
+
+
+def enter_wordsets(page) -> None:
+    """Guest, then the wordset list. Raises -> BLIND.
+
+    issue-85 names this surface explicitly and nothing had ever measured it:
+    `enter_practice` passes THROUGH it without stopping, so a green practice
+    cell says nothing about the list itself.
+
+    ⚠️ Deliberately does NOT share a step with `enter_practice`, and the four
+    duplicated lines are the price of a real control. If `enter_practice`
+    called this, its own URL assertion would no longer be independently
+    testable -- neutering the /game/ assert would still raise HERE, so the
+    self-test arm for it would go green with the assertion gone. A DRY-er
+    version of these two functions is a weaker instrument, which is the same
+    trade this file already makes for `landing` vs `guest`.
+    """
+    enter_guest(page)
+    try:
+        page.get_by_role("link", name="Word Sets").first.click(timeout=10_000)
+        page.wait_for_timeout(4_000)
+    except PlaywrightError as e:
+        raise RuntimeError(f"could not reach the wordset list: {e}") from e
+    if WORDSETS_URL_MARKER not in page.url:
+        raise RuntimeError(
+            f"clicked the Word Sets link but the URL is {page.url!r}, carrying "
+            f"no {WORDSETS_URL_MARKER!r} -- still on the page we started from")
 
 
 def enter_practice(page) -> None:
@@ -189,6 +217,7 @@ def enter_practice(page) -> None:
 
 #: name -> entry callable (None = measure the page as landed)
 ROUTES: dict[str, object] = {"landing": None, "guest": enter_guest,
+                             "wordsets": enter_wordsets,
                              "practice": enter_practice}
 
 
@@ -345,6 +374,13 @@ def self_test(browser) -> int:
     # route report the homepage as measured. enter_practice must refuse it.
     page.goto(_PRACTICE_FIXTURE_NO_NAV)
     try:
+        enter_wordsets(page)
+        failures.append("wordsets entry did NOT raise on a page that moves "
+                        "state without navigating — the #85 failure exactly")
+    except RuntimeError:
+        pass
+    page.goto(_PRACTICE_FIXTURE_NO_NAV)
+    try:
         enter_practice(page)
         failures.append("practice entry did NOT raise on a page that moves "
                         "state without navigating — the #85 failure exactly")
@@ -365,7 +401,8 @@ def self_test(browser) -> int:
     print("SELF-TEST PASS — detector fires on short AND narrow, stays silent on "
           "compliant, skips invisible; guest entry raises on a no-op click and "
           "stays quiet when the state moves; practice entry refuses a route "
-          "that authenticated without navigating; a detached node is skipped, "
+          "that authenticated without navigating, and so does wordsets entry; a "
+          "detached node is skipped, "
           "not counted and not raised.")
     return EXIT_PASS
 
