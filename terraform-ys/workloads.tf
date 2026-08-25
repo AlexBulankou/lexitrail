@@ -123,6 +123,38 @@ resource "kubernetes_deployment_v1" "backend" {
             failure_threshold     = 3
           }
 
+          # issue-164: WITHOUT this, liveness starts counting at t+30s and kills
+          # the container at ~t+60-80s -- before the app has always finished
+          # importing. Measured on this exact deployment/image, two cold starts:
+          #
+          #   kb8nr 2026-08-20  first serving at +67s  -> SIGKILL 137 at +81s
+          #   lfmws 2026-08-22  first serving at +37s  -> survived, ~1 failure spare
+          #
+          # Same image digest; the variable is Python import time, which moves
+          # with node and image-cache state. So every cold start was a coin-toss.
+          #
+          # A startup_probe is the correct instrument rather than a bigger
+          # liveness initial_delay: while it is active Kubernetes SUSPENDS both
+          # liveness and readiness, and once it succeeds liveness takes over at
+          # its normal cadence. Raising initial_delay instead would buy the same
+          # startup headroom by permanently delaying detection of a genuine
+          # mid-life hang, which is the thing liveness exists for.
+          #
+          # 10 + (30 x 10) = up to 310s to bind, ~4.6x the worst start observed.
+          # Generous on purpose: the failure this replaces is a kill loop on a
+          # healthy app, and the cost of the slack is only a slower first
+          # detection of a container that never binds at all.
+          startup_probe {
+            http_get {
+              path = "/health"
+              port = 80
+            }
+            initial_delay_seconds = 10
+            period_seconds        = 10
+            timeout_seconds       = 10
+            failure_threshold     = 30
+          }
+
           liveness_probe {
             http_get {
               path = "/health"
