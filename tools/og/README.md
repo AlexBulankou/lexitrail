@@ -17,7 +17,9 @@ and the marketing publisher can reference stable URLs without a build step.
 
 Every impression on every channel used **one byte-identical 1200×630 file**,
 `ui/public/images/og/hsk2-practice.png`, which was a raw screenshot of a live
-practice session. Two separate problems were bundled in that:
+practice session. (That file no longer exists in the tree — it and 17 sibling
+demo captures were deleted in issue-172; this paragraph is history, not a path
+you can open.) Two separate problems were bundled in that:
 
 **Aspect.** 1.905:1 is *correct* for a link-preview card and wrong for all three
 feed platforms we post to, in the expensive direction — landscape letterboxes
