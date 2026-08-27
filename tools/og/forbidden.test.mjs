@@ -23,6 +23,8 @@ const HERE = dirname(fileURLToPath(import.meta.url));
 
 // Each string below was READ OFF the replaced creative
 // (ui/public/images/og/hsk2-practice.png), not invented as a plausible example.
+// That PNG was deleted in issue-172 (unreferenced demo capture); the strings
+// stay because they are what shipped, and this file reads text, never the PNG.
 const REAL_ARTIFACTS = [
   ["demo account email", "4usvy@lexitrail.demo"],
   ["demo display name", "Demo User"],
