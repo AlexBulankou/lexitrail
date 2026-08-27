@@ -4,7 +4,7 @@
 <url>
     <loc>https://lexitrail.com/</loc>
     <image:image>
-      <image:loc>https://lexitrail.com/images/og/hsk2-practice.png</image:loc>
+      <image:loc>https://lexitrail.com/images/og/generated/og-landscape.png</image:loc>
       <image:caption>Lexitrail - Smart Chinese Vocabulary Learning</image:caption>
       <image:title>Lexitrail Chinese Learning Platform</image:title>
       <image:license>https://lexitrail.com/terms</image:license>
@@ -53,7 +53,7 @@
   <url>
     <loc>https://lexitrail.com/game/2/PRACTICE</loc>
     <image:image>
-      <image:loc>https://lexitrail.com/images/screenshots/hsk2-practice.png</image:loc>
+      <image:loc>https://lexitrail.com/images/og/generated/og-landscape.png</image:loc>
       <image:caption>HSK2 Practice Mode</image:caption>
     </image:image>
     <lastmod>2026-08-20</lastmod>
