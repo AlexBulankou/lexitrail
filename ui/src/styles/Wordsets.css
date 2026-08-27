@@ -6,6 +6,13 @@
   align-items: start;
   width: 100%;  /* Make sure container takes full width */
   padding: 0 20px;  /* Add some padding on the sides */
+  /* issue-177: without this, `width: 100%` + horizontal padding makes the
+     BORDER box wider than the parent by the padding (the default
+     `content-box` doing exactly what it documents), so /wordsets clipped
+     20px on a 390px viewport. Home.css also sets `max-width: 800px` on this
+     class, which capped it on desktop -- which is why it only showed below
+     ~840px and went unnoticed. */
+  box-sizing: border-box;
 }
 
 .wordsets-grid {
