@@ -57,9 +57,22 @@
 #
 # Same refusal, opposite cost, so the two do not belong in one pool.
 #
-# ⏭️ WHAT WOULD REOPEN IT: this repo going private (Actions minutes stop being
-# free), or lexitrail's `daily_build_count` rising far enough that test and
-# deploy builds stop competing. Either one, and re-file it.
+# ⏭️ WHAT WOULD REOPEN IT — any ONE of these, and re-file rather than remember:
+#
+#   1. this repo goes PRIVATE — Actions minutes stop being free and the cost
+#      half of the argument inverts;
+#   2. lexitrail's `daily_build_count` rises far enough that test and deploy
+#      builds stop competing for the same ceiling;
+#   3. 🔴 the DEPLOY pipeline grows an ordering-dependent side effect — a schema
+#      migration, a one-shot backfill, anything where build N does something
+#      build N+1 does not redo.
+#
+# (3) is the subtle one and it is hc2@'s, from reviewing #226: "a refused deploy
+# loses nothing" is true HERE only because `cloudbuild-ui.yaml` is build-and-push
+# and nothing else, so the next successful build genuinely subsumes every refused
+# one. That is a property of this pipeline, not a law about deploys. The day a
+# deploy step stops being idempotent-by-subsumption, refusing one costs what
+# refusing a test costs today, and the asymmetry this decision rests on is gone.
 #
 # ─────────────────────────────────────────────────────────────────────────────
 # THE COMMAND IS `npm test`, NOT `npx jest` — this is load-bearing
