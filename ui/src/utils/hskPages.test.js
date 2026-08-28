@@ -93,6 +93,45 @@ describe('the rendered page meets #183 acceptance', () => {
   });
 });
 
+describe('per-page og/twitter metadata (#76)', () => {
+  const g = groupByLevel(SAMPLE);
+  const html = renderPage(2, g[2]);
+
+  test('🔴 the card text is PER PAGE, not the homepage default', () => {
+    // #76's finding holds for SPA routes -- react-helmet is client-side and social crawlers do
+    // not run JS. These pages are static HTML, so their <head> IS what a crawler gets, which
+    // makes them the one place on this site where per-route og is achievable at all.
+    expect(html).toMatch(/<meta property="og:title" content="HSK 2 Vocabulary List/);
+    expect(html).toMatch(/<meta property="og:url" content="https:\/\/lexitrail\.com\/hsk2\.html">/);
+    expect(html).toMatch(/<meta property="twitter:title" content="HSK 2 /);
+  });
+
+  test('CONTROL: it VARIES by level — otherwise this is the generic card again', () => {
+    // Without this, hardcoding the HSK1 strings would pass every assertion above for page 1 and
+    // ship five identical cards, which is precisely what #76 is about.
+    expect(renderPage(5, g[2])).toMatch(/og:title" content="HSK 5 /);
+    expect(renderPage(5, g[2])).toMatch(/og:url" content="[^"]*hsk5\.html"/);
+  });
+
+  test('og:image points at an asset that EXISTS in the repo', () => {
+    // A card with a 404 image renders worse than one with none. There is no per-level artwork
+    // (checked), so all six share the one canonical landscape asset deliberately.
+    const fs = require('fs');
+    const path = require('path');
+    const m = html.match(/og:image" content="https:\/\/lexitrail\.com(\/[^"]+)"/);
+    expect(m).not.toBeNull();
+    expect(fs.existsSync(path.join(
+      __dirname, '..', '..', 'public', m[1]))).toBe(true);
+  });
+
+  test('the og values are ESCAPED, like every other attribute here', () => {
+    const evil = renderPage(1, [{ id: 1, word: '"', pinyin: '<', english: '&' }]);
+    const og = evil.match(/<meta property="og:description" content="([^"]*)"/);
+    expect(og).not.toBeNull();
+    expect(og[1]).not.toContain('"');
+  });
+});
+
 describe('urls are .html — verified against a real `serve`, not assumed', () => {
   test('pageUrl and pageFilename both carry the extension', () => {
     // `/hsk2` serves the SPA shell: serve-handler serves an EXACT filesystem match before
