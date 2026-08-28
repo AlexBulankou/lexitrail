@@ -150,6 +150,33 @@ def test_layer_cache_is_wired_and_tolerates_a_cold_start(path, build_id):
     assert "--cache-from" in _step(cfg, build_id)["args"]
 
 
+@gated
+def test_logging_destination_is_set_because_these_run_under_a_service_account(path, build_id):
+    """issue-228. Cloud Build REJECTS a service-account build with no logging
+    destination -- and it rejects it at VALIDATION, before step 0.
+
+    🔴 That is why this is pinned rather than left to review. The rejection means
+    `quota-gate` never runs, so the build is invisible to the budget: the first one
+    (2026-08-28T16:00:31Z) left `used` at 1. Every other test in this module guards
+    a gate that runs and enforces nothing; this one guards a gate that never runs at
+    all, and the two are indistinguishable downstream -- both leave the counter
+    untouched.
+
+    Pinned for EVERY config, not just the one that failed. `cloudbuild-ui.yaml` had
+    the identical omission and no trigger yet, so nothing would have failed until
+    issue-216 created one and its first build was rejected the same way -- the same
+    bug, rediscovered at the same cost, one issue later.
+    """
+    cfg = _cfg(path)
+    opts = cfg.get("options") or {}
+    assert opts.get("logging") in ("CLOUD_LOGGING_ONLY", "NONE") or opts.get(
+        "defaultLogsBucketBehavior") == "REGIONAL_USER_OWNED_BUCKET" or cfg.get(
+        "logsBucket"), (
+        f"{path.name} sets no logging destination. A trigger running it under a "
+        "service account is rejected before step 0 -- see issue-228."
+    )
+
+
 def test_configs_list_covers_every_gated_build_config_in_the_repo():
     """🔴 The guard on the list itself.
 
