@@ -64,6 +64,12 @@ const FLOOR_SELECTORS = [
   // absent from every population the matrix had ever sampled.
   '.onboarding-button',
   '.today-start',
+  // issue-196: "Sign in with Google" — 300x36 desktop, 270x36 mobile on live prod. THIRD time
+  // this enumeration has been the gap (after #52's three and #120's nav link), and this one is
+  // the secondary CTA at the acquisition moment. `.google-signin-compact` was already listed;
+  // `.google-signin-button` is a DIFFERENT control and a listed near-namesake is exactly what
+  // makes an absence hard to see.
+  '.google-signin-button',
 ];
 
 describe('shared touch-target floor', () => {
@@ -193,5 +199,33 @@ describe('retired controls stay retired (issue-109)', () => {
     };
     walk(root);
     expect(offenders).toEqual([]);
+  });
+});
+
+// ── lexitrail#196: the landing example must read as separate tokens ──────────────────────────
+//
+// The "Character Breakdown" card rendered `记忆jì yìmemoryThink of 记 (jì)...` — three spans with
+// NO styles at all, collapsing into each other and into the prose after them. A declaration-level
+// pin, with the same limits as everything else in this file: it can say the CSS declares
+// separation, not that the rendered box is separated.
+describe('lexitrail#196 — the Character Breakdown example is not a run-on string', () => {
+  const home = read('Home.css');
+
+  test('the example-word spans are styled at all — they were not', () => {
+    expect(home).toMatch(/\.example-word\s*\{/);
+    expect(home).toMatch(/\.example-word\s+\.chinese-char\s*\{/);
+  });
+
+  test('something separates pinyin from the meaning that follows it', () => {
+    // Either generated content or a margin: the assertion is on the SEPARATION, not on the
+    // interpunct, so a later redesign that spaces them differently does not red for style.
+    const rule = home.slice(home.indexOf('.example-word .pinyin'));
+    expect(rule.slice(0, 400)).toMatch(/content:|margin|padding|display:\s*block/);
+  });
+
+  test('CONTROL: Home.css was read and is the real file', () => {
+    // Without this, every assertion above is satisfied by an empty string.
+    expect(home).toMatch(/\.chinese-word\s*\{/);
+    expect(home.length).toBeGreaterThan(1000);
   });
 });

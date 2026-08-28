@@ -80,7 +80,22 @@ body, html {
  * FIRST control a new learner must tap, which is the reason to fix a 1px miss
  * rather than round it away. */
 .onboarding-button,
-.today-start {
+.today-start,
+/* issue-196: "Sign in with Google" — 300x36 desktop, 270x36 mobile on live prod. 8px padding
+ * plus a 14px font lands at 36. It is the SECONDARY CTA at the acquisition moment, shown to
+ * every guest who clicks Practice.
+ *
+ * 🔴 THIS BELONGS HERE, NOT IN PrivateRoute.css, and I put it there first. The suite reds twice
+ * on that: each listed control must REFERENCE `--min-tap-target`, and component CSS may not
+ * re-declare the number — component files load AFTER Global.css at equal specificity, so a
+ * local literal wins the tie and silently holds the old value when the floor is raised (hc2@'s
+ * finding on #73). My own comment claimed the number was "stated once" while adding a second
+ * copy of it.
+ *
+ * ⚠️ `.google-signin-compact` was ALREADY listed and is a DIFFERENT control. A listed
+ * near-namesake is exactly what makes an absence hard to see — third time this enumeration has
+ * been the gap, after #52's three and #120's nav link. */
+.google-signin-button {
   min-height: var(--min-tap-target);
 }
 
