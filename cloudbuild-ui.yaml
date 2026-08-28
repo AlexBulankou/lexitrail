@@ -124,3 +124,33 @@ images:
 # production build on node:16-alpine, and the uncached first build (nothing to
 # pull) is the slow case.
 timeout: '1800s'
+
+# ─── logging destination ────────────────────────────────────────────────────
+# REQUIRED, not stylistic: this build runs under a non-default service account
+# (`lexitrail-sa@lexitrail`, which the trigger must specify — a trigger cannot be
+# created without one), and Cloud Build REJECTS a service-account build that does
+# not name a logging destination:
+#
+#   invalid argument: if 'build.service_account' is specified, the build must
+#   either (a) specify 'build.logs_bucket', (b) use the REGIONAL_USER_OWNED_BUCKET
+#   build.options.default_logs_bucket_behavior option, or (c) use either
+#   CLOUD_LOGGING_ONLY / NONE logging options
+#
+# 🔴 That rejection happens at VALIDATION, before step 0. So it does not merely
+# fail the build — it means `quota-gate` never runs, and a rejected build is
+# therefore invisible to the budget: the first one (2026-08-28T16:00:31Z, issue-228)
+# left `used` at 1. Do not read "the counter didn't move" as "no build was
+# attempted"; on this path those are the same observation.
+#
+# CLOUD_LOGGING_ONLY over REGIONAL_USER_OWNED_BUCKET because it needs no bucket to
+# create, pay for, or lifecycle, and `lexitrail-sa` holds `logging.logWriter`.
+# NONE is not an option worth the saving here: the whole reason this trigger exists
+# is that merged backend work was shipping unobserved, and a build whose output
+# nobody can read reproduces that at the CI layer.
+# NOTE: no trigger uses this file YET — issue-216 creates `lexitrail-ui-deploy-main`,
+# which will specify a service account for the same reason the backend trigger did.
+# The option is here now so that trigger's first build is not rejected the way the
+# backend's first build was (issue-228). Fixing only the file that already failed
+# would leave an identical rejection waiting behind the next trigger creation.
+options:
+  logging: CLOUD_LOGGING_ONLY
