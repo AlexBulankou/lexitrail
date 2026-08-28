@@ -3,14 +3,16 @@ import { googleLogout, useGoogleLogin } from '@react-oauth/google';
 import { createUser, getUserByEmail, migrateUser } from '../services/userService';
 import { generateUniqueString } from '../utils/stringUtils';
 import defaultAvatar from '../styles/assets/default-avatar.svg';
+import { loadSession, saveMemberSession, saveGuestSession, clearSession } from '../utils/authStorage';
 
 const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(() => {
-    const storedUser = sessionStorage.getItem('user');
-    return storedUser ? JSON.parse(storedUser) : null;
-  });
+  // lexitrail#185: a member session now survives a browser close, but ONLY
+  // while its Google token is still valid. `loadSession` returns null for an
+  // expired one and clears it -- restoring an expired session would render the
+  // signed-in UI over a token that 401s on every request.
+  const [user, setUser] = useState(() => loadSession()?.user ?? null);
 
   const initUser = {
     onSuccess: async (tokenResponse) => {
@@ -19,13 +21,11 @@ export const AuthProvider = ({ children }) => {
         // practice data can be migrated onto the real account after sign-in.
         let demoEmailToMigrate = null;
         try {
-          const priorUser = JSON.parse(sessionStorage.getItem('user') || 'null');
+          const priorUser = loadSession()?.user ?? null;
           if (priorUser?.email?.endsWith('@lexitrail.demo')) {
             demoEmailToMigrate = priorUser.email;
           }
         } catch (_) { /* ignore malformed prior session */ }
-
-        sessionStorage.setItem('access_token', tokenResponse.access_token);
 
         const response = await fetch(`https://www.googleapis.com/oauth2/v3/userinfo?access_token=${tokenResponse.access_token}`, {
           method: 'GET',
@@ -41,7 +41,11 @@ export const AuthProvider = ({ children }) => {
   
         const data = await response.json();
         setUser(data);
-        sessionStorage.setItem('user', JSON.stringify(data));
+        // Written AFTER the userinfo call succeeds, so a failed exchange leaves
+        // no half-session behind. `expires_in` is Google's, in seconds; when it
+        // is absent authStorage stores no expiry and refuses the session on the
+        // next load -- toward a sign-in prompt, not toward a dead token.
+        saveMemberSession(data, tokenResponse.access_token, Number(tokenResponse.expires_in));
   
         try {
           const existingUser = await getUserByEmail(data.email);
@@ -78,8 +82,10 @@ export const AuthProvider = ({ children }) => {
     };
     
     setUser(demoUser);
-    sessionStorage.setItem('user', JSON.stringify(demoUser));
-    sessionStorage.setItem('access_token', demoToken);
+    // Guests stay tab-scoped (#185 AC3). Persisting a throwaway
+    // <random>@lexitrail.demo identity would accumulate orphan rows and would
+    // hand one visitor's practice data to the next on a shared machine.
+    saveGuestSession(demoUser, demoToken);
 
     try {
       await createUser(demoEmail);
@@ -91,8 +97,7 @@ export const AuthProvider = ({ children }) => {
   const logOut = useCallback(() => {
     googleLogout();
     setUser(null);
-    sessionStorage.removeItem('user');
-    sessionStorage.removeItem('access_token');
+    clearSession();
   }, []);
 
   return (
