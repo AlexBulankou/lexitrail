@@ -302,6 +302,25 @@
   border-radius: 8px;
 }
 
+/* lexitrail#193 — the AI etymology text the /hint response already returned and the UI
+   discarded. Its own container rather than a child of .hint-image-container: that one is pinned
+   to a hard 85px with the image at height:100%, so a caption inside it is clipped. */
+.hint-text-container {
+  width: 95%;
+  margin: 0 auto 6px auto;
+}
+
+.hint-text {
+  margin: 0;
+  font-size: 0.82rem;
+  line-height: 1.35;
+  color: #444;
+  text-align: left;
+  /* The mnemonics run to a couple of sentences. Wrapping is correct here -- this is prose, not
+     a pinyin token (contrast lexitrail#190, where nowrap is the whole point). */
+  overflow-wrap: break-word;
+}
+
 .regenerate-hint-button {
   position: absolute;
   top: 5px;
