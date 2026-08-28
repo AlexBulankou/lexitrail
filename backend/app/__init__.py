@@ -6,6 +6,7 @@ from flask_cors import CORS
 import sys
 import logging
 from .utils import ColorTruncatingFormatter
+from .errors import register_error_handlers
 
 def create_app(config_class=Config):
     # Configure logging for the entire application
@@ -38,6 +39,11 @@ def create_app(config_class=Config):
     
     # Register routes (this already registers the wordsets blueprint)
     register_routes(app)
+
+    # lexitrail#180: a 500 from an uncaught exception emitted NOTHING -- error_response() is a
+    # helper routes must call, and the access log only ever sees `GET /`. So every 500
+    # investigation here started from an undercount with nothing saying so.
+    register_error_handlers(app)
     
     # Enable CORS for all origins
     CORS(app, resources={r"/*": {"origins": "*"}})
