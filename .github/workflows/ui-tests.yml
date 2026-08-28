@@ -24,8 +24,34 @@
 #     against a small install, so the cost argument does not bind here.
 #
 # ⇒ Actions now, because the alternative is an unguarded floor for as long as
-#   #77 stays open, and #77 has no ETA. **When #77 resolves, migrate this to
-#   Cloud Build** — that is a real follow-up, not a courtesy sentence.
+#   #77 stays open, and #77 has no ETA.
+#
+# 🔴 THE FOLLOW-UP THIS PARAGRAPH USED TO CARRY IS WITHDRAWN (lexitrail#219,
+# decided 2026-08-28 by hcl@ as lead). It read: "**When #77 resolves, migrate
+# this to Cloud Build** — that is a real follow-up, not a courtesy sentence."
+# #77 resolved that day, and executing the follow-up would have INVERTED the
+# policy it was serving. Measured before deciding:
+#
+#   * The policy's stated rationale is COST. This repo is PUBLIC, so Actions
+#     minutes are free; Cloud Build minutes are not.
+#   * lexitrail is `daily_build_count: 5`, `count_pinned: true`, ENFORCING —
+#     a hard ceiling, not a dollar budget.
+#   * Merges touching `ui/` ran 3 / 5 / 12 on the last three active days, and
+#     a per-PR trigger fires on every PUSH, so 12 is a floor not an estimate.
+#
+#   ⇒ The jest run would arrive FIRST and exhaust the pool, and the build that
+#     gets refused is the DEPLOY. That is the failure #77 exists to end, caused
+#     by the migration meant to tidy it up.
+#
+# 🔑 The asymmetry that decides it, and the reason this is not "we skipped the
+# policy because it was inconvenient": a refused DEPLOY build loses nothing —
+# the next successful build ships every commit merged since, because the diffs
+# are cumulative. A refused TEST build loses the coverage of one specific diff
+# forever. Same refusal, opposite cost, so the two do not belong in one pool.
+#
+# ⏭️ WHAT WOULD REOPEN IT: this repo going private (Actions minutes stop being
+# free), or lexitrail's `daily_build_count` rising far enough that test and
+# deploy builds stop competing. Either one, and re-file it.
 #
 # ─────────────────────────────────────────────────────────────────────────────
 # THE COMMAND IS `npm test`, NOT `npx jest` — this is load-bearing
