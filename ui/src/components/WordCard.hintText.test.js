@@ -13,6 +13,25 @@ import fs from 'fs';
 import path from 'path';
 import { stripComments } from '../utils/stripComments';
 
+/** Index just past the `</div>` that CLOSES the <div> whose attributes contain `fromIdx`.
+ *
+ * Balanced-tag scan rather than a string anchor. Every anchor-based version of this check was
+ * wrong in the same direction — a landmark that sits NEAR the boundary is not the boundary, and
+ * the failure is silent because the assertion still compares two real numbers.
+ */
+const closeOfDivAt = (src, fromIdx) => {
+  const openTag = src.lastIndexOf('<div', fromIdx);
+  let depth = 0;
+  const re = /<div\b|<\/div>/g;
+  re.lastIndex = openTag;
+  let m;
+  while ((m = re.exec(src)) !== null) {
+    depth += m[0] === '</div>' ? -1 : 1;
+    if (depth === 0) return m.index + m[0].length;
+  }
+  return -1;                                  // unbalanced — the caller's > check then fails
+};
+
 const SRC = path.resolve(__dirname, 'WordCard.js');
 const code = () => stripComments(fs.readFileSync(SRC, 'utf8'));
 const css = () => fs.readFileSync(
@@ -68,18 +87,22 @@ describe('the caption is independent of the image', () => {
     // placed inside it is squeezed against a fixed height. Asserted by position: the caption
     // block must appear AFTER the container closes.
     //
-    // 🔴 MY FIRST VERSION OF THIS WAS VACUOUS and a mutation caught it. It compared the caption's
-    // position against the WRAPPER's closing </div> -- which sits well inside the container -- so
-    // a caption genuinely nested in the container still satisfied it. Anchor on the CONTAINER's
-    // end, which is the `) : (<></>)}` that closes its conditional.
+    // 🔴 I GOT THIS WRONG TWICE, THE SAME WAY, AND hc2 CAUGHT THE SECOND ONE.
+    //   v1 anchored on the WRAPPER's `</div>` — inside the container.
+    //   v2 anchored on the inner ternary's `) : (<></>)}` — also inside the container's <div>,
+    //      so a caption placed between that ternary and the div's real close is a genuine DOM
+    //      child and still passed. hc2 reproduced exactly that.
+    //
+    // The lesson is not "pick a better marker": every marker I chose was a SYNTAX landmark that
+    // happens to sit near the boundary. The boundary is a BALANCED TAG, so find it by balancing
+    // tags. No string anchor can be wrong this way because there is no anchor.
     const c = code();
     const containerStart = c.indexOf('className="hint-image-container"');
     const caption = c.indexOf('className="hint-text-container"');
     expect(containerStart).toBeGreaterThan(-1);      // both anchors exist, so the
     expect(caption).toBeGreaterThan(-1);             // comparison below is not vacuous
-    const containerEnd = c.indexOf(') : (<></>)}', containerStart);
-    expect(containerEnd).toBeGreaterThan(containerStart);
-    expect(caption).toBeGreaterThan(containerEnd);
+    expect(closeOfDivAt(c, containerStart)).toBeGreaterThan(containerStart);
+    expect(caption).toBeGreaterThan(closeOfDivAt(c, containerStart));
   });
 
   test('it is cleared on word change AND on a same-word action', () => {
