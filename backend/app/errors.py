@@ -14,6 +14,12 @@ Measuring #45's R3-BUG-1 I reported "4 user-facing 500s in 14 days, 0.55%". The 
 not the constraint; COVERAGE was, and I had not checked it. The honest figure was >=4 and >=0.55%.
 An absence that is really a blindness is the most expensive kind, because it reads as good news.
 
+📌 AC2 (2026-08-28): the uncaught line now carries `utils.error_response`'s own
+`Error response sent (status N):` prefix, so ONE grep covers handled and unhandled. The
+404/405 passthrough deliberately does NOT: those are Flask telling a client it asked for
+something that is not there, not this service failing, and folding them into the same count
+would inflate every error rate with routine 404s.
+
 ⚠️ WHAT THIS DOES NOT DO: it does not make the ACCESS log see API routes. That is a separate
 surface (werkzeug is pinned to WARNING in create_app) and a separate decision about log volume.
 This closes the uncaught-exception half only, and #180's other half stays open.
@@ -47,9 +53,25 @@ def register_error_handlers(app):
 
     @app.errorhandler(Exception)
     def _log_uncaught(exc):                          # noqa: ANN001
-        # The traceback is the point: without it the log says a 500 happened and not where.
+        # lexitrail#180 AC2: the line MUST start with the same token `utils.error_response`
+        # emits -- `Error response sent (status N):` -- so ONE query covers handled and
+        # unhandled alike. The AC said why, and the first version of this file (mine, PR #212)
+        # violated it anyway: it logged `UNCAUGHT …` with no shared token, so a reader
+        # grepping the known pattern counted the handled errors and silently missed exactly
+        # the class this module exists to surface. Two patterns is how you count one and
+        # forget the other -- which is the SAME defect as the original blindness, one layer
+        # up, delivered by the fix for it.
+        #
+        # ONE line, not two. Routing through `error_response()` would be the tidier-looking
+        # move and is wrong twice: its `**additional_data` lands in the RESPONSE BODY (the
+        # traceback would leak to the client), and logging separately for the traceback would
+        # emit two lines per event, so `grep -c` would double-count uncaught errors against
+        # handled ones. The prefix is shared; the emission is single.
+        #
+        # `UNCAUGHT` is KEPT after the prefix, so the narrower query still works and a reader
+        # can still tell the two apart once they have the lines in hand.
         logger.error(
-            "UNCAUGHT %s on %s %s: %s\n%s",
+            "Error response sent (status 500): UNCAUGHT %s on %s %s: %s\n%s",
             type(exc).__name__, request.method, request.path, exc,
             traceback.format_exc(),
         )
