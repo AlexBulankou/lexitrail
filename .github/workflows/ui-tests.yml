@@ -46,8 +46,16 @@
 # 🔑 The asymmetry that decides it, and the reason this is not "we skipped the
 # policy because it was inconvenient": a refused DEPLOY build loses nothing —
 # the next successful build ships every commit merged since, because the diffs
-# are cumulative. A refused TEST build loses the coverage of one specific diff
-# forever. Same refusal, opposite cost, so the two do not belong in one pool.
+# are cumulative. A refused TEST build loses something unrecoverable.
+#
+# And it loses MORE than the one diff (hc2@, reviewing #226, having tried to
+# break this argument rather than confirm it): it loses ATTRIBUTION. If N
+# introduces a bug and N+1..N+5 are refused, the first real run is against N+5
+# and nothing says the bug came from N. So a refused test build does not just
+# skip a check — it degrades every check after it until the next green one,
+# which is why the loss is not "one diff's coverage" but a bisection window.
+#
+# Same refusal, opposite cost, so the two do not belong in one pool.
 #
 # ⏭️ WHAT WOULD REOPEN IT: this repo going private (Actions minutes stop being
 # free), or lexitrail's `daily_build_count` rising far enough that test and

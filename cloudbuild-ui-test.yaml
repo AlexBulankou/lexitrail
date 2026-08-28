@@ -21,8 +21,9 @@
 #
 # The asymmetry, which is why tests and deploys must not share a pool: a refused DEPLOY
 # build loses nothing (the next successful build ships every commit merged since — the
-# diffs are cumulative); a refused TEST build loses the coverage of one specific diff
-# forever.
+# diffs are cumulative); a refused TEST build loses ATTRIBUTION as well as coverage — if
+# N introduces a bug and N+1..N+5 are refused, the first real run is against N+5 and
+# nothing says the bug came from N (hc2@ on #226).
 #
 # KEPT rather than deleted because it is reviewed and correct, and the decision above is
 # CONDITIONAL: it reopens if this repo goes private (Actions minutes stop being free) or
