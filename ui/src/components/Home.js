@@ -75,7 +75,7 @@ const Home = () => {
                   forget it, so review time goes to the words you actually
                   need — not a fixed daily list.
                 </p>
-                <Link to="/wordsets" className="cta-button">Start Learning Chinese</Link>
+                <Link to="/wordsets" className="cta-button" data-cta="hero">Start Learning Chinese</Link>
               </div>
             </div>
             <WordSets />
@@ -126,7 +126,7 @@ const Home = () => {
             </div>
 
             <div className="cta-section">
-              <Link to="/wordsets" className="cta-button">Start Learning Chinese</Link>
+              <Link to="/wordsets" className="cta-button" data-cta="footer">Start Learning Chinese</Link>
             </div>
           </div>
         </div>
