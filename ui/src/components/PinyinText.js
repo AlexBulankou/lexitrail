@@ -71,9 +71,34 @@ const renderPinyin = (text) => {
     });
 };
 
-// Usage example in a React component
+// lexitrail#190 — WHY THIS WRAPPER EXISTS, and why the fix is here rather than on the button.
+//
+// THE DEFECT. `renderPinyin` emits ONE <span> PER CHARACTER so each vowel can carry its tone
+// colour. Sibling inline elements are break opportunities, so the browser may wrap between ANY
+// two characters of a pinyin token: measured on /game/<N>/TEST at 390x844, `xiǎojiě` rendered as
+// `xiǎoji` / `ě`, and `shāngdiàn`, `míngtiān`, `gōngzuò`, `zěnme` all broke the same way.
+//
+// 🔴 THE ISSUE PROPOSED A MIN-WIDTH ON THE BUTTON. That treats the symptom: it makes the
+// container wide enough that today's longest pinyin happens to fit, and the next longer one
+// breaks again -- at every OTHER call site too (WordCard's main pinyin, MiniWordCard, Completed),
+// none of which the issue mentions. The per-character break permission is a property of THIS
+// component, so it is fixed once here and every caller inherits it.
+//
+// In a tone-teaching app a syllable split across two lines is not a layout nit: the tone mark and
+// the vowel it belongs to end up on different rows.
+//
+// ⚠️ WHAT THIS DOES NOT DO: it does not decide how the button SIZES. With `nowrap` a token too
+// wide for its container overflows rather than breaking, so the 4-up option grid still needs to
+// let its buttons grow -- that is the layout half of #190 and it is deliberately separate,
+// because a break-permission bug and a grid-sizing bug have different fixes and different tests.
+//
+// 📌 `renderPinyinWithSyllables` above (with `splitSyllables`) is DEAD -- defined, never exported,
+// never called, verified by grep across ui/src. It is the syllable-aware renderer that would have
+// made breaking-BETWEEN-syllables possible while keeping each intact. Left in place rather than
+// deleted: if the layout half ever needs mid-token wrapping, that is where it comes from, and
+// deleting it would erase the design that solves the problem this comment describes.
 const PinyinText = ({ text }) => {
-    return <>{renderPinyin(text)}</>;
+    return <span className="pinyin-text" style={{ whiteSpace: 'nowrap' }}>{renderPinyin(text)}</span>;
 };
 
 export default PinyinText;
