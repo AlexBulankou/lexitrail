@@ -18,6 +18,18 @@
 // per-path rewrite does not help — measured before AND after the catch-all, order is irrelevant.
 // So `cleanUrls: false` is also required, or `/hsk2.html` 301s to `/hsk2` and the catch-all eats it.
 //
+// lexitrail#76 — PER-PAGE og/twitter METADATA, which is possible HERE and nowhere else on this
+// site. #76's finding stands for SPA routes: `<SEO>` is react-helmet, applied client-side, and the
+// social crawlers do not execute JS, so mounting it on more routes changes nothing a crawler sees.
+// These six pages are the exception BY CONSTRUCTION — they are static HTML, so whatever is in
+// their <head> IS what the crawler gets.
+//
+// ⚠️ Before this they had NO og tags at all, which is worse than the generic card #76 complains
+// about: a share of /hsk2.html produced no card, on the six pages most likely to be shared.
+// og:image stays the one canonical landscape asset (there is no per-level artwork in the repo —
+// checked); the TITLE and DESCRIPTION are what become per-page, and they are the half that says
+// which page you are looking at.
+//
 // PURE ON PURPOSE. Nothing here touches the filesystem, so every claim below is unit-testable and
 // the generator script is a thin shell around it. The committed HTML is checked against these
 // functions by a drift test — a generated artifact nobody re-generates is a stale artifact.
@@ -92,6 +104,16 @@ export const renderPage = (level, words, origin = ORIGIN) => {
 <title>${esc(title)}</title>
 <meta name="description" content="${esc(desc)}">
 <link rel="canonical" href="${url}">
+<meta property="og:type" content="website">
+<meta property="og:url" content="${url}">
+<meta property="og:title" content="${esc(title)}">
+<meta property="og:description" content="${esc(desc)}">
+<meta property="og:image" content="${origin}/images/og/generated/og-landscape.png">
+<meta property="twitter:card" content="summary_large_image">
+<meta property="twitter:url" content="${url}">
+<meta property="twitter:title" content="${esc(title)}">
+<meta property="twitter:description" content="${esc(desc)}">
+<meta property="twitter:image" content="${origin}/images/og/generated/og-landscape.png">
 <script type="application/ld+json">${jsonLd}</script>
 </head>
 <body>
