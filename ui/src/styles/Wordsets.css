@@ -31,82 +31,100 @@
   margin-bottom: 15px;
 }
 
+/* issue-194: was a dotted-gray box on a darkgray fill -- "reads as a
+   prototype" per the issue's own framing. Replaced with the app's real card
+   language (white, subtle border+shadow), matching `.feature-card` /
+   `.login-card` elsewhere in this app rather than inventing a fourth look. */
 .wordset-button-group {
   display: grid;
   align-items: center;
-  border: 1px dotted gray;
-  background-color: darkgray;
-  border-radius: 10px;;
-  grid-template-columns: repeat(2, 1fr);
-  /* issue-52: `grid-template-rows: repeat (3, 1fr)` used to sit here and was
-   * DEAD — CSS functional notation forbids a space before the paren, so the
-   * browser dropped the declaration. Measured on prod: computed
-   * `grid-template-rows` is `28.8125px 34px 34px 25px`, four content-sized
-   * rows, not three 1fr ones.
-   *
-   * Deleted rather than corrected, deliberately. "Fixing" the space would
-   * ACTIVATE a three-row template over four rows of content (header, practice,
-   * due, excluded) and change the layout — the typo is harmless precisely
-   * because it never applied. Removing a dropped declaration cannot change the
-   * computed value, so this is a provable no-op; auto rows are also what lets
-   * the shared 44px floor expand these buttons at all. */
-  gap: 5px;
-  padding:5px;
+  background-color: #ffffff;
+  border: 1px solid #e0e0e0;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  /* issue-194: 3 columns, not 2 -- Practice spans all 3 (one primary action
+     per tile); Due Today / Show Excluded / Test share a row underneath as
+     equal-weight secondary actions instead of Test spanning three button
+     heights as a giant fourth slab. */
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  padding: 14px;
 }
 
 .wordset-button {
-  margin: 5px;
+  margin: 0;
   font-size: 1rem;
   cursor: pointer;
   width:auto;
   height:100%;
   color:#ffffff;
-  border-radius: 10px;
+  border-radius: 8px;
+  border: none;
 }
 
 .wordset-header {
   grid-row:1;
-  grid-column: 1 / 3;
+  grid-column: 1 / 4;
   justify-items: center;
 }
 
 .wordset-header-text {
   text-align: center;
-  margin: -1.2rem 0 3px 0;
-  border: 1px solid gray;
-  padding: 3px;
-  border-radius: 10px;
-  background: #ffffff;
-  font-size: 2rem;
+  margin: 0 0 8px 0;
+  padding: 0;
+  border: none;
+  background: transparent;
+  /* issue-194: was 2rem -- larger than any heading on the surrounding page
+     and a direct contributor to the "prototype" read. */
+  font-size: 1.3rem;
+  font-weight: 600;
+  color: #202124;
 }
 
+/* issue-194: the ONE visually primary action per tile. Real app palette
+   (`#1a73e8`, matching `.login-card h2` / `.start-button` / `.cta-button`)
+   instead of the pure `blue` keyword. */
 .wordset-button-practice {
-  grid-row:2;
-  grid-column: 1;
-  background-color: blue;
+  grid-row: 2;
+  grid-column: 1 / 4;
+  background-color: #1a73e8;
+  font-weight: 600;
+  font-size: 1.05rem;
+}
 
+/* issue-194: Due Today / Show Excluded / Test are secondary -- present, not
+   competing. One shared muted treatment rather than purple/black/green each
+   fighting for the eye; `color` overrides `.wordset-button`'s white because
+   these rules load later in the file at equal specificity. */
+.wordset-button-due,
+.wordset-button-excluded,
+.wordset-button-test {
+  background-color: transparent;
+  color: #5f6368;
+  border: 1px solid #dadce0;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.wordset-button-due:hover,
+.wordset-button-excluded:hover,
+.wordset-button-test:hover {
+  background-color: #f1f3f4;
 }
 
 .wordset-button-due {
-  grid-row:3;
+  grid-row: 3;
   grid-column: 1;
-  background-color: #8e24aa;
-
 }
 
 .wordset-button-excluded {
-  grid-row:4;
-  grid-column: 1;
-  background-color: black;
-  font-size:0.5rem;
-
+  grid-row: 3;
+  grid-column: 2;
 }
 
 .wordset-button-test {
-  grid-row: 2 / 5;
-  grid-column: 2;
-  background-color: green;
-
+  grid-row: 3;
+  grid-column: 3;
 }
 
 .wordsets-login-container {
