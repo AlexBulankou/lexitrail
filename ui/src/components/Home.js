@@ -60,6 +60,23 @@ const Home = () => {
               <h1>Welcome to Lexitrail</h1>
               <h2>Master Chinese Vocabulary Through Smart Learning</h2>
               <p>Lexitrail is your AI-powered companion for mastering Mandarin Chinese vocabulary. Perfect for beginners to advanced learners looking to expand their Chinese word knowledge.</p>
+              {/* issue-194: an above-the-fold CTA + one-line SRS value prop.
+                  Previously the first CTA was the one at the page bottom, past
+                  the wordset grid and the features section -- ~4.5 viewport
+                  heights down on mobile (measured ~3630px at 390x844), with
+                  nothing above the fold stating what spaced repetition buys a
+                  visitor. This one is deliberately a SECOND `.cta-button` to
+                  the same `/wordsets` destination, not a replacement for the
+                  bottom one -- a long scroller still gets a CTA where they
+                  stop. */}
+              <div className="hero-cta">
+                <p className="hero-value-prop">
+                  Spaced repetition shows you each word right before you'd
+                  forget it, so review time goes to the words you actually
+                  need — not a fixed daily list.
+                </p>
+                <Link to="/wordsets" className="cta-button">Start Learning Chinese</Link>
+              </div>
             </div>
             <WordSets />
             
