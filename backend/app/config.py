@@ -35,6 +35,21 @@ class Config:
 
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
+    # lexitrail#179: every prod 500 in a 14d window was a pooled connection the
+    # server had already dropped, handed to a request as if live. The default
+    # pool never validates a connection before checkout, so an idle connection
+    # sitting past the server's wait_timeout comes back as (2006)/(2013).
+    #
+    # wait_timeout measured directly against mysql-0 (`SHOW VARIABLES LIKE
+    # 'wait_timeout'`) on 2026-08-27: 28800s (8h, the MySQL default — the app
+    # sets no server-side override). pool_recycle must stay comfortably under
+    # that so SQLAlchemy retires a connection before the server does; 1800s
+    # (30min) leaves a wide margin against a value that could itself drift.
+    SQLALCHEMY_ENGINE_OPTIONS = {
+        'pool_pre_ping': True,
+        'pool_recycle': 1800,
+    }
+
 
 class TestConfig(Config):
     TESTING = True
