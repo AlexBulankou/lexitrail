@@ -1,9 +1,7 @@
 import { createContext, useContext, useState, useCallback } from 'react';
 import { googleLogout, useGoogleLogin } from '@react-oauth/google';
-import { createUser, getUserByEmail, migrateUser } from '../services/userService';
-import { generateUniqueString } from '../utils/stringUtils';
-import defaultAvatar from '../styles/assets/default-avatar.svg';
-import { loadSession, saveMemberSession, saveGuestSession, clearSession } from '../utils/authStorage';
+import { loadSession, clearSession } from '../utils/authStorage';
+import { completeGoogleSignIn, startGuestSession } from '../utils/authFlows';
 
 const AuthContext = createContext(null);
 
@@ -41,26 +39,12 @@ export const AuthProvider = ({ children }) => {
   
         const data = await response.json();
         setUser(data);
-        // Written AFTER the userinfo call succeeds, so a failed exchange leaves
-        // no half-session behind. `expires_in` is Google's, in seconds; when it
-        // is absent authStorage stores no expiry and refuses the session on the
-        // next load -- toward a sign-in prompt, not toward a dead token.
-        saveMemberSession(data, tokenResponse.access_token, Number(tokenResponse.expires_in));
-  
-        try {
-          const existingUser = await getUserByEmail(data.email);
-          if (!existingUser) {
-            await createUser(data.email);
-          }
-          // Now authenticated as the real member: fold in the guest session's
-          // progress (uses the new Google token, so it migrates into this user).
-          if (demoEmailToMigrate && demoEmailToMigrate !== data.email) {
-            await migrateUser(demoEmailToMigrate);
-          }
-        } catch (error) {
-          console.error('Error handling user in backend:', error);
-        }
-  
+        // The session write, GA4 events and backend user-creation/migrate
+        // calls all live in completeGoogleSignIn now (lexitrail#195) --
+        // same ordering, same try/catch, this call site is unchanged in
+        // behavior from the inline version it replaces.
+        await completeGoogleSignIn(data, tokenResponse, { demoEmailToMigrate });
+
       } catch (error) {
         console.error('Error during Google login:', error);
       }
@@ -71,27 +55,14 @@ export const AuthProvider = ({ children }) => {
   const login = useGoogleLogin(initUser);
 
   const tryWithoutSignin = useCallback(async () => {
-    const uniqueString = generateUniqueString(5);
-    const demoEmail = `${uniqueString}@lexitrail.demo`;
-    const demoToken = `UNAUTH_USER:${demoEmail}`;
-    
-    const demoUser = {
-      email: demoEmail,
-      name: 'Demo User',
-      picture: defaultAvatar
-    };
-    
+    // lexitrail#195: startGuestSession does the storage write + GA4 event
+    // synchronously (same as the inline code it replaces) and returns the
+    // in-flight backend createUser call rather than awaiting it internally,
+    // so setUser below still fires immediately -- not delayed by the network,
+    // exactly as before.
+    const { demoUser, backendCreate } = startGuestSession();
     setUser(demoUser);
-    // Guests stay tab-scoped (#185 AC3). Persisting a throwaway
-    // <random>@lexitrail.demo identity would accumulate orphan rows and would
-    // hand one visitor's practice data to the next on a shared machine.
-    saveGuestSession(demoUser, demoToken);
-
-    try {
-      await createUser(demoEmail);
-    } catch (error) {
-      console.error('Error creating demo user:', error);
-    }
+    await backendCreate;
   }, []);
 
   const logOut = useCallback(() => {
