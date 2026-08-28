@@ -1,4 +1,11 @@
 Flask==2.2.5
+# lexitrail#232: Werkzeug is Flask's transitive dep and Flask 2.2.x does not cap it, so an
+# UNPINNED build resolves whatever is newest at build time. 3.1.8 is what the LIVE pod runs
+# today (verified: kubectl exec -n lexitrail <backend-pod> -- pip list), so this pin is a
+# no-op for production and closes the forward risk: 3.1 already removed werkzeug.__version__,
+# and the next release lands in the next image build with nothing asserting compatibility.
+# NOT a fix for the test client -- that break is real and separate (see #232).
+Werkzeug==3.1.8
 Flask-SQLAlchemy==3.0.2
 pymysql==1.0.3
 python-dotenv==0.19.2
