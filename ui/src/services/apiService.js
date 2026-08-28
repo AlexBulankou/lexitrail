@@ -1,3 +1,4 @@
+import { loadAccessToken } from '../utils/authStorage';
 import axios from 'axios';
 //import { useAuth } from '../hooks/useAuth';
 
@@ -6,8 +7,11 @@ const API_BASE_URL = window.config.API_BASE_URL;
 // Log the API base URL for diagnostics
 console.log(`API_BASE_URL is: ${API_BASE_URL}`);
 
-// Get the access token from sessionStorage
-const getAccessToken = () => sessionStorage.getItem('access_token');
+// lexitrail#185: the token moved out of sessionStorage for real members, and
+// this is the OTHER reader -- updating only AuthContext would leave every API
+// call tokenless. Expiry-checked in one place (authStorage), so the API layer
+// cannot send a token the auth layer would have refused.
+const getAccessToken = () => loadAccessToken();
 // const getAccessToken = ()=>useAuth.accessToken;
 
 // lexitrail#52 bug 6: axios has no default timeout, so a slow or hung backend
