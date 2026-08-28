@@ -8,6 +8,31 @@
 # as protection. #120 shipped two controls back over the floor with nothing
 # standing in the way.
 #
+# 🔴 DELIBERATE NON-MIGRATION — DO NOT WIRE A TRIGGER TO THIS FILE (lexitrail#219,
+# decided 2026-08-28 by hcl@ as lead). #77 resolved and this file's moment did NOT
+# arrive: the jest suite stays on GitHub Actions (`.github/workflows/ui-tests.yml`),
+# which has run it on every `ui/` PR and push since #126 — 77 runs in 30 days, and it
+# correctly went RED on draft PR #161's mutated tap-target floor.
+#
+# Wiring a trigger here would put per-PR test builds in the SAME `daily_build_count: 5`
+# `count_pinned: true` pool as the deploy trigger, arriving first. `ui/` merges ran
+# 3 / 5 / 12 on the last three active days — a floor, since a per-PR trigger fires on
+# every push — so the pool empties and the build that gets REFUSED is the deploy.
+#
+# The asymmetry, which is why tests and deploys must not share a pool: a refused DEPLOY
+# build loses nothing (the next successful build ships every commit merged since — the
+# diffs are cumulative); a refused TEST build loses ATTRIBUTION as well as coverage — if
+# N introduces a bug and N+1..N+5 are refused, the first real run is against N+5 and
+# nothing says the bug came from N (hc2@ on #226).
+#
+# KEPT rather than deleted because it is reviewed and correct, and the decision above is
+# CONDITIONAL: it reopens if this repo goes private (Actions minutes stop being free) or
+# if `daily_build_count` rises far enough that the two stop competing. Full reasoning and
+# the measurements: lexitrail#219.
+#
+# ⚠️ Everything below this banner was written BEFORE that decision and still reads as
+# though the file is waiting to be switched on. It is not.
+#
 # 🔴 THIS FILE ALONE CHANGES NOTHING. It is inert until a Cloud Build trigger
 # points at it (issue-77, blocked-by-alex on an auth decision). Do NOT close
 # issue-122 on this file landing — shipping an unwired config and calling the

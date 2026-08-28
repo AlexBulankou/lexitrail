@@ -24,8 +24,55 @@
 #     against a small install, so the cost argument does not bind here.
 #
 # ⇒ Actions now, because the alternative is an unguarded floor for as long as
-#   #77 stays open, and #77 has no ETA. **When #77 resolves, migrate this to
-#   Cloud Build** — that is a real follow-up, not a courtesy sentence.
+#   #77 stays open, and #77 has no ETA.
+#
+# 🔴 THE FOLLOW-UP THIS PARAGRAPH USED TO CARRY IS WITHDRAWN (lexitrail#219,
+# decided 2026-08-28 by hcl@ as lead). It read: "**When #77 resolves, migrate
+# this to Cloud Build** — that is a real follow-up, not a courtesy sentence."
+# #77 resolved that day, and executing the follow-up would have INVERTED the
+# policy it was serving. Measured before deciding:
+#
+#   * The policy's stated rationale is COST. This repo is PUBLIC, so Actions
+#     minutes are free; Cloud Build minutes are not.
+#   * lexitrail is `daily_build_count: 5`, `count_pinned: true`, ENFORCING —
+#     a hard ceiling, not a dollar budget.
+#   * Merges touching `ui/` ran 3 / 5 / 12 on the last three active days, and
+#     a per-PR trigger fires on every PUSH, so 12 is a floor not an estimate.
+#
+#   ⇒ The jest run would arrive FIRST and exhaust the pool, and the build that
+#     gets refused is the DEPLOY. That is the failure #77 exists to end, caused
+#     by the migration meant to tidy it up.
+#
+# 🔑 The asymmetry that decides it, and the reason this is not "we skipped the
+# policy because it was inconvenient": a refused DEPLOY build loses nothing —
+# the next successful build ships every commit merged since, because the diffs
+# are cumulative. A refused TEST build loses something unrecoverable.
+#
+# And it loses MORE than the one diff (hc2@, reviewing #226, having tried to
+# break this argument rather than confirm it): it loses ATTRIBUTION. If N
+# introduces a bug and N+1..N+5 are refused, the first real run is against N+5
+# and nothing says the bug came from N. So a refused test build does not just
+# skip a check — it degrades every check after it until the next green one,
+# which is why the loss is not "one diff's coverage" but a bisection window.
+#
+# Same refusal, opposite cost, so the two do not belong in one pool.
+#
+# ⏭️ WHAT WOULD REOPEN IT — any ONE of these, and re-file rather than remember:
+#
+#   1. this repo goes PRIVATE — Actions minutes stop being free and the cost
+#      half of the argument inverts;
+#   2. lexitrail's `daily_build_count` rises far enough that test and deploy
+#      builds stop competing for the same ceiling;
+#   3. 🔴 the DEPLOY pipeline grows an ordering-dependent side effect — a schema
+#      migration, a one-shot backfill, anything where build N does something
+#      build N+1 does not redo.
+#
+# (3) is the subtle one and it is hc2@'s, from reviewing #226: "a refused deploy
+# loses nothing" is true HERE only because `cloudbuild-ui.yaml` is build-and-push
+# and nothing else, so the next successful build genuinely subsumes every refused
+# one. That is a property of this pipeline, not a law about deploys. The day a
+# deploy step stops being idempotent-by-subsumption, refusing one costs what
+# refusing a test costs today, and the asymmetry this decision rests on is gone.
 #
 # ─────────────────────────────────────────────────────────────────────────────
 # THE COMMAND IS `npm test`, NOT `npx jest` — this is load-bearing
