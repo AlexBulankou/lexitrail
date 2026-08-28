@@ -100,3 +100,65 @@ def test_the_handlers_are_REGISTERED_by_create_app():
     src = pathlib.Path(__file__).resolve().parents[1].joinpath(
         "app", "__init__.py").read_text()
     assert "register_error_handlers(app)" in src
+
+
+# ── AC2: ONE query must cover handled AND unhandled errors ────────────────────
+# The AC said why, and PR #212 (mine) violated it anyway: it logged `UNCAUGHT …` with no
+# token shared with `utils.error_response`, so a reader grepping the known pattern counted the
+# handled errors and silently missed exactly the class this module exists to surface. That is
+# the SAME defect as the original blindness, one layer up, delivered by the fix for it.
+SHARED_PREFIX = "Error response sent (status "
+
+
+def test_AC2_the_uncaught_line_carries_error_responses_OWN_prefix(client, caplog):
+    with caplog.at_level(logging.ERROR):
+        client.get("/boom")
+    assert SHARED_PREFIX in caplog.text, (
+        "the uncaught line must be findable by the same pattern as a handled error, "
+        f"got: {caplog.text!r}")
+    # The narrower query must still work -- a reader with the lines in hand can still tell
+    # the two apart, which is what makes the shared prefix safe rather than lossy.
+    assert "UNCAUGHT" in caplog.text
+
+
+def test_AC2_ONE_query_finds_BOTH_a_handled_and_an_unhandled_error(client, caplog):
+    """The property the AC actually asks for, asserted end to end rather than by inspection.
+
+    A single grep over one log stream carrying both kinds returns both. Before this change it
+    returned exactly one of them, and nothing said the other existed.
+    """
+    from app.utils import error_response          # the handled-error surface, unchanged
+    with caplog.at_level(logging.ERROR):
+        client.get("/boom")                       # unhandled
+        with client.application.test_request_context("/handled"):
+            error_response("a handled failure", 400)
+    hits = [ln for ln in caplog.text.splitlines() if SHARED_PREFIX in ln]
+    assert len(hits) == 2, f"expected both kinds, got {len(hits)}: {hits}"
+
+
+def test_AC3_an_uncaught_error_emits_EXACTLY_ONE_line_not_two(client, caplog):
+    """No double-counting -- the AC's own words, and the reason this does NOT route through
+    `error_response()`.
+
+    Routing through it is the tidier-looking move and is wrong twice: its `**additional_data`
+    lands in the RESPONSE BODY (the traceback would leak to the client), and logging separately
+    for the traceback would emit two lines per event -- so `grep -c` would count every uncaught
+    error twice against the handled ones and every rate built on it would be wrong.
+    """
+    with caplog.at_level(logging.ERROR):
+        client.get("/boom")
+    hits = [ln for ln in caplog.text.splitlines() if SHARED_PREFIX in ln]
+    assert len(hits) == 1, f"expected exactly one line, got {len(hits)}: {hits}"
+
+
+def test_NEGATIVE_CONTROL_a_404_does_NOT_join_the_error_count(client, caplog):
+    """Deliberate asymmetry, so it is not read as an oversight.
+
+    A 404 is Flask telling a client it asked for something that is not there -- not this
+    service failing. Folding it into the same countable pattern would inflate every error rate
+    with routine 404s, which is a different way of making the number untrustworthy.
+    """
+    with caplog.at_level(logging.WARNING):
+        client.get("/no-such-route")
+    assert SHARED_PREFIX not in caplog.text
+    assert "HTTP 404" in caplog.text
