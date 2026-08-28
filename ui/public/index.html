@@ -36,7 +36,17 @@
   <meta property="twitter:image" content="%PUBLIC_URL%/images/og/generated/og-landscape.png">
 
   <link rel="icon" href="%PUBLIC_URL%/favicon.ico" />
-  <link rel="canonical" href="https://lexitrail.com/" />
+  <!-- lexitrail#186: NO canonical here, deliberately.
+       This file is the SPA shell and `serve -s build` returns it for EVERY unmatched URL,
+       so a canonical in it is served on /wordsets, /about, /game/2/PRACTICE, /privacy and
+       /nonexistent-route-xyz alike -- an explicit "fold this into the homepage"
+       instruction on every page of the site. Measured 2026-08-27: all of those returned
+       HTTP 200 with canonical=/.
+       No canonical is strictly better than a wrong one on every URL: Google then picks a
+       canonical itself, which is a guess rather than an instruction to discard the page.
+       The client-side <SEO> Helmet canonical does not reach crawlers (#76).
+       Pages that CAN carry a correct self-canonical do: hsk1..6.html (#183) are real
+       files, so they are served instead of this shell and carry their own. -->
   <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
   <base href="%PUBLIC_URL%/" />
   <title>Lexitrail - Smart Chinese Vocabulary Learning</title>
