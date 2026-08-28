@@ -67,7 +67,11 @@ const Home = () => {
               <div className="features-grid">
                 <div className="feature-card">
                   <h3>智能 Smart Word Sets</h3>
-                  <p>Create and organize Chinese vocabulary lists with Pinyin, characters, and English translations. More languages coming soon!</p>
+                  {/* lexitrail#191: was "Create and organize ...". Same nonexistent
+                      create-wordset feature as the login card claimed -- the issue named
+                      only the card, and fixing one surface of a claim while its sibling
+                      keeps making it is how a "fixed" issue stays true on the site. */}
+                  <p>Study curated HSK 1-6 vocabulary lists with Pinyin, characters, and English translations. More languages coming soon!</p>
                 </div>
                 <div className="feature-card">
                   <h3>AI Memory Hints</h3>
@@ -77,10 +81,14 @@ const Home = () => {
                   <h3>Interactive Practice</h3>
                   <p>Test your knowledge with character recognition, pronunciation, and meaning exercises. Track your progress with spaced repetition.</p>
                 </div>
-                <div className="feature-card">
-                  <h3>Cultural Context</h3>
-                  <p>Learn how words are actually used in Chinese culture with example sentences and usage notes.</p>
-                </div>
+                {/* lexitrail#191: the "Cultural Context" card is REMOVED, not reworded.
+                    It promised "example sentences and usage notes"; #118 deliberately removed
+                    the sentences view and never touched the marketing copy. The ~450 curated
+                    sentences are still served by the API and rendered nowhere (#192).
+                    Rewording it to describe the AI hints would have been true but would have
+                    made it a second card about the feature the card above already sells.
+                    RESTORE THIS with #192, copy and all -- it becomes accurate the moment a
+                    sentence surface ships. */}
                 <div className="feature-card">
                   <h3>Character Breakdown</h3>
                   <p>

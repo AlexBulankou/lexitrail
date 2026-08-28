@@ -37,7 +37,14 @@ const PrivateRoute = ({children}) => {
           <div className="features-list">
             <div className="feature-item">Track your learning progress</div>
             <div className="feature-item">Get AI-powered memory hints</div>
-            <div className="feature-item">Create custom word sets</div>
+            {/* lexitrail#191: was "Create custom word sets". There is no create-wordset UI
+                anywhere in ui/src and backend/app/routes/wordsets.py exposes GET only, so
+                this promised a feature that does not exist -- at the sign-in decision, which
+                is the worst possible place to be caught out. Replaced with the actual
+                difference between signing in and staying a guest: a guest identity lives in
+                sessionStorage and is gone with the tab, a member's progress is on their
+                account and can be signed back into. */}
+            <div className="feature-item">Keep your progress on your account, not just this browser</div>
           </div>
 
           <div className="auth-buttons">
