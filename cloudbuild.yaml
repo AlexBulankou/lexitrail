@@ -22,12 +22,36 @@
 #   5. visible to the same daily budget enforcement      (here, step 0)
 #
 # 🔴 SCOPE: this BUILDS AND PUSHES the backend image. It does not roll the
-# deployment. The live spec is `:latest` with `imagePullPolicy: Always` on a
-# cluster in ANOTHER project (ys-autopilot / yojowa-claw / ns lexitrail), so a
-# rollout needs cross-project credentials and is a separate, riskier change.
-# Pods cycle daily and re-pull `:latest`, so a push reaches prod within a day
-# on its own; `kubectl rollout restart deployment/lexitrail-backend -n lexitrail`
-# forces it sooner.
+# deployment, and — corrected 2026-08-28 — a push does NOT reach prod on its
+# own. The live Deployment is pinned BY DIGEST, not by tag:
+#
+#     lexitrail-backend  .../lexitrail-backend@sha256:<digest>   imagePullPolicy: Always
+#
+# `imagePullPolicy: Always` is INERT against a digest — there is nothing newer
+# for the same digest to resolve to — so `rollout restart` re-pulls the same
+# bytes and ships nothing. The rollout step is:
+#
+#     kubectl -n lexitrail set image deployment/lexitrail-backend \
+#       lexitrail-backend=${_IMAGE}@sha256:<the new digest>
+#     kubectl -n lexitrail get deploy lexitrail-backend \
+#       -o jsonpath='{.spec.template.spec.containers[0].image}'   # READ IT BACK
+#
+# ⚠️ `rollout status` reports that pods rolled. It has no opinion on whether the
+# IMAGE changed, so it returns success for a no-op restart — read the digest off
+# the live spec instead.
+#
+# 🔴 THIS PARAGRAPH USED TO SAY THE OPPOSITE, and it nearly cost a live security
+# fix. It read: "The live spec is `:latest` with `imagePullPolicy: Always` …
+# Pods cycle daily and re-pull `:latest`, so a push reaches prod within a day on
+# its own." Following it during the 2026-08-28 deploy of issue-182 (a member-email
+# exposure) would have produced a green build, a successful `rollout restart`, and
+# `GET /users` still answering — the fix reported shipped and not shipped. The
+# cluster spec was checked directly, which is the only reason it was caught.
+# Corrected in place rather than appended: both readings survive an append and
+# the stale one is the reassuring one.
+#
+# The cluster is in ANOTHER project (ys-autopilot / yojowa-claw / ns lexitrail),
+# so the rollout needs cross-project credentials and remains a separate change.
 
 substitutions:
   # Default empty so ordinary builds are unaffected; only a deliberate re-run
@@ -109,10 +133,12 @@ steps:
       - './backend'
     waitFor: ['pull-cache']
 
-# Both tags are pushed. `:latest` is what the live Deployment pulls
-# (`imagePullPolicy: Always`); `:$SHORT_SHA` exists so a running pod can be
-# traced back to a commit — the absence of that is why "is this fix deployed?"
-# has needed ReplicaSet archaeology rather than a lookup.
+# Both tags are pushed. `:latest` is NOT what the live Deployment pulls — it is
+# pinned by digest (see SCOPE above), so `:latest` serves the `--cache-from`
+# pull and gives a human a tag to reason about, nothing more. `:$SHORT_SHA`
+# exists so a running pod can be traced back to a commit — the absence of that
+# is why "is this fix deployed?" has needed ReplicaSet archaeology rather than
+# a lookup.
 images:
   - '${_IMAGE}:latest'
   - '${_IMAGE}:$SHORT_SHA'
