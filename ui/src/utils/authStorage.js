@@ -96,7 +96,21 @@ export const saveGuestSession = (user, token) => {
 export const loadSession = (now = Date.now()) => {
   const guestUser = safeParse(window.sessionStorage.getItem(USER_KEY));
   const guestToken = window.sessionStorage.getItem(TOKEN_KEY);
-  if (guestUser && guestToken) return { user: guestUser, token: guestToken };
+  // lexitrail#185 follow-up (hc2@'s review Q on PR #200): gated on the token
+  // actually BEING guest-shaped, not merely on sessionStorage having something
+  // in it. Without the gate this branch means "trust whatever is in
+  // sessionStorage", and the one thing that can put a NON-guest token there is
+  // a pre-#185 member session in a tab that was already open when this
+  // deployed -- which would then be returned with NO expiry check, the exact
+  // shape the rest of this module exists to refuse.
+  //
+  // ⚠️ The trade is deliberate and it is not free: a member in such a tab is
+  // signed OUT on the next render instead of riding their old session to its
+  // natural expiry. That is one click, and it is the honest failure -- the
+  // alternative is a signed-in UI over a token that 401s, which is the one
+  // failure a user cannot diagnose or recover from. Transient either way: the
+  // legacy rows exist only until that tab closes.
+  if (guestUser && isGuestToken(guestToken)) return { user: guestUser, token: guestToken };
 
   const user = safeParse(window.localStorage.getItem(USER_KEY));
   const token = window.localStorage.getItem(TOKEN_KEY);
