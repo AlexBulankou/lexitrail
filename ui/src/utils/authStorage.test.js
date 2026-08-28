@@ -105,6 +105,37 @@ describe('guests are unchanged (#185 AC3)', () => {
   });
 });
 
+describe('the guest branch is gated on the TOKEN, not on sessionStorage being non-empty (PR #200 review)', () => {
+  test('🔴 a pre-#185 MEMBER session left in sessionStorage is not read back as a guest', () => {
+    // The deploy transient: a tab open across the deploy still holds the old
+    // sessionStorage-only member session. Ungated, loadSession returns it --
+    // and returns it via the branch that applies NO expiry check, so a real
+    // Google token would be trusted indefinitely.
+    window.sessionStorage.setItem('user', JSON.stringify(MEMBER));
+    window.sessionStorage.setItem('access_token', 'ya29.a0AfLegacyRealGoogleToken');
+    expect(loadSession(T0)).toBeNull();
+  });
+
+  test('CONTROL: the same shape WITH a guest token is still accepted', () => {
+    // Without this, the assertion above passes equally well against a branch
+    // that rejects everything -- which would sign every guest out.
+    window.sessionStorage.setItem('user', JSON.stringify(GUEST));
+    window.sessionStorage.setItem('access_token', 'UNAUTH_USER:xk39f@lexitrail.demo');
+    expect(loadSession(T0)).toEqual({
+      user: GUEST, token: 'UNAUTH_USER:xk39f@lexitrail.demo' });
+  });
+
+  test('a legacy member row does not shadow a VALID localStorage session either', () => {
+    // The ordering test elsewhere proves sessionStorage wins. That is correct
+    // for a guest and wrong for this leftover, so the gate has to make the
+    // localStorage session reachable past it.
+    saveMemberSession(MEMBER, 'tok', 3600, T0);
+    window.sessionStorage.setItem('user', JSON.stringify(MEMBER));
+    window.sessionStorage.setItem('access_token', 'ya29.a0AfLegacyRealGoogleToken');
+    expect(loadSession(T0 + 60_000)).toEqual({ user: MEMBER, token: 'tok' });
+  });
+});
+
 describe('clearing and malformed state', () => {
   test('clearSession clears BOTH stores, not just the one we read', () => {
     saveMemberSession(MEMBER, 'tok', 3600, T0);
