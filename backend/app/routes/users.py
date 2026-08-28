@@ -158,12 +158,21 @@ def migrate_user():
         return error_response(str(e), 500)
 
 
-@bp.route('', methods=['GET'])
-@authenticate_user
-def get_users():
-    try:
-        users = User.query.all()
-        return jsonify([{"email": user.email} for user in users])
-    except Exception as e:
-        logger.error(f"Error get_user: {e}", exc_info=True)
-        return error_response(str(e), 500) 
+# lexitrail#182: there is deliberately NO `GET /users` collection route.
+#
+# It returned `[{'email': u.email} for u in User.query.all()]` behind
+# `@authenticate_user` alone -- the only user route that did not call
+# `validate_user_access` to scope the response to the caller. Since the auth
+# layer treats a guest/demo identity as authenticated, any anonymous visitor
+# could read every registered member's email address, confirmed against
+# production on 2026-08-27.
+#
+# REMOVED rather than gated behind an admin check: this backend has no admin
+# concept at all (no role, no is_admin, nothing), so "gate it" would have meant
+# inventing an authorization tier to keep a route with no caller -- the client
+# helper that called it (`getAllUsers`) had zero call sites and is gone too.
+#
+# GET /users now resolves to 405 (POST /users still exists). Pinned by
+# tests/test_users_collection_route_182.py, which asserts the ROUTE TABLE and
+# needs no database -- deliberately, because the main suite requires a live
+# MySQL and this repo has no CI, so a pin that cannot run is not a pin.

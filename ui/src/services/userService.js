@@ -6,10 +6,9 @@ export const createUser = async (email) => {
   return await postData('/users', data);
 };
 
-// Get all users
-export const getAllUsers = async () => {
-  return await getData('/users');
-};
+// lexitrail#182: getAllUsers removed with the GET /users collection route
+// it called -- that route leaked every member's email to any guest token, and
+// this helper had zero call sites.
 
 // Get a user by email
 export const getUserByEmail = async (email) => {

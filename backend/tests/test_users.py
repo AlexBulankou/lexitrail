@@ -49,13 +49,31 @@ class UserTests(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIn(b'User deleted successfully', response.data)
 
-    def test_get_users(self):
-        """This might be failing because the GET /users route is missing."""
+    def test_get_users_collection_is_REFUSED(self):
+        """lexitrail#182: `GET /users` is gone -- it returned every member's
+        email to any authenticated caller, and a guest/demo token counts as
+        authenticated.
+
+        This asserted 200 until 2026-08-28, i.e. it PINNED the leak. Its
+        docstring said "this might be failing because the GET /users route is
+        missing", which is a note from someone who was not sure why the test
+        existed -- worth keeping in mind before treating an old green test as
+        an endorsement of the behaviour it covers.
+
+        405, not 404: `POST /users` still exists, so the path is known and only
+        the method is not. The DB-free route-table pin in
+        tests/test_users_collection_route_182.py is the one that runs
+        everywhere; this one keeps the authenticated-caller case honest for
+        whoever has a live MySQL."""
         TestUtils.authenticate_and_create_user(self.client, default_mock_user)  # Create user
         TestUtils.mock_auth_header(self.headers, default_mock_user)  # Mock auth header
 
         response = self.client.get('/users', headers=self.headers)
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 405)
+        # and the caller's own record is still reachable -- a control, so this
+        # cannot pass by the whole blueprint having gone missing
+        own = self.client.get(f'/users/{default_mock_user}', headers=self.headers)
+        self.assertEqual(own.status_code, 200)
 
     def test_unauthenticated_user_access(self):
         """Test that unauthenticated users can access endpoints with special token format."""
