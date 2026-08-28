@@ -19,11 +19,9 @@ import path from 'path';
 const COMPONENTS = path.resolve(__dirname, '..', 'components');
 const read = (f) => fs.readFileSync(path.join(COMPONENTS, f), 'utf8');
 
-/** Source with comments removed: {/* jsx *\/}, /* block *\/ and // line. */
-export const stripComments = (src) => src
-  .replace(/\{\s*\/\*[\s\S]*?\*\/\s*\}/g, ' ')   // {/* jsx comment */}
-  .replace(/\/\*[\s\S]*?\*\//g, ' ')             // /* block */
-  .replace(/^\s*\/\/.*$/gm, ' ');                // // line
+// #193: extracted to ./stripComments so WordCard's test uses the SAME stripper. Two copies would
+// drift and the tests depending on them would then disagree silently.
+import { stripComments } from './stripComments';
 
 // Claims with no shipped implementation. Each entry names WHY, because a banned-phrase list with
 // no reasons rots into a list nobody dares change.

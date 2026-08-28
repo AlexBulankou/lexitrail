@@ -8,6 +8,11 @@ import '../styles/WordCard.css';
 
 const WordCard = ({ mode, word, isFlipped, isHintDisplayed, handleMemorized, handleNotMemorized, toggleExclusion, feedbackClass, provideFeedback, setFlippedState }) => {
   const [hintImage, setHintImage] = useState(null);
+  // lexitrail#193: the /hint response already carries an AI etymology/mnemonic that the UI
+  // threw away. Kept in its OWN state rather than derived from hintImage, because the two are
+  // independently nullable -- a word can have text and no image, and the render below is a
+  // SIBLING of the image block for exactly that reason.
+  const [hintText, setHintText] = useState(null);
   const [loadingHint, setLoadingHint] = useState(true);
   const [loadingWord, setLoadingWord] = useState(true); // New state for controlling button loading state
 
@@ -18,6 +23,7 @@ const WordCard = ({ mode, word, isFlipped, isHintDisplayed, handleMemorized, han
 
       // Clear the current hint and show loading message
       setHintImage(null);
+      setHintText(null);
 
       // SUG-2: hint images are opt-in. Only request one when the learner has
       // hints shown, so browsing the card grid doesn't fire a generate/fetch
@@ -34,6 +40,9 @@ const WordCard = ({ mode, word, isFlipped, isHintDisplayed, handleMemorized, han
           const response = await getHint(word.user_id, word.word_id);
           if (response && response.data) {
             setHintImage(response.data.hint_image);
+            // #193: the SAME cached response -- no extra request, so this stays cost-neutral
+            // and inherits SUG-2's opt-in gate above unchanged.
+            setHintText(response.data.hint_text || null);
           }
         } catch (error) {
           console.error('Failed to load hint image:', error);
@@ -62,6 +71,7 @@ const WordCard = ({ mode, word, isFlipped, isHintDisplayed, handleMemorized, han
     // Set loadingWord to true to disable all buttons
     setLoadingWord(true);
     setHintImage(null);
+    setHintText(null);            // #193: mirror the image's clear/restore pair
 
     // Save the current word ID to check if it changes after the action
     const currentWordId = word.word_id;
@@ -75,6 +85,7 @@ const WordCard = ({ mode, word, isFlipped, isHintDisplayed, handleMemorized, han
         // If the word is still the same, reset the loading state and hint image
         setLoadingWord(false);
         setHintImage(hintImage); // Restore the previous hint image
+        setHintText(hintText);   // #193: and its text, or the caption vanishes on a same-word action
       }
     }, 0); // Run this check right after the action to update states
   };
@@ -116,6 +127,7 @@ const WordCard = ({ mode, word, isFlipped, isHintDisplayed, handleMemorized, han
         const response = await regenerateHint(word.user_id, word.word_id);
         if (response && response.data) {
           setHintImage(response.data.hint_image);
+          setHintText(response.data.hint_text || null);   // #193: regenerate replaces BOTH
         }
       } catch (error) {
         console.error('Failed to regenerate hint image:', error);
@@ -254,6 +266,21 @@ const WordCard = ({ mode, word, isFlipped, isHintDisplayed, handleMemorized, han
           </>
         ) : (<></>)}
       </div>
+
+      {/* lexitrail#193 — the etymology text, OUTSIDE .hint-image-container on purpose.
+          That container is pinned to a hard 85px (inline, above) with the image at height:100%;
+          a caption placed inside it is squeezed against a fixed height and clipped. Its own
+          container is also why this is not simply a sibling <p>: the text is not part of the
+          image container's job, and reusing it would couple the caption's layout to the
+          image's fixed geometry.
+          Independently gated on hintText because the two fields are independently nullable —
+          a word can have text and no image, and those are exactly the words whose caption
+          would otherwise be the only hint content and would be hidden. */}
+      {isHintDisplayed && hintText && (
+        <div className="hint-text-container">
+          <p className="hint-text">{hintText}</p>
+        </div>
+      )}
 
       <div onClick={mode === GameMode.TEST ? undefined : handleCardClick}
         className={`word-card-inner ${isFlipped ? 'flipped' : ''}`}
