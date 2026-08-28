@@ -168,6 +168,33 @@
     text-align: center;
 }
 
+/* lexitrail#196 — the landing "Character Breakdown" example rendered as one run-on string:
+   `记忆jì yìmemoryThink of 记 (jì)...`. The three spans (chinese-char / pinyin / meaning) had NO
+   styles at all, so they collapsed into each other and into the copy that follows.
+   A block with an interpunct between tokens: the separator is generated content rather than
+   markup, so the JSX stays three semantic spans and a screen reader is not read a dot. */
+.example-word {
+    display: block;
+    margin-bottom: 0.5rem;
+}
+
+.example-word .chinese-char {
+    font-size: 1.6rem;
+    margin-right: 0.4rem;
+}
+
+.example-word .pinyin,
+.example-word .meaning {
+    font-size: 1rem;
+    color: #666;
+}
+
+.example-word .pinyin::after {
+    content: "\00b7";          /* · — a separator, not a word */
+    margin: 0 0.4rem;
+    color: #bbb;
+}
+
 .chinese-word {
     font-size: 2.5rem;
     margin-bottom: 1rem;
