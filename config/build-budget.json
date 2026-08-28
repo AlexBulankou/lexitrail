@@ -162,7 +162,8 @@
         "anchor_utc": "2026-08-08T16:00:00Z"
       },
       "gate_triggers": [
-        "lexitrail-backend-deploy-main"
+        "lexitrail-backend-deploy-main",
+        "lexitrail-ui-deploy-main"
       ],
       "trigger_region": "us-central1",
       "daily_build_count": 5,

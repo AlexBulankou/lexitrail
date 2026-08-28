@@ -1,0 +1,126 @@
+# cloudbuild-ui.yaml — build and push the UI image on main merges (issue-216).
+#
+# WHY THIS EXISTS: `cloudbuild.yaml` (issue-77) closed the BACKEND half of the
+# deploy gap. The UI half was left open and is the larger one. Measured
+# 2026-08-28: the live UI image is `sha256:f691890…`, created 2026-08-11T18:47Z,
+# and 32 commits touching `ui/` have merged since — 23 distinct issues. Four
+# were verified inert at the wire, not inferred from the merge list:
+#
+#   #204  GET /does-not-exist -> 200        the indexable soft-404 is still served
+#         (and #204 is CLOSED as COMPLETED, which is the harm: it reads as fixed)
+#   #186  that same 200 still carries <link rel="canonical" href="https://lexitrail.com/"/>
+#   #157  live sitemap.xml: 26 `xhtml:link`, 0 of them with an href
+#   #183  /hsk2.html -> 301 -> /hsk2 -> the generic SPA shell, 2871 bytes
+#
+# So this file is not an improvement to a working pipeline; it is the pipeline.
+#
+# ─── WHAT THIS DOES NOT DO ────────────────────────────────────────────────────
+# 🔴 It BUILDS AND PUSHES. It does not roll the deployment, and a push does NOT
+# reach prod on its own. `lexitrail-ui-deployment` is pinned BY DIGEST, so
+# `imagePullPolicy: Always` is inert (nothing newer for the same digest to
+# resolve to) and `rollout restart` re-pulls identical bytes. The rollout is:
+#
+#     kubectl -n lexitrail set image deployment/lexitrail-ui-deployment \
+#       <container>=us-central1-docker.pkg.dev/lexitrail/lexitrail-repo/lexitrail-ui@sha256:<new>
+#     kubectl -n lexitrail get deploy lexitrail-ui-deployment \
+#       -o jsonpath='{.spec.template.spec.containers[0].image}'    # READ IT BACK
+#
+# ⚠️ `rollout status` reports that pods rolled and has no opinion on whether the
+# IMAGE changed, so it returns success for a no-op restart. The same stale
+# `:latest` + `Always` claim in `cloudbuild.yaml` nearly made the issue-182
+# security deploy a silent no-op; corrected there in the same cycle as this file.
+#
+# ─── COST, WHICH IS THE REAL CONSTRAINT HERE ──────────────────────────────────
+# lexitrail is `daily_build_count: 5`, `count_pinned: true`, enforcing. Merges
+# touching `ui/` ran 3 / 5 / 12 on the last three active days, so on a busy day
+# this trigger alone can exceed the pool and be REFUSED.
+#
+# 🔴 That is tolerable HERE and would not be for a test trigger, and the reason
+# is worth stating so nobody "fixes" it by widening the budget reflexively: a
+# refused DEPLOY build loses nothing, because the next successful build ships
+# every commit merged since — the diffs are cumulative. A refused TEST build
+# loses the coverage of one specific diff forever. Same refusal, different cost.
+# (issue-219 is the decision about NOT moving the jest suite into this pool.)
+#
+# What a refusal does cost is a red check on `main` carrying zero information
+# about the code. If that becomes routine, the fix is a deliberate raise of
+# `daily_build_count` — measured at ~$0.0061/build, going 5 -> 12 costs about
+# $0.04/day — and it must be a decision, not a drift: `count_pinned: true`
+# exists so calibration cannot silently move a number a human chose.
+#
+# ─── REQUIRED WIRING, ALL THREE LOAD-BEARING ──────────────────────────────────
+# (a) `--trigger-name=$TRIGGER_NAME`. A build step gets no ambient environment,
+#     so without the flag the name reads EMPTY, empty is treated as ungated, and
+#     the per-trigger downgrade turns enforcement off while leaving counting on.
+#     Silently. Measured on this project: the 2026-08-28 12:16Z manual
+#     `builds submit` shows `used: 1` — counted, unenforceable.
+# (b) The `env:` block. The refusal message tells a blocked engineer to re-run
+#     with `_BREAK_GLASS=1`; without this wiring that variable never reaches the
+#     process and the hatch the message names does not exist.
+# (c) Every later step says `waitFor: ['quota-gate']`. `waitFor: ['-']` means
+#     START AT t=0 REGARDLESS OF POSITION, so a gate at the top of a file whose
+#     steps all say `['-']` gates ZERO of them. Not "delete the dashes" — a step
+#     with no `waitFor` waits for the one above it, serialising everything.
+# (d) NOT in this file: the trigger's name must be added to `gate_triggers` for
+#     `lexitrail` in `config/build-budget.json`. An empty or non-matching list
+#     means nothing can ever be refused. Done in this same PR.
+
+substitutions:
+  # Default empty so ordinary builds are unaffected; only a deliberate re-run
+  # with --substitutions=_BREAK_GLASS=1 overrides the quota gate. The override
+  # is still COUNTED — an override nobody counts becomes the habit.
+  _BREAK_GLASS: ''
+  _IMAGE: 'us-central1-docker.pkg.dev/lexitrail/lexitrail-repo/lexitrail-ui'
+
+steps:
+
+  - name: 'python:3.11-slim'
+    id: 'quota-gate'
+    entrypoint: 'python3'
+    args:
+      - 'scripts/build_budget/inbuild.py'
+      - '--repo=lexitrail'
+      - '--state-uri=gs://lexitrail-build-budget/count-lexitrail.json'
+      - '--build-id=$BUILD_ID'
+      - '--trigger-name=$TRIGGER_NAME'
+    env:
+      - 'ENSEMBLE_BUILD_QUOTA_BREAK_GLASS=${_BREAK_GLASS}'
+    waitFor: ['-']
+
+  # `|| true` because a missing cache must never be a build failure — an
+  # uncached rebuild is the most expensive thing this file can do, which is why
+  # the pull is worth its own step.
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'pull-cache'
+    entrypoint: 'bash'
+    args: ['-c', 'docker pull ${_IMAGE}:latest || true']
+    waitFor: ['quota-gate']
+
+  # No `machineType` anywhere in this file, deliberately: the default is the
+  # cheap one, and specifying a larger one is a silent cost increase no reviewer
+  # of a later PR would think to look for.
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'ui-build'
+    args:
+      - 'build'
+      - '--cache-from'
+      - '${_IMAGE}:latest'
+      - '-t'
+      - '${_IMAGE}:latest'
+      - '-t'
+      - '${_IMAGE}:$SHORT_SHA'
+      - './ui'
+    waitFor: ['pull-cache']
+
+# `:latest` is NOT what the live Deployment pulls — it is digest-pinned (see
+# above), so `:latest` serves the `--cache-from` pull and gives a human a tag to
+# reason about. `:$SHORT_SHA` is what makes "is this fix deployed?" a lookup
+# rather than ReplicaSet archaeology.
+images:
+  - '${_IMAGE}:latest'
+  - '${_IMAGE}:$SHORT_SHA'
+
+# 30m, longer than the backend's 20m: this image runs `npm install` plus a CRA
+# production build on node:16-alpine, and the uncached first build (nothing to
+# pull) is the slow case.
+timeout: '1800s'

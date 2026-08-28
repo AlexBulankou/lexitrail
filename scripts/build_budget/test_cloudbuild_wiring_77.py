@@ -16,11 +16,35 @@ import pytest
 
 yaml = pytest.importorskip("yaml")
 
-CB = Path(__file__).resolve().parents[2] / "cloudbuild.yaml"
+_ROOT = Path(__file__).resolve().parents[2]
+
+# EVERY gated build config in the repo, with the id of its docker build step.
+# issue-216 added the second one; the wiring below was written for the first and
+# would have passed unchanged while the new file gated nothing, because the
+# tests named a single file rather than the class of files.
+#
+# 🔴 A config added here and NOT added to this list is the failure this list
+# exists to stop, so the last test in the yaml block asserts the list is the
+# whole set rather than trusting whoever adds the next one to remember.
+# `build_id` is the docker build step to check `--cache-from` on, or None for a
+# config that builds no image (the jest one runs npm, so a layer cache is not a
+# thing it can have — skipping that ONE assertion is right, silently excluding
+# the whole file from the other six would not be).
+CONFIGS = [
+    (_ROOT / "cloudbuild.yaml", "backend-build"),
+    (_ROOT / "cloudbuild-ui.yaml", "ui-build"),
+    (_ROOT / "cloudbuild-ui-test.yaml", None),
+]
+_IDS = [p.name for p, _ in CONFIGS]
+
+# Kept so the module still names the original file explicitly.
+CB = CONFIGS[0][0]
+
+gated = pytest.mark.parametrize("path,build_id", CONFIGS, ids=_IDS)
 
 
-def _cfg():
-    return yaml.safe_load(CB.read_text())
+def _cfg(path=CB):
+    return yaml.safe_load(path.read_text())
 
 
 def _step(cfg, sid):
@@ -30,12 +54,14 @@ def _step(cfg, sid):
     raise AssertionError(f"no step {sid!r}; ids={[s.get('id') for s in cfg['steps']]}")
 
 
-def test_quota_gate_exists_and_starts_first():
-    gate = _step(_cfg(), "quota-gate")
+@gated
+def test_quota_gate_exists_and_starts_first(path, build_id):
+    gate = _step(_cfg(path), "quota-gate")
     assert gate["waitFor"] == ["-"], "the gate itself must start at t=0"
 
 
-def test_every_other_step_waits_on_the_gate_transitively():
+@gated
+def test_every_other_step_waits_on_the_gate_transitively(path, build_id):
     """🔴 The largest bypass measured in the fleet.
 
     `waitFor: ['-']` means START AT t=0 REGARDLESS OF FILE POSITION. A gate
@@ -44,7 +70,7 @@ def test_every_other_step_waits_on_the_gate_transitively():
     (`a -> gate`, `b -> a`) is legitimate and still gated; only a `['-']` or a
     chain that never reaches the gate is a bypass.
     """
-    cfg = _cfg()
+    cfg = _cfg(path)
     by_id = {s.get("id"): s for s in cfg["steps"]}
 
     def reaches_gate(sid, seen=()):
@@ -67,34 +93,38 @@ def test_every_other_step_waits_on_the_gate_transitively():
             assert reaches_gate(sid), f"step {sid!r} never reaches the quota gate"
 
 
-def test_gate_passes_trigger_name():
+@gated
+def test_gate_passes_trigger_name(path, build_id):
     """issue-8237: without it the trigger name reads EMPTY, empty is treated as
     ungated, and inbuild.py's per-trigger downgrade turns enforcement off while
     leaving counting on. Fails toward 'never gate anything'."""
-    args = _step(_cfg(), "quota-gate")["args"]
+    args = _step(_cfg(path), "quota-gate")["args"]
     assert "--trigger-name=$TRIGGER_NAME" in args
 
 
-def test_gate_wires_the_break_glass_var_its_own_message_names():
+@gated
+def test_gate_wires_the_break_glass_var_its_own_message_names(path, build_id):
     """The refusal message tells a blocked engineer to re-run with
     _BREAK_GLASS=1. A Cloud Build step gets no ambient environment, so without
     this the hatch the message names does not exist — worse than none, because
     it is specific and reads as actionable."""
-    cfg = _cfg()
+    cfg = _cfg(path)
     env = _step(cfg, "quota-gate").get("env") or []
     assert any("ENSEMBLE_BUILD_QUOTA_BREAK_GLASS" in e for e in env)
     assert "_BREAK_GLASS" in (cfg.get("substitutions") or {}), \
         "_BREAK_GLASS must default to empty, or every ordinary build overrides"
 
 
-def test_gate_reads_lexitrails_own_repo_and_state():
-    args = _step(_cfg(), "quota-gate")["args"]
+@gated
+def test_gate_reads_lexitrails_own_repo_and_state(path, build_id):
+    args = _step(_cfg(path), "quota-gate")["args"]
     assert "--repo=lexitrail" in args
     assert any(a.startswith("--state-uri=gs://") for a in args), \
         "a file:// store cannot compare-and-swap and degrades the gate open"
 
 
-def test_no_machine_type_anywhere():
+@gated
+def test_no_machine_type_anywhere(path, build_id):
     """Constraint 4 of the authorization: default machine type. A larger one is
     a silent cost increase no later reviewer would think to look for.
 
@@ -102,19 +132,47 @@ def test_no_machine_type_anywhere():
     'No machineType anywhere in this file', so a substring search matches the
     comment SAYING it is absent and passes even if a real key is added.
     """
-    cfg = _cfg()
+    cfg = _cfg(path)
     assert "machineType" not in (cfg.get("options") or {})
     for s in cfg["steps"]:
         assert "machineType" not in s, f"step {s.get('id')} sets machineType"
 
 
-def test_layer_cache_is_wired_and_tolerates_a_cold_start():
+@gated
+def test_layer_cache_is_wired_and_tolerates_a_cold_start(path, build_id):
     """Constraint 3. An uncached rebuild is the most expensive thing this file
     can do; a missing cache on the FIRST build must not fail the build."""
-    cfg = _cfg()
+    if build_id is None:
+        pytest.skip(f"{path.name} builds no image -- no layer cache to wire")
+    cfg = _cfg(path)
     pull = _step(cfg, "pull-cache")
     assert "|| true" in " ".join(pull["args"]), "first build has nothing to pull"
-    assert "--cache-from" in _step(cfg, "backend-build")["args"]
+    assert "--cache-from" in _step(cfg, build_id)["args"]
+
+
+def test_configs_list_covers_every_gated_build_config_in_the_repo():
+    """🔴 The guard on the list itself.
+
+    Every assertion above names files through CONFIGS, so a NEW `cloudbuild*.yaml`
+    that nobody adds to that list is unpinned -- and unpinned is invisible,
+    because an inert gate produces a green build exactly like a live one. That is
+    the same shape the gate tests guard inside a file, one level out.
+
+    Keyed on "declares a step with id `quota-gate`", not on the filename, so a
+    config that genuinely has no gate (nothing to enforce) is correctly ignored
+    rather than needing an exclusion entry.
+    """
+    listed = {p.name for p, _ in CONFIGS}
+    found = set()
+    for f in sorted(_ROOT.glob("cloudbuild*.yaml")):
+        cfg = yaml.safe_load(f.read_text()) or {}
+        if any(s.get("id") == "quota-gate" for s in (cfg.get("steps") or [])):
+            found.add(f.name)
+    assert found == listed, (
+        f"gated configs on disk {sorted(found)} != CONFIGS {sorted(listed)}. "
+        "A gated config missing from CONFIGS is checked by nothing; a name in "
+        "CONFIGS with no gate on disk means the gate was removed."
+    )
 
 
 # ── the trap that is NOT in cloudbuild.yaml ──────────────────────────────────
