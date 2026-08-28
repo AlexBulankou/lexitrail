@@ -35,6 +35,22 @@
 #       lexitrail-backend=${_IMAGE}@sha256:<the new digest>
 #     kubectl -n lexitrail get deploy lexitrail-backend \
 #       -o jsonpath='{.spec.template.spec.containers[0].image}'   # READ IT BACK
+#     python3 scripts/smoke_served_content.py   # ...AND READ THE SERVED BYTES (#235 AC1)
+#
+# 🔴 THE LAST LINE IS NOT OPTIONAL, AND THE TWO CHECKS ANSWER DIFFERENT QUESTIONS.
+# The digest read-back proves the DEPLOYMENT moved. It has no opinion on what the
+# site SERVES. Every path on lexitrail returns 200 — including ones that do not
+# exist — so the obvious check certifies nothing (issue-77). The smoke compares the
+# served og:image against what `ui/public/index.html` declares and asserts the asset
+# comes back as an image rather than the SPA shell.
+#
+#     exit 0  PASS         served content matches source
+#     exit 1  FAIL         stale or wrong content -- a real finding
+#     exit 3  CANNOT-TELL  the discriminator died, or the site did not answer
+#
+# ⚠️ Exit 3 is NOT a failure and must not be wired as one. It means the probe could
+# not look. Treating it as a bad deploy trains people to ignore it, which converts
+# the third state back into noise and then into nothing.
 #
 # ⚠️ `rollout status` reports that pods rolled. It has no opinion on whether the
 # IMAGE changed, so it returns success for a no-op restart — read the digest off
