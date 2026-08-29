@@ -198,7 +198,30 @@ resource "kubernetes_deployment_v1" "backend" {
               # a bundled change reports as free and surfaces a cost later with nothing
               # pointing at it. AC3 (memory) is a separate decision.
               cpu                 = "1"
-              memory              = "512Mi"
+              # issue-276 AC3: 512Mi -> 1Gi. The pods were OOMKilled (exit=137)
+              # roughly hourly, and each kill dumps the per-pod in-memory cache,
+              # so every kill re-opens the ~cold-warm window #266 is about.
+              #
+              # SIZED, not guessed. Read off the live cgroups before changing it:
+              #   pod fd9ft (19m, fully warmed)  peak 390.3 MB / max 536.9 MB  73%
+              #   pod w45vm (3m45s, warming)     peak 426.5 MB / max 536.9 MB  79%
+              # ~110 MB of headroom, which a single concurrent large-wordset
+              # compute can cross. 1Gi gives ~2.5x the observed peak.
+              #
+              # FREE, and re-probed rather than inherited: an earlier handoff of
+              # mine claimed this raise was NOT free because Autopilot would
+              # silently lift requests.cpu 100m -> 154m. That does not
+              # reproduce -- 1Gi and even 2Gi echo requests UNMUTATED at
+              # req 100m/256Mi. The ratio is real but applies to REQUESTS and we
+              # are far inside it (a 4-CPU/128Mi probe IS silently corrected to
+              # 4Gi, which is the positive control proving the webhook enforces
+              # it and that our arms genuinely pass rather than going unseen).
+              #
+              # ⚠️ NOT proven sufficient: both samples are 19 min and 4 min old
+              # while the OOM cadence is ~1h, so a slow leak over a full period
+              # is NOT excluded. If exit=137 returns at 1Gi, the fix is a leak
+              # hunt, not another raise.
+              memory              = "1Gi"
               "ephemeral-storage" = "1Gi"
             }
           }
