@@ -321,29 +321,6 @@
   overflow-wrap: break-word;
 }
 
-/* lexitrail#192 — the curated example sentences, on the card back under the translation.
-   Only rendered for words the corpus covers (~224 of 5,614), so this never shows an empty box. */
-.word-sentences {
-  margin-top: 8px;
-  width: 100%;
-  text-align: left;
-}
-
-.word-sentence + .word-sentence {
-  margin-top: 6px;
-  padding-top: 6px;
-  border-top: 1px solid rgba(0, 0, 0, 0.08);
-}
-
-.word-sentence p {
-  margin: 0;
-  line-height: 1.35;
-}
-
-.word-sentence-zh { font-size: 1rem; }
-.word-sentence-py { font-size: 0.8rem; }        /* PinyinText keeps each token unbroken (#190) */
-.word-sentence-en { font-size: 0.8rem; color: #555; }
-
 .regenerate-hint-button {
   position: absolute;
   top: 5px;
