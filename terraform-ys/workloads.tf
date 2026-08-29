@@ -208,14 +208,17 @@ resource "kubernetes_deployment_v1" "backend" {
               # ~110 MB of headroom, which a single concurrent large-wordset
               # compute can cross. 1Gi gives ~2.5x the observed peak.
               #
-              # FREE, and re-probed rather than inherited: an earlier handoff of
-              # mine claimed this raise was NOT free because Autopilot would
-              # silently lift requests.cpu 100m -> 154m. That does not
-              # reproduce -- 1Gi and even 2Gi echo requests UNMUTATED at
-              # req 100m/256Mi. The ratio is real but applies to REQUESTS and we
-              # are far inside it (a 4-CPU/128Mi probe IS silently corrected to
-              # 4Gi, which is the positive control proving the webhook enforces
-              # it and that our arms genuinely pass rather than going unseen).
+              # FREE -- but ONLY because this raises the LIMIT, not the REQUEST.
+              # Autopilot's cpu:memory ratio acts on REQUESTS, and the warning
+              # about it is CORRECT; I nearly retracted it as unreproducible by
+              # probing the wrong field. Measured:
+              #   REQ 100m/256Mi LIM 1/512Mi -> 100m   control (today)
+              #   REQ 100m/256Mi LIM 1/1Gi   -> 100m   THIS CHANGE, free
+              #   REQ 100m/1Gi   LIM 1/1Gi   -> 154m   the ratio, reproduced
+              # Positive control (4 CPU/128Mi is SILENTLY corrected to 4Gi)
+              # proves the webhook runs, so the unmutated echoes above mean
+              # "seen and allowed" rather than "never inspected".
+              # 🔴 Raising requests.memory here would NOT be free.
               #
               # ⚠️ NOT proven sufficient: both samples are 19 min and 4 min old
               # while the OOM cadence is ~1h, so a slow leak over a full period
