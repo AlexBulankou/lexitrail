@@ -73,6 +73,36 @@ export const sessionRemaining = (words, sessionKeys) =>
 // words yields a 4-card session, and showing "1 of 10" there would promise six
 // cards that do not exist. It is also never `toShow.length`, which shrinks —
 // a denominator that moves is how a progress bar runs backwards.
+// The label under the progress bar (lexitrail#263).
+//
+// 🔴 `done + 1` NAMES THE FIRST VISIBLE CARD, and the grid shows `visibleCount` of
+// them. Alex, 2026-08-29, on the live site: "Below card 1 of x is incorrect, it
+// should show not 1 but based on how many cards are shown."
+//
+// He is describing a real defect INSIDE #108's design rather than #108 itself.
+// The bounded session and its finish line are sub-issue 2 of 3 of his own #50
+// directive; what was wrong is that the counter was written for a one-card view
+// and the layout renders `selectedLayout.capacity` cards. With six on screen,
+// "card 1 of 10" names one of the six and moves in jumps that match nothing the
+// learner can see.
+//
+// So: a RANGE when more than one card is showing, and the single form when one
+// is -- which is byte-identical to the old string at capacity 1, so the common
+// phone layout is unchanged.
+//
+// `total` is still the captured-set size and still never `toShow.length` (see
+// sessionProgress) -- a denominator that moves is how a progress bar runs
+// backwards. Only the NUMERATOR changes here.
+export const progressLabel = ({ done, total }, visibleCount = 1) => {
+  if (!total) return '';
+  const first = Math.min(done + 1, total);
+  const last = Math.min(done + Math.max(visibleCount, 1), total);
+  return first === last
+    ? `card ${first} of ${total}`
+    : `cards ${first}\u2013${last} of ${total}`;
+};
+
+
 export const sessionProgress = (sessionKeys, remainingCount) => {
   const total = sessionKeys ? sessionKeys.size : 0;
   const remaining = Math.max(0, Math.min(remainingCount || 0, total));

@@ -4,8 +4,7 @@ import MiniWordCard from './MiniWordCard';
 import Completed from './Completed';
 import {
   SESSION_BUDGET, sessionRemaining, sessionProgress, sessionOutcome,
-  nextSessionBinding, sessionVisibleIndices, EMPTY_BINDING,
-} from '../utils/session';
+  nextSessionBinding, sessionVisibleIndices, EMPTY_BINDING, progressLabel } from '../utils/session';
 import OnboardingOverlay from './OnboardingOverlay';
 import Timer from './Timer';
 import { useParams } from 'react-router-dom';
@@ -490,7 +489,7 @@ const Game = () => {
         </div>
         <div className="progress-info">
           {sessionKeys
-            ? `card ${Math.min(progress.done + 1, progress.total)} of ${progress.total}`
+            ? progressLabel(progress, visibleIndices.length)
             : `recalled ${correctlyMemorized.size} out of ${totalToShow}`}
         </div>
       </div>
