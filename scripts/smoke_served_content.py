@@ -43,6 +43,7 @@ green run is exactly what a healthy deploy looks like.
 from __future__ import annotations
 
 import argparse
+import json
 import re
 import sys
 import urllib.error
@@ -87,6 +88,31 @@ def _repo_og(repo_root: Path) -> str | None:
     return raw.replace("%PUBLIC_URL%", "") if raw else None
 
 
+def _known_good_route(repo_root: Path) -> str | None:
+    """A route this site is DECLARED to serve, read from `serve.json` (#240 AC5).
+
+    Hard-coding `/` worked, and would decay silently the day the routing config
+    stopped rewriting it -- the same class as hard-coding the og:image instead of
+    reading it from `index.html`. `serve.json`'s `rewrites` IS the declaration of
+    what this site routes, so deriving from it means the check cannot drift away
+    from the config that decides the answer.
+
+    Takes the first LITERAL source (no `:param`, no `**`), which is `/`.
+    """
+    cfg = repo_root / "ui" / "public" / "serve.json"
+    if not cfg.is_file():
+        return None
+    try:
+        rewrites = json.loads(cfg.read_text(encoding="utf-8")).get("rewrites") or []
+    except (json.JSONDecodeError, OSError):
+        return None
+    for r in rewrites:
+        src = (r or {}).get("source", "")
+        if src.startswith("/") and ":" not in src and "*" not in src:
+            return src
+    return None
+
+
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--base", default=DEFAULT_BASE)
@@ -100,21 +126,52 @@ def main(argv: list[str] | None = None) -> int:
     base = args.base.rstrip("/")
 
     # ---- control FIRST. Nothing below means anything until this discriminates.
+    #
+    # issue-240: this used to require the SPA SHELL (200, text/html) back, because
+    # when it was written on 2026-08-28 *every* path on this site returned 200.
+    # That was issue-204's bug. #204's fix went live 2026-08-29 in the first UI
+    # deploy since 08-11, unknown paths now 404, and the old control therefore
+    # reported CANNOT-TELL on every run -- a permanently-red step, which is the
+    # muted-alarm outcome #235 AC3 predicted.
+    #
+    # 🔴 The control's PURPOSE is unchanged: prove `image/png` is a value this site
+    # can FAIL to return, so "it is a PNG" below is not passing for free. What
+    # changed is the site's contract -- from "everything 200s" to "unknown paths
+    # 404, enumerated routes 200". The control is re-pointed at the NEW contract
+    # rather than patched to tolerate the new 404: a 200 here is now the ANOMALY,
+    # and it means #204 regressed.
+    #
+    # ⚠️ HTTPError is a SUBCLASS of URLError, so it must be caught first. Merging
+    # them is what made "the site 404'd as designed" and "the site did not answer"
+    # the same branch -- two facts wearing one value, which is the thing this
+    # script exists to refuse (#240 AC3).
     try:
-        _, ctl_ctype, ctl_body = _fetch(base + CONTROL_PATH)
+        ctl_status, ctl_ctype, ctl_body = _fetch(base + CONTROL_PATH)
+    except urllib.error.HTTPError as exc:
+        if exc.code == 404:
+            print(f"control ok: {CONTROL_PATH} -> 404 (unknown paths are refused, "
+                  f"as issue-204 intends) -- the control discriminates")
+            ctl_status = 404
+        else:
+            print(f"CANNOT-TELL: the control path {CONTROL_PATH} returned HTTP "
+                  f"{exc.code}, which is neither the 404 issue-204 guarantees nor "
+                  f"a reachable-site answer. Fix the probe before trusting any "
+                  f"result below.")
+            return CANNOT_TELL
     except (urllib.error.URLError, OSError) as exc:
         print(f"CANNOT-TELL: control request failed ({exc}) -- the site did not "
-              f"answer, so this run establishes nothing about the deploy.")
+              f"answer at all, so this run establishes nothing about the deploy. "
+              f"This is NOT the same as the expected 404.")
         return CANNOT_TELL
-
-    if "text/html" not in ctl_ctype.lower():
+    else:
+        # A response with no exception means a 2xx/3xx: the catch-all is back.
         print(f"CANNOT-TELL: the control path {CONTROL_PATH} returned "
-              f"{ctl_ctype!r}, not the SPA shell. 'is it an image' has stopped "
-              f"discriminating on this site, so a PASS below would be vacuous. "
-              f"Fix the probe before trusting any result.")
+              f"{ctl_status} {ctl_ctype.split(';')[0]!r} ({len(ctl_body)}B) "
+              f"instead of a 404. The catch-all issue-204 removed has REGRESSED, "
+              f"so an unknown path is being served as a real page again -- and a "
+              f"PASS below would be vacuous. This is a finding about the site, "
+              f"not only about the probe.")
         return CANNOT_TELL
-    print(f"control ok: {CONTROL_PATH} -> {ctl_ctype.split(';')[0]} "
-          f"{len(ctl_body)}B (SPA shell, as required)")
 
     expected = _repo_og(args.repo_root)
     if not expected:
@@ -123,10 +180,18 @@ def main(argv: list[str] | None = None) -> int:
               f"served page against.")
         return CANNOT_TELL
 
+    route = _known_good_route(args.repo_root)
+    if route is None:
+        print(f"CANNOT-TELL: could not read an enumerated route from "
+              f"{args.repo_root}/ui/public/serve.json -- without one there is no "
+              f"route this site GUARANTEES to serve, so a fetch failure below "
+              f"could not be told apart from a route that simply is not routed.")
+        return CANNOT_TELL
     try:
-        _, _, home = _fetch(base + "/")
+        _, _, home = _fetch(base + route)
     except (urllib.error.URLError, OSError) as exc:
-        print(f"CANNOT-TELL: could not fetch {base}/ ({exc})")
+        print(f"CANNOT-TELL: could not fetch {base}{route} ({exc}) -- and this "
+              f"route IS in serve.json's rewrites, so the site should serve it.")
         return CANNOT_TELL
 
     served = _og_from(home.decode("utf-8", "replace"))
