@@ -19,6 +19,7 @@ import { createUser, getUserByEmail, migrateUser } from '../services/userService
 import { generateUniqueString } from './stringUtils';
 import defaultAvatar from '../styles/assets/default-avatar.svg';
 import { saveMemberSession, saveGuestSession } from './authStorage';
+import { markSignedInBefore } from './silentReauth';
 import { trackEvent } from './analytics';
 
 // Runs after Google userinfo has already succeeded and `setUser` has already
@@ -26,12 +27,23 @@ import { trackEvent } from './analytics';
 // Mirrors the original onSuccess body exactly: same session write, same
 // try/catch around the backend calls, so a backend or migrate failure is
 // swallowed here exactly as it always was -- this function never throws.
-export const completeGoogleSignIn = async (data, tokenResponse, { demoEmailToMigrate } = {}) => {
+export const completeGoogleSignIn = async (data, tokenResponse, { demoEmailToMigrate, method = 'google' } = {}) => {
   saveMemberSession(data, tokenResponse.access_token, Number(tokenResponse.expires_in));
+  // lexitrail#199: record that THIS BROWSER has completed a real sign-in, so a
+  // later load can attempt a silent token grant once this token expires. Set
+  // here rather than in AuthContext because this is the one place that runs on
+  // every successful member sign-in and nowhere else -- a guest never reaches
+  // it, which is #199 AC3 by construction rather than by a guard.
+  markSignedInBefore();
   // Fires on AUTH success (storage write), not on the backend calls below --
   // those are best-effort and independently try/caught, so a backend hiccup
   // must not make a real sign-in read as unmeasured.
-  trackEvent('login', { method: 'google' });
+  //
+  // #199: `method` distinguishes a clicked sign-in from a silent re-auth. They
+  // are both logins and both belong in this event, but #199's whole success
+  // measure is that clicked sign-ins become RARER -- folding silent ones in
+  // under the same label would hide exactly the movement it exists to show.
+  trackEvent('login', { method });
 
   try {
     const existingUser = await getUserByEmail(data.email);
