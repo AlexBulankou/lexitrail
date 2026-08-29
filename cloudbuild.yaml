@@ -53,8 +53,51 @@
 # the third state back into noise and then into nothing.
 #
 # ⚠️ `rollout status` reports that pods rolled. It has no opinion on whether the
-# IMAGE changed, so it returns success for a no-op restart — read the digest off
-# the live spec instead.
+# IMAGE changed, so it returns success for a no-op restart. That criticism is
+# correct and worth keeping.
+#
+# 🔴 BUT DO NOT ANSWER IT BY COMPARING DIGESTS, which is what this comment used
+# to say (issue-230). TWO BUILDS OF IDENTICAL SOURCE PRODUCE DIFFERENT DIGESTS,
+# so digest inequality does not imply a content difference. Measured 2026-08-28:
+# the live image (sha256:05a9f7bf…, a manual `gcloud builds submit`) and a fresh
+# trigger build (sha256:ab3a6696…) differed with NO backend/ commits between
+# them. Following the old advice says "stale — deploy again" for a deployment
+# that is fully current.
+#
+# ⚠️ And it fails toward ACTING. A check that wrongly says "up to date" is caught
+# the next time someone looks for their fix; a check that wrongly says "stale"
+# produces an unnecessary production rollout, and the rollout SUCCEEDS — so
+# nothing contradicts it afterwards. It also carried the credibility of being the
+# considered replacement for a known-bad check, which is exactly why nobody
+# re-derived it.
+#
+# COMPARE SOURCE, NOT DIGESTS. `:$SHORT_SHA` exists for this — it is what maps a
+# running pod back to a commit:
+#
+#     LIVE=$(kubectl -n lexitrail get deploy lexitrail-backend \
+#       -o jsonpath='{.spec.template.spec.containers[0].image}')
+#     # resolve that digest to its :<sha> tag
+#     gcloud artifacts docker images list ${_IMAGE} --include-tags \
+#       --filter="version=${LIVE##*@}" --format='value(tags)'
+#     git merge-base --is-ancestor <that-sha> origin/main   # live commit is on main
+#     git log --oneline <that-sha>..origin/main -- backend/ # EMPTY => nothing to deploy
+#
+# The last line is the real question — *is there a backend change not yet live* —
+# and it needs no digest comparison at all.
+#
+# ⚠️ Run it with a CONTROL, because an empty result is the answer you want and an
+# empty result is also what a broken invocation returns. Re-run the same `git log`
+# against an OLDER backend commit; if that is empty too, the command is not
+# discriminating and the "nothing to deploy" reading is worthless. Verified
+# 2026-08-29: live `4a939ef` -> empty, prior backend commit -> one commit.
+#
+# ⏳ The recipe needs the live image to carry a `:<sha>` tag, which a manual
+# `gcloud builds submit` does not produce. That was NOT true when issue-230 was
+# filed (the then-live image was hand-submitted and untagged) and IS true now —
+# the 2026-08-29 rollout of #233 put a trigger-built image live. If a hand
+# submit ever goes out again, this recipe stops applying until the next trigger
+# build, and the honest answer in that window is "cannot tell from the tag",
+# never a digest comparison.
 #
 # 🔴 THIS PARAGRAPH USED TO SAY THE OPPOSITE, and it nearly cost a live security
 # fix. It read: "The live spec is `:latest` with `imagePullPolicy: Always` …
