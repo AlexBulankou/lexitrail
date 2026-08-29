@@ -64,22 +64,27 @@ This project uses Python 3.9 to maintain consistency with our production environ
 ## Deployment
 
 > [!WARNING]
-> **This Terraform uses local state only — there is no remote (GCS) backend.**
-> `terraform apply` is only safe from the machine/clone that holds the original
-> `terraform.tfstate`. From a **fresh clone the state is empty**, so `apply`
-> would attempt to **recreate the entire live stack** (cluster, Cloud SQL, IAM,
-> app) rather than make incremental changes — do not run it there. `data.dotenv.env`
-> also requires a local `.env` (gitignored) that a fresh clone won't have.
+> **`terraform/` is RETIRED — the live stack is provisioned by `terraform-ys/`
+> instead (lexitrail#222).** This root uses local state only (no remote/GCS
+> backend), `data.dotenv.env` requires a local `.env` (gitignored) that a
+> fresh clone won't have, and `sql.tf`'s `mysql_schema_and_data_job` runs an
+> **unconditional `DROP TABLE`** (`schema-tables.sql`) on any apply that
+> reaches it. `terraform/retired-root-guard.tf` refuses to plan/apply this
+> root at all unless you pass
+> `-var='i_understand_this_root_is_retired_and_may_drop_prod_tables=true'` —
+> do not pass that flag unless you have confirmed with the team this root
+> (not `terraform-ys/`) is what you actually mean to run.
 >
-> Until a shared backend is set up, treat infra changes as **operator-applied
-> from the state-holding machine**, or apply individual additive Kubernetes
-> objects directly via `kubectl apply` of the rendered `k8s_templates/`. See
-> issue #11 for the GCS-backend-migration vs operator-applied-only decision.
+> For the live stack, use `terraform-ys/` (see its own README/CUTOVER-RUNBOOK).
+> `terraform/` still holds a few pieces that are NOT retired — e.g.
+> `verify_gmp_filter.sh` / `gmp-filter-guard.tf` (see
+> `docs/runbooks/gmp-cadvisor-filter.md`) — those are scripts/resources this
+> directory happens to hold, not things that require applying this root.
 
 ```bash
 cd terraform/
 gcloud auth login
-terraform apply
+terraform apply -var='i_understand_this_root_is_retired_and_may_drop_prod_tables=true'  # see warning above — confirm with the team first
 ```
 
 ## Configuration
@@ -123,12 +128,8 @@ npm start
 ```
 
 # Deploy to cloud
-```
-cd terraform/
-gcloud auth login
-gcloud auth application-default login
-terraform apply
-```
+`terraform/` is retired — see the Deployment warning above and use
+`terraform-ys/` for the live stack.
 
 
 ## Handling Deleted Kubernetes Clusters: Pruning Resources from Terraform State
