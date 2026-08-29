@@ -15,9 +15,11 @@
 # and it is the one repo that must NEVER get a self-hosted runner. Sister
 # to `ui-tests.yml`'s own (independent) deviation for the same reason —
 # see that file's header for the cost/asymmetry argument in the deploy-vs-
-# test-pool case, which applies here too: lexitrail's `daily_build_count: 5`
-# Cloud Build pool cannot absorb a per-PR test build without risking the
-# DEPLOY trigger being the one that gets refused.
+# test-pool case, which applies here too: lexitrail's Cloud Build pool
+# (`daily_build_count: 12` as of #260's Liberation pin -- re-check this
+# number before quoting it forward, it has already moved once) cannot
+# absorb a per-PR test build without risking the DEPLOY trigger being the
+# one that gets refused.
 #
 # ─────────────────────────────────────────────────────────────────────────────
 # WHY THE SCHEMA FILE IS READ LOCALLY, NOT DOWNLOADED FROM GCS (AC2/AC4)

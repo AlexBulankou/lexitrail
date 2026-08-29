@@ -101,9 +101,16 @@ class TestUtils:
                 # treats the whole line as a comment, but str.split(';') has
                 # no idea what a comment is, so it cut mid-line and handed the
                 # back half of the sentence to MySQL as if it were SQL.
-                # schema-tables.sql is pure DDL with no string literals, so
-                # stripping full-line `--` comments before splitting is safe
-                # and removes the class rather than this one instance of it.
+                #
+                # Stripping full-line `--` comments before splitting removes
+                # the class rather than this one instance -- safe on THIS
+                # file for a narrower reason than "no string literals" (it
+                # has two, in the CONCAT/SEPARATOR args of the daily_recall_
+                # stats view): no line of a string literal begins with `--`,
+                # and no string literal itself contains a `;`. A future edit
+                # that adds e.g. a `SEPARATOR ';'` would defeat the split
+                # this strip protects -- re-check both conditions before
+                # trusting this to still hold (lexitrail#274 review, hcl@).
                 sql_script = '\n'.join(
                     line for line in sql_script.splitlines()
                     if not line.strip().startswith('--')
