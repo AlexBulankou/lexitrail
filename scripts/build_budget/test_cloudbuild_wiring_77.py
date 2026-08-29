@@ -10,6 +10,7 @@ Run:  python3 -m pytest scripts/build_budget/test_cloudbuild_wiring_77.py
 """
 from __future__ import annotations
 
+import re
 from pathlib import Path
 
 import pytest
@@ -348,15 +349,102 @@ def test_ui_push_does_not_take_the_digest_from_repodigests_216():
 def test_ui_smoke_fails_the_build_on_cannot_tell_too_216():
     """zz1 relaying Alex: wire CANNOT-TELL *and* FAIL to a surface guaranteed to
     be seen. Exit 3 is CANNOT-TELL — if it were swallowed, a dead instrument
-    would render exactly like a healthy deploy."""
-    step = _ui_steps()["ui-smoke"]
-    script = "\n".join(step.get("args", []))
+    would render exactly like a healthy deploy.
+
+    Goes through `_ui_step_script()` rather than indexing `_ui_steps()` directly:
+    hc2 caught (PR #237 review) that this was the ONE pin of the seven that
+    bypassed the guard, so a missing step threw a bare KeyError — inside the very
+    change whose stated purpose is making that case legible.
+    """
+    script = _ui_step_script("ui-smoke")
     assert "smoke_served_content.py" in script, "issue-216: ui-smoke no longer runs the smoke"
-    assert 'exit "$rc"' in script, (
+    # `$$rc`, NOT `$rc`: Cloud Build substitutes `$VAR` before bash sees it, so a
+    # single `$` rejects the BUILD at validation (that is the 02:00Z rejection).
+    assert 'exit "$$rc"' in script, (
         "issue-216: ui-smoke no longer propagates the smoke's exit code — "
-        "swallowing exit 3 (CANNOT-TELL) makes a dead instrument look green"
+        "swallowing exit 3 (CANNOT-TELL) makes a dead instrument look green. "
+        "(If you just changed `$$rc` to `$rc`, that ALSO rejects the build.)"
     )
-    assert step.get("waitFor") == ["ui-deploy"], (
+    assert _ui_steps()["ui-smoke"].get("waitFor") == ["ui-deploy"], (
         "issue-216: ui-smoke must run AFTER ui-deploy, or it smokes the OLD site "
         "and passes on the state the deploy was supposed to change"
     )
+
+
+# ─── issue-216: Cloud Build substitutes $VAR before bash ever sees it ─────────
+#
+# 🔴 THIS IS THE GAP THAT SHIPPED. The 2026-08-29 02:00Z build was REJECTED at
+# validation, before step 0, with:
+#
+#     invalid value for 'build.substitutions': key in the template "DIGEST"
+#     is not a valid built-in substitution
+#
+# `$DIGEST` in an inline script is not a shell variable to Cloud Build — it is a
+# SUBSTITUTION, and an unknown one rejects the whole build. Shell vars must be
+# written `$$VAR`.
+#
+# Nothing then in this file could have caught it: `yaml.safe_load` parses the
+# document fine, and every other assertion here is about structure. A config that
+# PARSES is not a config that VALIDATES, and the rejection happens server-side
+# before any step runs — so there is no local signal at all without this rule.
+#
+# ⚠️ Cloud Build reports only the FIRST offending key. Five were present across
+# three steps (DIGEST, LIVE, REF, i, rc); fixing them one report at a time would
+# have cost four merge-and-reject cycles. This checks ALL of them at once, which
+# is the whole reason it is a rule and not a fix.
+#
+# (Free, at least: a validation rejection never reaches `quota-gate`, so it is
+# invisible to the budget — the build costs no unit. That is documented in
+# cloudbuild-ui.yaml's logging note, from issue-228 hitting the same class.)
+
+# https://cloud.google.com/build/docs/configuring-builds/substitute-variable-values
+_BUILTIN_SUBSTITUTIONS = {
+    "PROJECT_ID", "PROJECT_NUMBER", "BUILD_ID", "LOCATION", "TRIGGER_NAME",
+    "COMMIT_SHA", "SHORT_SHA", "REVISION_ID", "REPO_NAME", "REPO_FULL_NAME",
+    "BRANCH_NAME", "TAG_NAME", "SERVICE_ACCOUNT", "SERVICE_ACCOUNT_EMAIL",
+    "TRIGGER_BUILD_CONFIG_PATH",
+}
+
+# `$FOO` / `${FOO}` NOT preceded by another `$` (i.e. not already escaped).
+_UNESCAPED_VAR = re.compile(r"(?<!\$)\$\{([A-Za-z_][A-Za-z0-9_]*)\}|(?<!\$)\$([A-Za-z_][A-Za-z0-9_]*)")
+
+
+@pytest.mark.parametrize("path,build_id", CONFIGS, ids=lambda v: getattr(v, "name", v))
+def test_no_unescaped_shell_vars_in_inline_scripts_216(path, build_id):
+    """Every `$VAR` in a step's args must be a Cloud Build builtin, a `_`-prefixed
+    user substitution, or escaped `$$VAR` for the shell. Anything else rejects the
+    BUILD AT VALIDATION — no step runs, and the only place it is visible is the
+    build's `statusDetail`."""
+    doc = yaml.safe_load(path.read_text())
+    declared = set(doc.get("substitutions", {}))
+    offenders = {}
+    for step in doc.get("steps", []):
+        body = "\n".join(step.get("args", []) or [])
+        names = {m.group(1) or m.group(2) for m in _UNESCAPED_VAR.finditer(body)}
+        bad = sorted(
+            n for n in names
+            if n not in _BUILTIN_SUBSTITUTIONS and n not in declared and not n.startswith("_")
+        )
+        if bad:
+            offenders[step.get("id")] = bad
+    assert not offenders, (
+        f"issue-216: unescaped shell variables in {path.name} — Cloud Build reads these as "
+        f"SUBSTITUTIONS and rejects the build at validation, before step 0: {offenders}. "
+        "Write them `$$VAR`. Note Cloud Build reports only the FIRST one, so fixing what it "
+        "names is not the same as fixing this."
+    )
+
+
+def test_the_substitution_rule_can_actually_fail_216():
+    """POSITIVE CONTROL. The check above passes trivially on a config with no
+    inline scripts, so on its own a green run says nothing. Drive it to the other
+    verdict on a synthetic step to prove it discriminates."""
+    names = {m.group(1) or m.group(2)
+             for m in _UNESCAPED_VAR.finditer('D="$(cmd)"\n[ -n "$D" ] || exit 1')}
+    assert "D" in names, "the detector cannot see an unescaped var — it would pass on anything"
+    escaped = {m.group(1) or m.group(2)
+               for m in _UNESCAPED_VAR.finditer('D="$$(cmd)"\n[ -n "$$D" ] || exit 1')}
+    assert not escaped, f"the detector flags CORRECTLY escaped vars: {escaped} — it would red every fixed config"
+    assert not ({m.group(1) or m.group(2)
+                 for m in _UNESCAPED_VAR.finditer("docker build -t x:$SHORT_SHA .")}
+                - _BUILTIN_SUBSTITUTIONS), "a builtin must not be flagged"
