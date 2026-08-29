@@ -175,7 +175,29 @@ resource "kubernetes_deployment_v1" "backend" {
               "ephemeral-storage" = "1Gi"
             }
             limits = {
-              cpu                 = "200m"
+              # issue-276 AC1: 200m -> 1. At 200m the container was throttled in
+              # 98.7% of every scheduling period and spent MORE wall time frozen
+              # (130.9 s) than running (62.2 s), which is the whole gap between the
+              # algorithm's 0.37 ms/word and production's ~64 ms/word (#266).
+              #
+              # This is FREE. Autopilot bills REQUESTS, and requests are untouched at
+              # 100m. Probe-verified against the live webhook before applying, with a
+              # positive control: this exact shape passes `--dry-run=server` UNMUTATED
+              # while a shape missing ephemeral-storage is visibly mutated, so the
+              # unmutated echo means "the webhook saw it and left it alone" rather than
+              # "no webhook ran". Probe a BARE POD, not the Deployment -- dry-running
+              # the Deployment returns a confident wrong answer.
+              #
+              # Measured after the roll, against the still-running 200m pod as a
+              # simultaneous same-image control:
+              #   200m  nr_throttled 3086/3126 (98.7%)  throttled 130.9 s / usage 62.2 s
+              #   1      nr_throttled    7/841 ( 0.8%)  throttled   0.33 s / usage 50.8 s
+              #
+              # ⚠️ Do NOT bundle a memory raise into this edit. Autopilot enforces a
+              # cpu:memory ratio and reports a violation as a WARNING, not an error, so
+              # a bundled change reports as free and surfaces a cost later with nothing
+              # pointing at it. AC3 (memory) is a separate decision.
+              cpu                 = "1"
               memory              = "512Mi"
               "ephemeral-storage" = "1Gi"
             }
