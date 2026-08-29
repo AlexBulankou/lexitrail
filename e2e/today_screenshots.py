@@ -53,7 +53,32 @@ import threading
 API_ORIGIN = "https://api.lexitrail.com"
 USER = {"email": "screenshot@lexitrail.demo", "name": "Screenshot User"}
 
+# lexitrail#249. Setting `user` alone stopped signing anyone in on 2026-08-28.
+#
+# BEFORE #200 (issue-185) `AuthContext` read `sessionStorage.getItem('user')` and
+# nothing else, so a user object by itself WAS a session. #200 introduced
+# `authStorage.loadSession`, whose guest branch is `guestUser && guestToken`, and
+# #201 narrowed it again to `guestUser && isGuestToken(guestToken)` -- guest-shaped
+# meaning the `UNAUTH_USER:` prefix. A token-less stub therefore falls through to
+# the localStorage branch, finds nothing, and renders the signed-out marketing
+# landing. `.today` never appears and every shot fails.
+#
+# 🔴 The failure looked exactly like a broken deploy. It is not: a build of current
+# `main` and the bundle serving production fail IDENTICALLY, which is what said the
+# instrument had gone stale rather than the product. Keep this comment -- the next
+# person to see "`.today` never rendered" will reach for the deploy first.
+GUEST_TOKEN = "UNAUTH_USER:screenshot"
+
 DAY_MS = 24 * 60 * 60 * 1000
+
+# ONE definition on purpose (lexitrail#249): the previous code repeated the seed
+# at three call sites, so a change had to be made three times or the run would
+# authenticate on some shots and not others -- which reads as a flaky render, not
+# as a half-applied stub.
+SEED_SESSION = """({user, token}) => {
+    sessionStorage.setItem('user', JSON.stringify(user));
+    sessionStorage.setItem('access_token', token);
+}"""
 
 # A userword row as `getUserWordsByWordset` returns it. `recall_state: 2` is a
 # 1-day interval and the review is 30 days old, so `isWordDue` is true --
@@ -249,7 +274,7 @@ def run_game(browser, base, out, unexpected, failures):
         # that hides the thing under test.
         page.add_init_script("try { localStorage.setItem('lexitrail_onboarded', '1'); } catch (e) {}")
         page.goto(base, wait_until="domcontentloaded")
-        page.evaluate("u => sessionStorage.setItem('user', JSON.stringify(u))", USER)
+        page.evaluate(SEED_SESSION, {"user": USER, "token": GUEST_TOKEN})
         page.goto(f"{base}/game/1/DUE_TODAY", wait_until="networkidle")
 
         try:
@@ -422,7 +447,7 @@ def run_start_flow(browser, base, unexpected, failures):
     page.add_init_script("window.gtag = window.gtag || function () {};")
     page.add_init_script("try { localStorage.setItem('lexitrail_onboarded', '1'); } catch (e) {}")
     page.goto(base, wait_until="domcontentloaded")
-    page.evaluate("u => sessionStorage.setItem('user', JSON.stringify(u))", USER)
+    page.evaluate(SEED_SESSION, {"user": USER, "token": GUEST_TOKEN})
     page.goto(base, wait_until="networkidle")
 
     try:
@@ -471,10 +496,70 @@ def run_start_flow(browser, base, unexpected, failures):
 
 
 
+def self_test(build, base_factory):
+    """Does the session stub DISCRIMINATE, or would anything render Today? (#249)
+
+    The bug this file just recovered from was a stub that silently stopped
+    authenticating. The obvious fix -- seed a token until the shots come back --
+    is satisfied equally by a stub that authenticates EVERYTHING, and that
+    version would render Today for a visitor who should see the marketing page.
+    So the positive arm alone cannot tell a working stub from a broken gate.
+
+    Two arms, one build, one instant:
+        guest-shaped token (UNAUTH_USER:)  -> .today MUST render
+        member-shaped token (ya29.*)       -> .today MUST NOT render
+
+    The second arm is the load-bearing one. `loadSession`'s guest branch is
+    `guestUser && isGuestToken(guestToken)`, and a `ya29.` token in
+    sessionStorage is exactly the pre-#185 member session #201 exists to refuse.
+
+    0 OK   1 FAIL (an arm came out the wrong way)   2 BLIND (could not run)
+    """
+    from playwright.sync_api import sync_playwright
+    httpd, port = serve(build)
+    base = f"http://127.0.0.1:{port}"
+    arms = {"guest": (GUEST_TOKEN, True), "member-shaped": ("ya29.not-a-guest-token", False)}
+    bad = []
+    try:
+        with sync_playwright() as p:
+            browser = p.chromium.launch()
+            for name, (token, want_today) in arms.items():
+                ctx = browser.new_context(viewport={"width": 1280, "height": 900})
+                # Fail closed, same as the main run: nothing leaves this machine.
+                ctx.route("**/*", lambda r: (r.continue_() if r.request.url.startswith(base)
+                                             else r.abort()))
+                page = ctx.new_page()
+                page.goto(base, wait_until="domcontentloaded")
+                page.evaluate(SEED_SESSION, {"user": USER, "token": token})
+                page.add_init_script(
+                    "try { localStorage.setItem('lexitrail_onboarded', '1'); } catch (e) {}")
+                page.goto(base, wait_until="domcontentloaded")
+                page.wait_for_timeout(1200)
+                got_today = page.locator(".today").count() > 0
+                verdict = "OK" if got_today == want_today else "WRONG"
+                print(f"  self-test {name:14} .today={got_today}  want={want_today}  {verdict}")
+                if got_today != want_today:
+                    bad.append(name)
+                ctx.close()
+            browser.close()
+    except Exception as exc:                                  # noqa: BLE001
+        print(f"BLIND: self-test could not run: {exc}", file=sys.stderr)
+        return 2
+    finally:
+        httpd.shutdown()
+    if bad:
+        print(f"FAIL: the stub does not discriminate -- wrong arm(s): {bad}", file=sys.stderr)
+        return 1
+    print("self-test OK: guest token renders Today, member-shaped token does not")
+    return 0
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--build", default="ui/build")
     ap.add_argument("--out", default="docs/review-artifacts/107")
+    ap.add_argument("--self-test", action="store_true",
+                    help="prove the session stub discriminates, then exit (#249)")
     args = ap.parse_args()
 
     if not os.path.isfile(os.path.join(args.build, "index.html")):
@@ -486,6 +571,9 @@ def main():
     except ImportError:
         print("BLIND: playwright for Python is not installed", file=sys.stderr)
         return 2
+
+    if args.self_test:
+        return self_test(args.build, None)
 
     os.makedirs(args.out, exist_ok=True)
     httpd, port = serve(args.build)
@@ -533,7 +621,7 @@ def main():
                     page.goto(base, wait_until="domcontentloaded")
                     # Sign in the way AuthContext reads it, then reload so the
                     # provider initialises from storage.
-                    page.evaluate("u => sessionStorage.setItem('user', JSON.stringify(u))", USER)
+                    page.evaluate(SEED_SESSION, {"user": USER, "token": GUEST_TOKEN})
                     page.goto(base, wait_until="networkidle")
 
                     try:
