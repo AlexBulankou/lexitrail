@@ -83,6 +83,39 @@ export const collectWords = (rows) => {
   return { words: out, sensesMerged };
 };
 
+/** Bank entries -> Map(hanzi -> [{chinese, pinyin, english}]), for the example-sentence block.
+ *
+ * `banks` is an ORDERED list of parsed `sentences/sentences-*.json` bodies. The caller sorts the
+ * filenames; this function preserves the order it is given and the order within each bank, because
+ * the drift test byte-compares generated output to committed output and an intermittent guard gets
+ * deleted rather than fixed. Nothing here sorts by content.
+ *
+ * 🔴 Sentences are deduplicated on the CHINESE text, not on the whole object. The banks are four
+ * generated files over an overlapping HSK range, so the same sentence can appear twice with a
+ * different English rendering; keeping both would print what reads as an editing mistake on a
+ * public page.
+ *
+ * The join is exact on `word.chinese` against the CSV's `word` column. Measured 2026-08-29:
+ * 224 of 224 bank words match a CSV word, 0 misses -- so this block reaches 224 of 4,999 pages
+ * (4.5%). That number is the point of the measurement: a join that silently matched nothing would
+ * ship a feature that renders on no page at all and still passes every test written against the
+ * renderer in isolation.
+ */
+export const collectExamples = (banks) => {
+  const byWord = new Map();
+  for (const bank of banks) {
+    for (const e of (bank && bank.sentences) || []) {
+      const hanzi = e && e.word && e.word.chinese;
+      if (!hanzi || !e.chinese) continue;
+      if (!byWord.has(hanzi)) byWord.set(hanzi, []);
+      const list = byWord.get(hanzi);
+      if (list.some((x) => x.chinese === e.chinese)) continue;
+      list.push({ chinese: e.chinese, pinyin: e.pinyin || '', english: e.english || '' });
+    }
+  }
+  return byWord;
+};
+
 /** One word page. `prev`/`next` are the adjacent words IN THE SAME LEVEL, or null at the ends.
  *
  * 🔴 The prev/next links are not decoration — they are the CRAWL PATH. Until sitemap.xml carries
@@ -90,7 +123,7 @@ export const collectWords = (rows) => {
  * reach a word page at all. They also mean the pages are discoverable in the order a human would
  * read them, which is what makes this a list rather than 5,600 orphans.
  */
-export const renderWordPage = (w, { prev = null, next = null } = {}, origin = ORIGIN) => {
+export const renderWordPage = (w, { prev = null, next = null, examples = [] } = {}, origin = ORIGIN) => {
   const url = wordUrl(w.level, w.word, origin);
   const senses = w.senses || [{ pinyin: w.pinyin, english: w.english }];
   const levelUrl = `${origin}/hsk${w.level}.html`;
@@ -140,7 +173,13 @@ ${prev ? `<link rel="prev" href="${wordUrl(prev.level, prev.word, origin)}">\n` 
 <h2>Senses</h2>
 <ol>
 ${senses.map((s) => `<li>${esc([s.pinyin, s.english].filter(Boolean).join(' — '))}</li>`).join('\n')}
-</ol>` : ''}
+</ol>` : ''}${examples.length ? `
+<h2>Example sentences</h2>
+<ul>
+${examples.map((x) => `<li><span lang="zh-Hans">${esc(x.chinese)}</span>`
+    + `${x.pinyin ? `<br><em>${esc(x.pinyin)}</em>` : ''}`
+    + `${x.english ? `<br>${esc(x.english)}` : ''}</li>`).join('\n')}
+</ul>` : ''}
 <p><span lang="zh-Hans">${esc(w.word)}</span>${w.pinyin ? ` is pronounced <em>${esc(w.pinyin)}</em>` : ''}${w.english ? ` and means ${senses.length > 1 ? `&ldquo;${esc(senses[0].english)}&rdquo; (and ${senses.length - 1} further sense${senses.length > 2 ? 's' : ''} below)` : `&ldquo;${esc(w.english)}&rdquo;`}` : ''}. It is one of the words in the HSK ${w.level} vocabulary, a level of the Hanyu Shuiping Kaoshi, China&rsquo;s standardised Chinese proficiency test. Recognising a word on a page and recalling it when you need it are different skills, and only the second survives a conversation &mdash; which is why LexiTrail shows you <span lang="zh-Hans">${esc(w.word)}</span> again just before you would have forgotten it, rather than on a fixed schedule.</p>
 <p><a href="${origin}/game/${w.level}/PRACTICE">Practise HSK ${w.level} with ${esc(w.word)} &rarr;</a></p>
 <nav>${nav}</nav>

@@ -22,6 +22,10 @@ const Papa = require('papaparse');
 
 const UI = path.resolve(__dirname, '..');
 const CSV = path.resolve(UI, '..', 'terraform', 'csv', 'words.csv');
+// lexitrail#184 AC1: the example-sentence corpus. Same reason as the CSV for why the output is
+// COMMITTED -- `sentences/` is one directory UP from the Docker build context, so a build-time
+// read produces nothing in production.
+const SENTENCES_DIR = path.resolve(UI, '..', 'sentences');
 const OUT = path.resolve(UI, 'public');
 
 // hskPages.js and wordPages.js are ESM (`export const`) because CRA/jest consume them that way;
@@ -53,13 +57,33 @@ const hsk = evalModule('hskPages.js', [
   'pageFilename', 'pageUrl', 'renderPage', 'renderSitemapEntries']);
 const wp = evalModule('wordPages.js',
   ['wordFilename', 'wordUrl', 'collectWords', 'renderWordPage', 'renderWordSitemapEntries',
-   'renderWordSitemap', 'WORD_PAGES_LASTMOD'],
+   'renderWordSitemap', 'WORD_PAGES_LASTMOD', 'collectExamples'],
   { HSK_LEVELS: hsk.HSK_LEVELS, ORIGIN: hsk.ORIGIN, isHskWordset: hsk.isHskWordset });
 
 function main() {
   const check = process.argv.includes('--check');
   const rows = Papa.parse(fs.readFileSync(CSV, 'utf8'), { header: true, skipEmptyLines: true }).data;
   const { words, sensesMerged } = wp.collectWords(rows);
+
+  // Filenames sorted so the bank ORDER is stable across machines: readdir order is not
+  // guaranteed, and an unstable order would rewrite pages on every run and make --check
+  // fail for a reason that has nothing to do with the content.
+  const bankFiles = fs.readdirSync(SENTENCES_DIR)
+    .filter((f) => /^sentences-.*\.json$/.test(f)).sort();
+  const banks = bankFiles.map((f) =>
+    JSON.parse(fs.readFileSync(path.join(SENTENCES_DIR, f), 'utf8')));
+  const examplesByWord = wp.collectExamples(banks);
+  // Printed, never silent: this join reaching ZERO words would render a feature on no page at
+  // all while every renderer test still passed. The number is the control.
+  const covered = words.filter((w) => (examplesByWord.get(w.word) || []).length).length;
+  console.log(`note: ${bankFiles.length} sentence bank(s), ${examplesByWord.size} word(s) with `
+    + `examples -> ${covered} of ${words.length} pages carry an Example sentences block`);
+  if (covered === 0) {
+    console.error('REFUSING: the sentence join matched 0 pages. Either sentences/ is empty or\n'
+      + 'the bank word key no longer matches words.csv `word`. Shipping silently here would\n'
+      + 'remove every example from the live pages with a clean exit code.');
+    process.exit(2);
+  }
 
   // Reported, never silent: merged senses make the PAGE count disagree with the ROW count, and a
   // discrepancy nobody prints is one nobody can explain later.
@@ -81,7 +105,11 @@ function main() {
     const dir = path.join(OUT, `hsk${level}`);
     if (!check) fs.mkdirSync(dir, { recursive: true });
     for (let i = 0; i < lvl.length; i += 1) {
-      const html = wp.renderWordPage(lvl[i], { prev: lvl[i - 1] || null, next: lvl[i + 1] || null });
+      const html = wp.renderWordPage(lvl[i], {
+        prev: lvl[i - 1] || null,
+        next: lvl[i + 1] || null,
+        examples: examplesByWord.get(lvl[i].word) || [],
+      });
       const file = path.join(dir, wp.wordFilename(lvl[i].word));
       if (check) {
         // A MISSING file is stale too — reading it would throw, and a generator whose check mode

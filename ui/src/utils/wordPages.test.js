@@ -15,7 +15,7 @@ import Papa from 'papaparse';
 import { HSK_LEVELS, renderPage } from './hskPages';
 import {
   wordFilename, wordUrl, collectWords, renderWordPage, renderWordSitemapEntries,
-  renderWordSitemap, WORD_PAGES_LASTMOD,
+  renderWordSitemap, WORD_PAGES_LASTMOD, collectExamples,
 } from './wordPages';
 
 const REPO = path.resolve(__dirname, '..', '..', '..');
@@ -24,6 +24,12 @@ const PUBLIC = path.join(REPO, 'ui', 'public');
 
 const rows = () => Papa.parse(fs.readFileSync(CSV, 'utf8'),
   { header: true, skipEmptyLines: true }).data;
+
+// Sorted, exactly as the generator sorts them: readdir order is not guaranteed and an unstable
+// bank order would make the drift compare fail for a reason unrelated to the content.
+const SENTENCES = path.join(REPO, 'sentences');
+const banks = () => fs.readdirSync(SENTENCES).filter((f) => /^sentences-.*\.json$/.test(f)).sort()
+  .map((f) => JSON.parse(fs.readFileSync(path.join(SENTENCES, f), 'utf8')));
 
 const SAMPLE = [
   { word_id: '2', word: '我们', wordset_id: '1', def1: 'wǒmen', def2: 'we, us (pl.)' },
@@ -144,6 +150,71 @@ describe('renderWordPage', () => {
   });
 });
 
+describe('example sentences — #184 AC1', () => {
+  const BANK_A = { sentences: [
+    { word: { chinese: '颜色', pinyin: 'yánsè', english: 'color' },
+      chinese: '你喜欢什么颜色？', pinyin: 'Nǐ xǐhuan shénme yánsè?', english: 'Which color do you like?' },
+    { word: { chinese: '颜色', pinyin: 'yánsè', english: 'color' },
+      chinese: '这个颜色很漂亮。', pinyin: 'Zhège yánsè hěn piàoliang.', english: 'This color is very beautiful.' },
+  ] };
+  // Same CHINESE as A's first, different English -- the four banks overlap in HSK range, so this
+  // is the real shape, not a contrived one.
+  const BANK_B = { sentences: [
+    { word: { chinese: '颜色', pinyin: 'yánsè', english: 'color' },
+      chinese: '你喜欢什么颜色？', pinyin: 'Nǐ xǐhuan shénme yánsè?', english: 'What colour do you like?' },
+  ] };
+
+  test('joins sentences onto the hanzi, in bank order', () => {
+    const m = collectExamples([BANK_A]);
+    expect(m.get('颜色').map((x) => x.chinese))
+      .toEqual(['你喜欢什么颜色？', '这个颜色很漂亮。']);
+  });
+
+  test('deduplicates on the CHINESE text, not the whole object', () => {
+    // Keeping both would print two renderings of one sentence, which reads as an editing mistake
+    // on a public page. The control is that the SECOND, distinct sentence survives.
+    const m = collectExamples([BANK_A, BANK_B]);
+    expect(m.get('颜色')).toHaveLength(2);
+    expect(m.get('颜色')[0].english).toBe('Which color do you like?');
+  });
+
+  test('a word with no sentences gets no block, and the page is otherwise unchanged', () => {
+    const w = { level: 1, id: 1, word: '我', pinyin: 'wǒ', english: 'I, me' };
+    expect(renderWordPage(w, { examples: [] })).toBe(renderWordPage(w));
+    expect(renderWordPage(w)).not.toContain('Example sentences');
+  });
+
+  test('a covered word renders hanzi, pinyin and English for each sentence', () => {
+    const w = { level: 2, id: 9, word: '颜色', pinyin: 'yánsè', english: 'color' };
+    const html = renderWordPage(w, { examples: collectExamples([BANK_A]).get('颜色') });
+    expect(html).toContain('<h2>Example sentences</h2>');
+    expect(html).toContain('你喜欢什么颜色？');
+    expect(html).toContain('Nǐ xǐhuan shénme yánsè?');
+    expect(html).toContain('Which color do you like?');
+    expect(html).toContain('lang="zh-Hans">你喜欢什么颜色？');
+  });
+
+  test('sentence text is HTML-escaped', () => {
+    const html = renderWordPage(
+      { level: 1, id: 1, word: 'x', pinyin: 'p', english: 'e' },
+      { examples: [{ chinese: '<script>alert(1)</script>', pinyin: '&', english: '"q"' }] });
+    expect(html).not.toContain('<script>alert(1)</script>');
+    expect(html).toContain('&lt;script&gt;');
+  });
+
+  test('🔴 THE CONTROL: the real corpus joins onto real pages, and the count is NOT zero', () => {
+    // Every test above passes on a join that matches NOTHING -- they all supply their own fixture.
+    // This is the only one that would fail if the bank key stopped matching words.csv `word`, which
+    // is how this feature would silently render on no page at all.
+    const m = collectExamples(banks());
+    const { words } = collectWords(rows());
+    const covered = words.filter((w) => (m.get(w.word) || []).length);
+    expect(m.size).toBe(224);
+    expect(covered).toHaveLength(224);   // measured 2026-08-29: 224/224 bank words match, 0 misses
+    expect(covered.length).toBeGreaterThan(0);
+  });
+});
+
 describe('renderWordSitemapEntries', () => {
   test('takes lastmod rather than stamping now()', () => {
     const { words } = collectWords(SAMPLE);
@@ -210,6 +281,7 @@ describe('sitemap-words.xml', () => {
 
 describe('the committed pages are NOT stale', () => {
   const { words } = collectWords(rows());
+  const exampleMap = collectExamples(banks());
   const byLevel = (lvl) => words.filter((x) => x.level === lvl);
 
   test('the CSV yields the official HSK counts, minus one MERGED sense', () => {
@@ -247,7 +319,12 @@ describe('the committed pages are NOT stale', () => {
         const committed = fs.readFileSync(
           path.join(PUBLIC, `hsk${n}`, wordFilename(w.word)), 'utf8');
         expect(committed).toBe(renderWordPage(w, {
-          prev: lvl[i - 1] || null, next: lvl[i + 1] || null,
+          prev: lvl[i - 1] || null,
+          next: lvl[i + 1] || null,
+          // #184 AC1: the drift compare must render the page the GENERATOR renders. Omitting
+          // `examples` here passed for every uncovered word and failed the moment a covered one
+          // (您) landed in the sample -- a reader wired in the generator and not in its own test.
+          examples: exampleMap.get(w.word) || [],
         }));
       }
     }
