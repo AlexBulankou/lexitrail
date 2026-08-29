@@ -2,6 +2,7 @@ import {
   sessionVisibleIndices,
   SESSION_BUDGET, SESSION_MODES, isSessionMode, wordKey,
   bindSession, sessionRemaining, sessionProgress, sessionOutcome, SessionOutcome,
+  progressLabel,
   nextSessionBinding, sessionBindingKey, EMPTY_BINDING, windowHasSessionWord,
 } from './session';
 import { DEFAULT_GOAL } from './streak';
@@ -318,5 +319,39 @@ describe('sessionVisibleIndices', () => {
     expect(sessionVisibleIndices(undefined, keys, 3)).toEqual([]);
     expect(sessionVisibleIndices(many(3), keys, 0)).toEqual([]);
     expect(sessionVisibleIndices(many(3), keys, undefined)).toEqual([]);
+  });
+});
+
+
+describe('progressLabel — lexitrail#263: the numerator must match what is ON SCREEN', () => {
+  // Alex, from the live site: "Below card 1 of x is incorrect, it should show not 1
+  // but based on how many cards are shown." `done + 1` names the FIRST visible card
+  // while the grid renders `selectedLayout.capacity` of them.
+
+  test('🔴 a grid of 6 reports a RANGE, not "card 1"', () => {
+    expect(progressLabel({ done: 0, total: 10 }, 6)).toBe('cards 1\u20136 of 10');
+  });
+
+  test('CONTROL: at capacity 1 the string is byte-identical to the old one', () => {
+    // This is the claim that the common phone layout is UNCHANGED. Without it the
+    // test above passes on a change that rewrites every layout's label.
+    expect(progressLabel({ done: 0, total: 10 }, 1)).toBe('card 1 of 10');
+    expect(progressLabel({ done: 4, total: 10 }, 1)).toBe('card 5 of 10');
+  });
+
+  test('it never runs past the total — the old Math.min, kept on BOTH ends', () => {
+    expect(progressLabel({ done: 9, total: 10 }, 6)).toBe('card 10 of 10');
+    expect(progressLabel({ done: 8, total: 10 }, 6)).toBe('cards 9\u201310 of 10');
+  });
+
+  test('a missing visibleCount degrades to the single-card form, not to a crash', () => {
+    // The call site passes visibleIndices.length; 0 is reachable for one render
+    // between a session ending and the queue reloading.
+    expect(progressLabel({ done: 2, total: 10 })).toBe('card 3 of 10');
+    expect(progressLabel({ done: 2, total: 10 }, 0)).toBe('card 3 of 10');
+  });
+
+  test('no total -> empty string, not "card 1 of 0"', () => {
+    expect(progressLabel({ done: 0, total: 0 }, 3)).toBe('');
   });
 });
