@@ -1,4 +1,14 @@
-// lexitrail#193 — the /hint response already returned an AI etymology and the UI discarded it.
+// lexitrail#265 — the /hint `hint_text` is the Gemini IMAGE PROMPT, and the UI rendered it.
+//
+// 🔴 THIS FILE WAS #193's PIN AND IS NOW ITS INVERSE. #193 shipped these tests to prove a caption
+// rendered `hint_text`, on the premise that it was "an AI etymology/mnemonic ... free depth,
+// already paid for". `hint_generation.py:256` sets it to `_clean_text(prompt)` — the image
+// generation prompt verbatim — so the caption put internal prompt text in front of the learner
+// (Alex, 2026-08-29), and the prompt is written to "not directly reveal the word's meaning",
+// i.e. it describes the picture and hands over the hint the image exists to make you earn.
+//
+// The pins are inverted rather than deleted: an absence nobody asserts is one PR from coming back,
+// which is the argument issue-109 made for its own retired control.
 //
 // 🔴 WHY THIS ASSERTS SOURCE STRUCTURE RATHER THAN RENDERED OUTPUT. `WordCard` pulls in contexts
 // and services and cannot be rendered standalone without @testing-library, which this repo does
@@ -52,70 +62,30 @@ describe('the stripper is alive (controls)', () => {
   });
 });
 
-describe('hint_text is read from the SAME cached response', () => {
-  test('the text is taken off the /hint response', () => {
-    expect(code()).toMatch(/setHintText\(response\.data\.hint_text/);
-  });
-
-  test('🔴 no SECOND request — the request count is unchanged', () => {
-    // #193's AC: "No additional /hint request is issued (reuses the cached response)." The two
-    // existing calls are the initial fetch and the explicit regenerate; a third would mean the
-    // caption cost a network round trip per card, undoing SUG-2's whole point.
+describe('lexitrail#265 — the prompt does not reach the UI, and STAYS gone', () => {
+  test('🔴 neither `hintText` nor `hint_text` survives anywhere in the component', () => {
+    // Comments are stripped first (controls above), so the explanatory notes that NAME these
+    // identifiers cannot satisfy this. That is the whole reason the stripper exists here.
     const c = code();
-    expect((c.match(/await getHint\(/g) || [])).toHaveLength(1);
-    expect((c.match(/await regenerateHint\(/g) || [])).toHaveLength(1);
+    expect(c).not.toMatch(/hintText/);
+    expect(c).not.toMatch(/hint_text/);
   });
 
-  test('regenerate replaces BOTH fields, not just the image', () => {
-    // BUG SHAPE: updating only hintImage leaves a stale caption describing the PREVIOUS mnemonic
-    // next to a freshly generated image -- worse than no caption, because it reads as authoritative.
-    const regen = code().split('regenerateHint(word.user_id, word.word_id)')[1] || '';
-    expect(regen.slice(0, 400)).toMatch(/setHintText\(/);
-  });
-});
-
-describe('the caption is independent of the image', () => {
-  test('gated on hintText, not on hintImage', () => {
-    // The two fields are independently nullable. A word with text and no image is exactly the
-    // case where the caption is the ONLY hint content, so nesting it under the image would hide
-    // it precisely where it matters most.
-    expect(code()).toMatch(/isHintDisplayed && hintText &&/);
-  });
-
-  test('🔴 it is NOT inside .hint-image-container', () => {
-    // That container is pinned to a hard 85px inline with the image at height:100%; a caption
-    // placed inside it is squeezed against a fixed height. Asserted by position: the caption
-    // block must appear AFTER the container closes.
-    //
-    // 🔴 I GOT THIS WRONG TWICE, THE SAME WAY, AND hc2 CAUGHT THE SECOND ONE.
-    //   v1 anchored on the WRAPPER's `</div>` — inside the container.
-    //   v2 anchored on the inner ternary's `) : (<></>)}` — also inside the container's <div>,
-    //      so a caption placed between that ternary and the div's real close is a genuine DOM
-    //      child and still passed. hc2 reproduced exactly that.
-    //
-    // The lesson is not "pick a better marker": every marker I chose was a SYNTAX landmark that
-    // happens to sit near the boundary. The boundary is a BALANCED TAG, so find it by balancing
-    // tags. No string anchor can be wrong this way because there is no anchor.
+  test('CONTROL: the assertion above CAN fail — a symbol that should be present, is', () => {
+    // Without this, an empty or unreadable file passes the absence pin silently. `hintImage` is
+    // the sibling field the fix deliberately KEEPS, so it is the right positive control.
     const c = code();
-    const containerStart = c.indexOf('className="hint-image-container"');
-    const caption = c.indexOf('className="hint-text-container"');
-    expect(containerStart).toBeGreaterThan(-1);      // both anchors exist, so the
-    expect(caption).toBeGreaterThan(-1);             // comparison below is not vacuous
-    expect(closeOfDivAt(c, containerStart)).toBeGreaterThan(containerStart);
-    expect(caption).toBeGreaterThan(closeOfDivAt(c, containerStart));
+    expect(c).toMatch(/hintImage/);
+    expect(c).toMatch(/setHintImage/);
   });
 
-  test('it is cleared on word change AND on a same-word action', () => {
-    // Without the clear, a caption from the previous word survives onto the next one.
-    expect((code().match(/setHintText\(null\)/g) || []).length).toBeGreaterThanOrEqual(2);
+  test('the hint IMAGE still renders — the caption went, the picture did not', () => {
+    const c = code();
+    expect(c).toMatch(/className="hint-image"/);
+    expect(c).toMatch(/data:image\/jpeg;base64,/);
   });
-});
 
-test('the caption has styles, and they WRAP — unlike pinyin (#190)', () => {
-  const s = css();
-  expect(s).toMatch(/\.hint-text-container\s*\{/);
-  expect(s).toMatch(/\.hint-text\s*\{/);
-  // A mnemonic runs to a couple of sentences: this is prose. #190's nowrap is correct for a
-  // pinyin token and would be wrong here, so the two are asserted apart deliberately.
-  expect(s.split('.hint-text {')[1].slice(0, 300)).not.toMatch(/white-space:\s*nowrap/);
+  test('no `.hint-text` element is emitted', () => {
+    expect(code()).not.toMatch(/hint-text/);
+  });
 });

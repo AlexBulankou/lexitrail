@@ -155,6 +155,30 @@ def get_genai_client():
     return _genai_client
 
 
+def _client_hint_data(hint_image):
+    """The ONLY shape a /hint response may carry to the client (lexitrail#265).
+
+    🔴 `hint_text` IS THE GEMINI IMAGE-GENERATION PROMPT, not a learner-facing
+    caption. `process_single_hint` sets it to `_clean_text(prompt)` verbatim, and
+    `generate_prompt` instructs the model that the prompt "should be subtle and not
+    directly reveal the word's meaning" -- it is a DESCRIPTION OF THE PICTURE. So
+    shipping it does two things: it leaks internal prompt text into the UI, and it
+    hands the learner the hint the image exists to make them earn.
+
+    lexitrail#193 rendered it as a caption believing it was "an AI etymology/
+    mnemonic". Alex saw it on the live site on 2026-08-29 and asked for it to be
+    stripped AT THE PRODUCER, not just at the renderer -- "or the next surface
+    leaks it again". This function is that single producer-side seam: four response
+    paths built this dict independently, and four parallel edits are four chances
+    to drift.
+
+    The column is NOT dropped. `hint_text` is still stored and still read as the
+    presence check that decides whether a hint needs generating; what changes is
+    that it never crosses the wire.
+    """
+    return {'hint_image': hint_image}
+
+
 def generate_prompt(word, pinyin, translation):
     client = get_genai_client()
 
@@ -352,10 +376,8 @@ def generate_hint():
         if userword and userword.hint_text and userword.hint_img and not force_regenerate:
             logger.info("Using existing userword hints")
             return success_response(
-                data={
-                    'hint_text': userword.hint_text,
-                    'hint_image': base64.b64encode(userword.hint_img).decode('utf-8')
-                },
+                data=_client_hint_data(
+                    base64.b64encode(userword.hint_img).decode('utf-8')),
                 is_placeholder=False,
                 message="Hint retrieved successfully from userword"
             )
@@ -420,10 +442,7 @@ def generate_hint():
                 
                 db.session.commit()
             
-            hint_data = {
-                'hint_text': hint_result['hint_text'],
-                'hint_image': hint_result['hint_image']
-            }
+            hint_data = _client_hint_data(hint_result['hint_image'])
             if hint_result.get('is_placeholder', False):
                 # Degraded: image gen failed → placeholder. Report success:false so
                 # the client can surface/retry instead of showing a broken placeholder
@@ -445,10 +464,8 @@ def generate_hint():
         if word_entry.hint_text and word_entry.hint_img:
             logger.info("Using word-level hints")
             return success_response(
-                data={
-                    'hint_text': word_entry.hint_text,
-                    'hint_image': base64.b64encode(word_entry.hint_img).decode('utf-8')
-                },
+                data=_client_hint_data(
+                    base64.b64encode(word_entry.hint_img).decode('utf-8')),
                 is_placeholder=False,
                 message="Hint retrieved successfully from word"
             )
@@ -456,10 +473,7 @@ def generate_hint():
         # If we get here, generate the hint fresh.
         logger.info("Generating hint (final path)")
         result = process_single_hint(word_entry.word, word_entry.def1, word_entry.def2)
-        hint_data = {
-            'hint_text': result['hint_text'],
-            'hint_image': result['hint_image']
-        }
+        hint_data = _client_hint_data(result['hint_image'])
         if result.get('is_placeholder', False):
             # Honest degraded response (lexitrail#47 defect 2) — not success:true.
             return error_response(

@@ -85,12 +85,13 @@ class HintGenerationTests(unittest.TestCase):
             self.assertIsNotNone(updated_word.hint_text)
             self.assertIsNotNone(updated_word.hint_img)
             
-            # Verify response contains the generated hints
-            self.assertIn('hint_text', response_data)
+            # Verify response contains the generated hint IMAGE
             self.assertIn('hint_image', response_data)
-            self.assertEqual(response_data['hint_text'], updated_word.hint_text)
-            self.assertEqual(response_data['hint_image'], 
+            self.assertEqual(response_data['hint_image'],
                            base64.b64encode(updated_word.hint_img).decode('utf-8'))
+            # lexitrail#265: hint_text is the Gemini image PROMPT and must NOT cross the wire.
+            # It is still STORED -- asserted two lines up -- so this pins the wire, not the column.
+            self.assertNotIn('hint_text', response_data)
 
     def test_generate_hint_existing_word_hints(self):
         """Test fetching hints when word-level hints exist but no userword."""
@@ -105,10 +106,13 @@ class HintGenerationTests(unittest.TestCase):
             self.assertEqual(response.status_code, 200)
             response_data = response.get_json().get('data')
             
-            # Verify response uses word-level hints
-            self.assertEqual(response_data['hint_text'], 'Existing word hint')
-            self.assertEqual(response_data['hint_image'], 
+            # Verify response uses word-level hints -- the IMAGE only (lexitrail#265).
+            self.assertEqual(response_data['hint_image'],
                            base64.b64encode(b'Existing word image').decode('utf-8'))
+            self.assertNotIn('hint_text', response_data)
+            # CONTROL: the stored column is untouched, so the assertion above is about the
+            # RESPONSE and not about the hint having failed to generate.
+            self.assertEqual(db.session.get(Word, word.word_id).hint_text, 'Existing word hint')
 
     def test_generate_hint_force_regenerate_no_userword(self):
         """Test force regenerating hints when no userword exists."""
@@ -154,10 +158,10 @@ class HintGenerationTests(unittest.TestCase):
             self.assertEqual(response.status_code, 200)
             response_data = response.get_json().get('data')
             
-            # Verify response uses userword hints
-            self.assertEqual(response_data['hint_text'], 'Userword hint')
-            self.assertEqual(response_data['hint_image'], 
+            # Verify response uses userword hints -- the IMAGE only (lexitrail#265).
+            self.assertEqual(response_data['hint_image'],
                            base64.b64encode(b'Userword image').decode('utf-8'))
+            self.assertNotIn('hint_text', response_data)
 
     def test_generate_hint_force_regenerate_with_placeholder(self):
         """Test force regenerating hints when generation fails."""
