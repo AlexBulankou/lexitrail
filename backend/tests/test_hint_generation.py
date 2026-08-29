@@ -34,24 +34,42 @@ class HintGenerationTests(unittest.TestCase):
             temp_file.write(image_data)
             return temp_file.name
 
-    @patch('app.routes.hint_generation.get_llm_model')
-    @patch('app.routes.hint_generation.get_image_generation_model')
-    def test_generate_prompt_logic(self, mock_image_model, mock_llm_model):
-        """Test the logic of prompt generation with mocked LLM model."""
-        mock_chat = MagicMock()
-        mock_llm_model.return_value.start_chat.return_value = mock_chat
-        mock_chat.send_message.return_value.candidates[0].content.parts[0].text = 'A subtle prompt for testing'
-        
+    # lexitrail#269: these two used to `@patch(get_llm_model)` /
+    # `@patch(get_image_generation_model)` -- the OLD vertexai entry points
+    # from before lexitrail#47's migration to the google-genai SDK.
+    # `generate_prompt`/`generate_image` call `get_genai_client()` now; the two
+    # old functions are unreferenced by them, so those patches mocked nothing
+    # and every "mocked" run made a REAL Vertex/genai call. Caught wiring CI
+    # (no GCP credentials there): both failed with a live 403 instead of using
+    # the mock -- the tests had been silently hitting the real API (and, with
+    # real prod credentials, silently succeeding/costing money) since #47.
+    @patch('app.routes.hint_generation.get_genai_client')
+    def test_generate_prompt_logic(self, mock_get_client):
+        """Test the logic of prompt generation with a mocked genai client."""
+        mock_client = MagicMock()
+        mock_get_client.return_value = mock_client
+        mock_client.models.generate_content.return_value.text = 'A subtle prompt for testing'
+
         prompt = generate_prompt("必须", "bìxū", "must")
         self.assertEqual(prompt, 'A subtle prompt for testing')
 
-    @patch('app.routes.hint_generation.get_image_generation_model')
-    def test_generate_image_logic(self, mock_image_model):
-        """Test the image generation logic with mocked Image Generation model."""
-        mock_image = MockImage()
-        mock_image_model.return_value.generate_images.return_value = [mock_image]
+    @patch('app.routes.hint_generation.get_genai_client')
+    def test_generate_image_logic(self, mock_get_client):
+        """Test the image generation logic with a mocked genai client."""
+        mock_client = MagicMock()
+        mock_get_client.return_value = mock_client
+
+        # generate_image() reads response.candidates[0].content.parts, looking
+        # for a part with inline_data.data (raw image bytes) -- the shape
+        # google-genai's Gemini native image generation actually returns.
+        buf = io.BytesIO()
+        Image.new('RGB', (10, 10), color='blue').save(buf, format='PNG')
+        mock_part = MagicMock()
+        mock_part.inline_data.data = buf.getvalue()
+        mock_client.models.generate_content.return_value.candidates[0].content.parts = [mock_part]
+
         prompt = 'A subtle prompt for testing image generation'
-        
+
         image, is_placeholder = generate_image(prompt)
         self.assertIsNotNone(image)
         self.assertEqual(image.size, (400, 300))
@@ -75,8 +93,24 @@ class HintGenerationTests(unittest.TestCase):
         """Test generating hints when no hints exist at word or userword level."""
         with self.app.app_context():
             user, wordset, word = TestUtils.create_test_word(db, user_email='test@example.com', word_name='Test Word')
-            
-            response = self.client.get(f'/hint/generate_hint?user_id={user.email}&word_id={word.word_id}')
+
+            # lexitrail#269: this used to call the real /hint/generate_hint route
+            # with no mock at all -- a genuine live Vertex/genai call, same class
+            # of bug as the two above. Without real credentials (CI has none by
+            # design) generate_prompt/generate_image both degrade to their
+            # placeholder fallback, generate_hint() then deliberately does NOT
+            # persist hint_text/hint_img for a placeholder result (see the
+            # `if not hint_result.get('is_placeholder', False):` guard), and the
+            # assertIsNotNone below failed on real infra it never intended to
+            # depend on. Mock process_single_hint instead, matching the sibling
+            # force_regenerate tests in this same file.
+            with patch('app.routes.hint_generation.process_single_hint') as mock_process:
+                mock_process.return_value = {
+                    'hint_text': 'Test hint',
+                    'hint_image': base64.b64encode(b'test image').decode('utf-8'),
+                    'is_placeholder': False
+                }
+                response = self.client.get(f'/hint/generate_hint?user_id={user.email}&word_id={word.word_id}')
             self.assertEqual(response.status_code, 200)
             response_data = response.get_json().get('data')
             

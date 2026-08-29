@@ -30,8 +30,28 @@ class TestUtils:
     @staticmethod
     def download_sql_script():
         """
-        Download the SQL schema script from GCP storage.
+        Return a path to the SQL schema script.
+
+        lexitrail#269: CI (GitHub Actions, hosted runners) has no GCP credentials and
+        must not be given any just to read a schema file for a test fixture — that
+        would be new IAM/WIF surface on a PUBLIC repo for zero safety benefit, because
+        `terraform/storage.tf` uploads THIS EXACT REPO FILE to the bucket
+        (`schema-tables.sql`, `source = "${path.module}/schema-tables.sql"`). The
+        bucket copy is not an independently-maintained second source of truth — it is
+        a mirror of the file already checked in, kept in sync by `terraform apply`.
+        So reading the local file in CI is not a fallback with weaker guarantees; it
+        is the same bytes without the network hop, and without any risk of a stale
+        bucket copy if terraform hasn't been re-applied since the last schema edit.
+
+        LEXITRAIL_SCHEMA_SQL_PATH, when set, takes that path. GCS download (the
+        original behavior, still used by local/dev runs with gcloud credentials)
+        is the fallback so this stays a no-op change outside CI.
         """
+        local_path = os.getenv('LEXITRAIL_SCHEMA_SQL_PATH')
+        if local_path:
+            logger.debug(f"Using local schema SQL script at {local_path} (no GCS credentials needed).")
+            return local_path
+
         logger.debug("Downloading schema SQL script from GCP storage.")
         storage_client = storage.Client()
         bucket_name = os.getenv('MYSQL_FILES_BUCKET')
@@ -74,7 +94,21 @@ class TestUtils:
                 # Read and execute the SQL script
                 with open(sql_script_path, 'r') as f:
                     sql_script = f.read()
-                
+
+                # lexitrail#269: a `--` comment line containing a semicolon
+                # (introduced by lexitrail#222's header block: "...repo;
+                # adding\n-- a column means...") broke this split -- MySQL
+                # treats the whole line as a comment, but str.split(';') has
+                # no idea what a comment is, so it cut mid-line and handed the
+                # back half of the sentence to MySQL as if it were SQL.
+                # schema-tables.sql is pure DDL with no string literals, so
+                # stripping full-line `--` comments before splitting is safe
+                # and removes the class rather than this one instance of it.
+                sql_script = '\n'.join(
+                    line for line in sql_script.splitlines()
+                    if not line.strip().startswith('--')
+                )
+
                 sql_commands = sql_script.split(';')
 
                 for command in sql_commands:

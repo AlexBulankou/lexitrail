@@ -1,0 +1,147 @@
+# lexitrail#269 — give the backend pytest suite a moment of execution.
+#
+# `backend/tests/` has 93 tests and, until now, no trigger anywhere runs
+# them: `cloudbuild.yaml` (the backend deploy trigger) has no test step, and
+# `.github/workflows/ui-tests.yml` is path-filtered to `ui/**`. So every
+# "N passed" in a PR body was a LOCAL claim, unverified at merge -- and #263,
+# #264, #265 plausibly reached Alex's screen at all because of exactly that.
+#
+# ─────────────────────────────────────────────────────────────────────────────
+# WHY GITHUB ACTIONS HOSTED RUNNERS, NOT CLOUD BUILD
+# ─────────────────────────────────────────────────────────────────────────────
+# The fleet default for NET-NEW CI is Cloud Build (ensemble#4492). zz1
+# overrode that for lexitrail specifically (2026-08-29, relayed on this
+# issue): lexitrail is PUBLIC, so Actions hosted-runner minutes are free,
+# and it is the one repo that must NEVER get a self-hosted runner. Sister
+# to `ui-tests.yml`'s own (independent) deviation for the same reason —
+# see that file's header for the cost/asymmetry argument in the deploy-vs-
+# test-pool case, which applies here too: lexitrail's `daily_build_count: 5`
+# Cloud Build pool cannot absorb a per-PR test build without risking the
+# DEPLOY trigger being the one that gets refused.
+#
+# ─────────────────────────────────────────────────────────────────────────────
+# WHY THE SCHEMA FILE IS READ LOCALLY, NOT DOWNLOADED FROM GCS (AC2/AC4)
+# ─────────────────────────────────────────────────────────────────────────────
+# `backend/tests/utils.py::download_sql_script` originally required a live
+# `google.cloud.storage.Client()` call against `MYSQL_FILES_BUCKET` -- which
+# would mean minting new GCP credentials (a service-account key secret or
+# Workload Identity Federation) for a PUBLIC repo's CI, just to read a
+# schema file. That is real new attack surface for zero benefit, because
+# `terraform/storage.tf` uploads THIS EXACT REPO FILE to the bucket
+# (`schema-tables.sql`, `source = "${path.module}/schema-tables.sql"`) --
+# the bucket copy is a mirror of the checked-in file, not an independently
+# maintained second source of truth. Reading it locally in CI (via the new
+# LEXITRAIL_SCHEMA_SQL_PATH escape hatch in utils.py) is the same bytes
+# without the network hop or the credential, and cannot go stale the way a
+# bucket copy could if terraform hasn't been re-applied since the last edit.
+# GCS download remains the default for local/dev runs with gcloud creds.
+#
+# ─────────────────────────────────────────────────────────────────────────────
+# AC3 -- verified empirically before shipping, not assumed
+# ─────────────────────────────────────────────────────────────────────────────
+# Ran the full suite against a fresh `mysql:8.0` container (the image
+# `terraform-ys/mysql.tf` runs in prod) locally before wiring this:
+#
+#   baseline (current main)                          93 passed
+#   one assertion mutated to the wrong value          1 failed, rc=1
+#   mutation reverted                                 93 passed, rc=0
+#
+# Two real, pre-existing bugs surfaced and were fixed as part of getting to
+# that green baseline (both documented at their fix site, not here):
+#   - `tests/utils.py::run_sql_script`'s naive `sql.split(';')` broke on a
+#     semicolon inside a `--` comment line (lexitrail#222's header block) --
+#     blocks EVERY consumer of the schema fixture on current main, not just
+#     CI. Fixed by stripping full-line comments before splitting.
+#   - `test_hint_generation.py`'s two "mocked" tests patched
+#     `get_llm_model`/`get_image_generation_model`, which lexitrail#47's
+#     migration to the google-genai SDK left uncalled -- so they were
+#     silently making real Vertex/genai calls (403 here with no credentials;
+#     with real prod credentials, non-deterministic and billed). Re-pointed
+#     at `get_genai_client`, the function actually in the call path.
+#
+# ─────────────────────────────────────────────────────────────────────────────
+# WHAT IS DELIBERATELY LEFT OUT (say-so per AC2)
+# ─────────────────────────────────────────────────────────────────────────────
+# `test_process_single_hint_unmocked` and `test_generate_hint_no_existing_hints`
+# (before this PR's fix) are the file's own genuinely-unmocked integration
+# tests against live Vertex/genai -- appropriate for a human running them
+# locally with real credentials, not for a PR gate with none. The former is
+# LEFT AS-IS: `process_single_hint` degrades to a template+placeholder on
+# any failure and always returns a well-formed dict, so it passes
+# deterministically whether or not the live call succeeds -- it is a
+# resilience test, not a live-generation gate, and needs no mock to be
+# CI-safe. The latter now mocks `process_single_hint`, matching the pattern
+# already used by its two sibling force_regenerate tests in the same file.
+#
+# `test_get_words_by_wordset_with_portioned_options` (test_words.py) flaked
+# once (1 of 8 full-suite local runs) with no code change on either side of
+# the flake -- looks like a pre-existing edge case in the corpus-distractor
+# randomness, unrelated to this PR. Flagged on lexitrail#269 rather than
+# silently accepted or blocked on here; not introduced by this change.
+name: backend-tests
+
+on:
+  pull_request:
+    paths:
+      - 'backend/**'
+      - 'terraform/schema-tables.sql'
+      - '.github/workflows/backend-tests.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'backend/**'
+      - 'terraform/schema-tables.sql'
+      - '.github/workflows/backend-tests.yml'
+
+# A second push to the same PR makes the first run irrelevant.
+concurrency:
+  group: backend-tests-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  pytest:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+
+    services:
+      mysql:
+        # mysql:8.0 matches `terraform-ys/mysql.tf`'s prod image.
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: testpass
+        ports:
+          - 3306:3306
+        # `tests/utils.py` connects to 127.0.0.1:3306 with no retry of its
+        # own -- the healthcheck is what makes the first test not race the
+        # container's startup instead of that being pytest's job.
+        options: >-
+          --health-cmd="mysqladmin ping -h127.0.0.1 -uroot -ptestpass"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: backend/requirements.txt
+
+      - run: pip install -r requirements.txt
+
+      - run: python3 -m pytest tests/ -v
+        env:
+          DB_ROOT_PASSWORD: testpass
+          # Points at THIS checkout's copy of the file the bucket mirrors --
+          # see the header comment above for why this is not a weaker
+          # substitute for the GCS path, and `${{ github.workspace }}` so the
+          # path is correct regardless of `working-directory: backend` above.
+          LEXITRAIL_SCHEMA_SQL_PATH: ${{ github.workspace }}/terraform/schema-tables.sql
+          TESTING: 'True'
