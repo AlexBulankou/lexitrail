@@ -174,13 +174,35 @@ steps:
     waitFor: ['ui-push']
 
   # zz1 relaying Alex 2026-08-28: "wire its CANNOT-TELL and FAIL outcomes to a
-  # surface that is guaranteed to be seen". A red build on main is that surface.
+  # surface that is guaranteed to be seen."
   #
-  # 🔴 BOTH non-zero outcomes fail the build, including exit 3 (CANNOT-TELL). A
-  # smoke whose instrument has died is worse than no smoke, because a green run is
-  # exactly what a healthy deploy looks like -- so CANNOT-TELL must never render as
-  # the good state. The retry exists so ordinary propagation lag is not reported as
-  # a finding; three attempts is the bound, and exhausting it IS the finding.
+  # 🔴 SEEN IS NOT THE SAME AS IDENTICAL, and issue-240 AC6 is the correction of my
+  # own first version. That version failed the build on ANY non-zero exit, which
+  # collapsed FAIL (exit 1) and CANNOT-TELL (exit 3) into one red -- and issue-235
+  # AC3, written at #234's review BEFORE this step existed, said exactly why not:
+  # "wiring it as a failure would train people to ignore it. It should page
+  # differently from exit 1." Its prediction came true on the first real fire.
+  #
+  # `allowExitCodes: [3]` is the mechanism that gives both: the step still RUNS and
+  # its status is still recorded as FAILURE on exit 3 -- visible in the console and
+  # in `builds describe` -- but the BUILD stays green. So:
+  #
+  #     exit 0  step SUCCESS, build green    served content matches source
+  #     exit 1  step FAILURE, build RED      stale/wrong content -- a real finding
+  #     exit 3  step FAILURE, build GREEN    CANNOT-TELL: the instrument, not the
+  #                                          deploy. Loud, and not a false alarm
+  #                                          about the code.
+  #
+  # ⚠️ Do NOT "simplify" this to a bare non-zero check. Exit 3 means the probe could
+  # not discriminate; reporting that as a broken deploy is a claim about the code
+  # that the run does not support, and a red that recurs on its own baseline gets
+  # muted -- after which the step is absent on the day it matters.
+  #
+  # ⚠️ And do NOT add 1 to allowExitCodes. A stale deploy MUST redden the build;
+  # that is the entire point of the step.
+  #
+  # The retry exists so ordinary propagation lag is not reported as a finding;
+  # three attempts is the bound, and exhausting it IS the finding.
   - name: 'python:3.11-slim'
     id: 'ui-smoke'
     entrypoint: 'bash'
@@ -197,6 +219,8 @@ steps:
         done
         echo "SMOKE-FAIL (exit $$rc): 1=stale/wrong content, 3=CANNOT-TELL (the control did not discriminate, or the network did not answer). Neither is a pass." >&2
         exit "$$rc"
+    # issue-240 AC6: 3 only. See the note above -- exit 1 must still fail the build.
+    allowExitCodes: [3]
     waitFor: ['ui-deploy']
 
 # 30m, longer than the backend's 20m: this image runs `npm install` plus a CRA

@@ -448,3 +448,38 @@ def test_the_substitution_rule_can_actually_fail_216():
     assert not ({m.group(1) or m.group(2)
                  for m in _UNESCAPED_VAR.finditer("docker build -t x:$SHORT_SHA .")}
                 - _BUILTIN_SUBSTITUTIONS), "a builtin must not be flagged"
+
+
+def test_ui_smoke_allows_exit_3_but_never_exit_1_240():
+    """issue-240 AC6, and the correction of my own #237 wiring.
+
+    That version failed the build on ANY non-zero exit, collapsing FAIL (1) and
+    CANNOT-TELL (3) into one red — which #235 AC3 said not to do, before the step
+    existed, on the grounds that it trains people to ignore the alarm. It came
+    true on the first real fire.
+
+    `allowExitCodes: [3]` keeps both properties: the step's status is still
+    recorded as FAILURE on exit 3 (seen), and the build stays green (not a claim
+    about the code). Seen is not the same as identical.
+    """
+    step = _ui_steps()["ui-smoke"]
+    allowed = step.get("allowExitCodes")
+    assert allowed == [3], (
+        f"issue-240 AC6: ui-smoke must allow ONLY exit 3, got {allowed!r}. "
+        "Empty/absent collapses CANNOT-TELL into FAIL (the #237 bug #235 AC3 "
+        "predicted); including 1 would let a STALE DEPLOY pass, which is the "
+        "entire thing this step exists to catch."
+    )
+
+
+def test_ui_smoke_still_propagates_the_code_it_allows_240():
+    """NEGATIVE CONTROL for the above. `allowExitCodes` only means anything if the
+    step actually EXITS with the smoke's code — a script that swallowed the code
+    and exited 0 would make the allowance decorative and the step permanently
+    green, which is the failure mode inverted."""
+    script = _ui_step_script("ui-smoke")
+    assert 'exit "$$rc"' in script, (
+        "issue-240: ui-smoke no longer propagates the smoke's exit code, so "
+        "allowExitCodes has nothing to act on and the step can never report "
+        "anything at all"
+    )
