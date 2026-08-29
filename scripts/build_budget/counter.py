@@ -175,10 +175,17 @@ def next_increase_ts(daily_total: int, now_ts: float) -> Optional[float]:
 
     🔴 NOT `next_refill_ts`, whose docstring above claims to be "what a refusal message
     must say" and is wrong for any pool with `daily_build_count < 24`. Those pools have
-    `24 - daily` boundaries that grant NOTHING. lexitrail runs at 5/day, so **20 of every
-    24 hours grant nothing** and the refusal names one of them 20/24 of the time — a
-    refusal at 21:00 PDT told an agent to come back at 21:00 when the true next increase
-    was 23:00 (measured live, build 62fa85aa, 2026-08-29). That fails in the REASSURING
+    `24 - daily` boundaries that grant NOTHING. lexitrail runs at 5/day — accrual moments
+    are 00:00 / 09:00 / 14:00 / 19:00 / 23:00 local — so **19 of every 24 hours grant
+    nothing** and the refusal names one of them 19/24 of the time. Measured live: build
+    62fa85aa was refused at 20:25 PDT and told to come back at **21:00**, when the true
+    next increase was **23:00** (2026-08-29).
+
+    ⚠️ 19, not 20: the PT 23:30 hour looks dead to a naive `accrued(next) <= accrued(now)`
+    because `accrued` DROPS across the roll (5 -> 1), but the roll is the largest increase
+    of the day — `roll_day` zeroes `used`. I published 20 here and sbl@ caught it while
+    re-deriving for stopbystop. Same artifact inflates daily=8 (16, not 17) and daily=22
+    (2, not 3). That fails in the REASSURING
     direction, which is the one that gets acted on: the agent returns, merges, is refused
     again, and leaves a second red required check carrying no information (lexitrail#245).
 
