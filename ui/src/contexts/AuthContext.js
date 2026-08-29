@@ -1,6 +1,9 @@
-import { createContext, useContext, useState, useCallback } from 'react';
+import { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react';
 import { googleLogout, useGoogleLogin } from '@react-oauth/google';
 import { loadSession, clearSession } from '../utils/authStorage';
+import {
+  attemptSilentTokenGrant, forgetSignedInBefore, hasSignedInBefore,
+} from '../utils/silentReauth';
 import { completeGoogleSignIn, startGuestSession } from '../utils/authFlows';
 
 const AuthContext = createContext(null);
@@ -54,6 +57,53 @@ export const AuthProvider = ({ children }) => {
 
   const login = useGoogleLogin(initUser);
 
+  // lexitrail#199: a member returning the NEXT DAY has a cleared session (their
+  // ~1h implicit-flow token expired and `loadSession` refused it), but has not
+  // signed out. Try to re-obtain a token with no UI before rendering them a
+  // signed-out page.
+  //
+  // 🔴 Gated on `hasSignedInBefore()`, NOT on "no user": a first-time visitor
+  // and a guest must see no prompt, no error and no change from today (#199
+  // AC2/AC3). The hint is written only by `completeGoogleSignIn`, which a guest
+  // never reaches, so AC3 holds by construction rather than by a guard here.
+  const silentTried = useRef(false);
+  useEffect(() => {
+    // Once per mount. StrictMode double-invokes effects in development, and a
+    // second token request would be a second popup-less grant attempt against
+    // Google for no reason.
+    if (silentTried.current || user || !hasSignedInBefore()) return;
+    silentTried.current = true;
+    let cancelled = false;
+    (async () => {
+      const grant = await attemptSilentTokenGrant({
+        google: window.google,
+        clientId: window.config?.GOOGLE_CLIENT_ID,
+      });
+      // `null` is the ordinary outcome, not a fault: consent revoked, several
+      // signed-in accounts, third-party cookies blocked. Fall through to the
+      // signed-out page exactly as today, silently.
+      if (!grant || cancelled) return;
+      try {
+        const response = await fetch(
+          `https://www.googleapis.com/oauth2/v3/userinfo?access_token=${grant.access_token}`,
+          { method: 'GET', headers: {
+            Authorization: `Bearer ${grant.access_token}`, Accept: 'application/json' } });
+        if (!response.ok) return;   // a token we cannot identify is not a session
+        const data = await response.json();
+        if (cancelled) return;
+        setUser(data);
+        // No `demoEmailToMigrate`: this path runs only when there is no current
+        // session at all, so there is no in-progress guest to migrate. Passing
+        // one would migrate whatever stale guest row happened to be lying about.
+        await completeGoogleSignIn(data, grant, { method: 'google_silent' });
+      } catch (_) {
+        // Same swallow as the clicked path. A failed silent attempt must not
+        // surface an error to a user who did not ask for anything.
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [user]);
+
   const tryWithoutSignin = useCallback(async () => {
     // lexitrail#195: startGuestSession does the storage write + GA4 event
     // synchronously (same as the inline code it replaces) and returns the
@@ -69,6 +119,10 @@ export const AuthProvider = ({ children }) => {
     googleLogout();
     setUser(null);
     clearSession();
+    // lexitrail#199: an EXPLICIT sign-out is a decision, unlike an expired
+    // token. Forgetting the hint is what stops the next load silently signing
+    // this member back in and undoing the thing they just asked for.
+    forgetSignedInBefore();
   }, []);
 
   return (
