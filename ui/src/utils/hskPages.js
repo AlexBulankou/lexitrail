@@ -77,7 +77,17 @@ export const renderPage = (level, words, origin = ORIGIN) => {
   const title = `HSK ${level} Vocabulary List — all ${words.length} words with pinyin and English`;
   const desc = `The complete HSK ${level} word list: all ${words.length} words with pinyin and `
     + `English meanings, free and in one page. Practise them with spaced repetition on LexiTrail.`;
-  const rows = words.map((w, i) => `<tr><td>${i + 1}</td><td lang="zh-Hans">${esc(w.word)}</td>`
+  // lexitrail#184: the hanzi links to its own page. The URL is built here rather than imported
+  // from wordPages.js, which imports FROM this module -- a circular import for one template string
+  // is a worse trade than four duplicated characters. wordPages.test.js pins that the two agree, so
+  // they cannot drift silently.
+  //
+  // 🔴 These links are added WITH the pages, never before. #183 deliberately shipped without them
+  // ("Add them WITH #184") because linking pages that do not exist hands Googlebot ~5,000 soft-404s
+  // from the six pages meant to establish the site's crawlability -- the exact opposite of the goal.
+  const rows = words.map((w, i) => `<tr><td>${i + 1}</td>`
+    + `<td lang="zh-Hans"><a href="${origin}/hsk${level}/${encodeURIComponent(w.word)}.html">`
+    + `${esc(w.word)}</a></td>`
     + `<td>${esc(w.pinyin)}</td><td>${esc(w.english)}</td></tr>`).join('\n');
   // 🔴 `JSON.stringify` does NOT escape `<`, so a `</script>` in the source data would CLOSE this
   // block and everything after it becomes markup. My own escape test caught this before merge:

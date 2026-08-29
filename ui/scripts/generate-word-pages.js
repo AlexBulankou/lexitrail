@@ -52,7 +52,8 @@ const hsk = evalModule('hskPages.js', [
   'HSK_LEVELS', 'ORIGIN', 'isHskWordset', 'groupByLevel',
   'pageFilename', 'pageUrl', 'renderPage', 'renderSitemapEntries']);
 const wp = evalModule('wordPages.js',
-  ['wordFilename', 'wordUrl', 'collectWords', 'renderWordPage', 'renderWordSitemapEntries'],
+  ['wordFilename', 'wordUrl', 'collectWords', 'renderWordPage', 'renderWordSitemapEntries',
+   'renderWordSitemap', 'WORD_PAGES_LASTMOD'],
   { HSK_LEVELS: hsk.HSK_LEVELS, ORIGIN: hsk.ORIGIN, isHskWordset: hsk.isHskWordset });
 
 function main() {
@@ -94,6 +95,16 @@ function main() {
     }
   }
 
+  // sitemap-words.xml — its own file, declared alongside sitemap.xml in robots.txt.
+  const sitemap = wp.renderWordSitemap(words, wp.WORD_PAGES_LASTMOD);
+  const smFile = path.join(OUT, 'sitemap-words.xml');
+  if (check) {
+    const committedSm = fs.existsSync(smFile) ? fs.readFileSync(smFile, 'utf8') : null;
+    if (committedSm !== sitemap) { stale += 1; console.error('  stale: sitemap-words.xml'); }
+  } else {
+    fs.writeFileSync(smFile, sitemap);
+  }
+
   if (check) {
     if (stale) {
       console.error(`${stale} word page(s) stale or missing — run: node ui/scripts/generate-word-pages.js`);
@@ -103,6 +114,7 @@ function main() {
     return;
   }
   console.log(`wrote ${written} word pages across ${hsk.HSK_LEVELS.length} levels`);
+  console.log(`wrote sitemap-words.xml (${words.length} urls, lastmod ${wp.WORD_PAGES_LASTMOD})`);
 }
 
 main();

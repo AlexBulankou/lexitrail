@@ -12,9 +12,10 @@
 import fs from 'fs';
 import path from 'path';
 import Papa from 'papaparse';
-import { HSK_LEVELS } from './hskPages';
+import { HSK_LEVELS, renderPage } from './hskPages';
 import {
   wordFilename, wordUrl, collectWords, renderWordPage, renderWordSitemapEntries,
+  renderWordSitemap, WORD_PAGES_LASTMOD,
 } from './wordPages';
 
 const REPO = path.resolve(__dirname, '..', '..', '..');
@@ -149,6 +150,61 @@ describe('renderWordSitemapEntries', () => {
     expect(renderWordSitemapEntries(words, '2026-08-29')).toContain('<lastmod>2026-08-29</lastmod>');
     expect(renderWordSitemapEntries(words, '2026-08-29'))
       .toBe(renderWordSitemapEntries(words, '2026-08-29'));
+  });
+});
+
+describe('the level pages link to the word pages — the two modules must agree', () => {
+  // hskPages.js builds the href inline rather than importing wordUrl (that would be a circular
+  // import for one template string). This test is what stops the two forms drifting apart: it is
+  // the ONLY thing tying them together, so it is load-bearing rather than decorative.
+  const w = { id: 1, word: '我', pinyin: 'wǒ', english: 'I, me' };
+
+  test('the href on a level page is byte-identical to wordUrl()', () => {
+    expect(renderPage(3, [w])).toContain(`href="${wordUrl(3, '我')}"`);
+  });
+
+  test('the hanzi is still escaped inside the link text', () => {
+    const evil = { id: 1, word: '<b>', pinyin: '', english: '' };
+    const html = renderPage(3, [evil]);
+    expect(html).toContain('&lt;b&gt;</a>');
+    expect(html).not.toContain('<td lang="zh-Hans"><a href="' + wordUrl(3, '<b>') + '"><b></a>');
+  });
+});
+
+describe('sitemap-words.xml', () => {
+  const { words } = collectWords(Papa.parse(fs.readFileSync(CSV, 'utf8'),
+    { header: true, skipEmptyLines: true }).data);
+
+  test('the committed sitemap matches what the generator produces today', () => {
+    // ONE file, so unlike the 4,999 pages this drift check can afford to be exhaustive.
+    expect(fs.readFileSync(path.join(PUBLIC, 'sitemap-words.xml'), 'utf8'))
+      .toBe(renderWordSitemap(words));
+  });
+
+  test('it carries one <url> per word page, not per CSV row', () => {
+    const sm = fs.readFileSync(path.join(PUBLIC, 'sitemap-words.xml'), 'utf8');
+    expect((sm.match(/<url>/g) || [])).toHaveLength(words.length);
+  });
+
+  test('lastmod is the committed CONSTANT, not the day the test runs', () => {
+    // If this ever equals `today`, someone has wired new Date() in and the drift test above will
+    // fail tomorrow -- and an intermittent guard gets deleted rather than fixed.
+    expect(renderWordSitemap(words)).toContain(`<lastmod>${WORD_PAGES_LASTMOD}</lastmod>`);
+    expect(renderWordSitemap(words)).toBe(renderWordSitemap(words));
+  });
+
+  test('robots.txt declares it — a sitemap no crawler is told about does nothing', () => {
+    const robots = fs.readFileSync(path.join(PUBLIC, 'robots.txt'), 'utf8');
+    expect(robots).toContain('Sitemap: https://lexitrail.com/sitemap-words.xml');
+    expect(robots).toContain('Sitemap: https://lexitrail.com/sitemap.xml');  // the original survives
+  });
+
+  test('it is comfortably inside the 50,000-URL / 50 MB sitemap limits', () => {
+    // Pinned with headroom rather than as a tolerance: a future word list several times this size
+    // would need a sitemap index, and finding that out from Search Console is expensive.
+    const sm = fs.readFileSync(path.join(PUBLIC, 'sitemap-words.xml'), 'utf8');
+    expect(words.length).toBeLessThan(50000);
+    expect(Buffer.byteLength(sm, 'utf8')).toBeLessThan(50 * 1024 * 1024);
   });
 });
 

@@ -22,3 +22,6 @@ Allow: /*.gif$
 Allow: /*.svg$
 
 Sitemap: https://lexitrail.com/sitemap.xml 
+# lexitrail#184: the ~5,000 per-word pages. A SECOND Sitemap line rather than a sitemap index --
+# robots.txt accepts multiple, which is the documented alternative and has fewer moving parts.
+Sitemap: https://lexitrail.com/sitemap-words.xml

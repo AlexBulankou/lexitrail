@@ -157,3 +157,24 @@ export const renderWordSitemapEntries = (words, lastmod, origin = ORIGIN) =>
     + `    <priority>0.5</priority>\n  </url>`).join('\n');
 
 export { HSK_LEVELS };
+
+/** The `lastmod` stamped on every word-page sitemap entry. A COMMITTED CONSTANT, bumped by hand
+ * when the word content actually changes.
+ *
+ * 🔴 Not `new Date()`, and not "the date the generator ran". Either would rewrite all 4,999 entries
+ * on every run, so the drift test would fail the day after it was written and be deleted rather
+ * than fixed -- and a sitemap claiming everything changed today is a freshness signal crawlers
+ * learn to discount. Bumping this by hand is the point: it is a claim about the CONTENT, and a
+ * human is the only thing that knows whether the content changed.
+ */
+export const WORD_PAGES_LASTMOD = '2026-08-29';
+
+/** The whole sitemap-words.xml document. Its own file rather than entries appended to sitemap.xml:
+ * sitemap.xml is hand-maintained and reviewable at 21 URLs, and folding 4,999 generated entries
+ * into it would make every future edit to it an unreviewable diff. robots.txt declares both, which
+ * is the documented alternative to a sitemap index and has fewer moving parts. */
+export const renderWordSitemap = (words, lastmod = WORD_PAGES_LASTMOD, origin = ORIGIN) =>
+  `<?xml version="1.0" encoding="UTF-8"?>\n`
+  + `<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n`
+  + `${renderWordSitemapEntries(words, lastmod, origin)}\n`
+  + `</urlset>\n`;
