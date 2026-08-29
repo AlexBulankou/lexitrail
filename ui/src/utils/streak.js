@@ -79,9 +79,23 @@ export function goalMet(state, today, goal = DEFAULT_GOAL) {
 //
 // 🔴 What this does NOT decide, and deliberately: whether SHOW_EXCLUDED should
 // still move `recall_state` or append recall history. Both are backend writes
-// through one call, and splitting them needs a backend change that cannot ship
-// (lexitrail#77 — no Cloud Build trigger, no backend image since 2026-07-22).
-// #112 stays open for that half rather than being closed by this one.
+// through one call, and splitting them needs a backend change. #112 stays open
+// for that half rather than being closed by this one.
+//
+// ⏳ THE BLOCKER THAT USED TO BE HERE HAS EXPIRED. This said the backend change
+// "cannot ship (lexitrail#77 — no Cloud Build trigger, no backend image since
+// 2026-07-22)". Measured 2026-08-29: `lexitrail-backend-deploy-main` exists and
+// is ENABLED, with 3 SUCCESS builds in 15h. The constraint MOVED rather than
+// vanished — #77's current shape is that the trigger builds and pushes while the
+// Deployment is digest-pinned, so it needs one `kubectl set image` after merge
+// (done by hand for PR #233 at 07:09Z that day, verified running in-pod).
+//
+// Corrected rather than deleted, because the failure is the reusable part: a
+// claim that was TRUE WHEN WRITTEN keeps voting long after its grounds are gone,
+// and the version carrying a specific checkable reason is the most persuasive
+// kind — checking it is easy and nobody does. A reader who checks the old line,
+// finds it false, and discounts this whole comment would also discard the #112
+// reasoning above it, which still holds exactly.
 export const STREAK_CREDIT_MODES = ['PRACTICE', 'DUE_TODAY', 'TEST'];
 
 export const creditsStreak = (mode) => STREAK_CREDIT_MODES.includes(mode);
