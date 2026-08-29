@@ -141,12 +141,12 @@ steps:
         set -euo pipefail
         docker push '${_IMAGE}:latest'
         docker push '${_IMAGE}:$SHORT_SHA' | tee /workspace/push.log
-        DIGEST="$(grep -oE 'sha256:[a-f0-9]{64}' /workspace/push.log | tail -1)"
+        DIGEST="$$(grep -oE 'sha256:[a-f0-9]{64}' /workspace/push.log | tail -1)"
         # CANNOT-TELL must not proceed as success: an empty digest here would make
         # `set image` a no-op arg and the read-back compare '' against '', passing.
-        [ -n "$DIGEST" ] || { echo "PUSH-FAIL: no digest in push output -- refusing to deploy an unknown image" >&2; exit 1; }
-        printf '%s@%s' '${_IMAGE}' "$DIGEST" > /workspace/ui_image_ref.txt
-        echo "pushed: $(cat /workspace/ui_image_ref.txt)"
+        [ -n "$$DIGEST" ] || { echo "PUSH-FAIL: no digest in push output -- refusing to deploy an unknown image" >&2; exit 1; }
+        printf '%s@%s' '${_IMAGE}' "$$DIGEST" > /workspace/ui_image_ref.txt
+        echo "pushed: $$(cat /workspace/ui_image_ref.txt)"
     waitFor: ['ui-build']
 
   # `set image` to the digest, then READ THE LIVE SPEC BACK and compare. Not
@@ -162,15 +162,15 @@ steps:
         set -euo pipefail
         gcloud container clusters get-credentials ys-autopilot \
           --region us-central1 --project yojowa-claw
-        REF="$(cat /workspace/ui_image_ref.txt)"
+        REF="$$(cat /workspace/ui_image_ref.txt)"
         kubectl -n lexitrail set image deployment/lexitrail-ui-deployment \
-          lexitrail-ui="$REF"
+          lexitrail-ui="$$REF"
         kubectl -n lexitrail rollout status deployment/lexitrail-ui-deployment --timeout=300s
-        LIVE="$(kubectl -n lexitrail get deploy lexitrail-ui-deployment \
+        LIVE="$$(kubectl -n lexitrail get deploy lexitrail-ui-deployment \
           -o jsonpath='{.spec.template.spec.containers[0].image}')"
-        echo "requested: $REF"
-        echo "live spec: $LIVE"
-        [ "$LIVE" = "$REF" ] || { echo "DEPLOY-FAIL: live spec does not match what we pushed" >&2; exit 1; }
+        echo "requested: $$REF"
+        echo "live spec: $$LIVE"
+        [ "$$LIVE" = "$$REF" ] || { echo "DEPLOY-FAIL: live spec does not match what we pushed" >&2; exit 1; }
     waitFor: ['ui-push']
 
   # zz1 relaying Alex 2026-08-28: "wire its CANNOT-TELL and FAIL outcomes to a
@@ -191,12 +191,12 @@ steps:
         for i in 1 2 3; do
           python3 scripts/smoke_served_content.py && exit 0
           rc=$?
-          echo "smoke attempt $i -> exit $rc" >&2
-          [ "$i" = 3 ] && break
+          echo "smoke attempt $$i -> exit $$rc" >&2
+          [ "$$i" = 3 ] && break
           sleep 20
         done
-        echo "SMOKE-FAIL (exit $rc): 1=stale/wrong content, 3=CANNOT-TELL (the control did not discriminate, or the network did not answer). Neither is a pass." >&2
-        exit "$rc"
+        echo "SMOKE-FAIL (exit $$rc): 1=stale/wrong content, 3=CANNOT-TELL (the control did not discriminate, or the network did not answer). Neither is a pass." >&2
+        exit "$$rc"
     waitFor: ['ui-deploy']
 
 # 30m, longer than the backend's 20m: this image runs `npm install` plus a CRA
