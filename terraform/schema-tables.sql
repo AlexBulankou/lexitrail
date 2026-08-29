@@ -1,5 +1,15 @@
 -- To force job update this version: 2
 -- Temporarily drop all tables to ensure they are recreated from scratch
+--
+-- WARNING (lexitrail#222): this file is applied UNCONDITIONALLY whenever
+-- mysql_schema_and_data_job (sql.tf) runs — any edit here, or to
+-- schema-data.sql or csv/**, re-arms the Job's content-hash trigger and the
+-- next apply that reaches it drops+recreates every table below from
+-- schema-data.sql's seed data. This root (terraform/) is RETIRED — the live
+-- stack is terraform-ys/ — and terraform/retired-root-guard.tf refuses to
+-- plan/apply this root without an explicit -var opt-in for exactly this
+-- reason. There is no additive-migration path anywhere in this repo; adding
+-- a column means editing the CREATE TABLE below AND accepting the DROP.
 DROP TABLE IF EXISTS recall_history;
 DROP TABLE IF EXISTS userwords;
 DROP TABLE IF EXISTS words;
