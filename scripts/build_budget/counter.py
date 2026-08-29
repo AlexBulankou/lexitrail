@@ -164,6 +164,50 @@ def next_refill_ts(now_ts: float) -> float:
     return nxt.timestamp()
 
 
+# A day plus a margin. A pool cannot go longer than 24h without an increase, so
+# failing to find one inside this bound means the inputs are wrong, and saying so
+# beats returning a confident timestamp.
+_MAX_INCREASE_LOOKAHEAD_HOURS = 26
+
+
+def next_increase_ts(daily_total: int, now_ts: float) -> Optional[float]:
+    """The next hour boundary at which `accrued` ACTUALLY GOES UP. None if none found.
+
+    🔴 NOT `next_refill_ts`, whose docstring above claims to be "what a refusal message
+    must say" and is wrong for any pool with `daily_build_count < 24`. Those pools have
+    `24 - daily` boundaries that grant NOTHING. lexitrail runs at 5/day, so **20 of every
+    24 hours grant nothing** and the refusal names one of them 20/24 of the time — a
+    refusal at 21:00 PDT told an agent to come back at 21:00 when the true next increase
+    was 23:00 (measured live, build 62fa85aa, 2026-08-29). That fails in the REASSURING
+    direction, which is the one that gets acted on: the agent returns, merges, is refused
+    again, and leaves a second red required check carrying no information (lexitrail#245).
+
+    ⚠️ THE DAY ROLL COUNTS AS AN INCREASE EVEN THOUGH `accrued` DROPS ACROSS IT. At
+    PT23 on a `daily >= 24` pool every remaining boundary is capped, so an
+    accrued-only search finds nothing and would answer "never" on the eve of a full
+    reset — `roll_day` zeroes `used` at local midnight, which is the largest increase
+    of the day.
+
+    Ported verbatim from ensemble's copy (ensemble#8819), which is verified: a full-day
+    sweep finds it wrong 0/24 hours at each of daily in {5, 8, 24}, and it coincides with
+    `next_refill_ts` 24/24 at daily=24. `counter.py` is vendored per-repo with no sync;
+    lexitrail, market-mind and stopbystop all carried blob 0f16a2b6 without this.
+    """
+    if daily_total <= 0:
+        return None
+    here = accrued(daily_total, now_ts)
+    today = day_key(now_ts)
+    ts = now_ts
+    for _ in range(_MAX_INCREASE_LOOKAHEAD_HOURS):
+        ts = next_refill_ts(ts)
+        if day_key(ts) != today:
+            return ts
+        if accrued(daily_total, ts) > here:
+            return ts
+    return None
+
+
+
 def hourly_rate(daily_total: int) -> float:
     """DERIVED, never typed. A second hardcoded number is #7970 all over again."""
     return daily_total / HOURS_PER_DAY
@@ -269,7 +313,11 @@ def decide(state: dict, *, repo: str, now_ts: float, daily_total: int,
         used_after=int(st["used"]),
         accrued=granted, daily_total=daily_total, would_refuse=would_refuse,
         enforcing=enforcing, refused=refused,
-        refills_at_ts=(next_refill_ts(now_ts) if would_refuse else None),
+        # `next_increase_ts` can return None only when the inputs are wrong — and a
+        # slightly-early time still beats no time at all, because an agent told only
+        # "no" retry-loops. Same fallback as ensemble's copy.
+        refills_at_ts=((next_increase_ts(daily_total, now_ts) or next_refill_ts(now_ts))
+                       if would_refuse else None),
         break_glass=break_glass, notes=notes,
     )
 
