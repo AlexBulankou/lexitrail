@@ -258,8 +258,14 @@ def generate_quiz_options(word, words_by_syllable, syllable_count, corpus_by_syl
                     total_syllables += next_word_syllables
                     
                     
-                # Ensure no duplicate with an existing word
-                existing_words = {w.word for w in all_available_words if w.word_id in used_word_ids}
+                # Ensure no duplicate with an existing word (or with the target word
+                # itself -- `all_available_words` excludes the target by construction,
+                # so without adding it explicitly here a portioned prefix of another
+                # word that happens to equal the target's own text is never caught;
+                # e.g. "怎么样了"[:3] == "怎么样". See lexitrail#277's post-merge red.)
+                existing_words = {word.word} | {
+                    w.word for w in all_available_words if w.word_id in used_word_ids
+                }
                 if concatenated_word in existing_words:
                     # Replace a character to ensure uniqueness
                     replace_index = random.randint(0, len(concatenated_word) - 1)
