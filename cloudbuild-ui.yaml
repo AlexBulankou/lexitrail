@@ -14,21 +14,31 @@
 #
 # So this file is not an improvement to a working pipeline; it is the pipeline.
 #
-# ─── WHAT THIS DOES NOT DO ────────────────────────────────────────────────────
-# 🔴 It BUILDS AND PUSHES. It does not roll the deployment, and a push does NOT
-# reach prod on its own. `lexitrail-ui-deployment` is pinned BY DIGEST, so
-# `imagePullPolicy: Always` is inert (nothing newer for the same digest to
-# resolve to) and `rollout restart` re-pulls identical bytes. The rollout is:
+# ─── WHAT THIS DOES (issue-216: it now ROLLS) ─────────────────────────────────
+# It builds, pushes, ROLLS the deployment, reads the digest back, and smokes the
+# served site. Until 2026-08-29 it stopped after the push, and this block said so
+# in the imperative — a correct description of a pipeline that shipped nothing.
+# zz1 relaying Alex, 2026-08-28: "the deploy becomes boring: every future merge
+# rolls automatically... the seventeen-days-stale situation must be structurally
+# impossible after this week."
 #
-#     kubectl -n lexitrail set image deployment/lexitrail-ui-deployment \
-#       <container>=us-central1-docker.pkg.dev/lexitrail/lexitrail-repo/lexitrail-ui@sha256:<new>
-#     kubectl -n lexitrail get deploy lexitrail-ui-deployment \
-#       -o jsonpath='{.spec.template.spec.containers[0].image}'    # READ IT BACK
+# `lexitrail-ui-deployment` is pinned BY DIGEST, so `imagePullPolicy: Always` is
+# inert (nothing newer for the same digest to resolve to) and `rollout restart`
+# re-pulls identical bytes. The ONLY rollout that works is `set image` to the new
+# digest — which is what `ui-deploy` does, followed by a read-back.
 #
 # ⚠️ `rollout status` reports that pods rolled and has no opinion on whether the
-# IMAGE changed, so it returns success for a no-op restart. The same stale
+# IMAGE changed, so it returns success for a no-op restart. That is why the
+# read-back compares the live spec against the digest we just pushed and FAILS on
+# mismatch, rather than trusting a rollout to have meant something. The same stale
 # `:latest` + `Always` claim in `cloudbuild.yaml` nearly made the issue-182
 # security deploy a silent no-op; corrected there in the same cycle as this file.
+#
+# 🔴 This step is only possible because `lexitrail-sa` was granted
+# `roles/container.developer` on `yojowa-claw` (issue-216, 2026-08-29). Without it
+# `set image` returns PERMISSION_DENIED and the build goes red at the last step —
+# loudly, which is the correct direction. Do not "fix" such a failure by deleting
+# the deploy step; that restores the build-and-ship-nothing shape.
 #
 # ─── COST, WHICH IS THE REAL CONSTRAINT HERE ──────────────────────────────────
 # lexitrail is `daily_build_count: 5`, `count_pinned: true`, enforcing. Merges
@@ -112,13 +122,82 @@ steps:
       - './ui'
     waitFor: ['pull-cache']
 
-# `:latest` is NOT what the live Deployment pulls — it is digest-pinned (see
-# above), so `:latest` serves the `--cache-from` pull and gives a human a tag to
-# reason about. `:$SHORT_SHA` is what makes "is this fix deployed?" a lookup
-# rather than ReplicaSet archaeology.
-images:
-  - '${_IMAGE}:latest'
-  - '${_IMAGE}:$SHORT_SHA'
+  # 🔴 PUSHED HERE, IN A STEP, NOT VIA `images:`. Cloud Build's `images:` block
+  # pushes AFTER every step completes, so a deploy step could never see the digest
+  # it needs — `images:` and "roll it in this build" are mutually exclusive. The
+  # block is deleted rather than kept alongside: keeping it would re-push identical
+  # bytes and, worse, leave two places that decide what ships.
+  #
+  # The digest is taken from the PUSH OUTPUT, not from `docker inspect`
+  # `.RepoDigests` — that field is a LIST and carries one entry per tag, so
+  # `index 0` silently picks whichever the daemon ordered first. The push line is
+  # unambiguous about which bytes went where.
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'ui-push'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        set -euo pipefail
+        docker push '${_IMAGE}:latest'
+        docker push '${_IMAGE}:$SHORT_SHA' | tee /workspace/push.log
+        DIGEST="$(grep -oE 'sha256:[a-f0-9]{64}' /workspace/push.log | tail -1)"
+        # CANNOT-TELL must not proceed as success: an empty digest here would make
+        # `set image` a no-op arg and the read-back compare '' against '', passing.
+        [ -n "$DIGEST" ] || { echo "PUSH-FAIL: no digest in push output -- refusing to deploy an unknown image" >&2; exit 1; }
+        printf '%s@%s' '${_IMAGE}' "$DIGEST" > /workspace/ui_image_ref.txt
+        echo "pushed: $(cat /workspace/ui_image_ref.txt)"
+    waitFor: ['ui-build']
+
+  # `set image` to the digest, then READ THE LIVE SPEC BACK and compare. Not
+  # `rollout status`, which reports that pods rolled and has no opinion on whether
+  # the image changed -- it returns success for a no-op restart, which is exactly
+  # the failure this whole file exists to end.
+  - name: 'gcr.io/cloud-builders/kubectl'
+    id: 'ui-deploy'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        set -euo pipefail
+        gcloud container clusters get-credentials ys-autopilot \
+          --region us-central1 --project yojowa-claw
+        REF="$(cat /workspace/ui_image_ref.txt)"
+        kubectl -n lexitrail set image deployment/lexitrail-ui-deployment \
+          lexitrail-ui="$REF"
+        kubectl -n lexitrail rollout status deployment/lexitrail-ui-deployment --timeout=300s
+        LIVE="$(kubectl -n lexitrail get deploy lexitrail-ui-deployment \
+          -o jsonpath='{.spec.template.spec.containers[0].image}')"
+        echo "requested: $REF"
+        echo "live spec: $LIVE"
+        [ "$LIVE" = "$REF" ] || { echo "DEPLOY-FAIL: live spec does not match what we pushed" >&2; exit 1; }
+    waitFor: ['ui-push']
+
+  # zz1 relaying Alex 2026-08-28: "wire its CANNOT-TELL and FAIL outcomes to a
+  # surface that is guaranteed to be seen". A red build on main is that surface.
+  #
+  # 🔴 BOTH non-zero outcomes fail the build, including exit 3 (CANNOT-TELL). A
+  # smoke whose instrument has died is worse than no smoke, because a green run is
+  # exactly what a healthy deploy looks like -- so CANNOT-TELL must never render as
+  # the good state. The retry exists so ordinary propagation lag is not reported as
+  # a finding; three attempts is the bound, and exhausting it IS the finding.
+  - name: 'python:3.11-slim'
+    id: 'ui-smoke'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        set -uo pipefail
+        for i in 1 2 3; do
+          python3 scripts/smoke_served_content.py && exit 0
+          rc=$?
+          echo "smoke attempt $i -> exit $rc" >&2
+          [ "$i" = 3 ] && break
+          sleep 20
+        done
+        echo "SMOKE-FAIL (exit $rc): 1=stale/wrong content, 3=CANNOT-TELL (the control did not discriminate, or the network did not answer). Neither is a pass." >&2
+        exit "$rc"
+    waitFor: ['ui-deploy']
 
 # 30m, longer than the backend's 20m: this image runs `npm install` plus a CRA
 # production build on node:16-alpine, and the uncached first build (nothing to

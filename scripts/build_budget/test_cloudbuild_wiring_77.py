@@ -249,3 +249,114 @@ def test_gated_trigger_name_matches_the_state_bucket_project():
             "config was copied from a sibling project and gates someone else's "
             "builds while lexitrail's own run ungated."
         )
+
+
+# ─── issue-216: the UI config must actually ROLL, and prove it rolled ─────────
+#
+# Until 2026-08-29 `cloudbuild-ui.yaml` stopped after the push. Every assertion
+# above passed on it — the gate was wired, the cache was wired, logging was set —
+# and merging UI work still changed nothing anyone could see. A green build was
+# the whole symptom, so these pins are about what the build DOES, not whether it
+# succeeds.
+
+_UI = _ROOT / "cloudbuild-ui.yaml"
+
+
+def _ui_steps():
+    return {s["id"]: s for s in yaml.safe_load(_UI.read_text())["steps"]}
+
+
+def _ui_step_script(step_id):
+    steps = _ui_steps()
+    # A missing step is the ORIGINAL bug (build-and-push-only), so say that
+    # rather than letting a KeyError stand in for it -- the next editor to see
+    # this red should read what it means, not a traceback.
+    assert step_id in steps, (
+        f"issue-216: cloudbuild-ui.yaml has no `{step_id}` step. That is the "
+        "pre-2026-08-29 build-and-push-only shape: the build goes green and the "
+        "served site never changes."
+    )
+    return "\n".join(steps[step_id].get("args", []))
+
+
+def test_ui_config_has_no_images_block_216():
+    """BUG SHAPE. `images:` pushes AFTER every step, so a deploy step can never
+    see the digest it needs — `images:` and "roll it in this build" are mutually
+    exclusive. Reintroducing it would ALSO leave two places deciding what ships."""
+    doc = yaml.safe_load(_UI.read_text())
+    assert "images" not in doc, (
+        "issue-216: cloudbuild-ui.yaml grew an `images:` block back. It pushes "
+        "after all steps, so ui-deploy cannot read the digest — the build goes "
+        "green and the site stays stale, which is the whole bug."
+    )
+
+
+def test_ui_config_rolls_the_deployment_216():
+    ids = _ui_steps()
+    for needed in ("ui-push", "ui-deploy", "ui-smoke"):
+        assert needed in ids, f"issue-216: cloudbuild-ui.yaml lost its `{needed}` step"
+
+
+def test_ui_deploy_uses_set_image_not_rollout_restart_216():
+    """BUG SHAPE. The Deployment is DIGEST-pinned: `rollout restart` re-pulls
+    identical bytes and `rollout status` then reports success for a no-op. Only
+    `set image` to a new digest ships anything."""
+    script = _ui_step_script("ui-deploy")
+    assert "set image" in script, "issue-216: ui-deploy no longer uses `set image`"
+    assert "rollout restart" not in script, (
+        "issue-216: ui-deploy uses `rollout restart` — inert on a digest-pinned "
+        "Deployment, and it reports success while shipping nothing"
+    )
+
+
+def test_ui_deploy_reads_the_live_spec_back_and_compares_216():
+    """`rollout status` has no opinion on whether the IMAGE changed. The
+    read-back comparison is the only thing here that can tell a real deploy from
+    a no-op, so it must exist AND must fail the build on mismatch."""
+    script = _ui_step_script("ui-deploy")
+    assert "jsonpath" in script and "containers[0].image" in script, (
+        "issue-216: ui-deploy no longer reads the live image back off the spec"
+    )
+    assert "DEPLOY-FAIL" in script and "exit 1" in script, (
+        "issue-216: the read-back no longer FAILS the build on mismatch — a "
+        "comparison whose result is discarded is not a check"
+    )
+
+
+def test_ui_push_refuses_an_empty_digest_216():
+    """CANNOT-TELL must not proceed as success. An empty digest would make
+    `set image` a no-op argument and the read-back would compare '' to '' and
+    pass — a green build, a stale site, and a check that certified it."""
+    script = _ui_step_script("ui-push")
+    assert "PUSH-FAIL" in script, (
+        "issue-216: ui-push no longer refuses an empty digest; an unparsed push "
+        "output would silently deploy nothing and still read as verified"
+    )
+
+
+def test_ui_push_does_not_take_the_digest_from_repodigests_216():
+    """`.RepoDigests` is a LIST with one entry per tag, so `index 0` picks
+    whichever the daemon happened to order first. The push output names the
+    bytes unambiguously."""
+    script = _ui_step_script("ui-push")
+    assert "RepoDigests" not in script, (
+        "issue-216: ui-push reads .RepoDigests — ambiguous across the two tags "
+        "this build pushes; parse the push output instead"
+    )
+
+
+def test_ui_smoke_fails_the_build_on_cannot_tell_too_216():
+    """zz1 relaying Alex: wire CANNOT-TELL *and* FAIL to a surface guaranteed to
+    be seen. Exit 3 is CANNOT-TELL — if it were swallowed, a dead instrument
+    would render exactly like a healthy deploy."""
+    step = _ui_steps()["ui-smoke"]
+    script = "\n".join(step.get("args", []))
+    assert "smoke_served_content.py" in script, "issue-216: ui-smoke no longer runs the smoke"
+    assert 'exit "$rc"' in script, (
+        "issue-216: ui-smoke no longer propagates the smoke's exit code — "
+        "swallowing exit 3 (CANNOT-TELL) makes a dead instrument look green"
+    )
+    assert step.get("waitFor") == ["ui-deploy"], (
+        "issue-216: ui-smoke must run AFTER ui-deploy, or it smokes the OLD site "
+        "and passes on the state the deploy was supposed to change"
+    )
