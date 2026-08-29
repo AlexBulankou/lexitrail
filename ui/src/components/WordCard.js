@@ -2,17 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { getHint, regenerateHint } from '../services/hintService';
 import { GameMode } from './Game';
 import PinyinText from './PinyinText';
-import { loadSentences, sentencesFor } from '../utils/sentences';
 import SpeakButton from './SpeakButton';
 import { buildHistoryTiles } from '../utils/historyTiles';
 import '../styles/WordCard.css';
 
 const WordCard = ({ mode, word, isFlipped, isHintDisplayed, handleMemorized, handleNotMemorized, toggleExclusion, feedbackClass, provideFeedback, setFlippedState }) => {
   const [hintImage, setHintImage] = useState(null);
-  // lexitrail#192: the ~450 curated examples that ship in prod and were never rendered.
-  // The INDEX, not this word's sentences: `loadSentences` is memoised module-wide, so every
-  // card shares one request and the per-word lookup is a synchronous slice.
-  const [sentenceIndex, setSentenceIndex] = useState(null);
   // lexitrail#193: the /hint response already carries an AI etymology/mnemonic that the UI
   // threw away. Kept in its OWN state rather than derived from hintImage, because the two are
   // independently nullable -- a word can have text and no image, and the render below is a
@@ -71,15 +66,6 @@ const WordCard = ({ mode, word, isFlipped, isHintDisplayed, handleMemorized, han
   const stopPropagation = (e) => {
     e.stopPropagation();
   };
-
-  // #192: load the corpus once, ever. Not gated on isHintDisplayed -- these are curated
-  // sentences already deployed, not a generated asset, so there is no per-card cost to gate
-  // (contrast SUG-2's hint images, where the gate exists because each miss GENERATES one).
-  useEffect(() => {
-    let live = true;
-    loadSentences().then((idx) => { if (live) setSentenceIndex(idx); });
-    return () => { live = false; };
-  }, []);
 
   const handleButtonClick = (action) => {
     // Set loadingWord to true to disable all buttons
@@ -333,20 +319,6 @@ const WordCard = ({ mode, word, isFlipped, isHintDisplayed, handleMemorized, han
                   {removeQuotes(word.def2)}
                 </p>
               </div>
-              {/* lexitrail#192 — the example sentences. Rendered ONLY when this word has any:
-                  "words with no sentence render no empty panel" is the acceptance, and ~224 of
-                  5,614 words are covered, so the empty case is the common one. */}
-              {sentencesFor(sentenceIndex, word.word).length > 0 && (
-                <div className="word-sentences">
-                  {sentencesFor(sentenceIndex, word.word).map((s, i) => (
-                    <div className="word-sentence" key={i}>
-                      <p className="word-sentence-zh" lang="zh">{s.zh}</p>
-                      <p className="word-sentence-py"><PinyinText text={s.py} /></p>
-                      <p className="word-sentence-en">{s.en}</p>
-                    </div>
-                  ))}
-                </div>
-              )}
             </div>
           }
 
