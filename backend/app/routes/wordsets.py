@@ -12,6 +12,7 @@ from ..cache_warm_policy import (CACHE_WARM_DEADLINE_S, WARM_OK,
                                  classify_warm_result, warm_verdict)
 from functools import partial
 import multiprocessing
+from ..cpu_quota import effective_cpus
 from threading import Lock
 import threading
 
@@ -381,7 +382,11 @@ def get_words_by_wordset(wordset_id, skip_cache=False):
             corpus_by_syllable.setdefault(count_syllables(w.word), []).append(w)
 
         # Determine optimal number of workers
-        num_workers = min(multiprocessing.cpu_count(), len(words))
+        # lexitrail#276: effective_cpus() reads the CGROUP QUOTA, not nproc.
+        # cpu_count() reports the NODE's cores (2) while cpu.max grants 0.2 CPU,
+        # so this used to spawn 2 threads that drained a 20ms budget in ~10ms and
+        # froze the container for the rest of every 100ms period.
+        num_workers = min(effective_cpus(), len(words))
         
         # Process words in parallel using ThreadPoolExecutor
         with ThreadPoolExecutor(max_workers=num_workers) as executor:
