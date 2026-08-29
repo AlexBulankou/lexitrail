@@ -30,7 +30,19 @@
 # So: refuse to plan/apply this root at all unless the operator explicitly
 # opts in. There is no default of `true` — an unset/false value fails
 # validation on every `terraform plan`/`apply` in this directory, regardless
-# of -target.
+# of -target. Deliberately `default = false`, not no-default: with no
+# default, a plain `terraform plan` (input enabled) PROMPTS instead of
+# refusing, and an operator who types `true` never sees the reasoning below
+# — verified empirically (lexitrail#253 review).
+#
+# `terraform import` also fires this validation (verified). `terraform
+# destroy` does too when it evaluates the resource graph, EXCEPT that with
+# genuinely empty local state it short-circuits to "no changes" before
+# variable evaluation runs (verified against this clone's empty state) — not
+# a gap in practice, since empty state means there is nothing to destroy and
+# `destroy` never runs schema-tables.sql (the DROP TABLE this guard is
+# about only fires on `apply`, via mysql_schema_and_data_job's
+# replace-on-hash-change). Not verified against a populated state.
 variable "i_understand_this_root_is_retired_and_may_drop_prod_tables" {
   type        = bool
   default     = false
