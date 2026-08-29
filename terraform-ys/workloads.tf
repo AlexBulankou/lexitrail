@@ -198,7 +198,33 @@ resource "kubernetes_deployment_v1" "backend" {
               # a bundled change reports as free and surfaces a cost later with nothing
               # pointing at it. AC3 (memory) is a separate decision.
               cpu                 = "1"
-              memory              = "512Mi"
+              # issue-276 AC3: 512Mi -> 1Gi. The pods were OOMKilled (exit=137)
+              # roughly hourly, and each kill dumps the per-pod in-memory cache,
+              # so every kill re-opens the ~cold-warm window #266 is about.
+              #
+              # SIZED, not guessed. Read off the live cgroups before changing it:
+              #   pod fd9ft (19m, fully warmed)  peak 390.3 MB / max 536.9 MB  73%
+              #   pod w45vm (3m45s, warming)     peak 426.5 MB / max 536.9 MB  79%
+              # ~110 MB of headroom, which a single concurrent large-wordset
+              # compute can cross. 1Gi gives ~2.5x the observed peak.
+              #
+              # FREE -- but ONLY because this raises the LIMIT, not the REQUEST.
+              # Autopilot's cpu:memory ratio acts on REQUESTS, and the warning
+              # about it is CORRECT; I nearly retracted it as unreproducible by
+              # probing the wrong field. Measured:
+              #   REQ 100m/256Mi LIM 1/512Mi -> 100m   control (today)
+              #   REQ 100m/256Mi LIM 1/1Gi   -> 100m   THIS CHANGE, free
+              #   REQ 100m/1Gi   LIM 1/1Gi   -> 154m   the ratio, reproduced
+              # Positive control (4 CPU/128Mi is SILENTLY corrected to 4Gi)
+              # proves the webhook runs, so the unmutated echoes above mean
+              # "seen and allowed" rather than "never inspected".
+              # 🔴 Raising requests.memory here would NOT be free.
+              #
+              # ⚠️ NOT proven sufficient: both samples are 19 min and 4 min old
+              # while the OOM cadence is ~1h, so a slow leak over a full period
+              # is NOT excluded. If exit=137 returns at 1Gi, the fix is a leak
+              # hunt, not another raise.
+              memory              = "1Gi"
               "ephemeral-storage" = "1Gi"
             }
           }
