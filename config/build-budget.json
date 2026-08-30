@@ -162,13 +162,16 @@
         "step_every_hours": 24,
         "anchor_utc": "2026-08-08T16:00:00Z"
       },
-      "gate_triggers": [],
+      "gate_triggers": [
+        "lexitrail-backend-deploy-main",
+        "lexitrail-ui-deploy-main"
+      ],
       "trigger_region": "us-central1",
       "daily_build_count": 12,
       "count_pinned": true,
       "_count_reason": "EXPLICIT FLOOR, not derived. lexitrail ran 1 build in the 168h calibration window, far below the 20 samples a p90 needs, so calibrate.py correctly refused to invent a number \u2014 and left the field ABSENT while `enforcing` stayed true. hcl@ caught that on #8199: a project claiming enforcement with no count is exactly the 'fallback that is also a legitimate value' hazard this file's own comment names. 5/day is ~35x its observed rate (0.14/day) and costs $0.03/day at its measured $0.0061/build, inside its $0.05 target. Pinned so calibration does not overwrite a deliberate floor with a number derived from one sample.",
       "required_contexts_unknown": true,
-      "_gate_comment_2026_08_29": "goal-1.8 reconcile (not copy): the authority's [] is DELIBERATE \u2014 deploy triggers are never gated (a closed hour = a silent no-ship with no retry, ens#8237 class); this copy carried [backend-deploy-main, ui-deploy-main], the exact inversion measured in #agent-coord 08-29. required_contexts_unknown:true is the fail-safe that empties the closable set whichever copy is read."
+      "_gate_comment_2026_08_30": "goal-1.8 reconcile (not copy), and INVERTED from this PR's first version after reading gate.py + inbuild.py at HEAD rather than reasoning from the authority's shape. Emptying gate_triggers does NOT hide lexitrail's spend and does NOT disable the in-build step: enforcing=False still debits, and #8237's repo_enforcing split keeps the deploy path counted. What [] removes is the BRAKE -- the in-build refusal -- so the earlier wording ('disables the in-build step') overstated it in the alarming direction, which is the direction that gets copied. The authority's [] is deliberate for ITS triggers (a closed hour on a deploy trigger is a silent no-ship with no retry, ens#8237 class); copying that shape here would reconcile the VALUE while inverting the REASON, since lexitrail's triggers are deploy-only and its budget is the thing under discussion. So: keep the trigger names, and add required_contexts_unknown:true as the fail-safe that empties the closable set whichever copy is read. hcl@, confirmed by zz1 against gate.py/inbuild.py at HEAD."
     }
   },
   "_rates_comment": "2026-08-08 \u2014 RATE RAISE REVERTED, and the reason is the whole lesson. I first raised these ~2x because the ledger under-read the invoice. But I ALSO corrected cost_of_build's span from startTime..finishTime to createTime..finishTime in the same change. Those were TWO fixes for ONE symptom: the rates were derived as (SKU dollars / minutes_SHORT), so applying them to the now-longer span computes SKU_dollars x (minutes_LONG / minutes_SHORT) and double-counts. Queue time is ~30% of stopbystop's bill and ~16.5% of ensemble's, so the compounded error runs +20% to +43% HOT per project; costed over all 613 real 08-07 builds it was $30.74 against a $24.30 invoice, +26.5%. With these original rates and the corrected span it is $24.78, +2.0%. A ledger that reads 26% hot refuses builds a quarter earlier than the real budget requires \u2014 under enforcement that is a CI outage caused by an accounting error. KEEP THE SPAN FIX; the rates were never the defect.",
