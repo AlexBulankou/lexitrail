@@ -6,7 +6,7 @@ import { recordPractice } from '../services/streakStore';
 import { creditsStreak } from '../utils/streak';
 import { formatDistanceToNow, max } from 'date-fns';
 import { GameMode } from '../components/Game';
-import { isWordDue } from '../utils/srs';
+import { isWordDue, nextRecallState } from '../utils/srs';
 import { makeInFlight, requestKey, beginRequest, endRequest } from '../utils/inFlight';
 import { rawKey, viewKey, invalidateWordset } from '../utils/wordsetCache';
 import { makeRawRegistry, claimRawFetch } from '../utils/rawFetchRegistry';
@@ -28,14 +28,14 @@ if (!window.rawFetchRegistry) {
 const rawFetchRegistry = window.rawFetchRegistry;
 
 // Function to abstract recall state logic
+// issue-188: the transition moved to utils/srs.js so the mastery floor lives in
+// the same module as the interval ladder it must agree with. Kept as a thin
+// named alias so the call sites below read unchanged and the console tracing
+// stays where it was useful.
 const updateRecallState = (currentRecallState, isCorrect) => {
-  if (isCorrect) {
-    console.log(`Correct recall! Current recall state: ${currentRecallState}, New recall state: ${Math.max(0, currentRecallState - 1)}`);
-    return Math.max(0, currentRecallState - 1);
-  } else {
-    console.log(`Incorrect recall! Current recall state: ${currentRecallState}, New recall state: ${currentRecallState + 1}`);
-    return currentRecallState + 1;
-  }
+  const next = nextRecallState(currentRecallState, isCorrect);
+  console.log(`${isCorrect ? 'Correct' : 'Incorrect'} recall! Current recall state: ${currentRecallState}, New recall state: ${next}`);
+  return next;
 };
 
 // Sweeps the raw payload plus EVERY derived view for this wordset. The old
