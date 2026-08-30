@@ -44,7 +44,7 @@ MARK = "lt:first-card"
 DEFAULT_URL = "https://lexitrail.com/"
 
 
-def one_run(ctx, url: str, timeout_ms: int) -> tuple[float | None, str | None]:
+def one_run(ctx, url: str, timeout_ms: int, wordset: str | None = None) -> tuple[float | None, str | None]:
     """Drive the guest journey to practice and read the mark. (ms, error)."""
     page = ctx.new_page()
     try:
@@ -72,7 +72,34 @@ def one_run(ctx, url: str, timeout_ms: int) -> tuple[float | None, str | None]:
             page.wait_for_selector("button.wordset-button-practice", timeout=timeout_ms)
         except Exception:
             return None, "no practice control on /wordsets"
-        page.query_selector_all("button.wordset-button-practice")[0].click()
+
+        # issue-266: WHICH wordset is the whole question. The issue is about BIG
+        # datasets, and the first button in DOM order is HSK1 -- 150 words against
+        # HSK6's 2500 (measured via /wordsets/<id>/words). Timing the first button
+        # answers "how fast is the smallest set", which is not what was asked.
+        #
+        # Anchored on the wordset's visible NAME rather than an index, because
+        # index order is a rendering detail that can change without anyone
+        # noticing the measurement silently moved to a different dataset.
+        if wordset:
+            btns = page.query_selector_all("button.wordset-button-practice")
+            target = None
+            for b in btns:
+                # NOT `closest('[class*=wordset]')`: the button's OWN class is
+                # `wordset-button-practice`, so closest() matches the button itself
+                # and returns innerText "Practice" for every row. parentElement is
+                # the row: "HSK1 | Practice | Due Today | Show Excluded | Test!".
+                row = b.evaluate("el => el.parentElement ? el.parentElement.innerText : ''")
+                if wordset.lower() in (row or "").lower():
+                    target = b
+                    break
+            if target is None:
+                names = [b.evaluate("el => el.parentElement ? el.parentElement.innerText : ''")
+                         .split("\n")[0] for b in btns]
+                return None, f"wordset {wordset!r} not found among {names}"
+            target.click()
+        else:
+            page.query_selector_all("button.wordset-button-practice")[0].click()
 
         # Wait for the MARK, not for a selector. If it never arrives we say so.
         try:
@@ -103,6 +130,10 @@ def main() -> int:
     ap.add_argument("--budget-ms", type=float, default=None,
                     help="fail with 1 if the median exceeds this")
     ap.add_argument("--timeout-ms", type=int, default=30000)
+    ap.add_argument("--wordset", default=None,
+                    help="name to match in the wordset row, e.g. HSK6 (the BIGGEST live set, "
+                         "2500 words). Omitted = first button in DOM order = HSK1 (150), which "
+                         "is NOT what #266 asks about.")
     args = ap.parse_args()
 
     samples: list[float] = []
@@ -114,7 +145,7 @@ def main() -> int:
             # warm cache, which measures the wrong journey -- the issue is about a
             # user arriving, not about re-entering.
             ctx = browser.new_context(viewport={"width": 390, "height": 844})
-            ms, err = one_run(ctx, args.url, args.timeout_ms)
+            ms, err = one_run(ctx, args.url, args.timeout_ms, args.wordset)
             ctx.close()
             if err:
                 errors.append(f"run {i+1}: {err}")
