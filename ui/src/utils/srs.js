@@ -33,7 +33,18 @@ const INTERVAL_DAYS = [7, 3, 1, 0, 0];
 // -3 (90 days) that is missed climbs back to -2, then -1, and a further miss
 // puts it at 0 and then into the struggling range. Mastery decays at exactly
 // the rate it was earned.
-const GRADUATED_DAYS = [7, 14, 30, 90];
+// hc2@ on PR #285: index 0 is NEVER READ -- `srsIntervalMs` enters this branch
+// only for state < 0, so the index is always >= 1. It is here as the ladder's
+// ORIGIN, and it is DERIVED rather than written as a second `7`, because a
+// literal would be a duplicate of INTERVAL_DAYS[0] that nothing forces to agree:
+// change the weekly interval there and this array would keep claiming the ladder
+// starts at 7, silently.
+//
+// Deriving it also keeps MASTERY_FLOOR correct by construction. Deleting the
+// "dead" element instead -- the natural cleanup -- would shorten the array, move
+// the floor from -3 to -2, and drop the 14-day rung entirely. That is caught
+// (two tests red, verified), but it is better not to invite the edit.
+const GRADUATED_DAYS = [INTERVAL_DAYS[0], 14, 30, 90];
 
 // The furthest a word can graduate. Exported because `updateRecallState` must
 // clamp to the SAME floor -- a floor in the writer that disagreed with the
