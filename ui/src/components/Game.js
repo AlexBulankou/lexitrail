@@ -210,15 +210,26 @@ const Game = () => {
   // when we decided to paint it. Those differ by the commit, which is part of
   // what the issue is complaining about on a big dataset.
   //
-  // The condition mirrors the render guards below (`loading.status === 'loaded'`
-  // plus a non-empty list) rather than restating them in new terms -- if those
-  // guards change, this should be changed with them, and a reader comparing the
-  // two can see that in one glance.
+  // 🔴 The condition must match the render guard EXACTLY, and my first version did
+  // not -- hc2 caught it on #288. The guard below is
+  //
+  //     if ((displayWords.length === 0 || sessionOver) && loading.status === 'loaded')
+  //         -> <Completed/>, NOT a card
+  //
+  // so a card shows only when `!sessionOver` as well. I omitted that, and wrote a
+  // comment claiming the condition "mirrors the render guards" -- asserting the
+  // property I had failed to implement, which is worse than omitting it silently,
+  // because the comment tells the next reader not to check.
+  //
+  // It matters more than an ordinary off-by-one because `markOnce` is once-EVER:
+  // a single wrong mark does not add noise, it permanently consumes the name and
+  // the real first card can never be recorded for that page load. The metric would
+  // then report a number that looks plausible and measures the Completed screen.
   useEffect(() => {
-    if (loading.status === 'loaded' && displayWords.length > 0) {
+    if (loading.status === 'loaded' && displayWords.length > 0 && !sessionOver) {
       markOnce(FIRST_CARD_MARK);
     }
-  }, [loading.status, displayWords.length]);
+  }, [loading.status, displayWords.length, sessionOver]);
 
 
   const updateLayout = (triggerEvent) => {
