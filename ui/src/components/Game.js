@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import WordCard from './WordCard';
+import { markOnce, FIRST_CARD_MARK } from '../utils/perfMark';
 import MiniWordCard from './MiniWordCard';
 import Completed from './Completed';
 import {
@@ -201,6 +202,24 @@ const Game = () => {
       window.removeEventListener('pageshow', handleUpdate);
     };
   }, [displayWords.length]);
+
+  // issue-266: mark when the first card is actually on screen.
+  //
+  // In an EFFECT rather than during render, deliberately: an effect runs after
+  // React has committed, so the mark lands when the card is painted rather than
+  // when we decided to paint it. Those differ by the commit, which is part of
+  // what the issue is complaining about on a big dataset.
+  //
+  // The condition mirrors the render guards below (`loading.status === 'loaded'`
+  // plus a non-empty list) rather than restating them in new terms -- if those
+  // guards change, this should be changed with them, and a reader comparing the
+  // two can see that in one glance.
+  useEffect(() => {
+    if (loading.status === 'loaded' && displayWords.length > 0) {
+      markOnce(FIRST_CARD_MARK);
+    }
+  }, [loading.status, displayWords.length]);
+
 
   const updateLayout = (triggerEvent) => {
     const width = window.innerWidth;
