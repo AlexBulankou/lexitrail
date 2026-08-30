@@ -198,9 +198,65 @@ steps:
 # exists so a running pod can be traced back to a commit — the absence of that
 # is why "is this fix deployed?" has needed ReplicaSet archaeology rather than
 # a lookup.
-images:
-  - '${_IMAGE}:latest'
-  - '${_IMAGE}:$SHORT_SHA'
+# The implicit `images:` block is GONE, and its absence is the change. It pushed
+# both tags but told us nothing: it reports no digest, and the live Deployment is
+# pinned BY digest -- so there was never a value to deploy. That is the whole
+# reason this file built and shipped nothing.
+#
+# Pushing explicitly instead, and capturing the digest, is exactly what
+# cloudbuild-ui.yaml already does. This mirrors it deliberately rather than
+# inventing a second shape: the UI path is the one with a live green run behind it.
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'backend-push'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        set -euo pipefail
+        docker push '${_IMAGE}:latest'
+        docker push '${_IMAGE}:$SHORT_SHA' | tee /workspace/push.log
+        DIGEST="$$(grep -oE 'sha256:[a-f0-9]{64}' /workspace/push.log | tail -1)"
+        # CANNOT-TELL must not proceed as success: an empty digest would make
+        # `set image` a no-op arg and the read-back compare '' against '', passing.
+        [ -n "$$DIGEST" ] || { echo "PUSH-FAIL: no digest in push output -- refusing to deploy an unknown image" >&2; exit 1; }
+        printf '%s@%s' '${_IMAGE}' "$$DIGEST" > /workspace/backend_image_ref.txt
+        echo "pushed: $$(cat /workspace/backend_image_ref.txt)"
+    waitFor: ['backend-build']
+
+  # `set image` to the digest, then READ THE LIVE SPEC BACK and compare.
+  #
+  # Not `rollout status`, which this file's own comments already warned about at
+  # length: it reports that pods rolled and has no opinion on whether the image
+  # changed, so it returns success for a no-op restart -- the exact shape that let
+  # backend merges look deployed while shipping nothing. It runs here for its
+  # waiting behaviour; the COMPARE is what decides.
+  #
+  # The cross-project credential this needs already exists: `lexitrail-sa` was
+  # granted `roles/container.developer` on `yojowa-claw` for the UI path
+  # (issue-216, 2026-08-29), and BOTH triggers run as that same account -- verified,
+  # not assumed. So the access has been in place since 08-29 and the backend simply
+  # never had the step. If `set image` ever returns PERMISSION_DENIED the build goes
+  # red at the last step, loudly, which is the correct direction: do not "fix" that
+  # by deleting this step, which restores build-and-ship-nothing.
+  - name: 'gcr.io/cloud-builders/kubectl'
+    id: 'backend-deploy'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        set -euo pipefail
+        gcloud container clusters get-credentials ys-autopilot \
+          --region us-central1 --project yojowa-claw
+        REF="$$(cat /workspace/backend_image_ref.txt)"
+        kubectl -n lexitrail set image deployment/lexitrail-backend \
+          lexitrail-backend="$$REF"
+        kubectl -n lexitrail rollout status deployment/lexitrail-backend --timeout=300s
+        LIVE="$$(kubectl -n lexitrail get deploy lexitrail-backend \
+          -o jsonpath='{.spec.template.spec.containers[0].image}')"
+        echo "requested: $$REF"
+        echo "live spec: $$LIVE"
+        [ "$$LIVE" = "$$REF" ] || { echo "DEPLOY-FAIL: live spec does not match what we pushed" >&2; exit 1; }
+    waitFor: ['backend-push']
 
 # 20m: the backend image is a small python:3.9-slim + pip install. The default
 # is 10m and an uncached first build (no cache to pull) is the slow case.
