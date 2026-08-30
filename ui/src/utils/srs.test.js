@@ -1,7 +1,4 @@
-import {
-  srsIntervalMs, isDue, lastRecallTimeOf, isWordDue, dueCount,
-  dueByWordset, totalDue, pickStartSet,
-} from './srs';
+import { srsIntervalMs, isDue, lastRecallTimeOf, isWordDue, dueCount, dueByWordset, totalDue, pickStartSet, MASTERY_FLOOR, nextRecallState } from './srs';
 
 const DAY = 24 * 60 * 60 * 1000;
 const NOW = new Date('2026-08-13T12:00:00Z');
@@ -22,7 +19,17 @@ describe('srsIntervalMs', () => {
 
   it('clamps out-of-range states instead of returning undefined', () => {
     expect(srsIntervalMs(99)).toBe(0);
-    expect(srsIntervalMs(-5)).toBe(7 * DAY);
+    // issue-188 CHANGED THIS LINE'S CONTRACT, deliberately. It asserted
+    // `srsIntervalMs(-5) === 7 * DAY` -- i.e. that a state below 0 clamped back
+    // to the weekly interval. That clamp WAS the ceiling this issue removes: a
+    // word mastered far past 0 was scheduled identically to one just reaching
+    // it, so the due-count never thinned.
+    //
+    // A negative now clamps to the FLOOR of the graduation ladder, not to 7
+    // days. Recording the change here rather than editing the number quietly,
+    // because a test that silently starts asserting the opposite of what it
+    // asserted yesterday is indistinguishable from one that was wrong.
+    expect(srsIntervalMs(-5)).toBe(90 * DAY);
   });
 });
 
@@ -353,5 +360,95 @@ describe('pickStartSet', () => {
 
   it('ignores malformed entries instead of opening an undefined wordset', () => {
     expect(pickStartSet([null, { due: undefined }, { wordsetId: 4, due: 1 }]).wordsetId).toBe(4);
+  });
+});
+
+
+// issue-188: the graduation ladder. Before this, `updateRecallState` floored at
+// 0 and 0 meant 7 days, so a word answered correctly a hundred times returned
+// weekly for ever and a steady learner's due-count grew without bound.
+describe('srsIntervalMs graduation ladder (issue-188)', () => {
+  it('rests a repeatedly-mastered word LONGER than a week', () => {
+    // THE BUG: every one of these was 7 days before the change. This is the
+    // assertion the old code fails -- verified by reverting, see the floor test
+    // below for the writer-side half.
+    expect(srsIntervalMs(-1)).toBe(14 * 24 * 60 * 60 * 1000);
+    expect(srsIntervalMs(-2)).toBe(30 * 24 * 60 * 60 * 1000);
+    expect(srsIntervalMs(-3)).toBe(90 * 24 * 60 * 60 * 1000);
+  });
+
+  it('is strictly increasing as mastery deepens, so the daily load can only shrink', () => {
+    // Stated as a PROPERTY rather than four numbers: a future edit that reorders
+    // the ladder would keep every individual assertion above passing.
+    const days = [-3, -2, -1, 0, 1, 2].map(srsIntervalMs);
+    for (let i = 1; i < days.length; i += 1) {
+      expect(days[i]).toBeLessThanOrEqual(days[i - 1]);
+    }
+    expect(days[0]).toBeGreaterThan(days[days.length - 1]);
+  });
+
+  it('clamps below the floor instead of returning undefined', () => {
+    expect(srsIntervalMs(MASTERY_FLOOR - 5)).toBe(srsIntervalMs(MASTERY_FLOOR));
+  });
+
+  it('leaves the struggling half untouched', () => {
+    // NEGATIVE CONTROL. Without this the ladder could be "fixed" by making every
+    // state longer, which would delay the words a learner is actually failing.
+    expect(srsIntervalMs(0)).toBe(7 * 24 * 60 * 60 * 1000);
+    expect(srsIntervalMs(1)).toBe(3 * 24 * 60 * 60 * 1000);
+    expect(srsIntervalMs(2)).toBe(1 * 24 * 60 * 60 * 1000);
+    expect(srsIntervalMs(3)).toBe(0);
+  });
+
+  it('MASTERY_FLOOR reaches the end of the ladder and no further', () => {
+    // The two-copies hazard named in srs.js: a floor that disagreed with the
+    // ladder length lets the writer keep decrementing past the last rung, so a
+    // word "graduates" with no change to when it is next seen -- a silent no-op.
+    // Pins that the deepest state is a DISTINCT interval from the one above it.
+    expect(srsIntervalMs(MASTERY_FLOOR)).toBeGreaterThan(srsIntervalMs(MASTERY_FLOOR + 1));
+    expect(srsIntervalMs(MASTERY_FLOOR - 1)).toBe(srsIntervalMs(MASTERY_FLOOR));
+  });
+});
+
+
+// issue-188 WRITER SIDE. Without these the ladder could be perfect and the
+// transition still floor at 0 -- the feature inert with every interval test
+// green, which is the shape this whole change is about.
+describe('nextRecallState (issue-188 writer side)', () => {
+  it('keeps graduating a repeatedly-correct word past 0', () => {
+    // THE BUG: the old `Math.max(0, ...)` returned 0 for every one of these.
+    expect(nextRecallState(0, true)).toBe(-1);
+    expect(nextRecallState(-1, true)).toBe(-2);
+    expect(nextRecallState(-2, true)).toBe(-3);
+  });
+
+  it('stops at the floor rather than decrementing for ever', () => {
+    expect(nextRecallState(MASTERY_FLOOR, true)).toBe(MASTERY_FLOOR);
+  });
+
+  it('reaches EXACTLY the end of the ladder — no unreachable rung, no silent no-op', () => {
+    // The two-copies hazard, now pinned end-to-end rather than commented: walk
+    // the transition from 0 and assert the interval it produces is the deepest
+    // the ladder offers. A floor SHORTER than the ladder leaves a rung nothing
+    // can reach; a floor DEEPER than it lets a word "graduate" with no change
+    // to when it is next seen.
+    let state = 0;
+    for (let i = 0; i < 20; i += 1) state = nextRecallState(state, true);
+    expect(state).toBe(MASTERY_FLOOR);
+    expect(srsIntervalMs(state)).toBe(90 * DAY);
+    expect(srsIntervalMs(state)).toBeGreaterThan(srsIntervalMs(state + 1));
+  });
+
+  it('a lapse climbs back one rung at a time, so mastery decays as it was earned', () => {
+    expect(nextRecallState(-3, false)).toBe(-2);
+    expect(nextRecallState(-1, false)).toBe(0);
+    expect(nextRecallState(0, false)).toBe(1);
+  });
+
+  it('leaves the struggling side unbounded above', () => {
+    // NEGATIVE CONTROL: the floor must not become a ceiling. srsIntervalMs
+    // clamps the READING end; the state itself keeps climbing so a word missed
+    // repeatedly is not silently treated as merely "state 4".
+    expect(nextRecallState(9, false)).toBe(10);
   });
 });

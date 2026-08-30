@@ -12,8 +12,72 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 // again immediately.
 const INTERVAL_DAYS = [7, 3, 1, 0, 0];
 
+// issue-188: states BELOW 0 are the graduation ladder, and they are why a
+// diligent learner's daily load can finally shrink.
+//
+// Before this, `updateRecallState` floored at 0 and 0 meant "7 days", so a word
+// answered correctly for the hundredth time came back on the same weekly
+// cadence as one answered correctly once. The due-count for a steady learner
+// therefore grew without bound: every word ever studied returned weekly for
+// ever, which is the opposite of what spaced repetition is for and a direct
+// cause of overwhelm-and-quit.
+//
+// The ladder extends DOWNWARD rather than adding a second field because
+// `recall_state` is already a signed `INT NOT NULL` (terraform/schema-tables.sql)
+// with no CHECK constraint, and the API passes it through unvalidated
+// (`routes/userwords.py::update_recall_state` reads `data.get('recall_state')`).
+// So negatives persist and round-trip today — no migration, no schema change,
+// and one number still fully describes a word's scheduling.
+//
+// Lapses need no special case: an incorrect answer is `state + 1`, so a word at
+// -3 (90 days) that is missed climbs back to -2, then -1, and a further miss
+// puts it at 0 and then into the struggling range. Mastery decays at exactly
+// the rate it was earned.
+// hc2@ on PR #285: index 0 is NEVER READ -- `srsIntervalMs` enters this branch
+// only for state < 0, so the index is always >= 1. It is here as the ladder's
+// ORIGIN, and it is DERIVED rather than written as a second `7`, because a
+// literal would be a duplicate of INTERVAL_DAYS[0] that nothing forces to agree:
+// change the weekly interval there and this array would keep claiming the ladder
+// starts at 7, silently.
+//
+// Deriving it also keeps MASTERY_FLOOR correct by construction. Deleting the
+// "dead" element instead -- the natural cleanup -- would shorten the array, move
+// the floor from -3 to -2, and drop the 14-day rung entirely. That is caught
+// (two tests red, verified), but it is better not to invite the edit.
+const GRADUATED_DAYS = [INTERVAL_DAYS[0], 14, 30, 90];
+
+// The furthest a word can graduate. Exported because `updateRecallState` must
+// clamp to the SAME floor -- a floor in the writer that disagreed with the
+// ladder here would produce states this function silently clamps, i.e. a word
+// that keeps "graduating" with no change to when it is next seen.
+export const MASTERY_FLOOR = -(GRADUATED_DAYS.length - 1);
+
+// The state TRANSITION lives here, beside the ladder it has to agree with.
+//
+// It was `useWordsetLoader`'s module-private `updateRecallState`, which meant
+// the floor and the ladder sat in different files. My first version of
+// issue-188 imported MASTERY_FLOOR across that boundary and left a comment
+// asking the next editor to keep them in step -- which is a rule that fires only
+// if someone reads it. Co-locating them makes the disagreement unrepresentable
+// instead of merely discouraged: there is no second floor to drift.
+//
+// It also makes the writer TESTABLE. As a private const it had no test at all,
+// so the ladder could be correct and the transition still floored at 0 -- the
+// feature inert with every srs test green.
+export const nextRecallState = (currentRecallState, isCorrect) => {
+  const state = currentRecallState | 0;
+  // Correct answers move DOWN toward mastery and stop at the last rung; wrong
+  // answers move up with no ceiling (srsIntervalMs clamps the reading end).
+  return isCorrect ? Math.max(MASTERY_FLOOR, state - 1) : state + 1;
+};
+
 export const srsIntervalMs = (recallState) => {
-  const idx = Math.min(Math.max(recallState | 0, 0), INTERVAL_DAYS.length - 1);
+  const state = recallState | 0;
+  if (state < 0) {
+    const idx = Math.min(-state, GRADUATED_DAYS.length - 1);
+    return GRADUATED_DAYS[idx] * DAY_MS;
+  }
+  const idx = Math.min(state, INTERVAL_DAYS.length - 1);
   return INTERVAL_DAYS[idx] * DAY_MS;
 };
 
