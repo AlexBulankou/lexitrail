@@ -22,7 +22,6 @@ const WordCard = ({ mode, word, isFlipped, isHintDisplayed, handleMemorized, han
 
       // Clear the current hint and show loading message
       setHintImage(null);
-      setHintText(null);
 
       // SUG-2: hint images are opt-in. Only request one when the learner has
       // hints shown, so browsing the card grid doesn't fire a generate/fetch
@@ -67,7 +66,6 @@ const WordCard = ({ mode, word, isFlipped, isHintDisplayed, handleMemorized, han
     // Set loadingWord to true to disable all buttons
     setLoadingWord(true);
     setHintImage(null);
-    setHintText(null);            // #193: mirror the image's clear/restore pair
 
     // Save the current word ID to check if it changes after the action
     const currentWordId = word.word_id;

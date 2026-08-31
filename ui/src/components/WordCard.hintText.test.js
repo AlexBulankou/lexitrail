@@ -66,9 +66,22 @@ describe('lexitrail#265 — the prompt does not reach the UI, and STAYS gone', (
   test('🔴 neither `hintText` nor `hint_text` survives anywhere in the component', () => {
     // Comments are stripped first (controls above), so the explanatory notes that NAME these
     // identifiers cannot satisfy this. That is the whole reason the stripper exists here.
+    //
+    // lexitrail#291: the original /hintText/ regex is lowercase-h only, so it is blind to the
+    // capital-H setter form `setHintText` — exactly the shape that shipped as a dangling
+    // reference in #268 (two orphaned `setHintText(null)` call sites survived the state's
+    // removal). Case-insensitive so `setHintText`/`SetHintText`/etc all trip the same pin.
     const c = code();
-    expect(c).not.toMatch(/hintText/);
-    expect(c).not.toMatch(/hint_text/);
+    expect(c).not.toMatch(/hintText/i);
+    expect(c).not.toMatch(/hint_text/i);
+  });
+
+  test('🔴 REGRESSION (#291): a dangling `setHintText(...)` call site is caught', () => {
+    // Mutation-verified: this is the exact shape that shipped and slipped past the
+    // lowercase-only pin above. Prove the widened regex catches it directly, independent
+    // of the source file's current content.
+    expect('      setHintText(null);').toMatch(/hintText/i);
+    expect(stripComments('      setHintText(null);')).toMatch(/hintText/i);
   });
 
   test('CONTROL: the assertion above CAN fail — a symbol that should be present, is', () => {
