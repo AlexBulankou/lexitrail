@@ -43,6 +43,7 @@ body, html {
 .dropdown-trigger,
 .wordsets-retry,
 .game-settings-button,
+.mark-all-memorized-button,
 /* issue-52: added once the E2E harness could measure the RENDERED box. These
  * three were never in this list, so the declaration test above was green while
  * every one of them shipped under the floor on live prod — 23 of 33 controls
