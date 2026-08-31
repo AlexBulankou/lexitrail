@@ -57,6 +57,7 @@ const Game = () => {
     toggleExclusion, //10
     handleMemorized, //11
     handleNotMemorized, //12
+    handleMemorizedMultiple,
 
   } = useWordsetLoader(
     wordsetId,
@@ -369,6 +370,41 @@ const Game = () => {
     loadWordsForWordset();
   }
 
+  // issue-264: RESTORED. Alex ruled this back on 2026-08-30 (option A, via zz1)
+  // -- "my favorite feature ... helps accelerate training for advanced learners".
+  // The ruling knowingly accepts the SRS-provenance trade-off #109 retired it
+  // for, so that argument is settled and deliberately not re-made here.
+  //
+  // 🔴 ONE DEVIATION FROM THE LITERAL 2026-08-13 CODE, AND IT IS A BUG FIX, NOT
+  // A REDESIGN. The original looped `for (i = 0; i < maxCardsToShow; i++)`,
+  // which was correct when the visible cards WERE indices 0..maxCardsToShow-1.
+  // They are not any more: `visibleIndices` is chosen by session state
+  // (`sessionVisibleIndices`), so the old loop would now mark cards that are
+  // not on screen and skip cards that are. Restoring it byte-for-byte would
+  // restore a control that lies about what it ticked.
+  const markAllAsMemorized = () => {
+    const indicesToMark = [];
+
+    // Send Google Analytics event for bulk recall
+    window.gtag('event', 'recall', {
+      'event_category': 'learning',
+      'event_label': 'correct',
+      'wordset_id': wordsetId,
+      'mode': mode,
+      'cards_count': visibleIndices.length
+    });
+
+    visibleIndices.forEach((i) => {
+      provideFeedback(i, true, () => {
+        setFlippedState(i, false);
+        indicesToMark.push(i);
+      });
+    });
+    setAllFlipped(false);
+
+    handleMemorizedMultiple(indicesToMark, maxCardsToShow);
+  };
+
   const wordsToRender = visibleIndices.map((i) => ({ word: displayWords[i], wordIndex: i }));
 
   if (loading.status === 'loading') {
@@ -480,24 +516,15 @@ const Game = () => {
       </div>
 
 
-      {/* issue-109 (RD-6): the blind "✔️ to all" control is RETIRED.
-          It wrote the same recall signal as a genuine answer, so the two are
-          indistinguishable downstream and every scheduling decision built on
-          that history is computed from data that cannot tell knowing from
-          tapping. A shortcut that costs one tap and corrupts the input to the
-          whole SRS is not a convenience.
-
-          Deleted rather than hidden. The click handler was the control's only
-          caller, and the loader's bulk-write function was that handler's only
-          caller, so leaving either in place would keep a reachable bulk-write
-          path one line of JSX from being live again — and a hidden control is
-          not a guard.
-
-          The identifiers are described rather than named here on purpose:
-          `tapTargets.test.js` pins that the retired symbols appear NOWHERE in
-          ui/src, and it caught this comment when it spelled them out. Which is
-          the detector working — a retirement that a comment can satisfy is not
-          a retirement. */}
+      {(mode === GameMode.PRACTICE || mode === GameMode.DUE_TODAY) ? (
+        <button
+          className="mark-all-memorized-button"
+          onClick={markAllAsMemorized}
+        >
+          ✔️ to all {visibleIndices.length}
+        </button>
+      ) : (<></>)
+      }
 
       {/* issue-108: inside a session the bar tracks position within THE
           SESSION, not within the wordset. Denominating on `totalToShow` (149
