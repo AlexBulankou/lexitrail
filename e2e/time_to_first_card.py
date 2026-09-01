@@ -173,6 +173,12 @@ def one_run(ctx, url: str, timeout_ms: int,
                  const e = performance.getEntriesByName(n);
                  return [n, e.length === 1 ? e[0].startTime : null];
                }))""", [AUTH_MARK, REQ_MARK])
+        # issue-266: read the resource timeline in the SAME evaluate pass as
+        # the marks, before the page closes. Unconditional rather than gated on
+        # the CLI flag -- it is one cheap read, and gating it would mean a run
+        # that turned out to be interesting could not be re-examined without a
+        # second visit to a site whose timings differ run to run.
+        nav["res"] = page.evaluate(_RESOURCE_JS)
         return float(ms), None, nav
     finally:
         page.close()
@@ -245,6 +251,126 @@ def phase_split(ms: float, nav: dict) -> dict | None:
     }
 
 
+
+# issue-266: WHAT OCCUPIES `req_to_card`. `--phases` narrowed the fixed cost to
+# this one part (~1196 ms of a ~1215 ms `app`), and the earlier probe trace put
+# roughly 520 ms of it in no named phase at all. The tempting next move is an
+# in-app mark on the words request -- but the browser already records every
+# fetch, so Resource Timing answers it with NO app change, which also means the
+# measurement works against a prod build that predates any new mark.
+#
+# WHY COVERAGE, AND NOT A LIST OF REQUESTS
+# ----------------------------------------
+# A list of requests inside the window invites reading the largest one as "the
+# cause". The question that actually discriminates is whether ANYTHING was in
+# flight: if the window is fully covered by requests, the cost is network and
+# the fix is fetch scheduling; if part of it is covered by NOTHING, the app is
+# idle -- waiting on itself -- and no amount of request reordering touches it.
+#
+# WHY EVERY RESOURCE AND NOT JUST THE API
+# ---------------------------------------
+# `redundant_fetches.py`'s `DATA_RE` deliberately matches only payload URLs,
+# because its question is "did we fetch the same bytes twice". Reusing it here
+# would be the same word for a different job: every resource it filters out is
+# one that could have been occupying the window, so a narrow matcher can only
+# ever make the gap look BIGGER. That is the direction that flatters the "the
+# app is idle" reading, so the matcher is deliberately the widest one available
+# -- scripts, styles, images, XHR, everything the browser recorded.
+
+_RESOURCE_JS = """() => performance.getEntriesByType('resource').map(e => ({
+  name: e.name, start: e.startTime, end: e.responseEnd,
+}))"""
+
+
+def uncovered_spans(start: float, end: float,
+                    intervals: list[tuple[float, float]]) -> list[tuple[float, float]]:
+    """The parts of [start, end] covered by NO interval, as merged spans.
+
+    Pure and total: the live reading is one call to this over whatever the
+    browser recorded, so every judgement about the gap is a property of this
+    function and can be tested without a browser.
+
+    Intervals are clipped to the window before merging. An interval that starts
+    before `start` (a request already in flight when the window opens) still
+    covers the beginning of it, and dropping such a request -- the naive
+    `if i.start >= start` filter -- would report its coverage as idle."""
+    clipped = sorted((max(a, start), min(b, end))
+                     for a, b in intervals if min(b, end) > max(a, start))
+    spans: list[tuple[float, float]] = []
+    cursor = start
+    for a, b in clipped:
+        if a > cursor:
+            spans.append((cursor, a))
+        cursor = max(cursor, b)
+    if cursor < end:
+        spans.append((cursor, end))
+    return spans
+
+
+def request_split(ms: float, nav: dict) -> dict | None:
+    """Coverage of the `req_to_card` window, or None when it cannot be measured.
+
+    THREE-STATE, like every sibling detector here. "I could not read the
+    resource timeline" must never render as "the window was idle", because
+    those two produce the same shape -- an uncovered window -- from opposite
+    facts. No entries at all, or a timeline whose `end` values are all zero,
+    is reported absent rather than as 100% idle."""
+    sub = nav.get("sub") or {}
+    req = sub.get(REQ_MARK)
+    res = nav.get("res")
+    if req is None or not res:
+        return None
+    # A cross-origin resource without Timing-Allow-Origin still exposes
+    # startTime and responseEnd, so a zero here is not the CORS case -- it is a
+    # timeline we did not read properly. Refuse rather than treat 0 as "ended
+    # at navigation start", which would make every such entry cover the whole
+    # window and hide a real gap.
+    if all(not r.get("end") for r in res):
+        return None
+    window = ms - req
+    if window <= 0:
+        return None
+    spans = uncovered_spans(req, ms, [(r["start"], r["end"]) for r in res])
+    idle = sum(b - a for a, b in spans)
+    widest = max(spans, key=lambda s: s[1] - s[0], default=None)
+    return {
+        "window": window,
+        "idle": idle,
+        "idle_pct": 100.0 * idle / window,
+        "widest": (widest[1] - widest[0]) if widest else 0.0,
+        # Relative to the mark, so the number is readable against the phase
+        # split printed on the line above it rather than against page load.
+        "widest_at": (widest[0] - req) if widest else None,
+        "n_resources": len(res),
+        # issue-266: WHO BRACKETS THE HOLE. "there is a 370 ms idle span" is not
+        # yet actionable -- the actionable form is "the app finishes X and does
+        # not ask for Y for 370 ms". These are the last resource to END at or
+        # before the span opens and the first to START at or after it closes,
+        # which is the pair a reader needs to look for the await between them.
+        #
+        # Nearest-by-time, NOT nearest-in-list-order: the resource array is in
+        # startTime order, so the entry adjacent to the hole in the list can be
+        # a long request that started much earlier and is still in flight.
+        "before": _nearest(res, widest[0], "end", before=True) if widest else None,
+        "after": _nearest(res, widest[1], "start", before=False) if widest else None,
+    }
+
+
+def _nearest(res: list[dict], t: float, key: str, *, before: bool) -> str | None:
+    """Name of the resource whose `key` time is closest to `t` on one side.
+
+    Ties broken by taking the LAST match scanning in time order, so a burst of
+    requests sharing a timestamp reports the one adjacent to the hole rather
+    than an arbitrary member of the burst."""
+    cands = [r for r in res if (r.get(key, 0) <= t if before else r.get(key, 0) >= t)]
+    if not cands:
+        return None
+    pick = max(cands, key=lambda r: r[key]) if before else min(cands, key=lambda r: r[key])
+    # Basename only: full CDN URLs are ~120 chars and would wrap the line the
+    # reader is scanning, and the discriminating part is always the tail.
+    return pick["name"].rsplit("/", 1)[-1][:44] or pick["name"][:44]
+
+
 def self_test() -> int:
     """Validate `phase_split` itself, the way redundant_fetches.py validates its
     counter: can it produce a split, and does it REFUSE on the one input shape
@@ -289,6 +415,53 @@ def self_test() -> int:
         print(f"FAIL app_split: {got} != {want}", file=sys.stderr); ok = False
     elif sum(v for k, v in want.items() if k != "ordering_ok") != 1000.0 - nav["dcl"]:
         print("FAIL app_split: parts do not sum to `app`", file=sys.stderr); ok = False
+
+    # issue-266: uncovered_spans is the whole judgement about the gap, so it
+    # gets both directions. A detector that can only ever report "idle" would
+    # confirm the hypothesis it was built to test.
+    #
+    # (1) KNOWN-POSITIVE: a real hole between two requests.
+    got_u = uncovered_spans(0.0, 100.0, [(0.0, 30.0), (70.0, 100.0)])
+    if got_u != [(30.0, 70.0)]:
+        print(f"FAIL uncovered: {got_u} != [(30.0, 70.0)]", file=sys.stderr); ok = False
+
+    # (2) KNOWN-NEGATIVE: fully covered, including an OVERLAPPING pair -- the
+    # merge must not report the overlap as a hole. Without this arm a coverage
+    # bug reads as an idle gap, which is the finding this flag exists to make,
+    # i.e. exactly the direction that would go unquestioned.
+    for covered, why in (([(0.0, 100.0)], "one spanning request"),
+                         ([(0.0, 60.0), (40.0, 100.0)], "an overlapping pair"),
+                         ([(0.0, 50.0), (50.0, 100.0)], "two abutting requests")):
+        got_c = uncovered_spans(0.0, 100.0, covered)
+        if got_c != []:
+            print(f"FAIL uncovered: {got_c} != [] for {why}", file=sys.stderr); ok = False
+
+    # (3) THE STRADDLE. A request already in flight when the window opens is the
+    # naive `start >= window_start` filter's blind spot, and dropping it would
+    # report its coverage as idle -- inventing a gap at the front of the window,
+    # which is precisely where the reported one sits.
+    got_s = uncovered_spans(50.0, 100.0, [(10.0, 80.0)])
+    if got_s != [(80.0, 100.0)]:
+        print(f"FAIL uncovered straddle: {got_s} != [(80.0, 100.0)]", file=sys.stderr); ok = False
+
+    # (4) request_split REFUSES rather than reporting a fully-idle window. Both
+    # unreadable shapes must return None: no entries at all, and entries whose
+    # `end` is uniformly zero (a timeline we failed to read, NOT the CORS case
+    # -- responseEnd survives a missing Timing-Allow-Origin).
+    base = {"dcl": 100.0, "sub": {AUTH_MARK: 300.0, REQ_MARK: 500.0}}
+    for res, why in ((None, "no resource read"), ([], "an empty timeline"),
+                     ([{"name": "x", "start": 0.0, "end": 0.0}], "all-zero ends")):
+        got_r = request_split(1000.0, {**base, "res": res})
+        if got_r is not None:
+            print(f"FAIL request_split: returned {got_r} for {why} "
+                  f"instead of refusing", file=sys.stderr); ok = False
+
+    # (5) ...and DOES measure when it can, so (4) is not passing by never working.
+    got_r = request_split(1000.0, {**base,
+                                   "res": [{"name": "a", "start": 500.0, "end": 700.0}]})
+    if got_r is None or abs(got_r["idle"] - 300.0) > 1e-9 or abs(got_r["window"] - 500.0) > 1e-9:
+        print(f"FAIL request_split: {got_r} does not measure a 300ms idle tail",
+              file=sys.stderr); ok = False
 
     # THE ARM THE SUM-CHECK CANNOT SEE. The parts telescope, so they add to
     # `app` for ANY mark order -- which is exactly why the sum assertion above
@@ -344,6 +517,9 @@ def main() -> int:
     ap.add_argument("--phases", action="store_true",
                     help="also split each run into network / parse / app "
                          "(issue-266: WHERE the ~1.96s fixed cost goes)")
+    ap.add_argument("--requests", action="store_true",
+                    help="also report how much of req->card had NOTHING in "
+                         "flight (issue-266: is the gap network, or is it idle?)")
     ap.add_argument("--wordset", default=None,
                     help="name to match in the wordset row, e.g. HSK6 (the BIGGEST live set, "
                          "2500 words). Omitted = first button in DOM order = HSK1 (150), which "
@@ -358,6 +534,7 @@ def main() -> int:
     samples: list[float] = []
     phases: list[dict] = []
     app_parts: list[dict] = []
+    req_parts: list[dict] = []
     errors: list[str] = []
     with sync_playwright() as p:
         browser = p.chromium.launch()
@@ -397,6 +574,27 @@ def main() -> int:
                 print(f"            app {ph['app']:7.1f}  =  ->auth {sub['to_auth']:6.1f}"
                       f" + auth->req {sub['auth_to_req']:6.1f}"
                       f" + req->card {sub['req_to_card']:6.1f}{flag}")
+                if args.requests:
+                    rq = request_split(ms, nav)
+                    if rq is None:
+                        # Absent, not zero. See request_split's docstring: an
+                        # unreadable timeline and a fully idle window are the
+                        # same shape from opposite facts.
+                        print("            requests: CANNOT MEASURE "
+                              "(no resource timeline on this run)")
+                    else:
+                        req_parts.append(rq)
+                        print(f"            req->card {rq['window']:7.1f}  =  "
+                              f"idle {rq['idle']:6.1f} ({rq['idle_pct']:4.1f}%)"
+                              f" over {rq['n_resources']} resources;"
+                              f" widest idle span {rq['widest']:6.1f}"
+                              f" at +{rq['widest_at']:.1f}")
+                        if rq["widest"] > 50.0:
+                            # Only for a hole big enough to be worth chasing --
+                            # naming the neighbours of a 5 ms gap is noise that
+                            # would train the reader to skip the line.
+                            print(f"              hole brackets: after "
+                                  f"{rq['before']!r} -> before {rq['after']!r}")
         browser.close()
 
     if not samples:
@@ -445,6 +643,23 @@ def main() -> int:
                       f"a negative part means the marks did not fire in the assumed "
                       f"order, so the middle figure is an OVERLAP, not a wait. "
                       f"The outer network/parse/app split is unaffected.")
+        if req_parts:
+            # issue-266: report the SPLIT, not a median idle. Across 25 runs on prod (2026-09-01) the
+            # idle is bimodal -- a run either carries a ~200-460 ms hole or it
+            # carries none -- and a median would land between the two modes on a
+            # value no run ever produced, which is the single most misleading
+            # number this harness could print.
+            big = [r for r in req_parts if r["widest"] > 50.0]
+            small = [r for r in req_parts if r["widest"] <= 50.0]
+            print(f"  req->card idle: {len(big)}/{len(req_parts)} run(s) carry a "
+                  f">50ms hole")
+            for label, group in (("with hole", big), ("without", small)):
+                if not group:
+                    continue
+                print(f"    {label:<10} req->card median "
+                      f"{statistics.median([r['window'] for r in group]):7.1f} ms"
+                      f"  (widest idle median "
+                      f"{statistics.median([r['widest'] for r in group]):6.1f})")
         else:
             # NOT silence. A build predating the sub-marks and a build whose
             # once-guard regressed both land here, and both are worth saying
