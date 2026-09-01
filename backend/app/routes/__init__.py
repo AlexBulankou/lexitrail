@@ -1,11 +1,15 @@
 from flask import Blueprint, jsonify
 import logging
+import time
 from sqlalchemy import text
 from .users import bp as users_bp
 from .wordsets import bp as wordsets_bp
 from .userwords import bp as userwords_bp
 from .hint_generation import bp as hint_generation_bp
 from ..database import db
+from ..cache_warm_policy import (WARM_NOT_READY,  # issue-266
+                                 cache_warm_readiness)
+from .wordsets import cache_status
 
 def register_routes(app):
     # Register all blueprints
@@ -48,4 +52,12 @@ def register_routes(app):
         except Exception as exc:  # noqa: BLE001 -- any failure means NOT ready
             logging.getLogger(__name__).warning('readiness probe failed: %s', exc)
             return jsonify({'status': 'not-ready', 'reason': str(exc)[:200]}), 503
-        return jsonify({'status': 'ready'}), 200
+
+        # issue-266: the database is reachable. Can this replica serve WELL?
+        # The decision lives in cache_warm_policy (pure, testable without a
+        # Flask environment) -- see its docstring for why the deadline arm
+        # reports READY rather than holding traffic forever.
+        verdict, reason = cache_warm_readiness(cache_status, time.time())
+        if verdict == WARM_NOT_READY:
+            return jsonify({'status': 'not-ready', 'reason': reason}), 503
+        return jsonify({'status': 'ready', 'cache': reason}), 200

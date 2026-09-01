@@ -12,8 +12,12 @@ holding 2050 users and 94244 recall rows. A regression that lets it into the
 plan is the most destructive thing this directory can do, so it gets its own
 test rather than riding along in an ordering assertion.
 
-⚠️ lexitrail's cloudbuild.yaml has no pytest step, so nothing runs this in CI.
-Local/manual gate; wiring a test step is #235's lane.
+⚠️ CORRECTION (hc2, #309 review): an earlier version of this note said
+"lexitrail's cloudbuild.yaml has no pytest step, so nothing runs this in CI."
+The first half is true and the CONCLUSION IS FALSE -- .github/workflows/
+backend-tests.yml runs pytest on every PR touching backend paths (#269). I
+checked Cloud Build, found nothing, and generalised to "no CI" -- enumerating
+one CI surface and concluding about all of them. These tests DO gate merges.
 """
 import subprocess
 from pathlib import Path

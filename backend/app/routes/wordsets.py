@@ -7,9 +7,10 @@ import random
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from concurrent.futures import TimeoutError as FuturesTimeoutError
-from ..cache_warm_policy import (CACHE_WARM_DEADLINE_S, WARM_OK,
-                                 WARM_RESULT_ERROR_RESPONSE, WARM_RESULT_OK,
-                                 classify_warm_result, warm_verdict)
+from ..cache_warm_policy import (CACHE_WARM_DEADLINE_S, WARM_FAILED,
+                                 WARM_OK, WARM_RESULT_ERROR_RESPONSE,
+                                 WARM_RESULT_OK, classify_warm_result,
+                                 warm_verdict)
 from functools import partial
 import multiprocessing
 from ..cpu_quota import effective_cpus
@@ -23,11 +24,19 @@ logger = logging.getLogger(__name__)
 cache = {}  # Indefinite in-memory cache
 cache_lock = Lock()
 cache_status = {"initialized": False, "complete": False, "progress": 0, "total": 0, "error": None,
-                "state": "cold", "succeeded": 0, "unfinished": 0}
+                "state": "cold", "succeeded": 0, "unfinished": 0,
+                # issue-266: None until the background warm thread starts.
+                "started_at": None}
 
 def initialize_cache():
     """Initialize cache with all wordsets data."""
     logger.info("Starting cache initialization for all wordsets")
+    # issue-266: stamp when the warm BEGAN. /readyz needs an elapsed time to
+    # apply CACHE_WARM_DEADLINE_S -- without it, a warm that hangs holds every
+    # replica NotReady forever and a partial degradation becomes a total
+    # outage. The deadline is the escape hatch and it cannot be evaluated
+    # without a start time.
+    cache_status["started_at"] = time.time()
     try:
         # Get all wordsets within the main application context
         wordsets = Wordset.query.all()
@@ -154,9 +163,14 @@ def initialize_cache():
         # on. Narrowing `initialized` without it would convert "the warm finished
         # imperfectly" into "the warm never finished" for anyone blocking on that
         # flag -- an unbounded wait, which is a worse failure than the dishonest
-        # True it replaces. Nothing in this repo reads the field and no k8s probe
-        # gates on it (both checked), but the endpoint is public, so the
-        # unblocking signal is provided rather than assumed unnecessary.
+        # True it replaces.
+        #
+        # ⚠️ UPDATED by issue-266: this used to say "nothing in this repo reads
+        # the field and no k8s probe gates on it (both checked)". That was true
+        # when written and is now FALSE -- /readyz consults `complete` and
+        # `state` through cache_warm_policy.cache_warm_readiness(), so these
+        # fields decide whether the pod takes user traffic. Treat every write
+        # to them as probe-visible.
         cache_status["complete"] = True
         cache_status["initialized"] = cache_status["state"] == WARM_OK
         logger.info(
@@ -165,6 +179,17 @@ def initialize_cache():
     except Exception as e:
         logger.error(f"Error during cache initialization: {e}", exc_info=True)
         cache_status["error"] = str(e)
+        # issue-266 (hc2's #309 review): classify the TOTAL failure too.
+        # Everything above this handler -- including `Wordset.query.all()` --
+        # can throw before any per-wordset classification runs, and this
+        # handler used to set only `error`, leaving `state` at its module
+        # default "cold" and `complete` False FOREVER. Nothing consumed those
+        # fields, so it was invisible; #266 made /readyz consume them, and a
+        # third shape neither branch handled appeared: not complete, not
+        # FAILED, just never classified. A pod would then sit NotReady for the
+        # full CACHE_WARM_DEADLINE_S before serving degraded -- strictly worse
+        # than the outright-FAILED case, which degrades to serving at once.
+        cache_status["state"] = WARM_FAILED
 
 @bp.route('/cache-status', methods=['GET'])
 def get_cache_status():

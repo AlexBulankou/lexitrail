@@ -7,9 +7,13 @@ divergence (someone edits one and not the other) surfaces as a failure with a
 message saying which, rather than as a schema file that quietly stops describing
 anything real.
 
-⚠️ Scope, so nobody inherits a guard that does not run: lexitrail's
-`cloudbuild.yaml` has NO pytest step, so nothing executes this in CI. It is a
-local/manual gate. Wiring a test step is #235's lane.
+⚠️ CORRECTION (hc2, #309 review): an earlier version of this note said
+"lexitrail's cloudbuild.yaml has no pytest step, so nothing runs this in CI."
+The first half is true and the CONCLUSION IS FALSE -- `.github/workflows/
+backend-tests.yml` runs pytest on every PR touching backend paths (#269). I
+checked Cloud Build, found nothing, and generalised to "no CI", which is the
+wrong-population error: I enumerated one CI surface and concluded about all of
+them. These tests DO gate merges.
 
 ⚠️ This compares column NAMES and object inventory only -- not types,
 nullability, indexes, or the view body. A type change passes this test.
