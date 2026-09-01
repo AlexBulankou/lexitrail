@@ -92,3 +92,61 @@ def warm_verdict(total: int, succeeded: int) -> str:
     if succeeded <= 0:
         return WARM_FAILED
     return WARM_DEGRADED
+
+
+# --- issue-266: is this replica warm enough to take user traffic? -----------
+# Measured on a live pod: Flask serves from t+0 (the warm is a background daemon
+# thread), readiness marks the pod Ready at ~t+30s, and the warm completes at
+# ~t+55s -- so there are ~25 seconds per pod start where the replica is IN THE
+# SERVICE and every request takes the expensive cache-MISS path. Both replicas
+# hit it during a rollout. That window IS #266's "big datasets slow to load";
+# steady-state serving is ~20ms for 2500 words (#283).
+#
+# 🔴 THE DANGEROUS VERSION of this rule is `not complete -> not ready`. If a warm
+# hangs or fails, NO replica ever becomes Ready, nothing serves, and a partial
+# degradation becomes a TOTAL outage -- the same shape as pointing a LIVENESS
+# probe at the database (#301 AC2), one endpoint over. Hence three states, with
+# the third deliberately reporting READY:
+#
+#   complete                      -> ready
+#   warming, within the deadline  -> NOT ready   (correct: hold traffic)
+#   past deadline, or FAILED      -> ready, degraded, serving slowly
+#
+# Pure by design, same reason as the rest of this module: the route that calls
+# it imports Flask, and the backend suite cannot collect outside a provisioned
+# venv, so a rule left in the route would ship with no executable test at all.
+WARM_READY = "ready"
+WARM_NOT_READY = "not-ready"
+
+
+def cache_warm_readiness(status: dict, now: float) -> tuple:
+    """Return (verdict, reason) for the cache-warm half of a readiness check.
+
+    `status` is `routes.wordsets.cache_status`; `now` is a unix timestamp,
+    passed in rather than read so the deadline arm is testable without waiting
+    five minutes.
+    """
+    if status.get("complete"):
+        return WARM_READY, "warm"
+
+    # An outright failed warm is not going to finish on its own. Serving slowly
+    # is strictly better than a replica that never joins the Service at all.
+    if status.get("state") == WARM_FAILED:
+        return WARM_READY, "warm-failed-serving-degraded"
+
+    started = status.get("started_at")
+    if started is None:
+        # The background thread has not stamped a start yet: the first instants
+        # of process life, not a hang. Hold traffic.
+        return WARM_NOT_READY, "warming (not started)"
+
+    elapsed = now - started
+    if elapsed >= CACHE_WARM_DEADLINE_S:
+        # 🔴 The escape hatch. Do NOT tighten this to NOT_READY -- it is the
+        # only thing between a slow warm and every replica out of the Service.
+        return WARM_READY, f"warm-deadline-exceeded ({elapsed:.0f}s) serving degraded"
+
+    return WARM_NOT_READY, (
+        f"warming {status.get('progress', 0)}/{status.get('total', 0)} "
+        f"({elapsed:.0f}s)"
+    )

@@ -23,11 +23,19 @@ logger = logging.getLogger(__name__)
 cache = {}  # Indefinite in-memory cache
 cache_lock = Lock()
 cache_status = {"initialized": False, "complete": False, "progress": 0, "total": 0, "error": None,
-                "state": "cold", "succeeded": 0, "unfinished": 0}
+                "state": "cold", "succeeded": 0, "unfinished": 0,
+                # issue-266: None until the background warm thread starts.
+                "started_at": None}
 
 def initialize_cache():
     """Initialize cache with all wordsets data."""
     logger.info("Starting cache initialization for all wordsets")
+    # issue-266: stamp when the warm BEGAN. /readyz needs an elapsed time to
+    # apply CACHE_WARM_DEADLINE_S -- without it, a warm that hangs holds every
+    # replica NotReady forever and a partial degradation becomes a total
+    # outage. The deadline is the escape hatch and it cannot be evaluated
+    # without a start time.
+    cache_status["started_at"] = time.time()
     try:
         # Get all wordsets within the main application context
         wordsets = Wordset.query.all()
