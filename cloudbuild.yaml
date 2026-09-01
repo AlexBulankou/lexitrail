@@ -238,6 +238,41 @@ steps:
   # never had the step. If `set image` ever returns PERMISSION_DENIED the build goes
   # red at the last step, loudly, which is the correct direction: do not "fix" that
   # by deleting this step, which restores build-and-ship-nothing.
+  # ─── additive schema migrations (issue-300) ─────────────────────────────────
+  # Runs BEFORE the new image goes live, and that ordering is the point: an
+  # additive migration must land before code that depends on the new column,
+  # and the old code tolerates an extra column it does not know about. The
+  # reverse order would serve requests against a schema that has not caught up.
+  #
+  # 🔴 WHY HERE AND NOT IN terraform-ys/: that root has no apply automation
+  # (#299) and a plan there yields 13 actions, 12 of them state-drift creates
+  # against objects that already exist, so an apply ABORTS before reaching any
+  # real change (gated on the state import, my-hermes#1338). A migration Job
+  # declared there would never run -- the exact defect #300 reports, one layer
+  # up.
+  #
+  # 🔴 WHY NOT THE APP ENTRYPOINT: the backend runs TWO replicas, so entrypoint
+  # migrations race. The standing objection to a pipeline step -- "it skips
+  # environments the pipeline does not touch" -- was measured away: one
+  # namespace, one MySQL StatefulSet, and backend/app/config.py connects to it
+  # by in-cluster DNS. If a second environment ever appears this becomes unsafe
+  # on exactly that axis (see backend/migrations/README.md).
+  #
+  # 🔴 NO allowExitCodes. A migration that fails must fail the BUILD. The
+  # runner is `set -euo pipefail` and writes its ledger row AFTER the apply, so
+  # a failure is never recorded as done and the next build retries it.
+  - name: 'gcr.io/cloud-builders/kubectl'
+    id: 'backend-migrate'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        set -euo pipefail
+        gcloud container clusters get-credentials ys-autopilot \
+          --region us-central1 --project yojowa-claw
+        bash backend/migrations/apply.sh
+    waitFor: ['backend-push']
+
   - name: 'gcr.io/cloud-builders/kubectl'
     id: 'backend-deploy'
     entrypoint: 'bash'
@@ -256,7 +291,7 @@ steps:
         echo "requested: $$REF"
         echo "live spec: $$LIVE"
         [ "$$LIVE" = "$$REF" ] || { echo "DEPLOY-FAIL: live spec does not match what we pushed" >&2; exit 1; }
-    waitFor: ['backend-push']
+    waitFor: ['backend-migrate']
 
   # ─── post-deploy CONTENT smoke (issue-77 AC3) ───────────────────────────────
   # The header of this file has said since #235 that reading the served bytes is
