@@ -272,10 +272,38 @@ steps:
   # up" from "the app works". `/` would not — it serves a static literal that a
   # backend which cannot reach the database still answers perfectly (issue-301).
   #
-  # ⚠️ Do NOT "simplify" this to a bare non-zero check. Exit 3 means the probe
-  # could not discriminate; reporting that as a broken deploy is a claim the run
-  # does not support, and a red that recurs on its own baseline gets muted —
-  # after which the step is absent on the day it matters.
+  # 🔴 NO `allowExitCodes` HERE, and that is a DELIBERATE DIVERGENCE from the
+  # sibling `ui-smoke` step, which carries `allowExitCodes: [3]` per #240 AC6.
+  # Three reasons, in order of weight (hc2's #302 review):
+  #
+  # 1. `allowExitCodes: [3]` makes CANNOT-TELL a build-level PASS. The #240
+  #    rationale for accepting that is that the STEP still records FAILURE, so it
+  #    is "seen but not identical" — loud without being a false claim about the
+  #    code. That property is what the whole design rests on, and it is
+  #    UNVERIFIED: across the 39 most recent lexitrail builds there is not one in
+  #    which ui-smoke exited 3 with the allowance in place. The only non-SUCCESS
+  #    ui-smoke on record (build 9c8be1ff) predates the allowance entirely
+  #    (`allowExitCodes` absent, step FAILURE, build FAILURE). So nobody has
+  #    observed the behaviour the exemption depends on.
+  # 2. This repo has NO notify path. Nothing pages, nothing sweeps build history.
+  #    So on exit 3 the sole trace is a step status whose rendering is the
+  #    unverified thing in (1) — i.e. plausibly no trace at all.
+  # 3. The backend's CANNOT-TELL causes are ALARMING, not benign: the host did
+  #    not answer, or an unknown route started returning JSON. Immediately after
+  #    a step that just verified the rollout, "the API is unreachable" is not an
+  #    instrument hiccup to wave through.
+  #
+  # ⚠️ THE COST IS REAL AND IS NOT DENIED: this collapses FAIL (1) and
+  # CANNOT-TELL (3) into one red, which is exactly what #235 AC3 warned trains
+  # people to ignore the alarm. The mitigation is only partial — the message
+  # below names which one fired — and a log line is weaker than a distinct
+  # status. This is a trade with no free option, taken because a red someone
+  # must look at is visible by construction while a green build is not.
+  #
+  # ⇒ REVERSAL CONDITION, so this is falsifiable rather than a preference: if
+  # backend CANNOT-TELL fires more than once WITHOUT being a real problem, add
+  # `allowExitCodes: [3]` and a notify path TOGETHER — never the allowance
+  # alone, which is the silent-forever shape.
   #
   # ⚠️ And do NOT add 1 to allowExitCodes. A backend that deployed but serves no
   # data MUST redden the build; that is the entire point of the step.
@@ -296,9 +324,8 @@ steps:
           [ "$$i" = 3 ] && break
           sleep 20
         done
-        echo "SMOKE-FAIL (exit $$rc): 1=wrong/empty content, 3=CANNOT-TELL (the control did not discriminate, or the host did not answer). Neither is a pass." >&2
+        echo "SMOKE-FAIL (exit $$rc): 1=wrong/empty content (a real finding about the deploy), 3=CANNOT-TELL (the control did not discriminate, or the host did not answer -- a finding about the INSTRUMENT, not the code). Both redden the build; read which." >&2
         exit "$$rc"
-    allowExitCodes: [3]
     waitFor: ['backend-deploy']
 
 # 20m: the backend image is a small python:3.9-slim + pip install. The default
