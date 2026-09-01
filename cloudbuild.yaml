@@ -258,6 +258,49 @@ steps:
         [ "$$LIVE" = "$$REF" ] || { echo "DEPLOY-FAIL: live spec does not match what we pushed" >&2; exit 1; }
     waitFor: ['backend-push']
 
+  # ─── post-deploy CONTENT smoke (issue-77 AC3) ───────────────────────────────
+  # The header of this file has said since #235 that reading the served bytes is
+  # "NOT OPTIONAL" — and until now no step did it. This is that step.
+  #
+  # 🔴 It runs `smoke_backend_content.py`, NOT `smoke_served_content.py`, and the
+  # distinction is the point. The UI smoke asserts the served og:image matches
+  # `ui/public/index.html`. No backend deploy can change that value, so wiring the
+  # UI smoke here would pass on every backend build INCLUDING one that shipped a
+  # completely broken API — a check whose result is independent of the fact it
+  # reports. The backend needs its own discriminator, and `/wordsets` returning
+  # real rows is it: rows come from MySQL, so an empty list separates "Flask is
+  # up" from "the app works". `/` would not — it serves a static literal that a
+  # backend which cannot reach the database still answers perfectly (issue-301).
+  #
+  # ⚠️ Do NOT "simplify" this to a bare non-zero check. Exit 3 means the probe
+  # could not discriminate; reporting that as a broken deploy is a claim the run
+  # does not support, and a red that recurs on its own baseline gets muted —
+  # after which the step is absent on the day it matters.
+  #
+  # ⚠️ And do NOT add 1 to allowExitCodes. A backend that deployed but serves no
+  # data MUST redden the build; that is the entire point of the step.
+  #
+  # The retry exists so ordinary rollout propagation is not reported as a finding;
+  # three attempts is the bound, and exhausting it IS the finding.
+  - name: 'python:3.11-slim'
+    id: 'backend-smoke'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        set -uo pipefail
+        for i in 1 2 3; do
+          python3 scripts/smoke_backend_content.py && exit 0
+          rc=$$?
+          echo "smoke attempt $$i -> exit $$rc" >&2
+          [ "$$i" = 3 ] && break
+          sleep 20
+        done
+        echo "SMOKE-FAIL (exit $$rc): 1=wrong/empty content, 3=CANNOT-TELL (the control did not discriminate, or the host did not answer). Neither is a pass." >&2
+        exit "$$rc"
+    allowExitCodes: [3]
+    waitFor: ['backend-deploy']
+
 # 20m: the backend image is a small python:3.9-slim + pip install. The default
 # is 10m and an uncached first build (no cache to pull) is the slow case.
 timeout: '1200s'
