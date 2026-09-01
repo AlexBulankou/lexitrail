@@ -1,15 +1,19 @@
 # `backend/migrations/` — additive schema changes (issue-300)
 
-## Status: BASELINE ONLY. There is no runner yet.
+## Status: baseline + runner. The runner is wired into `cloudbuild.yaml`.
 
-`000_baseline.sql` is a capture, not a migration. **Nothing in this directory is
-executed by anything today.** Saying so explicitly because a `migrations/`
-directory that looks operational and is not is the same defect #300 reports, one
-layer up.
+`000_baseline.sql` is a capture, **not a migration, and it is never applied** —
+it describes tables that already hold 2050 users and 94244 recall rows. It is
+the point `001` migrates *from*. `apply.sh` excludes it by name.
 
-## Why the runner is not here yet
+```bash
+backend/migrations/apply.sh --plan    # what WOULD be applied; touches nothing
+backend/migrations/apply.sh           # apply pending, in order, then record
+```
 
-Two things had to be settled first, and only one of them is.
+## Why the runner is shaped this way
+
+Two things had to be settled, and both now are.
 
 **Settled — where the mechanism is delivered from.** Not `terraform-ys/`. That
 root has no apply automation (#299), and a `terraform plan` on it produces 13
@@ -19,17 +23,28 @@ my-hermes#1338). A migration Job declared there would never run. The only path
 that reaches this cluster today is the backend image: `backend/**` →
 `cloudbuild.yaml` → build, push, `kubectl set image`, read back, smoke.
 
-**Open — where the step runs.** A correctness question, not a preference:
+**Settled — where the step runs.** A one-shot `backend-migrate` step in
+`cloudbuild.yaml`, between `backend-push` and `backend-deploy`:
 
 | option | single-run? | covers every environment? |
 |---|---|---|
 | app startup (`entrypoint`) | ❌ two replicas race | ✅ anything that runs the image |
-| one-shot step in `cloudbuild.yaml` | ✅ | ❌ silently skips anything the pipeline doesn't touch |
+| one-shot step in `cloudbuild.yaml` | ✅ | ❌ skips anything the pipeline doesn't touch |
 
-Both failure modes are silent, which is why this is being written up rather than
-picked quickly.
+The objection to the second was **measured away**: there is exactly one
+namespace, one MySQL StatefulSet, and `backend/app/config.py` connects to it by
+in-cluster DNS, so there is nothing to skip.
 
-## The convention, once a runner exists
+⚠️ **Reversal condition:** if a second environment or a non-cluster database
+appears, that column becomes false and the runner must move into the image with
+a lock. This is the one assumption to re-check before adding an environment.
+
+**Ordering:** migrations run BEFORE the new image goes live. An additive
+migration must land before code that depends on the new column, and old code
+tolerates a column it does not know about. The reverse order serves requests
+against a schema that has not caught up.
+
+## The convention
 
 - Files are `NNN_<slug>.sql`, applied in lexical order, **additive only** — no
   `DROP`, no destructive `ALTER`. `000_baseline.sql` is never applied; it is the
