@@ -209,11 +209,27 @@ def app_split(ms: float, nav: dict) -> dict | None:
     auth, req = sub.get(AUTH_MARK), sub.get(REQ_MARK)
     if auth is None or req is None:
         return None
-    return {
+    parts = {
         "to_auth": auth - nav["dcl"],
         "auth_to_req": req - auth,
         "req_to_card": ms - req,
     }
+    # A NEGATIVE part is not a duration. The three parts are a TELESCOPING sum,
+    # so they add up to `app` no matter what order the marks fired in -- which
+    # means "the parts sum to app" cannot detect a violated ordering, and the
+    # self-test asserting it passed while this was wrong on every live run.
+    #
+    # Measured 2026-09-01, first run after the marks deployed:
+    #
+    #     app 1215.0 = ->auth 82.6 + auth->req -63.6 + req->card 1196.0
+    #
+    # `lt:wordsets-requested` fires ~70 ms BEFORE `lt:auth-settled` on every
+    # run. The decomposition assumed auth gates the fetch; it does not -- the
+    # wordset list is public and requested on mount. So the middle "phase" is
+    # an overlap, not a wait, and printing -63.6 as a part invites reading it
+    # as one. Reported as a violated precondition instead.
+    parts["ordering_ok"] = all(v >= 0 for k, v in parts.items())
+    return parts
 
 
 def phase_split(ms: float, nav: dict) -> dict | None:
@@ -267,11 +283,36 @@ def self_test() -> int:
     # path then becomes unreachable from a live run.
     nav = {"dcl": 100.0, "sub": {AUTH_MARK: 300.0, REQ_MARK: 500.0}}
     got = app_split(1000.0, nav)
-    want = {"to_auth": 200.0, "auth_to_req": 200.0, "req_to_card": 500.0}
+    want = {"to_auth": 200.0, "auth_to_req": 200.0, "req_to_card": 500.0,
+            "ordering_ok": True}
     if got != want:
         print(f"FAIL app_split: {got} != {want}", file=sys.stderr); ok = False
-    elif sum(want.values()) != 1000.0 - nav["dcl"]:
+    elif sum(v for k, v in want.items() if k != "ordering_ok") != 1000.0 - nav["dcl"]:
         print("FAIL app_split: parts do not sum to `app`", file=sys.stderr); ok = False
+
+    # THE ARM THE SUM-CHECK CANNOT SEE. The parts telescope, so they add to
+    # `app` for ANY mark order -- which is exactly why the sum assertion above
+    # passed on live data where the order was wrong. This is the control that
+    # discriminates, added only after the live run produced -63.6 ms and the
+    # self-test stayed green. Marks reversed: request BEFORE auth.
+    rev = {"dcl": 100.0, "sub": {AUTH_MARK: 500.0, REQ_MARK: 300.0}}
+    got_rev = app_split(1000.0, rev)
+    if got_rev is None:
+        print("FAIL app_split: refused a reversed pair; it should REPORT it",
+              file=sys.stderr); ok = False
+    else:
+        if got_rev["ordering_ok"] is not False:
+            print("FAIL app_split: reversed marks did not set ordering_ok False",
+                  file=sys.stderr); ok = False
+        if got_rev["auth_to_req"] >= 0:
+            print("FAIL app_split: reversed marks did not yield a negative part",
+                  file=sys.stderr); ok = False
+        tot = sum(v for k, v in got_rev.items() if k != "ordering_ok")
+        if tot != 1000.0 - rev["dcl"]:
+            print("FAIL app_split: the reversed parts should STILL sum to app "
+                  "-- if they do not, the telescoping claim is wrong and this "
+                  "whole control is testing something else", file=sys.stderr)
+            ok = False
 
     for bad, why in (({"dcl": 100.0, "sub": {AUTH_MARK: 300.0, REQ_MARK: None}}, "one mark absent"),
                      ({"dcl": 100.0, "sub": {}}, "neither mark present"),
@@ -352,9 +393,10 @@ def main() -> int:
             sub = app_split(ms, nav)
             if sub is not None:
                 app_parts.append(sub)
+                flag = "" if sub["ordering_ok"] else "   <- ORDERING VIOLATION"
                 print(f"            app {ph['app']:7.1f}  =  ->auth {sub['to_auth']:6.1f}"
                       f" + auth->req {sub['auth_to_req']:6.1f}"
-                      f" + req->card {sub['req_to_card']:6.1f}")
+                      f" + req->card {sub['req_to_card']:6.1f}{flag}")
         browser.close()
 
     if not samples:
@@ -394,6 +436,15 @@ def main() -> int:
                   f"DCL->auth {med_ap['to_auth']:.1f}"
                   f" | auth->wordsets-requested {med_ap['auth_to_req']:.1f}"
                   f" | requested->first-card {med_ap['req_to_card']:.1f}")
+            bad = [a for a in app_parts if not a["ordering_ok"]]
+            if bad:
+                # Loud, and it does NOT invalidate the outer network/parse/app
+                # split -- that one has no ordering assumption in it. Only the
+                # sub-parts are affected, and only in what they MEAN.
+                print(f"  🔴 ORDERING VIOLATION on {len(bad)}/{len(app_parts)} run(s): "
+                      f"a negative part means the marks did not fire in the assumed "
+                      f"order, so the middle figure is an OVERLAP, not a wait. "
+                      f"The outer network/parse/app split is unaffected.")
         else:
             # NOT silence. A build predating the sub-marks and a build whose
             # once-guard regressed both land here, and both are worth saying
