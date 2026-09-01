@@ -11,8 +11,12 @@ on a hung warm -- turning a partial degradation into a total outage. The
 deadline and failed-warm arms are the escape hatch, and they are pinned in the
 direction where "tightening" the check breaks production.
 
-⚠️ lexitrail's cloudbuild.yaml has no pytest step, so nothing runs this in CI.
-Local/manual gate; #235's lane.
+⚠️ CORRECTION (hc2, #309 review): an earlier version of this note said
+"lexitrail's cloudbuild.yaml has no pytest step, so nothing runs this in CI."
+The first half is true and the CONCLUSION IS FALSE -- .github/workflows/
+backend-tests.yml runs pytest on every PR touching backend paths (#269). I
+checked Cloud Build, found nothing, and generalised to "no CI" -- enumerating
+one CI surface and concluding about all of them. These tests DO gate merges.
 """
 import importlib.util
 import pathlib

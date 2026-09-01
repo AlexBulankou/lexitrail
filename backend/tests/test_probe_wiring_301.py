@@ -20,10 +20,12 @@ reader is most likely to "clean up": liveness and startup must stay on
 blip (partial outage -> total), and a DB-dependent startup probe stops a pod
 binding at all while the DB is down.
 
-⚠️ Scope, stated so nobody inherits a guard that does not run: lexitrail's
-`cloudbuild.yaml` has NO pytest step, so nothing executes this in CI. It is a
-local/manual gate and a record of intent, not an enforced one. Wiring a test
-step is #235's lane.
+⚠️ CORRECTION (hc2, #309 review): an earlier version of this note said
+"lexitrail's cloudbuild.yaml has no pytest step, so nothing runs this in CI."
+The first half is true and the CONCLUSION IS FALSE -- .github/workflows/
+backend-tests.yml runs pytest on every PR touching backend paths (#269). I
+checked Cloud Build, found nothing, and generalised to "no CI" -- enumerating
+one CI surface and concluding about all of them. These tests DO gate merges.
 """
 import re
 from pathlib import Path
