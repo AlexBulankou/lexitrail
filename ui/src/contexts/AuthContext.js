@@ -5,6 +5,7 @@ import {
   attemptSilentTokenGrant, forgetSignedInBefore, hasSignedInBefore,
 } from '../utils/silentReauth';
 import { completeGoogleSignIn, startGuestSession } from '../utils/authFlows';
+import { markOnce, AUTH_SETTLED_MARK } from '../utils/perfMark';
 
 const AuthContext = createContext(null);
 
@@ -49,6 +50,30 @@ export const AuthProvider = ({ children }) => {
   // expired one and clears it -- restoring an expired session would render the
   // signed-in UI over a token that 401s on every request.
   const [user, setUser] = useState(() => loadSession()?.user ?? null);
+
+  // issue-266: mark the moment a session first exists, whatever produced it.
+  //
+  // ONE SITE, NOT FOUR. `setUser` is called from the Google path, the silent
+  // re-auth path, the guest path and log-out. Marking at each call site would
+  // mean four places to keep in step and one of them (log-out, which sets
+  // null) must not mark at all -- so the site count is where a wrong mark
+  // would come from. An effect on `user` fires after whichever path won,
+  // cannot be reached by the null transition because of the guard, and needs
+  // no knowledge of how many paths there are.
+  //
+  // It also lands after React commits rather than when we decided to set,
+  // which matches FIRST_CARD_MARK's placement -- the two are subtracted from
+  // each other, so they must be measured the same way or the difference is
+  // an artifact of where the marks sit.
+  //
+  // A RESTORED session marks at once, and that is correct rather than a
+  // degenerate case: the phase this bounds is "how long until we can fetch",
+  // and a returning user genuinely can fetch immediately. If that ever needs
+  // separating from a cold guest sign-in, the discriminator is the mark's own
+  // startTime being ~0, not a second mark.
+  useEffect(() => {
+    if (user) markOnce(AUTH_SETTLED_MARK);
+  }, [user]);
 
   const initUser = {
     onSuccess: async (tokenResponse) => {

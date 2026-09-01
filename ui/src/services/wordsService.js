@@ -1,4 +1,5 @@
 import { getData } from './apiService';
+import { markOnce, WORDSETS_REQUESTED_MARK } from '../utils/perfMark';
 
 // Fetch all wordsets
 export const getWordsets = async () => {
@@ -29,6 +30,11 @@ export const getWordsets = async () => {
   };
   */
 
+  // issue-266: BEFORE the await, not after. The mark bounds the phase
+  // "how long until we ask", so it has to land when the request leaves --
+  // marking after the await would fold the API's own response time into the
+  // gap and make a slow backend read as a slow app.
+  markOnce(WORDSETS_REQUESTED_MARK);
   const response = await getData('/wordsets');
   // Hide the internal "test" and "HSK7" wordsets. Trim first so the match is
   // robust to legacy rows whose descriptions carry a trailing CR from an

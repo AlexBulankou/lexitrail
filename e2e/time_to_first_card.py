@@ -75,6 +75,13 @@ import sys
 from playwright.sync_api import sync_playwright
 
 MARK = "lt:first-card"
+# issue-266 follow-up: the two cuts INSIDE `app`. Optional by construction --
+# a build predating them still measures network/parse/app exactly as before,
+# and the sub-split is reported absent rather than the run failing. Prod lags
+# this repo, so the harness has to stay useful against a deployment that does
+# not carry the marks yet.
+AUTH_MARK = "lt:auth-settled"
+REQ_MARK = "lt:wordsets-requested"
 DEFAULT_URL = "https://lexitrail.com/"
 
 
@@ -157,6 +164,15 @@ def one_run(ctx, url: str, timeout_ms: int,
         if n != 1:
             return None, f"mark emitted {n} times — the once-guard has regressed", {}
         nav = page.evaluate(_PHASE_JS)
+        # Read the sub-marks WITHOUT waiting: both are emitted strictly before
+        # the first card, so if they are going to appear they already have. A
+        # wait here would turn "this build predates the marks" into a 30s
+        # timeout on every run.
+        nav["sub"] = page.evaluate(
+            """(names) => Object.fromEntries(names.map(n => {
+                 const e = performance.getEntriesByName(n);
+                 return [n, e.length === 1 ? e[0].startTime : null];
+               }))""", [AUTH_MARK, REQ_MARK])
         return float(ms), None, nav
     finally:
         page.close()
@@ -173,6 +189,31 @@ _PHASE_JS = """() => {
   return {navCount: 1, responseEnd: n.responseEnd,
           dcl: n.domContentLoadedEventEnd, loadEnd: n.loadEventEnd};
 }"""
+
+
+def app_split(ms: float, nav: dict) -> dict | None:
+    """Split the `app` phase into its three named parts, or None when either
+    sub-mark is missing.
+
+    ALL-OR-NOTHING on purpose. With one mark present two of the three parts are
+    still computable, and reporting those is the tempting thing. But the parts
+    are only meaningful as a decomposition that SUMS to `app` -- a partial one
+    invites reading a two-way split as though the third part were zero, which
+    is the reassuring direction. Absent is reported as absent.
+
+    A mark seen more than once yields None from the reader above (`length ===
+    1`), so a regressed once-guard arrives here as missing rather than as a
+    first-entry number that quietly measures something else.
+    """
+    sub = nav.get("sub") or {}
+    auth, req = sub.get(AUTH_MARK), sub.get(REQ_MARK)
+    if auth is None or req is None:
+        return None
+    return {
+        "to_auth": auth - nav["dcl"],
+        "auth_to_req": req - auth,
+        "req_to_card": ms - req,
+    }
 
 
 def phase_split(ms: float, nav: dict) -> dict | None:
@@ -221,6 +262,31 @@ def self_test() -> int:
         if got_bad is not None:
             print(f"FAIL: split returned {got_bad} for a {why}", file=sys.stderr); ok = False
 
+    # app_split: the all-or-nothing arm is the one that would ship untested,
+    # because prod WILL carry both marks once this deploys and the missing-mark
+    # path then becomes unreachable from a live run.
+    nav = {"dcl": 100.0, "sub": {AUTH_MARK: 300.0, REQ_MARK: 500.0}}
+    got = app_split(1000.0, nav)
+    want = {"to_auth": 200.0, "auth_to_req": 200.0, "req_to_card": 500.0}
+    if got != want:
+        print(f"FAIL app_split: {got} != {want}", file=sys.stderr); ok = False
+    elif sum(want.values()) != 1000.0 - nav["dcl"]:
+        print("FAIL app_split: parts do not sum to `app`", file=sys.stderr); ok = False
+
+    for bad, why in (({"dcl": 100.0, "sub": {AUTH_MARK: 300.0, REQ_MARK: None}}, "one mark absent"),
+                     ({"dcl": 100.0, "sub": {}}, "neither mark present"),
+                     ({"dcl": 100.0}, "no sub read at all")):
+        try:
+            got_bad = app_split(1000.0, bad)
+        except Exception as exc:  # noqa: BLE001
+            print(f"FAIL app_split: raised {type(exc).__name__} with {why} "
+                  f"instead of returning None", file=sys.stderr)
+            ok = False
+            continue
+        if got_bad is not None:
+            print(f"FAIL app_split: returned {got_bad} with {why}",
+                  file=sys.stderr); ok = False
+
     print("self-test: PASS" if ok else "self-test: FAIL")
     return 0 if ok else 1
 
@@ -250,6 +316,7 @@ def main() -> int:
 
     samples: list[float] = []
     phases: list[dict] = []
+    app_parts: list[dict] = []
     errors: list[str] = []
     with sync_playwright() as p:
         browser = p.chromium.launch()
@@ -282,6 +349,12 @@ def main() -> int:
             phases.append(ph)
             print(f"  run {i+1}: {ms:8.1f} ms  =  network {ph['network']:6.1f}"
                   f" + parse {ph['parse']:6.1f} + app {ph['app']:7.1f}")
+            sub = app_split(ms, nav)
+            if sub is not None:
+                app_parts.append(sub)
+                print(f"            app {ph['app']:7.1f}  =  ->auth {sub['to_auth']:6.1f}"
+                      f" + auth->req {sub['auth_to_req']:6.1f}"
+                      f" + req->card {sub['req_to_card']:6.1f}")
         browser.close()
 
     if not samples:
@@ -314,6 +387,19 @@ def main() -> int:
               f" | app {med_ph['app']:.1f} ({100*med_ph['app']/tot:.0f}%)")
         print(f"  (phase medians sum to {tot:.1f} ms vs total median {med:.1f} ms;"
               f" they need not agree exactly -- see the note in the code)")
+        if app_parts:
+            med_ap = {k: statistics.median([a[k] for a in app_parts])
+                      for k in ("to_auth", "auth_to_req", "req_to_card")}
+            print(f"  app split (median of {len(app_parts)}): "
+                  f"DCL->auth {med_ap['to_auth']:.1f}"
+                  f" | auth->wordsets-requested {med_ap['auth_to_req']:.1f}"
+                  f" | requested->first-card {med_ap['req_to_card']:.1f}")
+        else:
+            # NOT silence. A build predating the sub-marks and a build whose
+            # once-guard regressed both land here, and both are worth saying
+            # out loud -- an absent split must not read as "app has no parts".
+            print("  app split: UNAVAILABLE -- lt:auth-settled / "
+                  "lt:wordsets-requested absent (build predates them?)")
         print("  NB `app` is a REMAINDER, not a measurement of computation.")
 
     if args.budget_ms is not None and med > args.budget_ms:
