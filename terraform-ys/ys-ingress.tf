@@ -24,7 +24,9 @@
 # redirect is a per-Gateway HTTPRoute with a RequestRedirect filter on the :80 listener
 # (replaces the old GKE FrontendConfig, which is Ingress-only).
 #
-# Health checks: derived from each Service's pod readiness probe (backend HTTP /health:80;
+# Health checks: derived from each Service's pod readiness probe (backend HTTP /readyz:80
+# since issue-301 -- /health is a literal that cannot fail, so an LB health check on it
+# kept routing to replicas that could not reach MySQL;
 # UI TCP :3000 — workloads.tf, HC2 #16). The allow-lb-healthcheck NetworkPolicy
 # (35.191.0.0/16 + 130.211.0.0/22) lets the GFE LB probes reach the pods.
 #

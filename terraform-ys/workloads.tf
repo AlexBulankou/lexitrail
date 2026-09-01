@@ -112,9 +112,23 @@ resource "kubernetes_deployment_v1" "backend" {
             }
           }
 
+          # issue-301: readiness points at /readyz, NOT /health. /health is a
+          # literal that returns 200 for a replica that cannot reach MySQL, so
+          # while readiness pointed there Kubernetes kept routing user traffic
+          # to a pod answering 500 on every database-backed request. /readyz
+          # issues a real SELECT 1 through the app's own engine, so a replica
+          # that cannot serve leaves the Service.
+          #
+          # 🔴 liveness and startup below deliberately STAY on /health. A
+          # DB-dependent liveness probe restarts every replica during a brief
+          # DB blip, converting a partial outage into a total one; a
+          # DB-dependent startup probe would refuse to let a pod bind at all
+          # while the DB is down. Readiness depends on the DB; the other two
+          # must not. Do not "consistently" point all three at one endpoint --
+          # the split IS the design (backend/app/routes/__init__.py).
           readiness_probe {
             http_get {
-              path = "/health"
+              path = "/readyz"
               port = 80
             }
             initial_delay_seconds = 30
