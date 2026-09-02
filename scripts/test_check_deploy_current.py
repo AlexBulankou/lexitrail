@@ -121,3 +121,45 @@ def test_surfaces_compare_against_their_own_path_not_main_head():
     touch neither ui/ nor backend/ and trigger no build."""
     assert mod.SURFACES["ui"][1] == "ui/"
     assert mod.SURFACES["backend"][1] == "backend/"
+
+
+# --- the FAIL message has TWO directions (found by running AC4's control) ----
+# The first version said "main is AHEAD of production" unconditionally. AC4 asks
+# for a control against a deliberately stale ref, which produces the OTHER
+# direction — production newer than the ref — and the message sent the reader
+# after a refused deploy that never happened. Both are FAIL; only the cause and
+# the remedy differ.
+
+def test_main_ahead_names_the_refusal_check(monkeypatch):
+    """The common case: a merge landed, the deploy was refused, main is ahead."""
+    monkeypatch.setattr(mod, "_is_ancestor", lambda older, newer: True)
+    _, msg = V("ui", "b" * 40, "a" * 40, True, "")
+    assert "main is AHEAD of production" in msg, msg
+    assert "used_before == used_after" in msg, msg
+
+
+def test_production_ahead_does_NOT_name_the_refusal_check(monkeypatch):
+    """🔴 The direction AC4's control produces. Naming the refusal check here
+    sends the reader after a deploy that was never attempted."""
+    monkeypatch.setattr(mod, "_is_ancestor", lambda older, newer: False)
+    _, msg = V("ui", "a" * 40, "b" * 40, True, "")
+    assert "production is running something this ref does not know about" in msg, msg
+    assert "NOT the refused-deploy case" in msg, msg
+    assert "used_before == used_after" not in msg, (
+        "the refusal discriminator is the WRONG advice in this direction"
+    )
+
+
+def test_both_directions_are_still_FAIL():
+    """The wording differs; the verdict must not. A mis-detected direction is a
+    reader sent the wrong way, never a drift that goes unreported."""
+    for anc in (True, False):
+        import unittest.mock as _m
+        with _m.patch.object(mod, "_is_ancestor", lambda o, n: anc):
+            code, _ = V("ui", "a" * 40, "b" * 40, True, "")
+            assert code == FAIL, anc
+
+
+def test_is_ancestor_fails_toward_the_common_wording():
+    """A git failure must not produce a third, silent shape."""
+    assert mod._is_ancestor("not-a-sha", "also-not-a-sha") in (True, False)
