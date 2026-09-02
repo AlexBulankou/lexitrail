@@ -11,8 +11,8 @@ path -- both live reliability fixes, both merged, neither on the cluster.
 
 Nobody *chose* not to apply. Nobody knew. So the thing to automate is the
 noticing, not the applying -- see #299 AC3 for why an unattended apply trigger is
-the worst of the available options today (#312: ten live objects are absent from
-state and would plan as CREATE).
+the worst of the available options today (my-hermes#1338: twelve live objects are absent
+from state and would plan as CREATE).
 
 🔴 THE HARD PART IS THAT THE SOURCE AND THE CLUSTER CAN AGREE BY COINCIDENCE.
 On 2026-09-02 the backend's cpu/memory limits in `workloads.tf` matched the
@@ -138,7 +138,7 @@ def verdict(
         f"FAIL: {DEFAULT_PATH} is {gap_days:.1f} days ahead of the last "
         f"terraform apply ({commits_behind} commit(s) unapplied). "
         f"last apply {manager_ts.isoformat()}, newest commit "
-        f"{newest_commit_ts.isoformat()}. See lexitrail#299 -- and read #312 "
+        f"{newest_commit_ts.isoformat()}. See lexitrail#299 -- and read my-hermes#1338 "
         f"before running `terraform apply`, it is not a safe no-op today.",
     )
 

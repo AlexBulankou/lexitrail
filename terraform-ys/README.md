@@ -95,7 +95,7 @@ applied. The check above compares *who last wrote the object* rather than any
 field value, which is why a coincidence cannot fool it.
 
 🔴 **`terraform apply` is not a safe no-op today** -- ten live Gateway/TLS objects
-are absent from state and plan as `+ create`. Read #312 first.
+are absent from state and plan as `+ create`. Read **my-hermes#1338** first -- the import is owned and gated there.
 
 Its reader is manual until lexitrail has a scheduler at all
 (`GET /projects/lexitrail/schedules` -> `Unknown project`, ensemble#9032).

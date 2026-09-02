@@ -131,7 +131,8 @@ def test_parse_ts_returns_none_rather_than_raising():
 
 
 def test_the_fail_message_warns_against_a_bare_apply():
-    """#312: ten live objects are absent from state, so `apply` is not a no-op.
-    A drift alarm whose remedy is dangerous must say so at the point of alarm."""
+    """my-hermes#1338: twelve live objects are absent from state, so `apply` is
+    not a no-op and is owned/gated elsewhere. A drift alarm whose remedy is
+    dangerous must say so at the point of alarm, not in a linked issue."""
     _, msg = mod.verdict(NEWEST_COMMIT, JUNE_APPLY)
-    assert "#312" in msg, msg
+    assert "my-hermes#1338" in msg, msg
