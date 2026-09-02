@@ -165,9 +165,25 @@ def _is_ancestor(older: str, newer: str) -> bool:
 
     Used only to pick which FAIL message to print. Both branches are a FAIL;
     getting this wrong sends the reader after the wrong cause, not after
-    nothing. On any git failure it returns True, which selects the
-    main-is-ahead wording — the overwhelmingly common case in practice, and
-    the one whose remedy (check for a refusal) is harmless if wrong.
+    nothing.
+
+    🔴 ONLY rc==1 IS A CONFIRMED "NOT AN ANCESTOR". Everything else — including
+    git's 128 `fatal: Not a valid object name` — means we could not determine
+    ancestry, and falls to True, the main-is-ahead wording. That is the
+    overwhelmingly common real case, and its remedy (go check for a refusal) is
+    harmless when wrong; the other wording actively tells the reader NOT to
+    check the thing they should check.
+
+    An earlier version of this ended `return out.returncode == 0`, which sent
+    every non-zero code — 1 and 128 alike — to the wrong-direction wording. That
+    is the exact misdiagnosis this whole change exists to remove, reached from a
+    different input than the one AC4's control found. Caught by hc2 in review on
+    #318, who reproduced it directly rather than reading the docstring's claim.
+
+    Reachable in practice, not only in theory: `resolve_full` validates both
+    shas exist as OBJECTS, and a shallow clone can hold an object while lacking
+    the history `merge-base` needs to walk — so CI, which this script names as a
+    target environment, is exactly where 128 shows up.
     """
     try:
         out = subprocess.run(
@@ -176,7 +192,11 @@ def _is_ancestor(older: str, newer: str) -> bool:
         )
     except (OSError, subprocess.SubprocessError):
         return True
-    return out.returncode == 0
+    if out.returncode == 0:
+        return True
+    if out.returncode == 1:
+        return False
+    return True
 
 
 def verdict_for(

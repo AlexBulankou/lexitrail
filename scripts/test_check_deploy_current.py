@@ -161,5 +161,32 @@ def test_both_directions_are_still_FAIL():
 
 
 def test_is_ancestor_fails_toward_the_common_wording():
-    """A git failure must not produce a third, silent shape."""
-    assert mod._is_ancestor("not-a-sha", "also-not-a-sha") in (True, False)
+    """🔴 An unresolvable sha must select the main-is-ahead wording.
+
+    git exits **128** (`fatal: Not a valid object name`) here — it does not
+    raise, so the `except` never sees it. The previous implementation ended
+    `return out.returncode == 0`, sending 128 to False and therefore to the
+    "production is running something this ref does not know about ... NOT the
+    refused-deploy case" wording: the exact misdiagnosis this file's other
+    tests exist to prevent, reached from a different input.
+
+    ⚠️ The assertion this replaces was `in (True, False)` — true for every
+    boolean the function could ever return, so it could not fail whatever the
+    code did, while reading like the guard for the docstring's safety claim.
+    Found by hc2 in review on #318. Verified rc: 0 ancestor, 1 not-ancestor,
+    128 unresolvable.
+    """
+    assert mod._is_ancestor("not-a-sha", "also-not-a-sha") is True
+
+
+def test_is_ancestor_still_answers_the_two_real_cases():
+    """The fail-toward-True branch must not swallow a genuine negative."""
+    import subprocess
+    head = subprocess.run(["git", "rev-parse", "HEAD"], capture_output=True,
+                          text=True).stdout.strip()
+    older = subprocess.run(["git", "rev-parse", "HEAD~3"], capture_output=True,
+                           text=True).stdout.strip()
+    if not head or not older:
+        return  # shallow clone: nothing to assert, and that is this test's point
+    assert mod._is_ancestor(older, head) is True
+    assert mod._is_ancestor(head, older) is False
