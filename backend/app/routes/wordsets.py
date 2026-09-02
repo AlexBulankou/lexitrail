@@ -354,6 +354,67 @@ def process_word_with_options(word, words_by_syllable, total_syllables, corpus_b
         "quiz_options": quiz_options
     }
 
+def _as_cache_hit(cached_response, start_time):
+    """Relabel a cached response so its metadata describes THIS request (#215).
+
+    🔴 The bug this fixes is not cosmetic and it is not a wrong value -- it is a
+    field that is structurally incapable of reporting the thing it names.
+    `cache_status` is set in exactly one place, on the COMPUTE path, and the hit
+    path returned the stored object verbatim. So the field a reader reaches for
+    to answer "is the cache working?" said `miss` on every hit, forever, and the
+    timings beside it described a computation that could be minutes old.
+
+    Measured in production 2026-09-02, both wordsets served from cache:
+
+        wordset 1   wall 0.24s   metadata processing_time_ms 2827   cache_status "miss"
+        wordset 9   wall 0.29s   metadata processing_time_ms 4933   cache_status "miss"
+
+    A 10-17x mismatch between the wall clock and the number the response reports
+    about itself. The only way to tell a hit from a miss was to time the request
+    yourself and notice the disagreement -- which is not something a consumer of
+    the field would think to do, and I misread it as a genuine miss myself.
+
+    🔴 THE ORIGIN TIMINGS ARE MOVED, NOT DELETED AND NOT LEFT IN PLACE. Leaving
+    them at the top level is the actual defect: `total_time_ms` sitting next to
+    `cache_status: "hit"` still reads as "this request took 17 seconds". Deleting
+    them loses genuinely useful information about how expensive the warm was. So
+    they move under `origin`, where nothing can be mistaken for a statement about
+    the request that just happened.
+
+    Non-breaking, checked rather than assumed: nothing in `ui/`, `e2e/` or
+    `scripts/` reads `cache_status`, `total_time_ms` or `processing_time_ms` from
+    this route -- the only in-repo consumer of a `cache_status` name is the
+    module-level warm-progress dict, which is a different object entirely.
+
+    🔴 Copies, never mutates. `cache[wordset_id]` holds the response dict itself,
+    so relabelling in place would rewrite the cached object and every later hit
+    would nest `origin` inside `origin`. Both the outer dict and its `metadata`
+    are shallow-copied for that reason.
+    """
+    if not isinstance(cached_response, dict):
+        # A cache holding something we do not understand is not something to
+        # dress up as a hit -- hand it back untouched rather than guess.
+        return cached_response
+
+    origin = cached_response.get('metadata')
+    served_ms = round((time.time() - start_time) * 1000, 2)
+
+    if isinstance(origin, dict):
+        origin = {k: v for k, v in origin.items() if k != 'cache_status'}
+    else:
+        # No metadata to attribute. Still report the hit -- the whole point is
+        # that the field must be able to say `hit`.
+        origin = None
+
+    out = dict(cached_response)
+    out['metadata'] = {
+        'cache_status': 'hit',
+        'served_time_ms': served_ms,
+        'origin': origin,
+    }
+    return out
+
+
 @bp.route('/<int:wordset_id>/words', methods=['GET'])
 def get_words_by_wordset(wordset_id, skip_cache=False):
     """Fetch words by wordset with quiz options and optional random seed."""
@@ -364,7 +425,7 @@ def get_words_by_wordset(wordset_id, skip_cache=False):
         cached_data = cache.get(wordset_id)
         if cached_data:
             logger.debug(f"Cache hit for wordset_id: {wordset_id}")
-            return cached_data
+            return _as_cache_hit(cached_data, start_time)
         else:
             # If cache is still initializing, inform the client
             if not cache_status["initialized"] and cache_status["progress"] > 0:
