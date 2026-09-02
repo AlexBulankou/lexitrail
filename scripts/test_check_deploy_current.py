@@ -77,11 +77,26 @@ def test_known_true_with_no_sha_is_cannot_tell():
         assert code == CANNOT_TELL, empty
 
 
-def test_differing_abbreviation_lengths_are_not_drift():
-    """git and Cloud Build's $SHORT_SHA can abbreviate differently."""
-    assert V("ui", "e0986fc", "e0986fcab12", True, "")[0] == PASS
-    assert V("ui", "e0986fcab12", "e0986fc", True, "")[0] == PASS
-    assert V("ui", "e0986fc", "e0986ff", True, "")[0] == FAIL
+def test_a_shared_prefix_is_NOT_a_match():
+    """🔴 The comparison is exact, on full shas resolved by resolve_full().
+
+    hc2 asked on #314 whether the old min-length prefix compare was defensive
+    only. It was -- and the defense was the bug: `git log --abbrev=7` is a
+    MINIMUM, git extends it when 7 characters are ambiguous, so the two sides
+    differ in length exactly when two commits share a 7-char prefix. That is
+    precisely when a prefix compare reports a match between different commits.
+    Same trigger for the tolerance and for the hazard."""
+    a = "e0986fc" + "a" * 33
+    b = "e0986fc" + "b" * 33
+    assert V("ui", a, b, True, "")[0] == FAIL
+    assert V("ui", a, a, True, "")[0] == PASS
+
+
+def test_resolve_full_rejects_a_sha_it_cannot_resolve_uniquely():
+    """Ambiguous or not-fetched must be CANNOT-TELL input, never a comparison."""
+    full, why = mod.resolve_full("zzzzzzz")
+    assert full is None
+    assert "does not resolve" in why, why
 
 
 def test_a_cannot_tell_surface_is_not_rescued_by_a_passing_sibling():

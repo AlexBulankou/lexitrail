@@ -100,6 +100,41 @@ def newest_sha(ref: str, path: str) -> str | None:
     return out.stdout.strip() or None
 
 
+def resolve_full(sha: str) -> tuple[str | None, str]:
+    """Full 40-char sha for an abbreviation, or (None, why).
+
+    🔴 Why not compare abbreviations directly. `git log --abbrev=7` is a MINIMUM,
+    not a width: git extends the abbreviation when 7 characters are ambiguous in
+    the repo. So the two sides can legitimately differ in length -- and the case
+    where they differ is exactly the case where two commits share the first 7
+    characters, which is the case where a prefix comparison silently reports a
+    match between different commits. The tolerance and the hazard have the same
+    trigger, so tolerating the length is the wrong move.
+
+    `git rev-parse --verify <sha>^{commit}` resolves it and FAILS on ambiguity,
+    which is the honest third answer rather than a coin flip. Raised by hc2 in
+    review on #314, who read the prefix compare as defensive-only; it was, and
+    the defense was the bug.
+
+    Measured here first rather than assumed: at 445 objects this repo returns
+    exactly 7 for --abbrev=7 today, so this is about the mechanism, not a
+    reproduction.
+    """
+    try:
+        out = subprocess.run(
+            ["git", "rev-parse", "--verify", "--quiet", f"{sha}^{{commit}}"],
+            capture_output=True, text=True, timeout=30,
+        )
+    except (OSError, subprocess.SubprocessError) as exc:
+        return None, f"git could not be run ({exc})"
+    if out.returncode != 0 or not out.stdout.strip():
+        return None, (
+            f"{sha!r} does not resolve to a unique commit in this clone -- it is "
+            f"either ambiguous or not fetched here"
+        )
+    return out.stdout.strip(), ""
+
+
 def fetch_version(url: str, timeout: int = 15) -> tuple[str | None, bool | None, str]:
     """(sha, known, why_not). `known is None` means the surface did not answer."""
     try:
@@ -147,14 +182,16 @@ def verdict_for(
             f"endpoint contradicts itself."
         )
     live = sha.strip()
-    # Compare on the shorter of the two: git may abbreviate differently from
-    # Cloud Build's $SHORT_SHA, and a length mismatch is not drift.
-    n = min(len(live), len(expected))
-    if live[:n] == expected[:n]:
-        return PASS, f"PASS [{name}]: live {live} == newest commit {expected}."
+    # Full shas by the time they get here -- see resolve_full(). No prefix
+    # comparison: it would report a match between two commits sharing a prefix,
+    # in exactly the situation that makes the lengths differ in the first place.
+    if live == expected:
+        return PASS, (
+            f"PASS [{name}]: live {live[:8]} == newest commit {expected[:8]}."
+        )
     return FAIL, (
-        f"FAIL [{name}]: main is AHEAD of production. live {live}, newest "
-        f"commit for its path {expected}. A merge at build-budget margin 0 does "
+        f"FAIL [{name}]: main is AHEAD of production. live {live[:8]}, newest "
+        f"commit for its path {expected[:8]}. A merge at build-budget margin 0 does "
         f"not red main -- check whether the deploy trigger was REFUSED "
         f"(used_before == used_after in the gate's JSON) rather than failed. "
         f"See #273."
@@ -171,11 +208,24 @@ def main(argv: list[str] | None = None) -> int:
     args = ap.parse_args(argv)
 
     wanted = args.surface or sorted(SURFACES)
-    codes = []
+    codes: list[int] = []
     for name in wanted:
         url, path = SURFACES[name]
         expected = newest_sha(args.ref, path)
+        if expected is not None:
+            expected, why_exp = resolve_full(expected)
+            if expected is None:
+                print(f"CANNOT-TELL [{name}]: newest commit {why_exp}.")
+                codes.append(CANNOT_TELL)
+                continue
         sha, known, why = fetch_version(url)
+        if known and isinstance(sha, str) and sha.strip():
+            full, why_live = resolve_full(sha.strip())
+            if full is None:
+                print(f"CANNOT-TELL [{name}]: the live sha {why_live}.")
+                codes.append(CANNOT_TELL)
+                continue
+            sha = full
         code, msg = verdict_for(name, expected, sha, known, why)
         print(msg)
         codes.append(code)
