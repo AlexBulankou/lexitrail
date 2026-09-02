@@ -189,6 +189,13 @@ steps:
       - '${_IMAGE}:latest'
       - '-t'
       - '${_IMAGE}:$SHORT_SHA'
+      # issue-273 step 1: bake the sha into the artifact so it can say which
+      # commit it is. Without this, "is production current?" is answerable only
+      # by grepping the served bytes for a string a recent commit happened to
+      # introduce -- which silently reports "current" for any commit that added
+      # no distinctive literal.
+      - '--build-arg'
+      - 'BUILD_SHA=$SHORT_SHA'
       - './backend'
     waitFor: ['pull-cache']
 
