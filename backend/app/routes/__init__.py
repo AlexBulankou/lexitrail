@@ -28,6 +28,46 @@ def register_routes(app):
     def health_check():
         return jsonify({'status': 'healthy'}), 200
 
+    @app.route('/version')
+    def version():
+        """The git sha these bytes were built from (issue-273 step 1).
+
+        A merge at build-budget margin 0 does not red main -- the quota gate
+        declines the deploy trigger and the artifact silently never moves. Alex's
+        P1 #265 fix sat merged-but-not-live for ~75 minutes that way, and was
+        found only by accident. Nothing in this repo could say "main is ahead of
+        production", because nothing shipped can say WHICH COMMIT it is.
+
+        🔴 The alternative that was measured and rejected: grepping the served
+        bytes for a string a recent commit introduced. That works only when a
+        commit happens to add a distinctive literal. A commit that changes a
+        constant, reorders logic or edits a template adds nothing greppable, and
+        the check then reports "current" for a stale artifact -- failing in the
+        reassuring direction, which is the same shape as the silent no-deploy it
+        is meant to catch.
+
+        🔴 UNSET IS ITS OWN STATE AND MUST NOT LOOK LIKE A MATCH. `BUILD_SHA` is
+        injected by the Dockerfile at image build; a locally-run or hand-built
+        image has none. Returning `""` there would let a naive comparison read
+        equal-to-nothing, or a truthiness check read "no drift". So the field is
+        JSON `null` and `known` is `false`, and a consumer that ignores `known`
+        gets a value it cannot mistake for a sha. See scripts/check_deploy_current.py,
+        which renders this as CANNOT-TELL rather than as pass or fail.
+
+        Unauthenticated on purpose. Every credential on bp is PERMISSION_DENIED
+        against lexitrail's Artifact Registry and its build list (#224), so a
+        detector built on "compare the deployed image tag to the newest build" is
+        not implementable from any seat we have. A public sha is not a secret --
+        the repo is the operator's and the commits are visible in it -- and it is
+        the only thing that makes the check runnable from anywhere, CI included.
+        """
+        import os
+        sha = (os.environ.get('BUILD_SHA') or '').strip()
+        return jsonify({
+            'sha': sha or None,
+            'known': bool(sha),
+        }), 200
+
     @app.route('/readyz')
     def readiness_check():
         """Readiness: can this replica actually SERVE, not merely run.

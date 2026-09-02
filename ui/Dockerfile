@@ -17,6 +17,27 @@ COPY . .
 # Build the app for production
 RUN npm run build
 
+# issue-273 step 1: write the git sha these bytes were built from into the served
+# bundle, so "is production current?" is answerable without credentials.
+#
+# 🔴 Placed AFTER `npm run build`, not before. CRA wipes `build/` at the start of
+# a build, so a version.json written earlier would be deleted by the very step
+# that produces the artifact -- and silently: the image would build green and the
+# file would simply not be there.
+#
+# 🔴 UNSET IS ITS OWN STATE. A local `docker build` with no --build-arg must not
+# produce a file that reads like a match. `sha` is JSON null and `known` is false
+# in that case, mirroring the backend's /version, so one consumer handles both.
+#
+# ARG is declared here rather than at the top so it does not invalidate the cache
+# for `npm install` -- an ARG busts every layer below its declaration.
+ARG BUILD_SHA=""
+RUN if [ -n "$BUILD_SHA" ]; then \
+      printf '{"sha":"%s","known":true}\n' "$BUILD_SHA" > build/version.json; \
+    else \
+      printf '{"sha":null,"known":false}\n' > build/version.json; \
+    fi
+
 # Install serve to serve the build folder
 RUN npm install -g serve
 
