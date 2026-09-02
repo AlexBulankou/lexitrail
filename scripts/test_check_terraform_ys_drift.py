@@ -170,3 +170,87 @@ def test_several_objects_are_checked_not_one():
 def test_the_path_label_names_tf_not_the_whole_directory():
     """The message a reader acts on must say which files counted."""
     assert mod.PATH_LABEL.endswith("*.tf")
+
+
+# --- issue-317: the PARTIAL-coverage state, which was neither of the two above ---
+#
+# The suite covered all-answer (PASS) and none-answer (CANNOT-TELL). The state in
+# between -- SOME objects answered -- took the PASS branch and printed a line
+# indistinguishable from full coverage, because `why` is only read when
+# present=False. hc2@ found it on #313 by pointing one --object at a nonexistent
+# name alongside a real one and getting a bare PASS.
+#
+# 🔴 These pin BOTH directions on purpose. Asserting only that a partial run
+# mentions coverage would pass a version that printed the note unconditionally,
+# which trains readers to skip the line and puts the check back where it started.
+
+
+def _fake_one(answers):
+    """Build a _manager_ts_one stand-in from {obj: (ts, ok, why)}."""
+    def _one(namespace, obj):
+        return answers[obj]
+    return _one
+
+
+def test_partial_coverage_still_passes_but_says_how_many_answered(monkeypatch, capsys):
+    """Option (c) on #317: the exit code is unchanged, the coverage is visible."""
+    ts = mod._parse_ts("2026-09-02T04:06:18Z")
+    monkeypatch.setattr(mod, "_manager_ts_one", _fake_one({
+        "deploy/a": (ts, True, ""),
+        "deploy/gone": (None, False, 'kubectl exited 1 for lexitrail/deploy/gone'),
+    }))
+    monkeypatch.setattr(mod, "_git_newest", lambda ref, paths: (ts, "abc1234"))
+    monkeypatch.setattr(mod, "_git_count_since", lambda ref, paths, since: 0)
+
+    code = mod.main(["--object", "deploy/a", "--object", "deploy/gone"])
+    out = capsys.readouterr().out
+
+    assert code == 0, "a rename must not read as an outage -- that is option (b), rejected"
+    assert "1 of 2 objects answered" in out, (
+        "issue-317: a partial answer that prints a bare PASS is the going-blind "
+        "state; the verdict must carry its own coverage"
+    )
+    assert "deploy/gone" in out, "the discarded `why` must reach the reader"
+
+
+def test_full_coverage_does_NOT_print_a_coverage_line(monkeypatch, capsys):
+    """The negative direction. A note printed on every run is not a signal.
+
+    Without this, a version that appended the coverage line unconditionally
+    passes the test above while making the partial state invisible again --
+    the same defect wearing the fix's clothes.
+    """
+    ts = mod._parse_ts("2026-09-02T04:06:18Z")
+    monkeypatch.setattr(mod, "_manager_ts_one", _fake_one({
+        "deploy/a": (ts, True, ""),
+        "deploy/b": (ts, True, ""),
+    }))
+    monkeypatch.setattr(mod, "_git_newest", lambda ref, paths: (ts, "abc1234"))
+    monkeypatch.setattr(mod, "_git_count_since", lambda ref, paths, since: 0)
+
+    code = mod.main(["--object", "deploy/a", "--object", "deploy/b"])
+    out = capsys.readouterr().out
+
+    assert code == 0
+    assert "coverage:" not in out, (
+        "issue-317: silent on full coverage, so the line's PRESENCE is the signal"
+    )
+
+
+def test_no_object_answering_is_still_cannot_tell_not_a_coverage_note(monkeypatch, capsys):
+    """The boundary between #317's new state and #299's original one.
+
+    Zero witnesses is 'we could not look' (exit 3), NOT '0 of 2 answered, PASS'.
+    Collapsing the partial state upward into CANNOT-TELL was option (b); this
+    pins that adding option (c) did not accidentally collapse it DOWNWARD.
+    """
+    ts = mod._parse_ts("2026-09-02T04:06:18Z")
+    monkeypatch.setattr(mod, "_manager_ts_one", _fake_one({
+        "deploy/gone": (None, False, "kubectl exited 1"),
+        "deploy/alsogone": (None, False, "kubectl exited 1"),
+    }))
+    monkeypatch.setattr(mod, "_git_newest", lambda ref, paths: (ts, "abc1234"))
+    monkeypatch.setattr(mod, "_git_count_since", lambda ref, paths, since: 0)
+
+    code = mod.main(["--object", "deploy/gone", "--object", "deploy/alsogone"])
+    assert code == 3, "zero witnesses is CANNOT-TELL, not a passing partial"

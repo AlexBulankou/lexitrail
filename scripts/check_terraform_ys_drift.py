@@ -263,26 +263,41 @@ def _manager_ts_one(
 
 def _manager_ts(
     namespace: str, objs: list[str],
-) -> tuple[datetime | None, bool, str]:
-    """Newest terraform write across `objs`.
+) -> tuple[datetime | None, bool, str, int]:
+    """Newest terraform write across `objs`, plus how many of them ANSWERED.
 
     🔴 `present` is True if ANY object answered. One object having been deleted
     or renamed must not blind the whole check -- but if NONE answered we could
     not look at all, and that is CANNOT-TELL rather than "terraform never
     applied". The two are different facts and this is where they separate.
+
+    🔴 issue-317: `answered` exists because `present` alone cannot distinguish
+    "all four witnesses agree" from "three are gone and the fourth answered".
+    Both set present=True, both take the PASS branch, and `why` is only read on
+    the not-present branch -- so the check got MORE reassuring as it lost
+    coverage, which is the going-blind-while-reading-healthy shape this script
+    exists to detect, reproduced inside the script. Found by hc2@ in review on
+    #313 by probing the degradation arm rather than reading it.
+
+    Returning the count rather than promoting a partial answer to CANNOT-TELL is
+    deliberate (option (c) on #317): the objects that DID answer are answering
+    the same question correctly, so an object rename must not read as an
+    outage. The caller surfaces the count; the exit code is unchanged.
     """
     times: list[datetime] = []
     present = False
+    answered = 0
     whys: list[str] = []
     for obj in objs:
         ts, ok, why = _manager_ts_one(namespace, obj)
         if ok:
             present = True
+            answered += 1
             if ts is not None:
                 times.append(ts)
         elif why:
             whys.append(why)
-    return (max(times) if times else None), present, "; ".join(whys)
+    return (max(times) if times else None), present, "; ".join(whys), answered
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -301,13 +316,24 @@ def main(argv: list[str] | None = None) -> int:
     objs = args.object or DEFAULT_OBJECTS
 
     newest, _ = _git_newest(args.ref, paths)
-    mts, present, why = _manager_ts(args.namespace, objs)
+    mts, present, why, answered = _manager_ts(args.namespace, objs)
     behind = _git_count_since(args.ref, paths, mts) if (mts and newest) else 0
 
     code, msg = verdict(
         newest, mts, commits_behind=behind, manager_field_present=present,
         cannot_tell_reason=why,
     )
+    # issue-317: coverage is reported on the FACE of the verdict, not only when
+    # the check fails. A partial answer keeps its exit code (option (c)) but must
+    # not print a bare PASS -- otherwise the line reads identically whether four
+    # witnesses agreed or three vanished. Silent on full coverage, so the extra
+    # line is itself the signal rather than noise every reader learns to skip.
+    if present and answered < len(objs):
+        msg += (
+            f"\n  coverage: {answered} of {len(objs)} objects answered"
+            f" -- verdict above rests on {answered}."
+            f" Objects that did not answer: {why or '(no reason recorded)'}"
+        )
     print(msg)
     return code
 
