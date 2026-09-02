@@ -46,6 +46,27 @@ while a PRESENT list with no `HashiCorp` entry is a genuine FAIL (terraform has
 never touched this object). Collapsing the first into the second would make this
 alarm on every healthy cluster; collapsing it into PASS would make it blind.
 
+🔴 THIS ANSWERS "IS THE CLUSTER CURRENT", NOT "IS TERRAFORM'S RECORD CURRENT"
+---------------------------------------------------------------------------
+Those come apart, and they did so on the very apply this check was written
+around. On 2026-09-02 an `apply -target` wrote the cluster at 04:06:18Z and was
+then killed mid-rollout-wait; the remote state object in GCS is still `serial 19`
+from **2026-08-14** and records `readiness_probe path = /health` with **no**
+`startup_probe` -- i.e. the state does not contain the change that is live.
+
+`managedFields` says the write happened, because it did. So this check reports
+PASS while `terraform show` would describe a cluster that no longer exists. That
+is the right answer for the question asked here (a viewer hits the cluster, not
+the state file) and the wrong answer for "can I trust state", so do not reach for
+this check to answer the second one.
+
+⚠️ It also cost me a wrong published claim. I read a subsequent `plan` returning
+`No changes` as proof state had been written -- but plan REFRESHES against the
+live cluster first, so a cluster that now matches config produces `No changes`
+whether or not state was ever saved. Two hypotheses, one observation, and I
+reported the one I wanted. The discriminator is the state object itself
+(`serial` / the recorded attributes), never a plan result.
+
 KNOWN LIMIT, STATED SO IT IS NOT REDISCOVERED
 ---------------------------------------------
 `managedFields` records a manager's last *write*. A terraform apply that was a
@@ -74,10 +95,38 @@ from datetime import datetime
 PASS, FAIL, CANNOT_TELL = 0, 1, 3
 
 TF_MANAGER = "HashiCorp"
-DEFAULT_PATH = "terraform-ys/"
 DEFAULT_REF = "origin/main"
 DEFAULT_NAMESPACE = "lexitrail"
-DEFAULT_OBJECT = "deploy/lexitrail-backend"
+
+# 🔴 `.md` IS EXCLUDED, AND IT IS NOT TIDYING. Scoped to the whole directory this
+# check false-FAILs on its own merge: the commit that adds the README section
+# below post-dates the apply it documents, so `git log -1 -- terraform-ys/` on
+# main returns a doc commit as "the newest source change" and the check reports
+# drift because documentation moved. Every future README edit does the same.
+# Caught in review by hc2 (#313) -- and it is the identical error I had written a
+# warning about one directory away in #273 ("comparing to main's HEAD would
+# report drift permanently -- an alarm firing on its own baseline, muted within a
+# week"). The denominator being wrong is the recurring shape, not this instance.
+#
+# Top-anchored (`:(top)`, `:(exclude,top)`) because git pathspecs are CWD-relative:
+# run from a subdirectory, a bare `terraform-ys/` silently narrows to nothing and
+# a bare exclude excludes nothing.
+DEFAULT_PATHSPECS = [":(top)terraform-ys/", ":(exclude,top)terraform-ys/*.md"]
+PATH_LABEL = "terraform-ys/*.tf"
+
+# 🔴 SEVERAL OBJECTS, MAXed -- not one. A `terraform apply` writes only the
+# resources that CHANGED, so a commit touching the UI deployment leaves the
+# backend's HashiCorp timestamp untouched and a single-object check reports FAIL
+# for a stack that was just applied. hc2 asked exactly this in #313. Taking the
+# newest terraform write across the root's cluster-side objects answers the
+# question this check actually asks -- "has an apply happened since the source
+# moved" -- rather than "was this one object rewritten".
+DEFAULT_OBJECTS = [
+    "deploy/lexitrail-backend",
+    "deploy/lexitrail-ui-deployment",
+    "statefulset/mysql",
+    "service/lexitrail-backend-service",
+]
 
 
 def _parse_ts(raw: str | None) -> datetime | None:
@@ -109,7 +158,7 @@ def verdict(
         return (
             CANNOT_TELL,
             f"CANNOT-TELL: could not read the newest commit touching "
-            f"{DEFAULT_PATH} -- the check did not run, this is not a pass.",
+            f"{PATH_LABEL} -- the check did not run, this is not a pass.",
         )
     if not manager_field_present:
         why = cannot_tell_reason or "the cluster did not answer"
@@ -121,21 +170,21 @@ def verdict(
     if manager_ts is None:
         return (
             FAIL,
-            f"FAIL: no `{TF_MANAGER}` manager has ever written this object. "
-            f"terraform has not applied it -- newest {DEFAULT_PATH} commit is "
-            f"{newest_commit_ts.isoformat()}.",
+            f"FAIL: no `{TF_MANAGER}` manager has ever written any of the "
+            f"checked objects. terraform has not applied this root -- newest "
+            f"{PATH_LABEL} commit is {newest_commit_ts.isoformat()}.",
         )
     if manager_ts >= newest_commit_ts:
         return (
             PASS,
             f"PASS: last terraform write {manager_ts.isoformat()} is at or "
-            f"after the newest {DEFAULT_PATH} commit "
+            f"after the newest {PATH_LABEL} commit "
             f"{newest_commit_ts.isoformat()}.",
         )
     gap_days = (newest_commit_ts - manager_ts).total_seconds() / 86400.0
     return (
         FAIL,
-        f"FAIL: {DEFAULT_PATH} is {gap_days:.1f} days ahead of the last "
+        f"FAIL: {PATH_LABEL} is {gap_days:.1f} days ahead of the last "
         f"terraform apply ({commits_behind} commit(s) unapplied). "
         f"last apply {manager_ts.isoformat()}, newest commit "
         f"{newest_commit_ts.isoformat()}. See lexitrail#299 -- and read my-hermes#1338 "
@@ -143,7 +192,7 @@ def verdict(
     )
 
 
-def _git_newest(ref: str, path: str) -> tuple[datetime | None, int]:
+def _git_newest(ref: str, paths: list[str]) -> tuple[datetime | None, int]:
     """Newest commit time touching `path` on `ref`, and how many are unapplied.
 
     Returns (None, 0) on any git failure. Deliberately does NOT pipe: a pipeline
@@ -152,7 +201,7 @@ def _git_newest(ref: str, path: str) -> tuple[datetime | None, int]:
     """
     try:
         out = subprocess.run(
-            ["git", "log", "-1", "--format=%cI", ref, "--", path],
+            ["git", "log", "-1", "--format=%cI", ref, "--", *paths],
             capture_output=True, text=True, timeout=30,
         )
     except (OSError, subprocess.SubprocessError):
@@ -162,11 +211,11 @@ def _git_newest(ref: str, path: str) -> tuple[datetime | None, int]:
     return _parse_ts(out.stdout.strip()), 0
 
 
-def _git_count_since(ref: str, path: str, since: datetime) -> int:
+def _git_count_since(ref: str, paths: list[str], since: datetime) -> int:
     try:
         out = subprocess.run(
             ["git", "log", "--format=%H", f"--since={since.isoformat()}",
-             ref, "--", path],
+             ref, "--", *paths],
             capture_output=True, text=True, timeout=30,
         )
     except (OSError, subprocess.SubprocessError):
@@ -176,7 +225,7 @@ def _git_count_since(ref: str, path: str, since: datetime) -> int:
     return len([ln for ln in out.stdout.splitlines() if ln.strip()])
 
 
-def _manager_ts(
+def _manager_ts_one(
     namespace: str, obj: str,
 ) -> tuple[datetime | None, bool, str]:
     """(timestamp, managed_fields_key_present, why_not). See module docstring."""
@@ -212,17 +261,48 @@ def _manager_ts(
     return (max(times) if times else None), True, ""
 
 
+def _manager_ts(
+    namespace: str, objs: list[str],
+) -> tuple[datetime | None, bool, str]:
+    """Newest terraform write across `objs`.
+
+    🔴 `present` is True if ANY object answered. One object having been deleted
+    or renamed must not blind the whole check -- but if NONE answered we could
+    not look at all, and that is CANNOT-TELL rather than "terraform never
+    applied". The two are different facts and this is where they separate.
+    """
+    times: list[datetime] = []
+    present = False
+    whys: list[str] = []
+    for obj in objs:
+        ts, ok, why = _manager_ts_one(namespace, obj)
+        if ok:
+            present = True
+            if ts is not None:
+                times.append(ts)
+        elif why:
+            whys.append(why)
+    return (max(times) if times else None), present, "; ".join(whys)
+
+
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--ref", default=DEFAULT_REF)
-    ap.add_argument("--path", default=DEFAULT_PATH)
+    ap.add_argument("--path", action="append", default=None,
+                    help="git pathspec (repeatable); default: terraform-ys/ "
+                         "excluding *.md")
     ap.add_argument("--namespace", default=DEFAULT_NAMESPACE)
-    ap.add_argument("--object", default=DEFAULT_OBJECT)
+    ap.add_argument("--object", action="append", default=None,
+                    help="cluster object to read the terraform write time from "
+                         "(repeatable); default: the root's four workload objects")
     args = ap.parse_args(argv)
 
-    newest, _ = _git_newest(args.ref, args.path)
-    mts, present, why = _manager_ts(args.namespace, args.object)
-    behind = _git_count_since(args.ref, args.path, mts) if (mts and newest) else 0
+    paths = args.path or DEFAULT_PATHSPECS
+    objs = args.object or DEFAULT_OBJECTS
+
+    newest, _ = _git_newest(args.ref, paths)
+    mts, present, why = _manager_ts(args.namespace, objs)
+    behind = _git_count_since(args.ref, paths, mts) if (mts and newest) else 0
 
     code, msg = verdict(
         newest, mts, commits_behind=behind, manager_field_present=present,

@@ -136,3 +136,37 @@ def test_the_fail_message_warns_against_a_bare_apply():
     dangerous must say so at the point of alarm, not in a linked issue."""
     _, msg = mod.verdict(NEWEST_COMMIT, JUNE_APPLY)
     assert "my-hermes#1338" in msg, msg
+
+
+# --- #313 review: the denominator ------------------------------------------
+# hc2 caught that scoping "newest commit" to the whole directory makes the check
+# FAIL on its own merge, and on every future README edit. Reproduced live on the
+# PR branch before fixing (old scoping -> exit 1; new default -> exit 0), which
+# is the only reason these two assertions mean anything.
+
+def test_markdown_is_excluded_from_the_source_side():
+    """🔴 Without this the check alarms because documentation moved. An alarm
+    that fires on non-infra changes is muted within a week, which is the exact
+    failure #299 is about."""
+    assert ":(exclude,top)terraform-ys/*.md" in mod.DEFAULT_PATHSPECS
+
+
+def test_pathspecs_are_top_anchored():
+    """git pathspecs are CWD-relative: from a subdirectory a bare
+    `terraform-ys/` narrows to nothing and a bare exclude excludes nothing."""
+    for spec in mod.DEFAULT_PATHSPECS:
+        assert spec.startswith(":(top)") or spec.startswith(":(exclude,top)"), spec
+
+
+def test_several_objects_are_checked_not_one():
+    """A terraform apply writes only what CHANGED, so a commit touching the UI
+    deployment leaves the backend's timestamp untouched -- and a single-object
+    check reports FAIL for a stack that was just applied (hc2, #313)."""
+    assert len(mod.DEFAULT_OBJECTS) > 1
+    assert "deploy/lexitrail-backend" in mod.DEFAULT_OBJECTS
+    assert "deploy/lexitrail-ui-deployment" in mod.DEFAULT_OBJECTS
+
+
+def test_the_path_label_names_tf_not_the_whole_directory():
+    """The message a reader acts on must say which files counted."""
+    assert mod.PATH_LABEL.endswith("*.tf")
