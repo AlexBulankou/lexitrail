@@ -76,6 +76,30 @@ The grants are stable, so this is a break-glass procedure, not routine. (Alterna
 grant `epod-d-sa` standing `artifactregistry.admin` + `iam.serviceAccountAdmin` on
 lexitrail to make the stack fully self-applying — declined for least-privilege.)
 
+## Is it applied? (run this before you reason from these files)
+
+```bash
+python3 ../scripts/check_terraform_ys_drift.py     # 0 PASS · 1 FAIL · 3 CANNOT-TELL
+```
+
+`terraform-ys/` has no apply trigger and no apply automation anywhere in the tree,
+so an infra change lands on `main` and stops there. Between 2026-06-30 and
+2026-09-02 that swallowed 14 commits, including two live reliability fixes
+(#164's `startupProbe`, #301/#304's `/readyz` readiness path). See #299.
+
+🔴 **Reading a file in this directory tells you nothing about the cluster, and
+the cases where it happens to be right are the ones that make that hardest to
+notice.** On 2026-09-02 the backend's cpu/memory limits matched `workloads.tf`
+exactly -- because a human ran `kubectl patch` on 08-29, not because terraform
+applied. The check above compares *who last wrote the object* rather than any
+field value, which is why a coincidence cannot fool it.
+
+🔴 **`terraform apply` is not a safe no-op today** -- ten live Gateway/TLS objects
+are absent from state and plan as `+ create`. Read #312 first.
+
+Its reader is manual until lexitrail has a scheduler at all
+(`GET /projects/lexitrail/schedules` -> `Unknown project`, ensemble#9032).
+
 ## Apply
 
 ```bash
