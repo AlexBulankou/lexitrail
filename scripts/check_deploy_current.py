@@ -160,6 +160,45 @@ def fetch_version(url: str, timeout: int = 15) -> tuple[str | None, bool | None,
     return doc.get("sha"), bool(doc.get("known")), ""
 
 
+def _is_ancestor(older: str, newer: str) -> bool:
+    """True if `older` is an ancestor of `newer` — i.e. main really is ahead.
+
+    Used only to pick which FAIL message to print. Both branches are a FAIL;
+    getting this wrong sends the reader after the wrong cause, not after
+    nothing.
+
+    🔴 ONLY rc==1 IS A CONFIRMED "NOT AN ANCESTOR". Everything else — including
+    git's 128 `fatal: Not a valid object name` — means we could not determine
+    ancestry, and falls to True, the main-is-ahead wording. That is the
+    overwhelmingly common real case, and its remedy (go check for a refusal) is
+    harmless when wrong; the other wording actively tells the reader NOT to
+    check the thing they should check.
+
+    An earlier version of this ended `return out.returncode == 0`, which sent
+    every non-zero code — 1 and 128 alike — to the wrong-direction wording. That
+    is the exact misdiagnosis this whole change exists to remove, reached from a
+    different input than the one AC4's control found. Caught by hc2 in review on
+    #318, who reproduced it directly rather than reading the docstring's claim.
+
+    Reachable in practice, not only in theory: `resolve_full` validates both
+    shas exist as OBJECTS, and a shallow clone can hold an object while lacking
+    the history `merge-base` needs to walk — so CI, which this script names as a
+    target environment, is exactly where 128 shows up.
+    """
+    try:
+        out = subprocess.run(
+            ["git", "merge-base", "--is-ancestor", older, newer],
+            capture_output=True, text=True, timeout=30,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return True
+    if out.returncode == 0:
+        return True
+    if out.returncode == 1:
+        return False
+    return True
+
+
 def verdict_for(
     name: str, expected: str | None, sha: str | None, known: bool | None, why: str,
 ) -> tuple[int, str]:
@@ -189,12 +228,26 @@ def verdict_for(
         return PASS, (
             f"PASS [{name}]: live {live[:8]} == newest commit {expected[:8]}."
         )
+    # 🔴 TWO DIRECTIONS, and they have different causes and different fixes.
+    # The first version of this message said "main is AHEAD of production"
+    # unconditionally -- found by running AC4's control, which deliberately
+    # compares against an OLDER ref and therefore produces the other direction.
+    # A reader told "main is ahead" when production is ahead goes looking for a
+    # refused deploy that never happened.
+    if _is_ancestor(live, expected):
+        return FAIL, (
+            f"FAIL [{name}]: main is AHEAD of production. live {live[:8]}, "
+            f"newest commit for its path {expected[:8]}. A merge at "
+            f"build-budget margin 0 does not red main -- check whether the "
+            f"deploy trigger was REFUSED (used_before == used_after in the "
+            f"gate's JSON) rather than failed. See #273."
+        )
     return FAIL, (
-        f"FAIL [{name}]: main is AHEAD of production. live {live[:8]}, newest "
-        f"commit for its path {expected[:8]}. A merge at build-budget margin 0 does "
-        f"not red main -- check whether the deploy trigger was REFUSED "
-        f"(used_before == used_after in the gate's JSON) rather than failed. "
-        f"See #273."
+        f"FAIL [{name}]: production is running something this ref does not "
+        f"know about. live {live[:8]}, newest commit for its path "
+        f"{expected[:8]}. Most likely your clone is behind origin (fetch and "
+        f"re-run) or --ref points at an older commit; a deploy from a branch "
+        f"would also land here. This is NOT the refused-deploy case."
     )
 
 
