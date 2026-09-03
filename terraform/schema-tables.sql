@@ -64,6 +64,12 @@ CREATE TABLE IF NOT EXISTS recall_history (
     recall_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     old_recall_state INT NULL,
     new_recall_state INT NOT NULL,
+    -- issue-109 (RD-6): mirrors backend/migrations/003_add_recall_history_provenance.sql.
+    -- This file builds a FRESH database (CI's test DB via LEXITRAIL_SCHEMA_SQL_PATH,
+    -- and any new environment); the migrations build the EXISTING one. Both must
+    -- carry every column or the two paths diverge, and the divergence surfaces as
+    -- "Unknown column" on the first request rather than at deploy.
+    provenance VARCHAR(16) NULL,
     FOREIGN KEY (user_id) REFERENCES users(email) ON DELETE CASCADE ON UPDATE CASCADE,
     FOREIGN KEY (word_id) REFERENCES words(word_id) ON DELETE CASCADE ON UPDATE CASCADE
 );
