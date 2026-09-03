@@ -243,3 +243,36 @@ def test_main_REFUSES_when_a_migration_could_not_be_parsed(monkeypatch, capsys):
     out = capsys.readouterr().out
     assert code == CANNOT_TELL, out
     assert "002_rename.sql" in out, "the refusal must name the file to fix"
+
+
+def test_a_COMMENTED_ddl_statement_is_not_read_as_ddl(tmp_path):
+    """🔴 Found by running the parser against the REAL migration, not a fixture.
+
+    Our own convention is to document a migration's reverse next to it:
+
+        -- REVERSIBLE:  ALTER TABLE users DROP COLUMN timezone;
+
+    A regex counting DDL verbs cannot tell that mention from a statement, so the
+    file reported as unaccounted-for and the whole check refused. Every fixture
+    I had written by hand was a bare one-line ALTER with no prose, so none of
+    them could have found it — the convention that makes migrations readable is
+    the one that broke the parser reading them."""
+    _mig(tmp_path, **{"002_tz.sql":
+                      "-- REVERSIBLE: ALTER TABLE users DROP COLUMN timezone;\n"
+                      "-- see also: CREATE TABLE notes, DROP TABLE nothing\n"
+                      "/* block: ALTER TABLE users ADD COLUMN decoy INT; */\n"
+                      "ALTER TABLE `users` ADD COLUMN `timezone` VARCHAR(64) NULL;\n"})
+    cols, unparsed = mod.cols_from_migrations(tmp_path)
+    assert cols == {"users.timezone"}, f"a commented ALTER leaked in: {cols}"
+    assert unparsed == [], "prose about DDL was counted as DDL"
+
+
+def test_stripping_comments_does_not_hide_REAL_ddl_on_the_same_line(tmp_path):
+    """The negative control for the strip: a statement followed by a trailing
+    comment must still be seen."""
+    _mig(tmp_path, **{"002_x.sql":
+                      "ALTER TABLE users ADD COLUMN tz VARCHAR(64);  -- the expand half\n"
+                      "DROP TABLE stale;  -- and something we do not parse\n"})
+    cols, unparsed = mod.cols_from_migrations(tmp_path)
+    assert cols == {"users.tz"}
+    assert unparsed == ["002_x.sql"], "a real DROP hid behind comment-stripping"

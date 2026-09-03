@@ -117,6 +117,24 @@ _DDL_RE = re.compile(
     r"\b(ALTER\s+TABLE|CREATE\s+TABLE|DROP\s+TABLE|RENAME\s+TABLE)\b", re.I)
 
 
+def _strip_sql_comments(sql: str) -> str:
+    """Remove `-- line` and `/* block */` comments before matching.
+
+    🔴 Not defensive tidying -- without it the FIRST real migration is
+    unparseable. `002_add_users_timezone.sql` documents its own reversal as
+    `-- ALTER TABLE users DROP COLUMN timezone;`, and a regex counting DDL
+    verbs cannot tell that mention from a statement, so the file reports as
+    unaccounted-for and the whole check refuses. Our own convention -- write
+    the reverse next to the change -- breaks the parser that reads it.
+
+    Caught by running the parser against the real migration rather than a
+    fixture I wrote, which is the only reason it was found before shipping:
+    every hand-written fixture had a bare one-line ALTER and no prose.
+    """
+    sql = re.sub(r"/\*.*?\*/", " ", sql, flags=re.S)
+    return re.sub(r"--[^\n]*", " ", sql)
+
+
 def cols_from_migrations(dirpath: Path | None = None
                          ) -> tuple[set[str], list[str]]:
     """(columns added by migrations, files this parser could not account for).
@@ -137,7 +155,7 @@ def cols_from_migrations(dirpath: Path | None = None
     for f in sorted(d.glob("[0-9][0-9][0-9]_*.sql")):
         if f.name.startswith("000_baseline"):
             continue          # the point migrations run FROM; never applied
-        text = f.read_text()
+        text = _strip_sql_comments(f.read_text())
         adds = _ADD_COLUMN_RE.findall(text)
         for table, col in adds:
             if table not in EXCLUDED_TABLES:
