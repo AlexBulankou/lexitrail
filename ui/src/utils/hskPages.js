@@ -10,13 +10,24 @@
 //
 //     /hsk2.html        REAL FILE ✅   an EXACT filesystem match
 //     /hsk3/index.html  REAL FILE ✅   also exact
-//     /hsk2             SPA SHELL ✗    needs cleanUrls resolution
-//     /hsk3/            SPA SHELL ✗    needs directory-index resolution
+//     /hsk2             301 -> /hsk2.html   ⚠️ CORRECTED 2026-09-03, see below
+//     /hsk3/            301 -> /hsk3.html   ⚠️ CORRECTED 2026-09-03, see below
 //
 // `serve-handler` serves an exact file BEFORE applying rewrites; anything needing *resolution* is
-// caught first by `serve.json`'s `{"source": "**", "destination": "/index.html"}`. Adding a
-// per-path rewrite does not help — measured before AND after the catch-all, order is irrelevant.
-// So `cleanUrls: false` is also required, or `/hsk2.html` 301s to `/hsk2` and the catch-all eats it.
+// caught first. So `cleanUrls: false` is required, or `/hsk2.html` 301s to `/hsk2`.
+//
+// 🔴 CORRECTED, NOT APPENDED TO (issue-342). The two rows above read `SPA SHELL ✗ needs
+// cleanUrls resolution`, which was measured and true when `serve.json` carried a catch-all
+// `{"source": "**", "destination": "/index.html"}`. That catch-all is GONE — unknown paths now
+// 404 — and with it the thing that was absorbing `/hskN`. What actually happened next was worse
+// than an SPA shell: `directoryListing` is absent from `serve.json` and `serve-handler` defaults
+// it ON, so `build/hsk2/` is a real directory and prod served a RAW FILE INDEX
+// (`<title>Files within build/hsk2/</title>`, 200) on all six bare paths for an unknown period.
+// #342 sets `directoryListing: false` and adds explicit `/hskN -> /hskN.html` 301s.
+//
+// ⚠️ The old rows are rewritten rather than annotated because both readings survive an append and
+// the stale one is the reassuring one — a reader who stops at the table gets the superseded
+// answer. This is the same failure the docstring itself was written to prevent.
 //
 // lexitrail#76 — PER-PAGE og/twitter METADATA, which is possible HERE and nowhere else on this
 // site. #76's finding stands for SPA routes: `<SEO>` is react-helmet, applied client-side, and the
