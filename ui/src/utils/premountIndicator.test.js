@@ -113,6 +113,35 @@ describe('lexitrail#266 pre-mount loading indicator', () => {
     document.body.removeChild(container);
   });
 
+  // hc2's review Q on PR #329: the pre-mount spinner and the in-app one are two
+  // separately-maintained CSS blocks (inline <style> here, Game.css there) rather
+  // than one shared class. That duplication is FORCED — the pre-mount block exists
+  // precisely because the CSS bundle has not loaded, so it cannot reference a class
+  // from it. What is not forced is letting them drift apart silently, which is the
+  // real risk hc2 named. Pinning the shared constants is cheaper than a build-time
+  // codegen step and catches the same drift: an edit to one block that is not
+  // mirrored in the other now reds here rather than shipping two spinners that
+  // visibly change shape mid-load.
+  test('the two spinners keep the SAME shape constants (they cannot share a class)', () => {
+    const rootBlock = readRootBlock();
+    const gameCss = fs.readFileSync(
+      path.join(__dirname, '..', 'styles', 'Game.css'), 'utf8');
+
+    // Control first: if either source stopped containing its spinner rule at all,
+    // every assertion below would pass vacuously on two empty strings.
+    expect(rootBlock).toContain('.lx-premount-spinner');
+    expect(gameCss).toContain('.loading-spinner');
+
+    for (const decl of ['width: 40px', 'height: 40px', 'border-radius: 50%',
+                        'border: 4px solid rgba(0, 0, 0, 0.12)']) {
+      expect(rootBlock).toContain(decl);
+      expect(gameCss).toContain(decl);
+    }
+    // Same timing/easing, spelled per-block because the keyframes names differ.
+    expect(rootBlock).toContain('0.9s linear infinite');
+    expect(gameCss).toContain('0.9s linear infinite');
+  });
+
   test('index.js still uses createRoot — hydrateRoot would break the above', () => {
     const src = fs.readFileSync(path.join(__dirname, '..', 'index.js'), 'utf8');
     expect(src).toContain('createRoot');

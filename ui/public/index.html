@@ -96,7 +96,7 @@
          React removes it automatically: `src/index.js` uses `createRoot(...).render(...)`,
          and createRoot replaces the container's existing children on first render. That is
          load-bearing rather than incidental, so it is pinned by
-         `src/__tests__/premountIndicator.test.js` -- switching to hydrateRoot would try to
+         `src/utils/premountIndicator.test.js` -- switching to hydrateRoot would try to
          hydrate this markup instead of replacing it. -->
     <div id="lx-premount" role="status" aria-live="polite" aria-label="Loading Lexitrail">
       <style>
