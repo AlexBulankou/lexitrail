@@ -17,7 +17,22 @@
 
 .wordsets-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  /* issue-214: 205px, not 170px, and the number is derived rather than chosen.
+     `.wordset-button-group` has a min-content width of 201.8px at 1440x900 --
+     the three secondary labels at their own min-content (48.1 Due Today / 66.6
+     Show Excluded / 41.0 Test!) plus 2x8px gap and 2x14px padding. At a 170px
+     floor, auto-fit put FOUR tracks in the 760px grid, giving 175px tiles --
+     27px NARROWER than the row they have to hold. The group overflowed its own
+     tile by 26.8px and spilled 7px into the neighbouring card, and the buttons
+     collapsed to min-content, which is why `Test!` measured exactly 41.0px
+     against the 44px tap floor.
+     205 forces three tracks (240px tiles), so the row fits with room and the
+     buttons get 63.7px each. Measured on live prod by injection before shipping:
+     overflow 26.8 -> 0, Test! 41 -> 63.7, zero text clipping, mobile unchanged.
+     🔴 The floor must stay ABOVE the group's min-content. If a fourth secondary
+     button or a longer label is ever added, re-measure -- this reverts silently
+     to squeezed buttons rather than failing. */
+  grid-template-columns: repeat(auto-fit, minmax(205px, 1fr));
   gap: 20px;
   width: 100%;
   margin: 0 auto;
