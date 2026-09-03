@@ -1,0 +1,57 @@
+-- 002_add_users_timezone.sql — issue-187 (Goal 3.8 step 1)
+--
+-- Adds a nullable IANA timezone to `users`. This is the EXPAND half of an
+-- expand / capture / backfill sequence; nothing reads the column yet.
+--
+-- 🔴 THIS IS THE FIRST SCHEMA (DDL) MIGRATION through the #300 mechanism.
+-- 001 was DML, so several properties are being exercised for the first time.
+--
+-- WHY A COLUMN AT ALL — the decision, so it can be overridden on the argument
+-- rather than re-derived (#187, 2026-09-01, taken as a lead call because it is
+-- a HOW question):
+--
+--   The streak badge counts a LOCAL calendar day (streakStore.js `todayISO()`
+--   uses getFullYear/getMonth/getDate) while `recall_history.recall_time` is
+--   UTC. Deriving the streak server-side from UTC dates gives a Pacific
+--   evening learner a streak shifted by a day, or a gap they did not have --
+--   on the very issue about the streak silently zeroing. `users` had exactly
+--   one column, `email`, so there was nowhere to get the learner's calendar
+--   from.
+--
+--   Option A was a `local_date` on each recall row. Rejected in favour of this
+--   despite being smaller, because #189 (the reminder email) independently
+--   needs a SEND HOUR in the learner's day, and a per-row past date cannot say
+--   what "9am tomorrow" means for someone. Building A means building this
+--   later anyway and then owning two representations of one fact.
+--
+--   REVERSAL CONDITION: if #189 is dropped or moves to a non-scheduled
+--   channel, this column's advantage disappears and A is better-scoped.
+--
+-- SAFETY, stated because this alters a live table holding ~2050 users:
+--
+--   * ONE STATEMENT. DDL implicitly commits in MySQL, so a multi-statement DDL
+--     file that fails partway leaves state the ledger never records and the
+--     next build re-runs it against a half-migrated table. MySQL 8.0.46 (the
+--     live version, checked) gives ATOMIC DDL for a single ALTER, which makes
+--     one-statement-per-file a guarantee rather than a convention.
+--   * NULLABLE, NO DEFAULT. No existing row's data changes, so the
+--     capture-first standing rule's affected-id set is EMPTY -- correctly, not
+--     skipped. Said explicitly because "the capture returned zero rows" and "I
+--     did not capture" leave the same artifact.
+--   * REVERSIBLE:  ALTER TABLE users DROP COLUMN timezone;
+--     Written here so it exists before it is needed.
+--   * BACKWARD-COMPATIBLE. The migrate step runs BEFORE the deploy, and the
+--     old image tolerates a column it does not know about (SQLAlchemy selects
+--     named columns). So there is no window where code meets a schema it
+--     cannot handle, in either order.
+--   * NOT A BACKFILL. Populating this is a separate, later migration, and that
+--     one has real capture work because it touches rows. Folding it in here
+--     would re-open the multi-statement hazard AND backfill from a source (the
+--     client's tz at login) that does not exist until the client change ships.
+--
+-- VARCHAR(64): IANA names are at most 32 characters today
+-- ("America/Argentina/ComodRivadavia" is 32); 64 leaves room without inviting
+-- free text. Not an enum -- the tz database changes and a schema change per
+-- zone rename would be worse than a wrong string.
+
+ALTER TABLE `users` ADD COLUMN `timezone` VARCHAR(64) NULL;
