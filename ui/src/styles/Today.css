@@ -74,6 +74,15 @@
   color: #007bff;
   text-decoration: none;
   font-size: 0.95rem;
+  /* issue-214: the layout half of the 44px tap floor. The NUMBER is in
+   * Global.css (`--min-tap-target`) and must not be repeated here — a local
+   * literal wins the tie at equal specificity and silently holds the old value
+   * when the floor is raised (hc2@'s #73 finding). An inline `<a>` ignores
+   * min-height, so the floor cannot take effect without this. */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
 }
 
 .today-secondary:hover {

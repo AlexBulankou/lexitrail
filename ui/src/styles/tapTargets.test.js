@@ -40,6 +40,11 @@ const FLOOR_SELECTORS = [
   // than left for a follow-up, since a restored control with no floor entry is
   // precisely the blinded detector #109 was careful not to leave behind.
   '.mark-all-memorized-button',
+  // issue-214: "Practice anyway" (Today.js) — 110.6x17.0 on live prod in all three
+  // viewports. A `<Link>` styled as body text, so #214's name-based CSS scan could
+  // not have found it; the E2E harness measuring the rendered box did.
+  '.today-secondary',
+
   // issue-52: these three were the gap made concrete. They were absent from
   // this list, so this file stayed green while all three shipped under the
   // floor on live prod — found by the E2E harness measuring the rendered box,

@@ -96,6 +96,25 @@ body, html {
  * ⚠️ `.google-signin-compact` was ALREADY listed and is a DIFFERENT control. A listed
  * near-namesake is exactly what makes an absence hard to see — third time this enumeration has
  * been the gap, after #52's three and #120's nav link. */
+/* issue-214: "Practice anyway" on the Today screen — measured 110.6x17.0 on live
+ * prod, in ALL THREE viewports (mobile, desktop, mobile_landscape). 27px under the
+ * floor, the largest miss in the whole matrix.
+ *
+ * 🔴 It was invisible to #214's declaration-level scan by CONSTRUCTION, not by
+ * oversight. That scan enumerated "class-selector rules whose name reads as an
+ * interactive control"; this is a `<Link>` styled as secondary body text — no
+ * padding, no background, `font-size: 0.95rem` and a colour. Its name does not
+ * announce it as a control, so a name-based inclusion rule can never reach it.
+ * Fourth instance of this enumeration being the gap, after #52's three, #120's nav
+ * link and #196's Google button.
+ *
+ * The layout half (`display: inline-flex` + centring, needed to make min-height take
+ * effect on an inline `<a>`) is in Today.css, per the `.nav-wordsets-link` split
+ * above: the NUMBER lives here once, the component-specific layout lives there.
+ * Verified against live prod by injecting exactly this rule: 17.0 -> 44.0 in both
+ * viewports, width unchanged at 110.6, and the screenshot shows no reflow — the
+ * control sits in open whitespace. */
+.today-secondary,
 .google-signin-button {
   min-height: var(--min-tap-target);
 }
