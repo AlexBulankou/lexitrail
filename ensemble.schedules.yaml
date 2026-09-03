@@ -1,0 +1,80 @@
+# LexiTrail ensemble schedules.
+#
+# Read by the ensemble orchestrator from THIS repo's `origin/main` (ensemble
+# #446 reader; `peer_repo_sync` fetches it — `/health.peer_sync` shows
+# `lexitrail: ok`). Per ensemble #441 the convention is that a project's cron
+# config is owned by the project repo, not by `fleet/<project>.yaml` — decipher
+# and market-mind do the same, and `fleet/lexitrail.yaml` deliberately has no
+# `schedules:` block.
+#
+# To add or change a cron: edit this file and open a PR here. No ensemble-repo
+# change is needed.
+#
+# ⚠️ `fleet/lexitrail.yaml` says `agents: []` and that "this manifest is not a
+# claim that anyone is staffed here". That is about AGENTS, not schedules —
+# schedules are read per-project regardless of roster, which is the whole reason
+# a repo nobody sits in can still watch itself.
+
+schedules:
+  # issue-331: LexiTrail was DOWN for ~8 hours on 2026-09-03 and nothing
+  # reported it. The site loaded normally the whole time (the UI pods were
+  # healthy); every database-backed endpoint returned 500 because `mysql-0`
+  # could not be scheduled, so the headless `mysql` Service had no backing pod
+  # and its DNS name did not resolve. It was found by a human clicking around,
+  # and it recovered on its own.
+  #
+  # 🔴 NOTHING WAS BLIND — that was my first and wrong reading. `/readyz` does a
+  # real `SELECT 1` (#301) and worked correctly: both replicas went NotReady and
+  # left the Service, which is why the site looked clean rather than half-broken.
+  # `/health` stayed 200 correctly too — it is the LIVENESS probe and MUST stay
+  # database-independent, or a brief DB blip restarts every replica and turns a
+  # partial outage total (see backend/app/routes/__init__.py, which says exactly
+  # this and says not to "simplify" the two endpoints into one).
+  #
+  # The gap was that the correct signal had NO CONSUMER. This is that consumer.
+  #
+  # `smoke_backend_content.py` is not new and is not a re-point of the UI smoke:
+  # it asserts `/wordsets` returns `application/json` AND a NON-EMPTY `data`
+  # list, precisely because `/` serves a static literal that a backend which
+  # cannot reach MySQL still returns perfectly. It runs a mandatory negative
+  # control on every invocation (a nonsense route must 404 as non-JSON), so an
+  # instrument that has stopped discriminating reports CANNOT-TELL (exit 3)
+  # rather than passing for free. Exit codes are 0 PASS / 1 FAIL / 3 CANNOT-TELL
+  # and the third is never a pass.
+  #
+  # ⚠️ WORKSPACE FRESHNESS, stated because it is the one real risk here. The
+  # script derives its route from `backend/app/routes/wordsets.py`'s
+  # `url_prefix` rather than hardcoding it (deliberate anti-drift), so it reads
+  # the working tree. `peer_repo_sync` is fetch-only by design, though on K8s
+  # these clones also get a hard-reset to origin/main via the cutter path —
+  # measured 2026-09-03: this clone was at `ccbfe86`, 0 behind origin/main, on
+  # main, 45s after that commit merged.
+  #
+  # 🔑 A stale tree fails in the SAFE direction and that is why this is
+  # acceptable rather than merely convenient: the only way staleness changes the
+  # outcome is if `url_prefix` moved, in which case the probe requests a route
+  # that no longer exists and the run goes FAIL/CANNOT-TELL. It cannot produce a
+  # false PASS. If that ever becomes noisy, decipher's `*-cutter-pull` schedule
+  # is the established fix — refresh the clone on its own cron.
+  #
+  # ⚠️ `on_failure: log` is not a choice: decipher's schedules header records
+  # that `page` and `alert` are parsed but NOT consumer-wired. A non-zero exit
+  # still surfaces on the fleet cron-health surface, which is how a failing
+  # backup cron has been caught before. **That is the assumption this whole
+  # schedule rests on and I have NOT verified it end-to-end** — if a red run
+  # here reaches nobody, this is another unwatched signal and #331's AC is not
+  # met. Verify with a deliberate failure before calling #331 done.
+  - name: lexitrail-backend-content-smoke
+    cron: "*/15 * * * *"
+    timezone: UTC
+    type: script
+    workspace: /home/alexb/src/github.com/lexitrail
+    command: python3 scripts/smoke_backend_content.py
+    max_runtime: 120
+    capture_output: true
+    on_failure: log
+    description: >-
+      issue-331. Every 15 min, assert api.lexitrail.com/wordsets serves real
+      database rows, not just a live Flask process. Bounds a total data outage
+      at ~15 min instead of the ~8 hours it took a human to notice one.
+      Stdlib-only; three-state exit with a mandatory negative control.
