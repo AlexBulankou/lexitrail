@@ -113,3 +113,133 @@ def test_the_baseline_parser_reads_the_real_file():
 
 def test_the_three_exit_codes_are_distinct():
     assert (PASS, FAIL, CANNOT_TELL) == (0, 1, 3)
+
+
+# ---------------------------------------------------------------------------
+# issue-308 follow-up — the repo's belief is baseline PLUS migrations.
+#
+# Found before shipping the first additive migration (lexitrail#187's timezone
+# column). `expected` was `cols_from_baseline()` alone, so the moment a properly
+# applied ALTER landed, the new column would be "in LIVE not in baseline" — the
+# message this script prints for a HAND-RUN ALTER. The detector would have
+# accused us of the exact defect it exists to catch, on its first real use.
+#
+# 001_strip_trailing_cr.sql never exposed it: DML changes no schema.
+# ---------------------------------------------------------------------------
+
+def _mig(tmp_path, **files):
+    for name, body in files.items():
+        (tmp_path / name).write_text(body)
+    return tmp_path
+
+
+def test_an_added_column_counts_as_expected(tmp_path):
+    _mig(tmp_path, **{
+        "000_baseline.sql": "CREATE TABLE `users` (\n  `email` varchar(320)\n) ENGINE=InnoDB;",
+        "002_add_users_timezone.sql": "ALTER TABLE users ADD COLUMN timezone VARCHAR(64) NULL;",
+    })
+    cols, unparsed = mod.cols_from_migrations(tmp_path)
+    assert cols == {"users.timezone"}
+    assert unparsed == []
+
+
+def test_the_baseline_is_never_read_as_a_migration(tmp_path):
+    """000 is the point migrations run FROM. Counting its CREATE TABLE here
+    would double-count every column and mask a real drop."""
+    _mig(tmp_path, **{
+        "000_baseline.sql": "ALTER TABLE users ADD COLUMN nonsense INT;",
+    })
+    assert mod.cols_from_migrations(tmp_path) == (set(), [])
+
+
+def test_backticked_and_bare_identifiers_both_parse(tmp_path):
+    _mig(tmp_path, **{
+        "002_a.sql": "ALTER TABLE `users` ADD COLUMN `tz` VARCHAR(64);",
+        "003_b.sql": "alter table userwords add column note text;",
+    })
+    cols, unparsed = mod.cols_from_migrations(tmp_path)
+    assert cols == {"users.tz", "userwords.note"} and unparsed == []
+
+
+# --- the CANNOT-TELL arm: an unparsed file must never silently contribute ---
+
+def test_ddl_this_parser_does_not_understand_is_REPORTED_not_ignored(tmp_path):
+    """🔴 The important one. Silently contributing nothing shrinks `expected`
+    and prints a confident FAIL naming a column the repo does know about —
+    not-looking rendering as a result, which is what this script exists to
+    refuse."""
+    _mig(tmp_path, **{"002_rename.sql": "ALTER TABLE users RENAME COLUMN a TO b;"})
+    cols, unparsed = mod.cols_from_migrations(tmp_path)
+    assert unparsed == ["002_rename.sql"], f"unparsed DDL was swallowed: {cols}"
+
+
+def test_a_file_MIXING_parsed_and_unparsed_ddl_is_still_reported(tmp_path):
+    """The dangerous shape: the ADD COLUMN parses, so `cols` looks right and
+    the DROP alongside it is invisible."""
+    _mig(tmp_path, **{"002_mixed.sql":
+                      "ALTER TABLE users ADD COLUMN tz VARCHAR(64);\n"
+                      "DROP TABLE stale_thing;"})
+    cols, unparsed = mod.cols_from_migrations(tmp_path)
+    assert cols == {"users.tz"}
+    assert unparsed == ["002_mixed.sql"], "a mixed file reported clean"
+
+
+def test_pure_DML_migrations_are_silent_and_not_unparsed(tmp_path):
+    """001 is real and is DML. It must contribute nothing AND not trip the
+    CANNOT-TELL arm, or every run refuses forever."""
+    _mig(tmp_path, **{"001_strip.sql": "UPDATE words SET def1 = TRIM(def1);"})
+    assert mod.cols_from_migrations(tmp_path) == (set(), [])
+
+
+def test_the_REAL_migrations_dir_is_silent_today(tmp_path):
+    """Behaviour is unchanged until the first additive migration lands — the
+    no-op-today property that makes this safe to ship ahead of #187."""
+    assert mod.cols_from_migrations() == (set(), [])
+
+
+def test_excluded_tables_are_excluded_here_too(tmp_path):
+    _mig(tmp_path, **{"002_x.sql":
+                      "ALTER TABLE schema_migrations ADD COLUMN note TEXT;"})
+    cols, _ = mod.cols_from_migrations(tmp_path)
+    assert cols == set(), "an excluded table leaked into expected"
+
+
+# ---------------------------------------------------------------------------
+# 🔴 WIRING. The tests above pin the helper; a mutation that dropped `| added`
+# from main() reddened NOTHING, so the helper could have been correct and
+# unused. That is the same shape I flagged on a peer's PR the same evening:
+# a guard on one path, and the delegation to it unverified.
+# ---------------------------------------------------------------------------
+
+def test_main_ADDS_migration_columns_to_expected(monkeypatch, capsys):
+    """A column added by a migration and present live must read PASS, not
+    'in LIVE not in baseline' — the message reserved for a hand-run ALTER."""
+    monkeypatch.setattr(mod, "cols_from_baseline", lambda *a, **k: {"users.email"})
+    monkeypatch.setattr(mod, "cols_from_migrations",
+                        lambda *a, **k: ({"users.timezone"}, []))
+    monkeypatch.setattr(mod, "_live_cols",
+                        lambda *a, **k: ({"users.email", "users.timezone"}, ""))
+    assert mod.main([]) == PASS, capsys.readouterr().out
+
+
+def test_main_still_FAILS_on_a_column_no_migration_explains(monkeypatch, capsys):
+    """The negative control. Widening `expected` must not blunt the detector:
+    a hand-run ALTER is still a hand-run ALTER."""
+    monkeypatch.setattr(mod, "cols_from_baseline", lambda *a, **k: {"users.email"})
+    monkeypatch.setattr(mod, "cols_from_migrations", lambda *a, **k: (set(), []))
+    monkeypatch.setattr(mod, "_live_cols",
+                        lambda *a, **k: ({"users.email", "users.sneaked_in"}, ""))
+    assert mod.main([]) == FAIL, capsys.readouterr().out
+
+
+def test_main_REFUSES_when_a_migration_could_not_be_parsed(monkeypatch, capsys):
+    """An unparsed migration means `expected` is unknown, so there is nothing
+    honest to compare. Refuse rather than print a confident verdict."""
+    monkeypatch.setattr(mod, "cols_from_baseline", lambda *a, **k: {"users.email"})
+    monkeypatch.setattr(mod, "cols_from_migrations",
+                        lambda *a, **k: (set(), ["002_rename.sql"]))
+    monkeypatch.setattr(mod, "_live_cols", lambda *a, **k: ({"users.email"}, ""))
+    code = mod.main([])
+    out = capsys.readouterr().out
+    assert code == CANNOT_TELL, out
+    assert "002_rename.sql" in out, "the refusal must name the file to fix"

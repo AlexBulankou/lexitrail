@@ -101,6 +101,53 @@ def cols_from_baseline(path: Path = BASELINE) -> set[str]:
     return cols
 
 
+# issue-308 follow-up: the baseline alone is not what the repo believes.
+# `000_baseline.sql` is a fixed historical capture and is never applied; the
+# repo's belief is baseline PLUS every migration since. Before this, the first
+# additive migration would have made a correctly-migrated column read as
+# "present live and absent from the repo" -- the message this script prints for
+# a hand-run ALTER. The detector would have accused us of exactly the defect it
+# exists to catch, on the first occasion it was used properly.
+#
+# `001_strip_trailing_cr.sql` never exposed it: it is DML and changes no schema.
+_ADD_COLUMN_RE = re.compile(
+    r"ALTER\s+TABLE\s+`?(\w+)`?\s+ADD\s+COLUMN\s+`?(\w+)`?", re.I)
+# Any other DDL verb means this parser does not know what the file did.
+_DDL_RE = re.compile(
+    r"\b(ALTER\s+TABLE|CREATE\s+TABLE|DROP\s+TABLE|RENAME\s+TABLE)\b", re.I)
+
+
+def cols_from_migrations(dirpath: Path | None = None
+                         ) -> tuple[set[str], list[str]]:
+    """(columns added by migrations, files this parser could not account for).
+
+    🔴 The second element is the point. A migration whose DDL this regex does
+    not understand must NOT silently contribute nothing -- that would shrink
+    `expected` and print a confident FAIL naming a column the repo does know
+    about. An unparsed file is a CANNOT-TELL, exactly as an unreadable cluster
+    is, and for the same reason: not-looking must never render as a result.
+
+    Scoped to `ADD COLUMN` on purpose. This directory is for ADDITIVE changes
+    (see its README), so that is the whole vocabulary today; anything else is
+    reported rather than guessed at.
+    """
+    d = dirpath or (ROOT / "backend" / "migrations")
+    cols: set[str] = set()
+    unparsed: list[str] = []
+    for f in sorted(d.glob("[0-9][0-9][0-9]_*.sql")):
+        if f.name.startswith("000_baseline"):
+            continue          # the point migrations run FROM; never applied
+        text = f.read_text()
+        adds = _ADD_COLUMN_RE.findall(text)
+        for table, col in adds:
+            if table not in EXCLUDED_TABLES:
+                cols.add(f"{table}.{col}")
+        # Every DDL statement in the file must be one this parser consumed.
+        if len(_DDL_RE.findall(text)) != len(adds):
+            unparsed.append(f.name)
+    return cols, unparsed
+
+
 def _live_cols(namespace: str, pod: str, schema: str) -> tuple[set[str] | None, str]:
     """(columns, why_not). Never raises; an unreadable cluster is not an empty one."""
     try:
@@ -179,7 +226,13 @@ def main(argv: list[str] | None = None) -> int:
     args = ap.parse_args(argv)
 
     live, why = _live_cols(args.namespace, args.pod, args.schema)
-    code, msg = verdict(live, cols_from_baseline(), why)
+    added, unparsed = cols_from_migrations()
+    if unparsed:
+        print("CANNOT-TELL: these migrations contain DDL this script cannot "
+              f"account for, so the repo's expected schema is unknown: {unparsed}. "
+              "Teach cols_from_migrations that statement rather than comparing.")
+        return CANNOT_TELL
+    code, msg = verdict(live, cols_from_baseline() | added, why)
     print(msg)
     return code
 
