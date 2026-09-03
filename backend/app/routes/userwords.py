@@ -4,7 +4,7 @@ from ..utils import to_dict, success_response, error_response, not_found_respons
 from datetime import datetime
 import logging
 from ..utils import validate_user_access  # Import the shared validation function
-from ..recall_policy import is_recall_event
+from ..recall_policy import is_recall_event, recall_provenance
 from app.auth import authenticate_user  # Import from auth.py
 import time
 
@@ -40,6 +40,7 @@ def get_userwords_by_user_and_wordset():
                 RecallHistory.recall_time,
                 RecallHistory.new_recall_state,
                 RecallHistory.old_recall_state,
+                RecallHistory.provenance,
                 db.func.row_number().over(
                     partition_by=(RecallHistory.user_id, RecallHistory.word_id),
                     order_by=RecallHistory.recall_time.desc()
@@ -57,7 +58,8 @@ def get_userwords_by_user_and_wordset():
                 recall_subquery.c.recall,
                 recall_subquery.c.recall_time,
                 recall_subquery.c.new_recall_state,
-                recall_subquery.c.old_recall_state
+                recall_subquery.c.old_recall_state,
+                recall_subquery.c.provenance
             )
             .join(Word, UserWord.word_id == Word.word_id)
             .outerjoin(
@@ -102,7 +104,11 @@ def get_userwords_by_user_and_wordset():
                     'recall_time': result.recall_time,
                     'new_recall_state': result.new_recall_state,
                     'old_recall_state': result.old_recall_state,
-                    'is_included': result.is_included
+                    'is_included': result.is_included,
+                    # #109: 'single' | 'bulk' | None. A consumer that cannot see
+                    # this cannot tell earned mastery from a bulk tap, which is
+                    # the whole point -- so it ships with the write, not later.
+                    'provenance': result.provenance
                 })
 
         return success_response(
@@ -145,6 +151,9 @@ def update_recall_state(user_id, word_id):
     # correctly) looks identical. That heuristic would silently drop real
     # recalls, which is a worse failure than the one being fixed.
     record_history = is_recall_event(data)
+    # #109 (RD-6): the caller declares HOW this recall was produced. Absent or
+    # unrecognised -> None (unknown), never 'single' -- see recall_policy.
+    provenance = recall_provenance(data)
     userword_entry_exists = False
 
     # Validate input fields
@@ -196,7 +205,8 @@ def update_recall_state(user_id, word_id):
                 recall_time=datetime.utcnow(),
                 new_recall_state=new_recall_state,
                 old_recall_state=old_recall_state if userword_entry_exists else None,
-                is_included=is_included  # Save is_included in RecallHistory
+                is_included=is_included,  # Save is_included in RecallHistory
+                provenance=provenance  # #109: 'single' | 'bulk' | None
             )
             db.session.add(recall_history)
             db.session.commit()

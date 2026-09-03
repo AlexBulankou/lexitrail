@@ -19,7 +19,13 @@ DROP TABLE IF EXISTS users;
 -- Create tables after dropping them
 
 CREATE TABLE IF NOT EXISTS users (
-    email VARCHAR(320) NOT NULL PRIMARY KEY
+    email VARCHAR(320) NOT NULL PRIMARY KEY,
+    -- issue-187, mirrored here by issue-109. `002_add_users_timezone.sql` added
+    -- this to the LIVE database and not to this file, so every fresh database
+    -- was built without it. That was benign only because nothing reads the
+    -- column yet -- the identical gap on recall_history.provenance failed 9 CI
+    -- tests with (1054) Unknown column, because that one IS read.
+    timezone VARCHAR(64) NULL
 );
 
 CREATE TABLE IF NOT EXISTS wordsets (
@@ -64,6 +70,12 @@ CREATE TABLE IF NOT EXISTS recall_history (
     recall_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     old_recall_state INT NULL,
     new_recall_state INT NOT NULL,
+    -- issue-109 (RD-6): mirrors backend/migrations/003_add_recall_history_provenance.sql.
+    -- This file builds a FRESH database (CI's test DB via LEXITRAIL_SCHEMA_SQL_PATH,
+    -- and any new environment); the migrations build the EXISTING one. Both must
+    -- carry every column or the two paths diverge, and the divergence surfaces as
+    -- "Unknown column" on the first request rather than at deploy.
+    provenance VARCHAR(16) NULL,
     FOREIGN KEY (user_id) REFERENCES users(email) ON DELETE CASCADE ON UPDATE CASCADE,
     FOREIGN KEY (word_id) REFERENCES words(word_id) ON DELETE CASCADE ON UPDATE CASCADE
 );

@@ -24,7 +24,8 @@ from pathlib import Path
 import pytest
 
 ROOT = Path(__file__).resolve().parents[2]
-BASELINE = ROOT / "backend" / "migrations" / "000_baseline.sql"
+MIGRATIONS = ROOT / "backend" / "migrations"
+BASELINE = MIGRATIONS / "000_baseline.sql"
 DECLARED = ROOT / "terraform" / "schema-tables.sql"
 
 
@@ -39,6 +40,41 @@ def _cols_from_baseline() -> set:
             cm = re.match(r"`(\w+)`\s", line)
             if cm:
                 cols.add(f"{table}.{cm.group(1)}")
+    return cols
+
+
+def _cols_added_by_migrations() -> set:
+    """Columns the applied migrations ADD on top of the baseline (issue-109).
+
+    🔴 WHY THIS FUNCTION EXISTS. The comparison below used to be
+    `baseline == declared`, and that invariant is unsatisfiable the moment any
+    migration adds a column: `000_baseline.sql` is a FROZEN capture and is never
+    re-taken, while `terraform/schema-tables.sql` has to gain the column or every
+    fresh database — CI's own test DB, via `LEXITRAIL_SCHEMA_SQL_PATH` — is built
+    without it.
+
+    So the old check actively pushed authors AWAY from updating the mirror, which
+    is how `002_add_users_timezone.sql` came to add `users.timezone` to the live
+    schema and not to the declared one. That gap was benign only because nothing
+    reads that column yet; issue-109's `recall_history.provenance` is read on the
+    very next request, and CI failed 9 tests with `(1054) Unknown column` — the
+    same gap, load-bearing.
+
+    ⇒ The invariant that is actually true is `baseline + migrations == declared`.
+
+    ⚠️ Deliberately narrow: `ADD COLUMN` only. A DROP or a RENAME would need its
+    own handling, and guessing at one now would be a parser for a case that has
+    never occurred — if one lands, `test_the_migration_parser_sees_every_add`
+    below fails loudly on the count rather than silently mis-modelling it.
+    """
+    cols = set()
+    for f in sorted(MIGRATIONS.glob("[0-9][0-9][0-9]_*.sql")):
+        if f.name == "000_baseline.sql":
+            continue  # never applied; it is the point 001 migrates FROM
+        for m in re.finditer(
+                r"ALTER\s+TABLE\s+`?(\w+)`?\s+ADD\s+COLUMN\s+`?(\w+)`?",
+                f.read_text(), re.I):
+            cols.add(f"{m.group(1)}.{m.group(2)}")
     return cols
 
 
@@ -66,29 +102,57 @@ def parsed():
     if not (BASELINE.is_file() and DECLARED.is_file()):
         pytest.skip("baseline or declarative schema not in this tree")
     base, decl = _cols_from_baseline(), _cols_from_declared()
+    adds = _cols_added_by_migrations()
     # Guard the PARSERS before comparing them: two empty sets are equal, and
     # would report agreement while establishing nothing.
     assert len(base) > 20, f"baseline parser found only {len(base)} columns"
     assert len(decl) > 20, f"declarative parser found only {len(decl)} columns"
-    return base, decl
+    # The migration parser gets the same guard for the same reason: a regex that
+    # silently stops matching turns this whole check back into `base == decl`,
+    # which is the invariant issue-109 found to be unsatisfiable.
+    assert adds, "migration parser found NO ADD COLUMN — it has stopped matching"
+    return base, decl, adds
 
 
 def test_baseline_and_declarative_schema_agree(parsed):
-    base, decl = parsed
-    only_baseline = sorted(base - decl)
-    only_declared = sorted(decl - base)
-    assert not only_baseline and not only_declared, (
-        "issue-300: the captured baseline and terraform/schema-tables.sql have "
-        "drifted.\n  only in 000_baseline.sql (i.e. live): %s\n  only in "
-        "schema-tables.sql (i.e. declared): %s\nIf this is an intended schema "
-        "change it needs a migration in backend/migrations/, not an edit to one "
-        "side." % (only_baseline, only_declared)
+    """issue-300, corrected by issue-109: `baseline + migrations == declared`."""
+    base, decl, adds = parsed
+    effective = base | adds
+    missing_from_declared = sorted(effective - decl)
+    only_declared = sorted(decl - effective)
+    assert not missing_from_declared and not only_declared, (
+        "the live schema (000_baseline.sql + backend/migrations/) and "
+        "terraform/schema-tables.sql have drifted.\n"
+        "  in live, MISSING from schema-tables.sql: %s\n"
+        "     -> a fresh database (CI's test DB, any new environment) is built "
+        "without it; a read of it fails (1054) Unknown column\n"
+        "  in schema-tables.sql, not in live: %s\n"
+        "     -> an edit to the mirror with no migration behind it\n"
+        "A schema change needs BOTH: a migration (for the existing database) "
+        "and the mirror (for fresh ones)."
+        % (missing_from_declared, only_declared)
     )
+
+
+def test_the_migration_parser_sees_every_add(parsed):
+    """Positive control on `_cols_added_by_migrations`, pinned by NAME.
+
+    The test above compares two sets. If the migration parser quietly matched
+    nothing, `effective` collapses to `base` and the comparison silently reverts
+    to the unsatisfiable pre-issue-109 invariant — passing today only because
+    the mirror would then have to be wrong in the matching way. Pinning the
+    actual columns means a regex that stops matching fails HERE, naming what it
+    lost, rather than changing what the other test means.
+    """
+    _, _, adds = parsed
+    assert adds == {"users.timezone", "recall_history.provenance"}, (
+        "migration ADD COLUMN set is %s. If a migration landed, add its column "
+        "here AND to terraform/schema-tables.sql." % sorted(adds))
 
 
 def test_users_still_has_only_email(parsed):
     """The concrete blocker #187 is waiting on -- pinned so its fix is visible."""
-    base, _ = parsed
+    base, _, _ = parsed
     users = {c for c in base if c.startswith("users.")}
     assert users == {"users.email"}, (
         "users columns are now %s. If a timezone column landed, #187 is "

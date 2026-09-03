@@ -47,9 +47,18 @@ export const getUserWordsByWordset = async (userId, wordsetId) => {
 // (`axios.post(url, data)`), so it survives that path too. A backend that
 // predates the flag ignores it and behaves exactly as today — i.e. the
 // old-server case degrades to the current bug, never to something worse.
-export const updateUserWordRecall = async (userId, wordId, recallState, recall, isIncluded, inclusionOnly = false) => {
+export const updateUserWordRecall = async (userId, wordId, recallState, recall, isIncluded, inclusionOnly = false, provenance = null) => {
   const data = { recall_state: recallState, recall, is_included: isIncluded };
   if (inclusionOnly) data.inclusion_only = true;
+  // #109 (RD-6): declare HOW this recall was produced, so a bulk "to all" tap
+  // is distinguishable from a genuine per-card answer. Omitted rather than
+  // defaulted: the server reads an absent flag as UNKNOWN, and a caller that
+  // has not been taught the difference must not claim "single".
+  // Both transports forward the body verbatim (putData; callMiddleLayer ->
+  // middle_layer/app.py `requests.put(json=data)`), so the field survives
+  // either path -- checked, because a field that silently vanishes in transit
+  // is the expensive failure here.
+  if (provenance) data.provenance = provenance;
   if (window.config.MIDDLE_LAYER_ADDRESS === undefined) {
     // If the middle layer is not ready, fall back to call backend directly
     return await putData(`/userwords/${userId}/${wordId}/recall`, data);

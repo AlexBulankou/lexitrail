@@ -219,7 +219,7 @@ const WordCard = ({ mode, word, isFlipped, isHintDisplayed, handleMemorized, han
   // on the row and a small ✓/✗ glyph so the state isn't conveyed by color alone.
   // Shows the most recent answers (newest on the right); older ones are clipped.
   const renderHistoryTiles = (w) => {
-    const { tiles, correct, total } = buildHistoryTiles(w.recall_history);
+    const { tiles, correct, bulk, total } = buildHistoryTiles(w.recall_history);
     if (total === 0) {
       return <span className="history-empty">New</span>;
     }
@@ -227,13 +227,22 @@ const WordCard = ({ mode, word, isFlipped, isHintDisplayed, handleMemorized, han
       <div
         className="history-tiles"
         role="img"
-        aria-label={`Past answers: ${correct} correct of ${total}`}
+        // #109: the bulk count is appended ONLY when it is non-zero, i.e. only
+        // when we positively know some greens were a "to all" tap. A history of
+        // unknown provenance (every row written before the column existed) says
+        // nothing new here rather than being described either way.
+        aria-label={`Past answers: ${correct} correct of ${total}` +
+          (bulk ? `, ${bulk} from the "to all" shortcut` : '')}
       >
         {tiles.map((t, i) => (
           <span
             key={i}
-            className={`history-tile ${t.correct ? 'correct' : 'wrong'}`}
-            title={`${t.correct ? 'Correct' : 'Wrong'}${t.time ? ' · ' + t.time : ''}`}
+            className={`history-tile ${t.correct ? 'correct' : 'wrong'}` +
+              (t.provenance === 'bulk' ? ' bulk' : '')}
+            title={`${t.correct ? 'Correct' : 'Wrong'}` +
+              (t.provenance === 'bulk' ? ' · marked by the "to all" shortcut'
+                : t.provenance === 'single' ? ' · answered card by card' : '') +
+              (t.time ? ' · ' + t.time : '')}
             aria-hidden="true"
           >
             {t.correct ? '✓' : '✗'}

@@ -40,3 +40,42 @@ def is_recall_event(data) -> bool:
     if not isinstance(data, dict):
         return True
     return not bool(data.get("inclusion_only", False))
+
+
+#: The provenance values a client may declare (#109 / RD-6 slice A).
+#:
+#: An allowlist, not free text: the value lands in a column and comes from the
+#: request body, so an unrecognised string must not be stored. Anything outside
+#: this set is treated exactly like an absent flag — UNKNOWN — rather than
+#: rejected with a 400, because a recall the learner actually made must never be
+#: lost to a client sending a value we have not heard of yet.
+RECALL_PROVENANCE_VALUES = frozenset({"single", "bulk"})
+
+
+def recall_provenance(data):
+    """How was this recall produced? -> "single" | "bulk" | None (#109)
+
+    None means UNKNOWN PROVENANCE and is the honest default, not a fallback to
+    "single". Three callers produce it:
+
+      * an older UI talking to a newer backend, which sends no flag at all;
+      * a client sending a value outside the allowlist;
+      * every one of the ~94k rows written before this column existed.
+
+    Collapsing any of those into "single" would assert that a row was earned
+    when nothing recorded that it was — which is the exact failure #109 exists
+    to end. A consumer must therefore be able to distinguish three states, and
+    that is why the column is nullable rather than a boolean.
+
+    WHY THE CALLER DECLARES IT rather than the server inferring it: the bulk
+    path issues N independent PUTs whose bodies are byte-identical to a single
+    card tap, so there is nothing in the request to infer from. The only
+    server-side signal would be a same-second cluster, and a fast learner
+    answering a small set produces that shape too — so the heuristic would
+    re-label real recalls as bulk, on the data this feature exists to make
+    trustworthy. Same argument as `is_recall_event` above, on the sister field.
+    """
+    if not isinstance(data, dict):
+        return None
+    value = data.get("provenance")
+    return value if value in RECALL_PROVENANCE_VALUES else None
