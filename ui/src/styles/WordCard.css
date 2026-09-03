@@ -384,3 +384,13 @@
   font-family: 'Times New Roman', Times, serif;
   color: #4285f4;
 }
+/* issue-344 — the correct option, shown after a WRONG answer in Test mode.
+   Green against the red failure feedback the card is showing at the same
+   moment, so the pair reads as "not that one, this one". Border rather than a
+   background swap: the option's own pinyin has to stay readable, and that is
+   the thing being taught. */
+.test-buttons button.quiz-option-correct {
+  border: 2px solid #2e7d32;
+  background-color: #e8f5e9;
+  font-weight: bold;
+}

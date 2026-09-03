@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { getHint, regenerateHint } from '../services/hintService';
+import { correctOption, shouldReveal, REVEAL_MS } from '../utils/quizReveal';
 import { GameMode } from './Game';
 import PinyinText from './PinyinText';
 import SpeakButton from './SpeakButton';
@@ -8,6 +9,12 @@ import '../styles/WordCard.css';
 
 const WordCard = ({ mode, word, isFlipped, isHintDisplayed, handleMemorized, handleNotMemorized, toggleExclusion, feedbackClass, provideFeedback, setFlippedState }) => {
   const [hintImage, setHintImage] = useState(null);
+  // issue-344: the correct option, held only while a wrong answer is being
+  // revealed. null = not revealing, which is also the state a card with no
+  // flagged correct option stays in (see quizReveal.correctOption).
+  const [revealed, setRevealed] = useState(null);
+  const revealTimer = useRef(null);
+  useEffect(() => () => { if (revealTimer.current) clearTimeout(revealTimer.current); }, []);
   // lexitrail#265: the `hintText` state, its setters and its caption are all DELETED, not
   // left unread. #193 added them believing `hint_text` was an AI etymology; it is the Gemini
   // image PROMPT (see the note at the render site). Keeping the state would leave the leak one
@@ -104,13 +111,42 @@ const WordCard = ({ mode, word, isFlipped, isHintDisplayed, handleMemorized, han
   };
 
   const onQuizOptionClicked = (isCorrect) => {
-    provideFeedback(isCorrect, () => {
-      if (isCorrect) {
-        handleMemorized();
-      } else {
-        handleNotMemorized();
-      }
-    });
+    const options = [word.quiz_option1, word.quiz_option2, word.quiz_option3, word.quiz_option4];
+
+    // issue-344: a wrong answer used to mark the word missed and advance, so the
+    // learner never saw which option was right or what the word meant. Reveal
+    // first, then advance -- the moment after a failed retrieval is the one with
+    // the most learning value in the session.
+    //
+    // A CORRECT pick is deliberately untouched: same call, same timing. The
+    // reveal shares `provideFeedback` with the success path, so slowing that
+    // branch would tax the common case (`shouldReveal` pins this).
+    if (!shouldReveal(isCorrect, options)) {
+      provideFeedback(isCorrect, () => {
+        if (isCorrect) {
+          handleMemorized();
+        } else {
+          handleNotMemorized();
+        }
+      });
+      return;
+    }
+
+    setRevealed(correctOption(options));
+    // The back face carries `.word-meaning` and IS rendered in TEST mode -- only
+    // the click-to-flip handler is gated on mode -- so flipping shows the meaning
+    // without any new markup.
+    setFlippedState(true);
+
+    // Stored on the ref so unmount can clear it. Advancing a card that has left
+    // the DOM is the #90 hang shape one layer down: the callback would call
+    // `handleNotMemorized` for a slot the loader has already moved past.
+    revealTimer.current = setTimeout(() => {
+      revealTimer.current = null;
+      setRevealed(null);
+      setFlippedState(false);
+      provideFeedback(false, () => handleNotMemorized());
+    }, REVEAL_MS);
   };
 
   const handleRegenerateHint = async () => {
@@ -340,8 +376,13 @@ const WordCard = ({ mode, word, isFlipped, isHintDisplayed, handleMemorized, han
               {[word.quiz_option1, word.quiz_option2, word.quiz_option3, word.quiz_option4].map((option, index) => (
                 <button
                   key={index}
+                  /* issue-344: while revealing, the correct option is marked so
+                     the learner can SEE which one it was. Keyed on the option's
+                     own `correct` flag rather than on identity, so it cannot
+                     highlight a different button than the one that was scored. */
+                  className={revealed && option && option.correct ? 'quiz-option-correct' : undefined}
                   onClick={() => onQuizOptionClicked(option.correct)}
-                  disabled={loadingWord}
+                  disabled={loadingWord || revealed !== null}
                 >
                   {loadingWord ? '⏳' : <PinyinText text={option.pinyin} />}
                 </button>
