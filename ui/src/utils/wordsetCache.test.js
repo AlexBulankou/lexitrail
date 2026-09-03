@@ -1,4 +1,4 @@
-import { rawKey, viewKey, invalidateWordset } from './wordsetCache';
+import { rawKey, viewKey, userwordsKey, invalidateWordset } from './wordsetCache';
 
 // Mirrors GameMode without importing it — components/Game pulls in React and
 // the router, and these are pure-key assertions.
@@ -85,6 +85,49 @@ describe('wordset cache keys (lexitrail#93, #91)', () => {
         viewKey('u1', '1', TEST),
       ].sort());
       expect(invalidateWordset({}, 'u1', '1')).toEqual([]);
+    });
+  });
+
+  // issue-335 — the published `/userwords/query` rows Today writes and the
+  // practice loader reads.
+  describe('userwordsKey (issue-335)', () => {
+    test('is a DIFFERENT slot from rawKey — they hold different shapes', () => {
+      // BUG SHAPE. Sharing `rawKey` would let Today's raw userword rows be read
+      // back by `loadWordsForWordset` as an already-MAPPED word list, which
+      // renders nothing. Distinctness is the property, not the spelling.
+      expect(userwordsKey('u1', '1')).not.toEqual(rawKey('u1', '1'));
+      expect(userwordsKey('u1', '1')).not.toEqual(viewKey('u1', '1', PRACTICE));
+    });
+
+    test('separates users and wordsets', () => {
+      expect(userwordsKey('u1', '1')).not.toEqual(userwordsKey('u2', '1'));
+      expect(userwordsKey('u1', '1')).not.toEqual(userwordsKey('u1', '2'));
+    });
+
+    test('invalidateWordset SWEEPS it — a recall write must not leave it behind', () => {
+      // BUG SHAPE (the one that matters): this slot is the UPSTREAM of `raw`.
+      // Left behind, the next loader rebuilds `raw` from pre-write rows and
+      // silently undoes the invalidation — the write appears to land and the
+      // next session shows the old recall state.
+      const cache = {
+        [userwordsKey('u1', '1')]: ['stale-rows'],
+        [rawKey('u1', '1')]: ['mapped'],
+      };
+      const removed = invalidateWordset(cache, 'u1', '1');
+      expect(cache[userwordsKey('u1', '1')]).toBeUndefined();
+      expect(removed).toContain(userwordsKey('u1', '1'));
+    });
+
+    test('sweeping wordset 1 leaves wordset 10 and other users intact', () => {
+      const cache = {
+        [userwordsKey('u1', '1')]: ['one'],
+        [userwordsKey('u1', '10')]: ['ten'],
+        [userwordsKey('u2', '1')]: ['other-user'],
+      };
+      invalidateWordset(cache, 'u1', '1');
+      expect(cache[userwordsKey('u1', '10')]).toEqual(['ten']);
+      expect(cache[userwordsKey('u2', '1')]).toEqual(['other-user']);
+      expect(cache[userwordsKey('u1', '1')]).toBeUndefined();
     });
   });
 });

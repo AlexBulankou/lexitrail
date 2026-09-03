@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { getWordsets } from '../services/wordsService';
 import { getUserWordsByWordset } from '../services/userService';
 import { dueByWordset, totalDue } from '../utils/srs';
+import { userwordsKey } from '../utils/wordsetCache';
 
 // issue-107: the cross-wordset "due today" number the Today home is built on.
 //
@@ -29,13 +30,29 @@ import { dueByWordset, totalDue } from '../utils/srs';
 //
 // Same shape as `dueAcrossWordsets` taking already-fetched lists: keep the
 // logic pure and let the thin wrapper be obviously correct by inspection.
-export const loadDueToday = async (userId) => {
+// issue-335: publish each fan-out response so the practice loader can reuse it.
+//
+// Today fetches `/userwords/query` for EVERY wordset; opening one for practice
+// then fetched the same rows again, because `useWordsetLoader`'s cache is keyed
+// on its own MAPPED shape and nothing wrote the raw rows anywhere both could
+// see. Passed in rather than imported so the pure `loadDueToday` stays
+// testable without a window — the hook supplies the real shared cache.
+//
+// DIRECTIONAL ON PURPOSE: Today WRITES and never READS. Today is the surface
+// that has to reflect practice you just finished, so it must always ask the
+// network; the loader is the consumer. Reading here would make the due count
+// answer from before the session that changed it, which is the one wrong answer
+// this screen must never give (see the error path below for the same argument).
+export const loadDueToday = async (userId, cache = null) => {
   const wordsetsResponse = await getWordsets();
   const wordsets = (wordsetsResponse && wordsetsResponse.data) || [];
 
   const entries = await Promise.all(
     wordsets.map(async (ws) => {
       const userwords = await getUserWordsByWordset(userId, ws.wordset_id);
+      if (cache) {
+        cache[userwordsKey(userId, ws.wordset_id)] = (userwords && userwords.data) || [];
+      }
       return {
         wordsetId: ws.wordset_id,
         description: ws.description,
@@ -55,6 +72,15 @@ export const loadDueToday = async (userId) => {
   // session it opens from disagreeing.
   const sets = dueByWordset(entries);
   return { total: totalDue(sets), sets };
+};
+
+// The window-scoped object `useWordsetLoader` already keeps its raw and view
+// slots in. Resolved lazily rather than at module load so importing this file
+// in a test (no `window`) stays free.
+const sharedWordsetCache = () => {
+  if (typeof window === 'undefined') return null;
+  if (!window.userWordsetExcludedCache) window.userWordsetExcludedCache = {};
+  return window.userWordsetExcludedCache;
 };
 
 export const useDueToday = (userId) => {
@@ -79,7 +105,7 @@ export const useDueToday = (userId) => {
     // than looking like a dead button while the fan-out is in flight.
     setState((prev) => (prev.status === 'loading' ? prev : { ...prev, status: 'loading' }));
 
-    loadDueToday(userId)
+    loadDueToday(userId, sharedWordsetCache())
       .then(({ total, sets }) => {
         if (!cancelled) setState({ status: 'ready', total, sets });
       })
