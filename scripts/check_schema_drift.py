@@ -101,6 +101,118 @@ def cols_from_baseline(path: Path = BASELINE) -> set[str]:
     return cols
 
 
+# issue-308 follow-up: the baseline alone is not what the repo believes.
+# `000_baseline.sql` is a fixed historical capture and is never applied; the
+# repo's belief is baseline PLUS every migration since. Before this, the first
+# additive migration would have made a correctly-migrated column read as
+# "present live and absent from the repo" -- the message this script prints for
+# a hand-run ALTER. The detector would have accused us of exactly the defect it
+# exists to catch, on the first occasion it was used properly.
+#
+# `001_strip_trailing_cr.sql` never exposed it: it is DML and changes no schema.
+_ADD_COLUMN_RE = re.compile(
+    r"ALTER\s+TABLE\s+`?(\w+)`?\s+ADD\s+COLUMN\s+`?(\w+)`?", re.I)
+# Any other DDL verb means this parser does not know what the file did.
+_DDL_RE = re.compile(
+    r"\b(ALTER\s+TABLE|CREATE\s+TABLE|DROP\s+TABLE|RENAME\s+TABLE)\b", re.I)
+
+
+def _strip_sql_comments(sql: str) -> str:
+    """Remove `-- line` and `/* block */` comments before matching DDL verbs.
+
+    🔴 SINGLE PASS, because NEITHER regex ORDER is correct (hc2@, reviewing this
+    PR). Two sequential `re.sub`s always eat real DDL on one of two mirrored
+    inputs, and which one depends only on which you run first:
+
+        block-then-line   `-- see the /* directory`   the stray `/*` opens a
+                          ALTER ...                   block running to the next
+                          `/* trailing */`            `*/`, eating the ALTER
+
+        line-then-block   `/* note -- see below */`   the `--` strip removes the
+                          ALTER ...                   closing `*/`, so the orphaned
+                          `/* another */`             `/*` runs to the NEXT one,
+                                                      eating the ALTER
+
+    Both measured. The second needs a LATER `*/` to trigger, which is why a
+    minimal two-line fixture makes line-first look correct -- it was the fixture
+    that was safe, not the order.
+
+    ⚠️ And the failure is SILENT, not CANNOT-TELL: with the ALTER eaten,
+    `len(_DDL_RE.findall(text)) == len(adds) == 0`, so the file is not flagged
+    unparsed either. The column vanishes from `expected` and then reports as
+    "present live and absent from the repo" -- this script's own message for a
+    hand-run ALTER, which is the exact thing it exists to detect.
+
+    So: scan once, and let whichever delimiter opens FIRST win. Inside a line
+    comment `/*` is inert; inside a block comment `--` is inert. That is what "a
+    comment" means, and no ordering of two independent passes can express it.
+
+    Single-quoted string literals are honoured for the same reason: a `'--'` in a
+    DEFAULT would otherwise blank the rest of the line and hide real DDL after
+    it. Backtick identifiers need no case of their own -- they cannot carry a
+    comment opener in any migration this repo will accept.
+    """
+    out: list[str] = []
+    i, n = 0, len(sql)
+    while i < n:
+        ch = sql[i]
+        if ch == "'":                        # string literal -- copy verbatim
+            j = i + 1
+            while j < n:
+                if sql[j] == "'":
+                    if j + 1 < n and sql[j + 1] == "'":    # '' escape
+                        j += 2
+                        continue
+                    break
+                j += 1
+            out.append(sql[i:min(j + 1, n)])
+            i = j + 1
+        elif sql.startswith("--", i):        # line comment -> end of line
+            j = sql.find(chr(10), i)
+            j = n if j == -1 else j
+            out.append(" ")
+            i = j
+        elif sql.startswith("/*", i):        # block comment -> closing */
+            j = sql.find("*/", i + 2)
+            out.append(" ")
+            i = n if j == -1 else j + 2
+        else:
+            out.append(ch)
+            i += 1
+    return "".join(out)
+
+
+def cols_from_migrations(dirpath: Path | None = None
+                         ) -> tuple[set[str], list[str]]:
+    """(columns added by migrations, files this parser could not account for).
+
+    🔴 The second element is the point. A migration whose DDL this regex does
+    not understand must NOT silently contribute nothing -- that would shrink
+    `expected` and print a confident FAIL naming a column the repo does know
+    about. An unparsed file is a CANNOT-TELL, exactly as an unreadable cluster
+    is, and for the same reason: not-looking must never render as a result.
+
+    Scoped to `ADD COLUMN` on purpose. This directory is for ADDITIVE changes
+    (see its README), so that is the whole vocabulary today; anything else is
+    reported rather than guessed at.
+    """
+    d = dirpath or (ROOT / "backend" / "migrations")
+    cols: set[str] = set()
+    unparsed: list[str] = []
+    for f in sorted(d.glob("[0-9][0-9][0-9]_*.sql")):
+        if f.name.startswith("000_baseline"):
+            continue          # the point migrations run FROM; never applied
+        text = _strip_sql_comments(f.read_text())
+        adds = _ADD_COLUMN_RE.findall(text)
+        for table, col in adds:
+            if table not in EXCLUDED_TABLES:
+                cols.add(f"{table}.{col}")
+        # Every DDL statement in the file must be one this parser consumed.
+        if len(_DDL_RE.findall(text)) != len(adds):
+            unparsed.append(f.name)
+    return cols, unparsed
+
+
 def _live_cols(namespace: str, pod: str, schema: str) -> tuple[set[str] | None, str]:
     """(columns, why_not). Never raises; an unreadable cluster is not an empty one."""
     try:
@@ -179,7 +291,13 @@ def main(argv: list[str] | None = None) -> int:
     args = ap.parse_args(argv)
 
     live, why = _live_cols(args.namespace, args.pod, args.schema)
-    code, msg = verdict(live, cols_from_baseline(), why)
+    added, unparsed = cols_from_migrations()
+    if unparsed:
+        print("CANNOT-TELL: these migrations contain DDL this script cannot "
+              f"account for, so the repo's expected schema is unknown: {unparsed}. "
+              "Teach cols_from_migrations that statement rather than comparing.")
+        return CANNOT_TELL
+    code, msg = verdict(live, cols_from_baseline() | added, why)
     print(msg)
     return code
 
