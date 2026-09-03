@@ -45,6 +45,11 @@ class RecallHistory(db.Model):
     recall_time = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
     new_recall_state = db.Column(db.Integer, nullable=False)
     old_recall_state = db.Column(db.Integer, nullable=True)
+    # issue-109 (RD-6): how this row was produced -- 'single' | 'bulk' | NULL.
+    # NULL means UNKNOWN PROVENANCE, which is what every row written before the
+    # column existed genuinely is. Not defaulted to 'single': that would assert
+    # ~94k rows were earned when nothing recorded that they were.
+    provenance = db.Column(db.String(16), nullable=True)
 
     # Relationships
     user = db.relationship('User', back_populates='recall_histories', overlaps="userword")

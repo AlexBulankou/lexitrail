@@ -259,6 +259,32 @@
   background-color: #c62828;
 }
 
+/* #109 (RD-6): a tile the learner did not actually answer card by card reads as
+   an OUTLINE rather than a fill -- same size, same position, visibly not the
+   same thing.
+
+   🔴 `box-shadow: inset`, not `border`. A border on a fixed 13x13 box changes
+   the rendered size unless box-sizing happens to be border-box, so the tile row
+   would shift depending on how many bulk taps are in it. An inset shadow paints
+   inside the existing box and cannot move anything.
+
+   🔴 `color` is set EXPLICITLY. `.history-tile` sets `color: #fff` for the
+   glyph on a dark fill; dropping the fill without changing the colour renders a
+   white check on a white tile -- invisible, i.e. the one thing the tile exists
+   to show. (Exactly the defect that shipped on #346's correct-answer highlight,
+   where every measured number was green and the pixels were not.) */
+.history-tile.correct.bulk {
+  background-color: transparent;
+  /* Darker than `.correct`'s #2e7d32 fill, deliberately. The tile sits on the
+     card front, which is #e0e0e0 -- NOT white. #2e7d32 on #e0e0e0 is 3.9:1,
+     under the 4.5:1 AA floor for a 9px glyph; #1b5e20 is 6.0:1. The first
+     artifact for this change was rendered on a white page, where the lighter
+     green measured 5.1:1 and looked fine -- a fixture I wrote that shared my
+     blind spot about the real surface. */
+  box-shadow: inset 0 0 0 1.5px #1b5e20;
+  color: #1b5e20;
+}
+
 .history-empty {
   color: #888;
   font-size: 0.55rem;

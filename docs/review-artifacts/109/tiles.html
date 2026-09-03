@@ -1,0 +1,67 @@
+<!doctype html><meta charset=utf-8>
+<title>#109 history tiles — the three provenance states</title>
+<!-- Rules below are COPIED VERBATIM from ui/src/styles/WordCard.css, and the
+     tiles sit on .card = #e0e0e0, the REAL .word-card-front background. The
+     first version of this page used a white body and made a 3.9:1 contrast
+     measure 5.1:1. -->
+<style>
+body { font:14px/1.5 system-ui,sans-serif; background:#fafafa; color:#222; margin:0; padding:24px; }
+.history-tiles {
+  display: flex;
+  justify-content: flex-end;
+  gap: 2px;
+  overflow: hidden;
+}
+
+.history-tile {
+  flex: 0 0 auto;
+  width: 13px;
+  height: 13px;
+  border-radius: 3px;
+  color: #fff;
+  font-size: 9px;
+  line-height: 13px;
+  text-align: center;
+  font-weight: 700;
+}
+
+.history-tile.correct {
+  background-color: #2e7d32;
+}
+
+.history-tile.wrong {
+  background-color: #c62828;
+}
+
+.history-tile.correct.bulk {
+  background-color: transparent;
+  /* Darker than `.correct`'s #2e7d32 fill, deliberately. The tile sits on the
+     card front, which is #e0e0e0 -- NOT white. #2e7d32 on #e0e0e0 is 3.9:1,
+     under the 4.5:1 AA floor for a 9px glyph; #1b5e20 is 6.0:1. The first
+     artifact for this change was rendered on a white page, where the lighter
+     green measured 5.1:1 and looked fine -- a fixture I wrote that shared my
+     blind spot about the real surface. */
+  box-shadow: inset 0 0 0 1.5px #1b5e20;
+  color: #1b5e20;
+}
+.card { background:#e0e0e0; padding:6px; display:inline-block; border-radius:4px; }
+.row { display:flex; align-items:center; gap:20px; margin:18px 0; }
+.lbl { width:340px; }
+.zoom { transform:scale(4); transform-origin:left center; }
+code { background:#eee; padding:1px 4px; border-radius:3px; }
+</style>
+<h2>#109 — history tiles, all three provenance states</h2>
+<p>Tiles sit on <code>#e0e0e0</code>, the real <code>.word-card-front</code>
+background. Left is 1:1 (13&times;13px); right is the same markup at 4&times;.</p>
+<div class=row><div class=lbl><b>Today / legacy</b><br><code>provenance: null</code> — unchanged; this is what every existing learner sees</div>
+  <div class="card"><div class="history-tiles"><span class="history-tile correct">✓</span><span class="history-tile wrong">✗</span><span class="history-tile correct">✓</span></div></div>
+  <div class=zoom><div class="card"><div class="history-tiles"><span class="history-tile correct">✓</span><span class="history-tile wrong">✗</span><span class="history-tile correct">✓</span></div></div></div></div>
+<div class=row><div class=lbl><b>Answered card by card</b><br><code>provenance: 'single'</code> — identical fill to today; the difference is in the tooltip</div>
+  <div class="card"><div class="history-tiles"><span class="history-tile correct">✓</span><span class="history-tile wrong">✗</span><span class="history-tile correct">✓</span></div></div>
+  <div class=zoom><div class="card"><div class="history-tiles"><span class="history-tile correct">✓</span><span class="history-tile wrong">✗</span><span class="history-tile correct">✓</span></div></div></div></div>
+<div class=row><div class=lbl><b>Bulk &quot;to all&quot; tap</b><br><code>provenance: 'bulk'</code> — outlined, same 13&times;13 box, glyph colour set explicitly</div>
+  <div class="card"><div class="history-tiles"><span class="history-tile correct bulk">✓</span><span class="history-tile wrong">✗</span><span class="history-tile correct bulk">✓</span></div></div>
+  <div class=zoom><div class="card"><div class="history-tiles"><span class="history-tile correct bulk">✓</span><span class="history-tile wrong">✗</span><span class="history-tile correct bulk">✓</span></div></div></div></div>
+<div class=row><div class=lbl><b>Mixed, as a real card would show it</b><br>3 bulk, 2 single, 1 wrong</div>
+  <div class="card"><div class="history-tiles"><span class="history-tile correct bulk">✓</span><span class="history-tile correct bulk">✓</span><span class="history-tile wrong">✗</span><span class="history-tile correct bulk">✓</span><span class="history-tile correct">✓</span><span class="history-tile correct">✓</span></div></div>
+  <div class=zoom><div class="card"><div class="history-tiles"><span class="history-tile correct bulk">✓</span><span class="history-tile correct bulk">✓</span><span class="history-tile wrong">✗</span><span class="history-tile correct bulk">✓</span><span class="history-tile correct">✓</span><span class="history-tile correct">✓</span></div></div></div></div>

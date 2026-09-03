@@ -534,7 +534,8 @@ export const useWordsetLoader = (wordsetId, userId, mode) => {
 
     // Async call to update the backend
     const priorMemorized = { ...currentWord };
-    updateUserWordRecall(userId, currentWord.word_id, newRecallState, true, currentWord.is_included)
+    // #109: a single card the learner answered correctly.
+    updateUserWordRecall(userId, currentWord.word_id, newRecallState, true, currentWord.is_included, false, 'single')
       .catch((error) => {
         console.error('Error updating recall state for memorized word:', error);
         // R3-BUG-3 (#45): put the word back rather than leaving a recall the
@@ -577,7 +578,10 @@ export const useWordsetLoader = (wordsetId, userId, mode) => {
 
       // Async call to update the backend for each word
       const priorBatchWord = { ...currentWord };
-      updateUserWordRecall(userId, currentWord.word_id, newRecallState, true, currentWord.is_included)
+      // #109 (RD-6): THIS is the bulk shortcut. Declared, because the body is
+      // otherwise byte-identical to the single-card call above -- which is why
+      // the two were indistinguishable downstream for the whole history.
+      updateUserWordRecall(userId, currentWord.word_id, newRecallState, true, currentWord.is_included, false, 'bulk')
         .catch((error) => {
           console.error(`Error updating recall state for word ID ${currentWord.word_id}:`, error);
           // R3-BUG-3 (#45): revert PER WORD, never per batch. A partial failure
@@ -634,7 +638,8 @@ export const useWordsetLoader = (wordsetId, userId, mode) => {
     }, maxWordsToShow, false);
 
     // Async call to update the backend
-    updateUserWordRecall(userId, currentWord.word_id, newRecallState, false, currentWord.is_included)
+    // #109: a single card the learner marked as not recalled.
+    updateUserWordRecall(userId, currentWord.word_id, newRecallState, false, currentWord.is_included, false, 'single')
       .catch((error) => console.error('Error updating recall state for not memorized word:', error));
 
     if (creditsStreak(mode)) recordPractice(); // FEAT-1: right or wrong counts (issue-112).

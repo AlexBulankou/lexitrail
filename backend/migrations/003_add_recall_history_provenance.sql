@@ -1,0 +1,51 @@
+-- 003_add_recall_history_provenance.sql — issue-109 (RD-6, slice A)
+--
+-- Adds a nullable provenance marker to `recall_history` so a row written by the
+-- bulk "✔️ to all" shortcut is distinguishable from one written by a genuine
+-- per-card answer. EXPAND half only; the reader ships in the same PR but no
+-- existing row is touched.
+--
+-- WHY A COLUMN AND NOT A DERIVATION — the finding that decides this issue:
+--
+--   `handleMemorizedMultiple` (useWordsetLoader.js) issues N INDEPENDENT PUTs,
+--   each byte-identical on the wire to a single card tap. So bulk and genuine
+--   recall are not merely reported the same, they ARE the same call. Nothing
+--   ever recorded which was which, across ~94k existing rows.
+--
+--   A same-second-cluster heuristic was considered and REJECTED: a fast learner
+--   answering a small set produces the same shape, so the rule would re-label
+--   real recalls as bulk — on the exact data the feature exists to make
+--   trustworthy. That is the identical argument `recall_policy.py` records for
+--   #111 ("intent is not recoverable from the state diff, so it has to be
+--   sent"), reached independently a month earlier on the sister field.
+--
+-- WHY NULLABLE WITH NO DEFAULT — this IS acceptance criterion 4:
+--
+--   Existing history cannot be classified retroactively, so it must not be
+--   asserted to be either kind. NULL means UNKNOWN PROVENANCE and reads that
+--   way at every consumer. Defaulting to 'single' would silently promote ~94k
+--   rows of unknown origin to "earned", which is precisely the failure this
+--   issue exists to end.
+--
+-- SAFETY, stated because this alters a live table holding ~94k rows:
+--
+--   * ONE STATEMENT. DDL implicitly commits in MySQL, so a multi-statement file
+--     that fails partway leaves state the ledger never records. MySQL 8.0.46
+--     gives ATOMIC DDL for a single ALTER (see 002).
+--   * NULLABLE, NO DEFAULT, NO BACKFILL. No existing row's data changes, so the
+--     capture-first standing rule's affected-id set is EMPTY — correctly, not
+--     skipped. Said explicitly because "the capture returned zero rows" and "I
+--     did not capture" leave the same artifact.
+--   * REVERSIBLE:  ALTER TABLE recall_history DROP COLUMN provenance;
+--   * BACKWARD-COMPATIBLE IN BOTH ORDERS. The migrate step runs BEFORE deploy,
+--     and the old image tolerates an unknown column (SQLAlchemy selects named
+--     columns). A newer backend meeting an older UI receives no flag and writes
+--     NULL, i.e. today's behaviour exactly.
+--
+-- VARCHAR(16), not an enum or a boolean: three states are needed today
+-- (unknown / single / bulk) and a boolean cannot carry the first without
+-- overloading NULL to mean two things at once. A string leaves room for a
+-- future import/migration source without a schema change, and the server
+-- validates against an allowlist so it cannot become free text.
+
+ALTER TABLE `recall_history` ADD COLUMN `provenance` VARCHAR(16) NULL;
