@@ -10,6 +10,7 @@ import OnboardingOverlay from './OnboardingOverlay';
 import Timer from './Timer';
 import { useParams } from 'react-router-dom';
 import { useWordsetLoader } from '../hooks/useWordsetLoader';
+import { gridDimensions, selectLayout } from '../utils/cardLayout';
 import { useAuth } from '../contexts/AuthContext';
 import '../styles/Game.css';
 import { useNavigate } from 'react-router-dom';
@@ -244,8 +245,13 @@ const Game = () => {
     const extraHorizontalSpaceNeeded = 200 ; //mode === (GameMode.TEST ? 80 : 120) + 115; 
     const extraVerticalSpaceNeeded = 100;
 
-    const maxColumns = Math.min(Math.floor((width - extraVerticalSpaceNeeded) / cardWidth), 20);
-    const maxRows = Math.min(Math.floor((height - extraHorizontalSpaceNeeded) / cardHeight), 7);
+    // issue-338: floored at 1x1 inside `gridDimensions`. This previously read
+    // `Math.floor((390 - 200) / 280)` = 0 in phone LANDSCAPE, which emptied the
+    // option list below and left `layoutClass` at its initial `layout1c1r` —
+    // one card, indistinguishable from having chosen one.
+    const { maxColumns, maxRows } = gridDimensions(
+      width, height, cardWidth, cardHeight,
+      extraVerticalSpaceNeeded, extraHorizontalSpaceNeeded);
 
     // Check if dimensions or displayWords length changed
     if (
@@ -260,33 +266,12 @@ const Game = () => {
     // Update previous dimensions to the current values
     previousDimensions.current = { width, height, wordCount: displayWords.length };
 
-    // Dynamically generate layout options
-    var layoutOptions = [];
-    for (let columns = 1; columns <= maxColumns; columns++) {
-      for (let rows = 1; rows <= maxRows; rows++) {
-        const capacity = columns * rows;
-        layoutOptions.push({
-          className: `layout${columns}c${rows}r`,
-          columns,
-          rows,
-          capacity,
-        });
-      }
-    }
-
-    layoutOptions.sort((a, b) => a.capacity - b.capacity);
-
-    /*
-    for (var loIndex in layoutOptions){
-      console.log(`Option: ${layoutOptions[loIndex].className}`);
-    }
-    */
-
-    // Select the most suitable layout based on available cards and window size
-    const selectedLayout = layoutOptions
-      .filter(option => option.columns <= maxColumns && option.rows <= maxRows)
-      .filter(option => option.capacity <= displayWords.length)
-      .pop();
+    // issue-338: option generation + selection moved to utils/cardLayout so it
+    // can be unit-tested. The two `.filter`s on columns/rows were redundant --
+    // the loops above never produced an option exceeding either bound -- so the
+    // extracted version drops them rather than carrying a filter that has never
+    // removed anything.
+    const selectedLayout = selectLayout(maxColumns, maxRows, displayWords.length);
 
     if (selectedLayout) {
       setLayoutClass(selectedLayout.className);
