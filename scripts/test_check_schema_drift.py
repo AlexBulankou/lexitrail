@@ -276,3 +276,75 @@ def test_stripping_comments_does_not_hide_REAL_ddl_on_the_same_line(tmp_path):
     cols, unparsed = mod.cols_from_migrations(tmp_path)
     assert cols == {"users.tz"}
     assert unparsed == ["002_x.sql"], "a real DROP hid behind comment-stripping"
+
+
+# ---------------------------------------------------------------------------
+# hc2@'s review catch: NEITHER regex ORDER is correct, so the strip is a single
+# pass. Both fixtures below eat a real ALTER under one of the two orderings —
+# and SILENTLY, not as CANNOT-TELL: with the ALTER gone,
+# len(_DDL_RE.findall) == len(adds) == 0, so the file is not flagged unparsed
+# either. The column vanishes from `expected` and reports as "present live and
+# absent from the repo" — this script's message for a hand-run ALTER.
+# ---------------------------------------------------------------------------
+
+def test_a_block_opener_inside_a_LINE_comment_does_not_eat_ddl():
+    """hc2@'s counterexample. Kills block-then-line."""
+    sql = ("-- see the /* directory for migration notes\n"
+           "ALTER TABLE users ADD COLUMN real_col INT;\n"
+           "/* a genuine trailing block comment */\n")
+    assert "ADD COLUMN" in mod._strip_sql_comments(sql)
+
+
+def test_a_line_opener_inside_a_BLOCK_comment_does_not_eat_ddl():
+    """The mirror. Kills line-then-block — and note the SECOND block comment:
+    without a later `*/` the orphaned `/*` simply fails to match and the bug
+    hides, which is why a minimal two-line fixture makes line-first look
+    correct. It was the fixture that was safe, not the ordering."""
+    sql = ("/* note -- see below */\n"
+           "ALTER TABLE users ADD COLUMN real_col INT;\n"
+           "/* a second, genuine block comment */\n")
+    assert "ADD COLUMN" in mod._strip_sql_comments(sql)
+
+
+def test_both_orderings_are_wrong_which_is_why_this_is_a_scanner():
+    """Pins the ARGUMENT, not just the fix: each sequential ordering eats the
+    ALTER on its own mirrored input, so 'flip the order' is not a repair."""
+    import re
+    A = ("-- see the /* directory\nALTER TABLE users ADD COLUMN c INT;\n/* t */\n")
+    B = ("/* note -- x */\nALTER TABLE users ADD COLUMN c INT;\n/* second */\n")
+    block_first = lambda s: re.sub(r"--[^\n]*", " ", re.sub(r"/\*.*?\*/", " ", s, flags=re.S))
+    line_first = lambda s: re.sub(r"/\*.*?\*/", " ", re.sub(r"--[^\n]*", " ", s), flags=re.S)
+    assert "ADD COLUMN" not in block_first(A), "block-first was expected to eat A"
+    assert "ADD COLUMN" not in line_first(B), "line-first was expected to eat B"
+    # ...and the scanner survives both.
+    assert "ADD COLUMN" in mod._strip_sql_comments(A)
+    assert "ADD COLUMN" in mod._strip_sql_comments(B)
+
+
+def test_a_comment_marker_inside_a_STRING_LITERAL_is_not_a_comment():
+    """A `'--'` DEFAULT would otherwise blank the rest of the line and hide the
+    DDL after it."""
+    sql = ("ALTER TABLE users ADD COLUMN c VARCHAR(8) DEFAULT '--'; "
+           "ALTER TABLE t ADD COLUMN d INT;\n")
+    out = mod._strip_sql_comments(sql)
+    assert out.count("ADD COLUMN") == 2, out
+
+
+def test_an_unterminated_block_comment_eats_only_to_EOF():
+    sql = "ALTER TABLE users ADD COLUMN c INT;\n/* never closed\n"
+    assert "ADD COLUMN" in mod._strip_sql_comments(sql)
+
+
+# --- controls: stripping must still actually STRIP -------------------------
+
+def test_a_decoy_inside_a_block_comment_still_does_not_leak():
+    sql = ("/* ALTER TABLE decoy ADD COLUMN d INT; */\n"
+           "ALTER TABLE users ADD COLUMN c INT;\n")
+    out = mod._strip_sql_comments(sql)
+    assert "decoy" not in out and out.count("ADD COLUMN") == 1
+
+
+def test_real_ddl_after_a_trailing_comment_is_still_seen():
+    """The CANNOT-TELL arm depends on unparsed DDL remaining visible."""
+    sql = "ALTER TABLE users ADD COLUMN c INT;  -- the expand half\nDROP TABLE stale;\n"
+    assert "DROP TABLE" in mod._strip_sql_comments(sql)

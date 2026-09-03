@@ -118,21 +118,68 @@ _DDL_RE = re.compile(
 
 
 def _strip_sql_comments(sql: str) -> str:
-    """Remove `-- line` and `/* block */` comments before matching.
+    """Remove `-- line` and `/* block */` comments before matching DDL verbs.
 
-    🔴 Not defensive tidying -- without it the FIRST real migration is
-    unparseable. `002_add_users_timezone.sql` documents its own reversal as
-    `-- ALTER TABLE users DROP COLUMN timezone;`, and a regex counting DDL
-    verbs cannot tell that mention from a statement, so the file reports as
-    unaccounted-for and the whole check refuses. Our own convention -- write
-    the reverse next to the change -- breaks the parser that reads it.
+    🔴 SINGLE PASS, because NEITHER regex ORDER is correct (hc2@, reviewing this
+    PR). Two sequential `re.sub`s always eat real DDL on one of two mirrored
+    inputs, and which one depends only on which you run first:
 
-    Caught by running the parser against the real migration rather than a
-    fixture I wrote, which is the only reason it was found before shipping:
-    every hand-written fixture had a bare one-line ALTER and no prose.
+        block-then-line   `-- see the /* directory`   the stray `/*` opens a
+                          ALTER ...                   block running to the next
+                          `/* trailing */`            `*/`, eating the ALTER
+
+        line-then-block   `/* note -- see below */`   the `--` strip removes the
+                          ALTER ...                   closing `*/`, so the orphaned
+                          `/* another */`             `/*` runs to the NEXT one,
+                                                      eating the ALTER
+
+    Both measured. The second needs a LATER `*/` to trigger, which is why a
+    minimal two-line fixture makes line-first look correct -- it was the fixture
+    that was safe, not the order.
+
+    ⚠️ And the failure is SILENT, not CANNOT-TELL: with the ALTER eaten,
+    `len(_DDL_RE.findall(text)) == len(adds) == 0`, so the file is not flagged
+    unparsed either. The column vanishes from `expected` and then reports as
+    "present live and absent from the repo" -- this script's own message for a
+    hand-run ALTER, which is the exact thing it exists to detect.
+
+    So: scan once, and let whichever delimiter opens FIRST win. Inside a line
+    comment `/*` is inert; inside a block comment `--` is inert. That is what "a
+    comment" means, and no ordering of two independent passes can express it.
+
+    Single-quoted string literals are honoured for the same reason: a `'--'` in a
+    DEFAULT would otherwise blank the rest of the line and hide real DDL after
+    it. Backtick identifiers need no case of their own -- they cannot carry a
+    comment opener in any migration this repo will accept.
     """
-    sql = re.sub(r"/\*.*?\*/", " ", sql, flags=re.S)
-    return re.sub(r"--[^\n]*", " ", sql)
+    out: list[str] = []
+    i, n = 0, len(sql)
+    while i < n:
+        ch = sql[i]
+        if ch == "'":                        # string literal -- copy verbatim
+            j = i + 1
+            while j < n:
+                if sql[j] == "'":
+                    if j + 1 < n and sql[j + 1] == "'":    # '' escape
+                        j += 2
+                        continue
+                    break
+                j += 1
+            out.append(sql[i:min(j + 1, n)])
+            i = j + 1
+        elif sql.startswith("--", i):        # line comment -> end of line
+            j = sql.find(chr(10), i)
+            j = n if j == -1 else j
+            out.append(" ")
+            i = j
+        elif sql.startswith("/*", i):        # block comment -> closing */
+            j = sql.find("*/", i + 2)
+            out.append(" ")
+            i = n if j == -1 else j + 2
+        else:
+            out.append(ch)
+            i += 1
+    return "".join(out)
 
 
 def cols_from_migrations(dirpath: Path | None = None
