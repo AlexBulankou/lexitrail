@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { getHint, regenerateHint } from '../services/hintService';
+import { correctOption, shouldReveal, REVEAL_MS } from '../utils/quizReveal';
 import { GameMode } from './Game';
 import PinyinText from './PinyinText';
 import SpeakButton from './SpeakButton';
@@ -8,6 +9,57 @@ import '../styles/WordCard.css';
 
 const WordCard = ({ mode, word, isFlipped, isHintDisplayed, handleMemorized, handleNotMemorized, toggleExclusion, feedbackClass, provideFeedback, setFlippedState }) => {
   const [hintImage, setHintImage] = useState(null);
+  // issue-344: the correct option, held only while a wrong answer is being
+  // revealed. null = not revealing, which is also the state a card with no
+  // flagged correct option stays in (see quizReveal.correctOption).
+  const [revealed, setRevealed] = useState(null);
+  const revealTimer = useRef(null);
+
+  // issue-344: cancel an in-flight reveal when THIS SLOT's word changes, and on
+  // unmount.
+  //
+  // 🔴 NOT DEFENSIVE — this path is reachable today, and hc2@ found it on review
+  // while describing it as hypothetical. `Game.js:487` keys WordCard on
+  // `key={index}`, the SLOT, not on the word (issue-137 documents that choice).
+  // So when a reveal's timer fires and removes its word, `wordsToRender` shrinks,
+  // every later slot receives a DIFFERENT word, and React reuses the instance
+  // rather than remounting it.
+  //
+  // Test mode shows several cards at once and `revealed` is card-local, so a
+  // neighbour's buttons stay enabled while this card reveals. Answer two cards in
+  // quick succession and the second card can inherit a new word with the previous
+  // word's reveal still set. Two consequences, both real:
+  //
+  //   1. the highlight keys on the NEW word's `option.correct`, so it hands the
+  //      learner that word's answer for free, unanswered
+  //   2. the pending timer calls `handleNotMemorized()` for a word nobody
+  //      answered, writing a recall the learner never earned
+  //
+  // Clearing the timer is the half that matters; `setRevealed(null)` alone would
+  // stop the highlight and still fire the write.
+  useEffect(() => {
+    return () => {
+      if (revealTimer.current) {
+        clearTimeout(revealTimer.current);
+        revealTimer.current = null;
+      }
+    };
+  }, [word.word_id]);
+
+  // `setFlippedState` is a fresh closure each render (Game.js binds the slot into
+  // it), so it is held on a ref rather than listed as a dep -- listing it would
+  // re-run this on every render and clear a reveal the instant it started.
+  const setFlippedRef = useRef(setFlippedState);
+  setFlippedRef.current = setFlippedState;
+
+  useEffect(() => {
+    setRevealed(null);
+    // Un-flip too: `isFlipped` is the PARENT's state, keyed on the slot
+    // (`flippedStates[index]`), so a card left flipped when its word changes
+    // would show the NEW word's back face -- its meaning -- unprompted. Same
+    // leak as the highlight, one prop up.
+    setFlippedRef.current(false);
+  }, [word.word_id]);
   // lexitrail#265: the `hintText` state, its setters and its caption are all DELETED, not
   // left unread. #193 added them believing `hint_text` was an AI etymology; it is the Gemini
   // image PROMPT (see the note at the render site). Keeping the state would leave the leak one
@@ -104,13 +156,42 @@ const WordCard = ({ mode, word, isFlipped, isHintDisplayed, handleMemorized, han
   };
 
   const onQuizOptionClicked = (isCorrect) => {
-    provideFeedback(isCorrect, () => {
-      if (isCorrect) {
-        handleMemorized();
-      } else {
-        handleNotMemorized();
-      }
-    });
+    const options = [word.quiz_option1, word.quiz_option2, word.quiz_option3, word.quiz_option4];
+
+    // issue-344: a wrong answer used to mark the word missed and advance, so the
+    // learner never saw which option was right or what the word meant. Reveal
+    // first, then advance -- the moment after a failed retrieval is the one with
+    // the most learning value in the session.
+    //
+    // A CORRECT pick is deliberately untouched: same call, same timing. The
+    // reveal shares `provideFeedback` with the success path, so slowing that
+    // branch would tax the common case (`shouldReveal` pins this).
+    if (!shouldReveal(isCorrect, options)) {
+      provideFeedback(isCorrect, () => {
+        if (isCorrect) {
+          handleMemorized();
+        } else {
+          handleNotMemorized();
+        }
+      });
+      return;
+    }
+
+    setRevealed(correctOption(options));
+    // The back face carries `.word-meaning` and IS rendered in TEST mode -- only
+    // the click-to-flip handler is gated on mode -- so flipping shows the meaning
+    // without any new markup.
+    setFlippedState(true);
+
+    // Stored on the ref so unmount can clear it. Advancing a card that has left
+    // the DOM is the #90 hang shape one layer down: the callback would call
+    // `handleNotMemorized` for a slot the loader has already moved past.
+    revealTimer.current = setTimeout(() => {
+      revealTimer.current = null;
+      setRevealed(null);
+      setFlippedState(false);
+      provideFeedback(false, () => handleNotMemorized());
+    }, REVEAL_MS);
   };
 
   const handleRegenerateHint = async () => {
@@ -340,8 +421,13 @@ const WordCard = ({ mode, word, isFlipped, isHintDisplayed, handleMemorized, han
               {[word.quiz_option1, word.quiz_option2, word.quiz_option3, word.quiz_option4].map((option, index) => (
                 <button
                   key={index}
+                  /* issue-344: while revealing, the correct option is marked so
+                     the learner can SEE which one it was. Keyed on the option's
+                     own `correct` flag rather than on identity, so it cannot
+                     highlight a different button than the one that was scored. */
+                  className={revealed && option && option.correct ? 'quiz-option-correct' : undefined}
                   onClick={() => onQuizOptionClicked(option.correct)}
-                  disabled={loadingWord}
+                  disabled={loadingWord || revealed !== null}
                 >
                   {loadingWord ? '⏳' : <PinyinText text={option.pinyin} />}
                 </button>
