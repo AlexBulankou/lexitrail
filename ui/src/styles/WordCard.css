@@ -392,5 +392,13 @@
 .test-buttons button.quiz-option-correct {
   border: 2px solid #2e7d32;
   background-color: #e8f5e9;
-  font-weight: bold;
+  /* 🔴 `color` is load-bearing, not decoration. The option buttons inherit WHITE
+     text from the blue default, so swapping only the background left white-on-
+     pale-green -- the correct answer rendered nearly unreadable, i.e. the one
+     thing this feature exists to show. Caught only by looking at a screenshot;
+     every geometry and timing number was green. (hc2@ blocked #346 for exactly
+     this reason.)
+     NO `font-weight: bold` either: the pinyin already fills these buttons and
+     bolding widens it, so the highlight would clip the text it is highlighting. */
+  color: #1b5e20;
 }
