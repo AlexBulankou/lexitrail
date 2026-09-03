@@ -81,7 +81,47 @@
 
 <body>
   <noscript>You need to enable JavaScript to run this app.</noscript>
-  <div id="root"></div>
+  <div id="root">
+    <!-- lexitrail#266: the PRE-MOUNT indicator. Alex's ruling (09-02, relayed by zz1)
+         set the bar at 5s time-to-first-card AND asked for a visual indicator while
+         loading. Measured on prod (HSK6, median cold arrival, 2278 ms total), the first
+         ~446 ms is network + bundle download/execute -- React does not exist yet, so no
+         component can render anything and the user sees a blank white page. This markup
+         is the only thing that can cover that window.
+
+         It is deliberately self-contained: the styles are INLINE because the CSS bundle
+         has not loaded either, and it draws a CSS-only spinner rather than an <img> so it
+         costs no extra request during the exact window it exists to cover.
+
+         React removes it automatically: `src/index.js` uses `createRoot(...).render(...)`,
+         and createRoot replaces the container's existing children on first render. That is
+         load-bearing rather than incidental, so it is pinned by
+         `src/utils/premountIndicator.test.js` -- switching to hydrateRoot would try to
+         hydrate this markup instead of replacing it. -->
+    <div id="lx-premount" role="status" aria-live="polite" aria-label="Loading Lexitrail">
+      <style>
+        #lx-premount {
+          display: flex; flex-direction: column; align-items: center;
+          justify-content: center; gap: 16px;
+          min-height: 60vh; font-family: system-ui, -apple-system, sans-serif;
+          color: #555;
+        }
+        #lx-premount .lx-premount-spinner {
+          width: 40px; height: 40px; border-radius: 50%;
+          border: 4px solid rgba(0, 0, 0, 0.12);
+          border-top-color: #555;
+          animation: lx-premount-spin 0.9s linear infinite;
+        }
+        @keyframes lx-premount-spin { to { transform: rotate(360deg); } }
+        /* Honour a reduced-motion preference: keep the indicator, drop the spin. */
+        @media (prefers-reduced-motion: reduce) {
+          #lx-premount .lx-premount-spinner { animation: none; }
+        }
+      </style>
+      <div class="lx-premount-spinner"></div>
+      <div>Loading Lexitrail&hellip;</div>
+    </div>
+  </div>
   <!--
       The root div is where our React app will be mounted.
     -->
