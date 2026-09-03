@@ -409,8 +409,12 @@ const Game = () => {
 
   if (loading.status === 'loading') {
     return (
-      <div className="loading-container">
+      <div className="loading-container" role="status" aria-live="polite">
         <Logo size="medium" />
+        {/* lexitrail#266: was a bare "Loading..." string. Alex asked for a
+            visual indicator; static text is not one. Matches the pre-mount
+            spinner in public/index.html so the two hand off invisibly. */}
+        <div className="loading-spinner" data-testid="loading-spinner" />
         <div>Loading...</div>
       </div>
     );
