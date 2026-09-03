@@ -147,13 +147,31 @@ def load_go_redirects() -> dict[str, str]:
             if r["source"].startswith("/go/")}
 
 
-HSK_SETS = range(1, 7)
+PUBLIC_DIR = Path(__file__).resolve().parent.parent / "ui" / "public"
+HSK_FILE_RE = re.compile(r"^hsk(\d+)\.html$")
+
+
+def load_hsk_sets() -> list[int]:
+    """Which HSK levels to check, derived from the static lander files in
+    `ui/public/` rather than hardcoded -- hcl@'s review on #347 caught that a
+    hardcoded `range(1, 7)` could silently under-cover a 7th level (already
+    mentioned as existing-but-hidden in `useDueToday.js`'s docstring) the same
+    way the OLD `/hskN` config gap did, one layer up. `ui/public/hsk1.html` etc
+    are checked-in source files, not build output, so this needs no JS parsing.
+    """
+    return sorted(int(m.group(1)) for f in PUBLIC_DIR.glob("hsk*.html")
+                  if (m := HSK_FILE_RE.match(f.name)))
 
 
 def run(base_url: str) -> int:
     go_redirects = load_go_redirects()
+    hsk_sets = load_hsk_sets()
     if not go_redirects:
         print("BLIND: no /go/* entries found in serve.json -- config moved or is empty",
+              file=sys.stderr)
+        return EXIT_BLIND
+    if not hsk_sets:
+        print("BLIND: no hskN.html files found in ui/public/ -- landers moved or renamed",
               file=sys.stderr)
         return EXIT_BLIND
 
@@ -173,7 +191,7 @@ def run(base_url: str) -> int:
         if not ok:
             failures.append(f"{source}: {why}")
 
-    for n in HSK_SETS:
+    for n in hsk_sets:
         source, dest, lander = f"/hsk{n}", f"/hsk{n}.html", f"/hsk{n}.html"
         try:
             redirect_probe = fetch(base_url, source)
@@ -204,7 +222,7 @@ def run(base_url: str) -> int:
             print(f"  - {f}", file=sys.stderr)
         return EXIT_FAIL
 
-    print(f"\nPASS: {len(go_redirects)} /go/* + {len(HSK_SETS)} /hskN routes all resolve as configured")
+    print(f"\nPASS: {len(go_redirects)} /go/* + {len(hsk_sets)} /hskN routes all resolve as configured")
     return EXIT_PASS
 
 
@@ -240,6 +258,14 @@ def self_test() -> int:
            check_hsk_lander(Probe(200, None, "<title>Files within build/hsk1/</title>"))[0], False)
     expect("lander-wrong-page",
            check_hsk_lander(Probe(200, None, "<title>Word Sets</title>"))[0], False)
+
+    # load_hsk_sets: real filesystem, not synthetic -- it's a glob over
+    # checked-in source files, so this checks the actual repo state rather
+    # than a fixture that could drift from it. This IS the regression test
+    # for the bug hcl@'s review found: run it after adding hsk7.html and it
+    # must return [1..7], not silently stay at six.
+    live = load_hsk_sets()
+    expect("hsk-sets-found-all-six-checked-in-landers", live, [1, 2, 3, 4, 5, 6])
 
     if ok:
         print("SELF-TEST PASS")
