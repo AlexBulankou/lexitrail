@@ -8,7 +8,7 @@ import { formatDistanceToNow, max } from 'date-fns';
 import { GameMode } from '../components/Game';
 import { isWordDue, nextRecallState } from '../utils/srs';
 import { makeInFlight, requestKey, beginRequest, endRequest } from '../utils/inFlight';
-import { rawKey, viewKey, invalidateWordset } from '../utils/wordsetCache';
+import { rawKey, viewKey, userwordsKey, invalidateWordset } from '../utils/wordsetCache';
 import { indexByFirst } from '../utils/indexBy';
 import { makeRawRegistry, claimRawFetch } from '../utils/rawFetchRegistry';
 
@@ -172,12 +172,34 @@ export const useWordsetLoader = (wordsetId, userId, mode) => {
         // was simply waiting out the first's round-trip for no reason. On a phone
         // on mobile data that is one whole RTT of dead time before the first card,
         // and it is paid on every uncached load regardless of dataset size.
-        const [response, userwordsResponse] = await Promise.all([
+        // issue-335: Today (`useDueToday`) fans `/userwords/query` out across
+        // EVERY wordset to build the due count, so by the time a session is
+        // opened these exact rows have usually just been fetched. Reuse them
+        // rather than asking again — measured on prod, that second ask was 3 of
+        // 13 requests (23%) on the wordsets journey, one per set opened.
+        //
+        // The word rows are still fetched: only the userwords half is shared,
+        // because only that half is what Today asked for.
+        //
+        // SAFE BECAUSE THE SLOT IS SWEPT ON WRITE. `invalidateWordset` drops
+        // this key with the raw and view slots on every recall write, so a
+        // reused payload can never be older than the last mutation of this
+        // wordset — the same guarantee the raw slot below already relies on.
+        const publishedUserwords = userWordsetExcludedCache[userwordsKey(userId, wordsetId)];
+
+        // Promise.all over exactly the calls still needed. Kept concurrent for
+        // the reason issue-266 records: neither takes the other's result, so
+        // sequencing them spends a whole round-trip of dead time before the
+        // first card. When the userwords are already published this degenerates
+        // to the single word fetch, which is the point.
+        const [response, userwordsRows] = await Promise.all([
           getWordsByWordset(wordsetId),
-          getUserWordsByWordset(userId, wordsetId),
+          publishedUserwords
+            ? Promise.resolve(publishedUserwords)
+            : getUserWordsByWordset(userId, wordsetId).then((r) => r.data),
         ]);
         const loadedWords = response.data;
-        const userWordsMetadata = userwordsResponse.data;
+        const userWordsMetadata = userwordsRows;
 
         // issue-266: index the userword rows ONCE instead of scanning them per word.
         // The map below did `userWordsMetadata.find(...)` inside `loadedWords.map(...)`,

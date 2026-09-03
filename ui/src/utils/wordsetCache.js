@@ -31,9 +31,37 @@
 
 const RAW = 'raw';
 const VIEW = 'view';
+const USERWORDS = 'uw';
 
 /** Key for the raw fetch result — deliberately mode-independent (#91). */
 export const rawKey = (userId, wordsetId) => `${RAW}|${userId}|${wordsetId}`;
+
+/**
+ * Key for the bare `/userwords/query` rows for one (user, wordset) — issue-335.
+ *
+ * A THIRD slot rather than reusing `rawKey`, because the two hold different
+ * SHAPES: `rawKey` holds the loader's MAPPED list (word rows joined with their
+ * userword metadata), while this holds the userword rows exactly as the network
+ * returned them. Writing one into the other's slot would be read back by
+ * `loadWordsForWordset` as an already-mapped list and render nothing.
+ *
+ * WHY THIS EXISTS. Two surfaces fetch the identical URL and neither could see
+ * the other: `useDueToday` fans out `/userwords/query` across EVERY wordset to
+ * build the Today count, then entering practice made `useWordsetLoader` fetch
+ * the same rows again for whichever set you opened. Measured on prod by
+ * `e2e/redundant_fetches.py`: 13 data requests, 3 of them redundant (23%), and
+ * the three duplicated URLs were exactly the three wordsets the journey opened
+ * while Today had fetched all seven.
+ *
+ * LIFETIME IS THE SAME AS THE OTHER TWO SLOTS, deliberately: it is swept by
+ * `invalidateWordset` on every recall write. It is NOT given a TTL — the raw
+ * and view slots this feeds already live for the session under exactly that
+ * rule, so a TTL here would make the SOURCE staler-proof than the cache it
+ * populates, which buys nothing and adds a second staleness model to reason
+ * about.
+ */
+export const userwordsKey = (userId, wordsetId) =>
+  `${USERWORDS}|${userId}|${wordsetId}`;
 
 /** Key for one mode's derived list. Keyed on MODE, never on includedFlag (#93). */
 export const viewKey = (userId, wordsetId, mode) =>
@@ -54,11 +82,16 @@ export const viewKey = (userId, wordsetId, mode) =>
  */
 export const invalidateWordset = (cache, userId, wordsetId) => {
   const raw = rawKey(userId, wordsetId);
+  // issue-335: the userwords slot is swept here too. It MUST be — it is the
+  // upstream of the raw slot, so leaving it behind would let the next loader
+  // rebuild `raw` from pre-write rows and silently undo the invalidation this
+  // function exists to perform.
+  const uw = userwordsKey(userId, wordsetId);
   // Trailing delimiter is load-bearing: without it, wordset 1 would also
   // invalidate wordset 10, 11, 100...
   const viewPrefix = `${VIEW}|${userId}|${wordsetId}|`;
   const removed = Object.keys(cache).filter(
-    (k) => k === raw || k.startsWith(viewPrefix));
+    (k) => k === raw || k === uw || k.startsWith(viewPrefix));
   removed.forEach((k) => { delete cache[k]; });
   return removed;
 };

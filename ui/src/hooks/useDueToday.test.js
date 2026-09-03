@@ -1,6 +1,7 @@
 import { loadDueToday } from './useDueToday';
 import { getWordsets } from '../services/wordsService';
 import { getUserWordsByWordset } from '../services/userService';
+import { userwordsKey } from '../utils/wordsetCache';
 
 // Factory mocks, not automocks: an automock still LOADS the real module to
 // derive its shape, and `apiService` reads `window.config.API_BASE_URL` at
@@ -136,5 +137,47 @@ describe('loadDueToday', () => {
     // should render "0 due", not blank the home screen with a TypeError.
     getWordsets.mockResolvedValue(undefined);
     await expect(loadDueToday('user-1')).resolves.toMatchObject({ total: 0 });
+  });
+});
+
+// issue-335 — Today PUBLISHES its fan-out so the practice loader can reuse it.
+// Measured on prod before this: `e2e/redundant_fetches.py` reported 13 data
+// requests / 3 redundant (23%), and the three duplicated URLs were exactly the
+// wordsets the journey opened while Today had fetched all seven.
+describe('loadDueToday publishes userwords for reuse (issue-335)', () => {
+  it('writes each wordset\'s rows into the shared cache under userwordsKey', async () => {
+    const rows7 = [uw()];
+    const rows9 = [uw(), uw({ word_id: 2 })];
+    getWordsets.mockResolvedValue({ data: [{ wordset_id: 7 }, { wordset_id: 9 }] });
+    getUserWordsByWordset.mockImplementation((userId, wordsetId) =>
+      Promise.resolve({ data: wordsetId === 7 ? rows7 : rows9 }));
+
+    const cache = {};
+    await loadDueToday('user-1', cache);
+
+    expect(cache[userwordsKey('user-1', 7)]).toEqual(rows7);
+    expect(cache[userwordsKey('user-1', 9)]).toEqual(rows9);
+  });
+
+  it('publishes an EMPTY ARRAY, never undefined, for a wordset with no rows', async () => {
+    // BUG SHAPE. The consumer treats a present key as "already fetched". If a
+    // set with no userwords published `undefined`, the key would be present and
+    // falsy, so the loader would refetch — reintroducing exactly the redundant
+    // request this change removes, and only for the sets where it is cheapest
+    // to get right.
+    getWordsets.mockResolvedValue({ data: [{ wordset_id: 7 }] });
+    getUserWordsByWordset.mockResolvedValue({ data: [] });
+
+    const cache = {};
+    await loadDueToday('user-1', cache);
+
+    expect(cache[userwordsKey('user-1', 7)]).toEqual([]);
+    expect(userwordsKey('user-1', 7) in cache).toBe(true);
+  });
+
+  it('still works with NO cache passed — the pure function stays window-free', async () => {
+    getWordsets.mockResolvedValue({ data: [{ wordset_id: 7 }] });
+    getUserWordsByWordset.mockResolvedValue({ data: [uw()] });
+    await expect(loadDueToday('user-1')).resolves.toHaveProperty('total');
   });
 });
