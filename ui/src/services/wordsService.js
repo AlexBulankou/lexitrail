@@ -67,8 +67,17 @@ export const getWordsets = async () => {
     })();
     _wordsetsInFlight = pending;
     // Clear on BOTH settle paths, or one failed request poisons every later
-    // call. The identity check matters: without it a slow failure could clear
-    // a NEWER in-flight request that started after it.
+    // call — that is the load-bearing half.
+    //
+    // The identity check is NOT: it cannot fire today, and hc2 was right to
+    // ask (#327 review). A new `pending` can only be assigned after some
+    // `finally` has already nulled the slot, so nothing can be clobbered in
+    // the window between a settle and its own microtask. My first version of
+    // this comment claimed "a slow failure could clear a NEWER in-flight
+    // request" — that race does not exist in this code and I should not have
+    // asserted it. Kept deliberately as belt-and-braces: it becomes real the
+    // moment anything `await`s between the request starting and the
+    // assignment (an auth refresh, say), and it costs one comparison.
     pending
       .finally(() => { if (_wordsetsInFlight === pending) _wordsetsInFlight = null; })
       // The `finally` chain is a derived promise nothing else awaits, so a
