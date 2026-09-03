@@ -61,6 +61,16 @@ import re
 import sys
 import time
 from collections import Counter
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+
+# issue-335: the SHARED guest journey, not a private copy. This harness had its
+# own click-Try-then-look-for-wordsets entry that never navigated, so it read
+# BLIND on every run -- the #85 failure `enter_guest`'s own docstring describes
+# and `enter_wordsets` fixes. The fix landed in the shared module and never
+# reached the copy. Importing it means the next such fix cannot miss this file.
+from lt_routes import enter_wordsets  # noqa: E402  (sys.path shim above)
 
 URL_DEFAULT = "https://lexitrail.com"
 
@@ -169,16 +179,25 @@ def measure(url, settle_ms, nav):
         page.goto(url, wait_until="domcontentloaded", timeout=30000)
         page.wait_for_timeout(2000)
 
+        # issue-335: `enter_wordsets` = guest entry THEN navigate, and it asserts
+        # the URL actually carries /wordsets. The private version this replaces
+        # clicked Try and then looked for `.wordset-button` on the LANDING page,
+        # which is why this harness returned BLIND on every run while
+        # `tap_targets.py` -- using this same shared entry -- reached the page fine.
+        # RuntimeError -> BLIND is the contract `enter_guest` documents: "a route
+        # we could not enter must never be reported as a clean measurement".
         try:
-            page.click("button.try-button", timeout=10000)
+            enter_wordsets(page)
         except Exception as exc:  # noqa: BLE001 - reported, never swallowed
             ctx.close()
-            return None, f"could not start the guest journey: {str(exc)[:120]}"
-        page.wait_for_timeout(2500)
+            return None, f"could not reach the wordset list: {str(exc)[:140]}"
 
+        # Kept as a post-condition rather than deleted: `enter_wordsets` asserts
+        # NAVIGATION, this asserts the page has the controls we are about to
+        # measure fetches for. Different claims; the second is this harness's own.
         if not page.query_selector_all(".wordset-button"):
             ctx.close()
-            return None, "no wordset controls found after Try"
+            return None, "reached /wordsets but it carries no .wordset-button controls"
 
         if nav == "goto":
             # Hard navigation. Reloads the SPA every view, so the in-memory
