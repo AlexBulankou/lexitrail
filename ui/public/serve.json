@@ -1,6 +1,37 @@
 {
   "cleanUrls": false,
+  "directoryListing": false,
   "redirects": [
+    {
+      "source": "/hsk1",
+      "destination": "/hsk1.html",
+      "type": 301
+    },
+    {
+      "source": "/hsk2",
+      "destination": "/hsk2.html",
+      "type": 301
+    },
+    {
+      "source": "/hsk3",
+      "destination": "/hsk3.html",
+      "type": 301
+    },
+    {
+      "source": "/hsk4",
+      "destination": "/hsk4.html",
+      "type": 301
+    },
+    {
+      "source": "/hsk5",
+      "destination": "/hsk5.html",
+      "type": 301
+    },
+    {
+      "source": "/hsk6",
+      "destination": "/hsk6.html",
+      "type": 301
+    },
     {
       "source": "/go/ig-wod",
       "destination": "/?utm_source=instagram&utm_medium=social&utm_campaign=lt_wod",
