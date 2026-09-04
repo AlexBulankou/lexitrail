@@ -93,15 +93,35 @@ resource "kubernetes_stateful_set_v1" "mysql" {
       }
 
       spec {
-        # Match live cost profile: schedule on Spot nodes. Autopilot honors the
-        # gke-spot node affinity. Trade-off: a Spot preemption briefly restarts
-        # the pod (data survives on the PD); acceptable for the live workload's
-        # established cost choice. Revisit to standard nodes if the cutover soak
-        # shows preemption-driven downtime hurts (candidate follow-up).
+        # Match live cost profile: PREFER Spot nodes. Autopilot honors the
+        # gke-spot node affinity either way, so the scheduler still lands this
+        # on Spot whenever one exists and the cost choice is unchanged.
+        #
+        # issue-331: this was `required` until 2026-09-04. Two individually
+        # reasonable constraints were jointly brittle:
+        #   - a REQUIRED gke-spot affinity -- so no spot node meant the pod was
+        #     UNSCHEDULABLE, not merely degraded; and
+        #   - a zone-pinned RWO PV in us-central1-b -- so the replacement had to
+        #     be a spot node in that ONE zone.
+        # A preemption therefore had no fallback, and lexitrail.com's data
+        # endpoints 500'd for as long as no us-central1-b spot node was free
+        # (/health kept returning 200 throughout, which is why it went unnoticed).
+        #
+        # The comment this replaces predicted exactly this and named its own
+        # trigger -- "revisit to standard nodes if the cutover soak shows
+        # preemption-driven downtime hurts". The soak showed it (#331). Nobody
+        # was watching for the trigger, which is the part worth remembering.
+        #
+        # `preferred` keeps Spot as the default placement and removes only the
+        # part that converts a preemption into an outage: with no spot node
+        # available the pod schedules on a standard node instead of pending
+        # forever. Weight is arbitrary within a single term -- there is nothing
+        # to rank it against -- so 100 reads as "strongly prefer".
         affinity {
           node_affinity {
-            required_during_scheduling_ignored_during_execution {
-              node_selector_term {
+            preferred_during_scheduling_ignored_during_execution {
+              weight = 100
+              preference {
                 match_expressions {
                   key      = "cloud.google.com/gke-spot"
                   operator = "In"
