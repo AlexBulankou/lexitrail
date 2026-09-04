@@ -13,10 +13,19 @@
 # The fleet default for NET-NEW CI is Cloud Build, not Actions (ensemble#4492
 # and its market-mind sister). This goes the other way on purpose:
 #
-#   * lexitrail has NO Cloud Build triggers at all, and creating one is exactly
-#     what lexitrail#77 is blocked on — an Alex A/B/C decision about a
-#     cross-project identity that `builds submit` fails under. So a
-#     `cloudbuild.yaml` committed today would not run.
+#   * ⏳ SUPERSEDED 2026-09-04 — kept because it is the stated reason, so a
+#     reader who inherits it concludes Cloud Build CANNOT run here, which is
+#     now false. It read: "lexitrail has NO Cloud Build triggers at all, and
+#     creating one is exactly what lexitrail#77 is blocked on — an Alex A/B/C
+#     decision about a cross-project identity that `builds submit` fails
+#     under. So a `cloudbuild.yaml` committed today would not run."
+#     Measured 2026-09-04 by enumeration, not recall — TWO triggers exist:
+#       lexitrail-ui-deploy-main       includedFiles  ui/**|cloudbuild-ui.yaml
+#       lexitrail-backend-deploy-main  includedFiles  backend/**|cloudbuild.yaml
+#     and lexitrail#77 CLOSED 2026-09-01 ("AC1 done; was: no triggers exist").
+#     🔑 The DECISION below still holds on its own merits (cost, and the free
+#     Actions minutes of a public repo) — only this premise expired. That is
+#     the point: the conclusion aged fine and the measurement under it did not.
 #   * A CI config that cannot fire IS the defect #122 is about. Shipping one to
 #     satisfy the policy would reproduce the bug in the fix.
 #   * The policy's rationale is COST. This repo's Actions usage is ~zero (one
