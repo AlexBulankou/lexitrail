@@ -27,13 +27,51 @@ PVC used (df -B1 /var/lib/mysql)
 ⚠️ These differ by 4x and both are "the database size". **#358's text says *check the PVC
 used bytes* — that is the misleading one**, and sizing off it over-provisions 4x.
 
+🔴 **CORRECTED 2026-09-04 05:30Z — the row counts below replace an EARLIER SET THAT WAS WRONG,
+and the wrong ones are in mcl@'s step 2 baseline further down.** My first figures came from
+`information_schema.tables.table_rows`, which for InnoDB is a **sampled estimate, not a count**.
+hc2@'s review of PR #359 questioned the arithmetic on a derived percentage, and re-deriving it
+with `COUNT(*)` is what exposed the counts underneath:
+
 ```
-userwords   75.5 MB   29,354 rows   hint_img blob, ONE ROW PER (user, word)
-words       53.8 MB    4,472 rows   hint_img blob, bounded by the catalogue
-recall_history 13.5 MB 95,135 rows
-users        0.2 MB    2,294 rows
-=> 85% of the dump is hint_img BLOBs
+table            ESTIMATE (published)   EXACT COUNT(*)    error
+userwords              29,354              27,063        +8.5% OVER
+words                   4,472               5,628       -20.5% UNDER
+recall_history         95,135              95,489        -0.4%
+users                   2,294               2,531        -9.4% UNDER
 ```
+
+⚠️ **Wrong in BOTH directions, which is why no sanity check would have caught it** — a systematic
+offset is noticeable; a mixed one reads as noise. Used as a migration baseline, these would have
+made step 2's verification fail for a reason unrelated to the import, and the natural next move
+(*"close enough, the estimate must be stale"*) walks straight past a real discrepancy.
+
+**Use `COUNT(*)` on BOTH sides. Never `table_rows`.**
+
+### Exact figures — measured with `COUNT(*)` and `SUM(LENGTH(hint_img))`
+
+```
+table            COUNT(*)     data+idx     SUM(LENGTH(hint_img))   rows WITH a blob
+userwords          27,063      75.5 MB          47,910,294 B            4,044
+words               5,628      53.8 MB          35,664,463 B            2,223
+recall_history     95,489      13.5 MB                    -                 -
+users               2,531       0.2 MB                    -                 -
+                                            TOTAL 83,574,757 B = 79.7 MiB
+```
+
+📌 `daily_recall_stats` is a **VIEW**, not a base table — it appears in `information_schema.tables`
+and carries `table_rows = NULL`. It has no rows to verify and must not be counted as a missing
+table during import verification.
+
+⚠️ **"85% of the dump is BLOBs" was wrong and so is "90%".** The honest statement: **79.7 MiB of
+raw blob bytes against a 106 MiB dump — about 75%.** hc2@'s 90% came from summing the two
+blob-*bearing* tables' data+index (129.3 of 143.0 MB), which measures *which tables hold blobs*,
+not *how much is blob*. The 85% was mine and had no derivation at all. Only 4,044 of 27,063
+`userwords` rows and 2,223 of 5,628 `words` rows actually carry an image.
+
+🔑 **The conclusion survives all three numbers and that is the point**: whether it is 75%, 85% or
+90%, the database is mostly images and `userwords` grows per sign-up. The percentage was never
+load-bearing — but it was quoted into three documents, so it needed to be right or gone.
 
 ---
 
@@ -65,7 +103,8 @@ SELECT 'userwords' t, COUNT(*) n, SUM(LENGTH(hint_img)) b FROM userwords
 UNION ALL SELECT 'words', COUNT(*), SUM(LENGTH(hint_img)) FROM words
 UNION ALL SELECT 'recall_history', COUNT(*), NULL FROM recall_history
 UNION ALL SELECT 'users', COUNT(*), NULL FROM users;
--- counts baseline (HCL, measured): 29354 / 4472 / 95135 / 2294
+-- counts baseline: use the CORRECTED table above -- 27063 / 5628 / 95489 / 2531
+-- (the 29354 / 4472 / 95135 / 2294 originally here were information_schema ESTIMATES)
 -- run on BOTH sides; the blob sums must match exactly, not approximately
 ```
 
