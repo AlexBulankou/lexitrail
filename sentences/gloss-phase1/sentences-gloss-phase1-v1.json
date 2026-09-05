@@ -1,0 +1,74 @@
+{
+  "sentences": [
+    {
+      "no": 1,
+      "word": { "no": 1, "chinese": "决定", "pinyin": "juédìng", "english": "decision" },
+      "chinese": "我做了一个决定。",
+      "pinyin": "Wǒ zuò le yí gè juédìng.",
+      "english": "I made a decision."
+    },
+    {
+      "no": 2,
+      "word": { "no": 1, "chinese": "决定", "pinyin": "juédìng", "english": "decision" },
+      "chinese": "这是一个很难的决定。",
+      "pinyin": "Zhè shì yí gè hěn nán de juédìng.",
+      "english": "This is a difficult decision."
+    },
+    {
+      "no": 3,
+      "word": { "no": 2, "chinese": "网球", "pinyin": "wǎngqiú", "english": "tennis" },
+      "chinese": "我周末喜欢打网球。",
+      "pinyin": "Wǒ zhōumò xǐhuan dǎ wǎngqiú.",
+      "english": "I like playing tennis on weekends."
+    },
+    {
+      "no": 4,
+      "word": { "no": 2, "chinese": "网球", "pinyin": "wǎngqiú", "english": "tennis" },
+      "chinese": "他是一位有名的网球运动员。",
+      "pinyin": "Tā shì yí wèi yǒumíng de wǎngqiú yùndòngyuán.",
+      "english": "He is a famous tennis player."
+    },
+    {
+      "no": 5,
+      "word": { "no": 3, "chinese": "模糊", "pinyin": "móhu", "english": "vague" },
+      "chinese": "他的解释很模糊。",
+      "pinyin": "Tā de jiěshì hěn móhu.",
+      "english": "His explanation is very vague."
+    },
+    {
+      "no": 6,
+      "word": { "no": 3, "chinese": "模糊", "pinyin": "móhu", "english": "vague" },
+      "chinese": "照片有点模糊，看不清楚。",
+      "pinyin": "Zhàopiàn yǒudiǎn móhu, kàn bu qīngchu.",
+      "english": "The photo is a bit blurry, can't see clearly."
+    },
+    {
+      "no": 7,
+      "word": { "no": 4, "chinese": "澄清", "pinyin": "chéngqīng", "english": "clarify" },
+      "chinese": "请让我澄清一下这个问题。",
+      "pinyin": "Qǐng ràng wǒ chéngqīng yíxià zhège wèntí.",
+      "english": "Please let me clarify this issue."
+    },
+    {
+      "no": 8,
+      "word": { "no": 4, "chinese": "澄清", "pinyin": "chéngqīng", "english": "clarify" },
+      "chinese": "公司发表声明澄清误会。",
+      "pinyin": "Gōngsī fābiǎo shēngmíng chéngqīng wùhuì.",
+      "english": "The company issued a statement to clarify the misunderstanding."
+    },
+    {
+      "no": 9,
+      "word": { "no": 5, "chinese": "名誉", "pinyin": "míngyù", "english": "reputation" },
+      "chinese": "他非常重视自己的名誉。",
+      "pinyin": "Tā fēicháng zhòngshì zìjǐ de míngyù.",
+      "english": "He values his own reputation very much."
+    },
+    {
+      "no": 10,
+      "word": { "no": 5, "chinese": "名誉", "pinyin": "míngyù", "english": "reputation" },
+      "chinese": "这件事会损害公司的名誉。",
+      "pinyin": "Zhè jiàn shì huì sǔnhài gōngsī de míngyù.",
+      "english": "This matter will damage the company's reputation."
+    }
+  ]
+}

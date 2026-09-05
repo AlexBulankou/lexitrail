@@ -104,6 +104,33 @@
     margin: 3rem 0;
 }
 
+/* lexitrail#365: internal links to the static "<gloss> in Chinese" landers, plain enough not to
+   compete visually with the primary CTA above/below it. */
+.popular-words-section {
+    width: 100%;
+    margin: 1.5rem 0;
+    text-align: center;
+}
+
+.popular-words-list {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.5rem 1.25rem;
+    list-style: none;
+    padding: 0;
+    margin: 0.5rem 0 0;
+}
+
+.popular-words-list a {
+    color: #1a73e8;
+    text-decoration: none;
+}
+
+.popular-words-list a:hover {
+    text-decoration: underline;
+}
+
 /* issue-194: was #007bff (Bootstrap blue) / #0056b3 hover -- a THIRD blue on
    this page next to #1a73e8 (.login-card, .start-button) and the wordset
    grid's own primary action. Matched to the app's real palette rather than

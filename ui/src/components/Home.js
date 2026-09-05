@@ -8,6 +8,10 @@ import { useAuth } from '../contexts/AuthContext';
 import { SEO } from '../components/SEO';
 import { JsonLd } from '../components/JsonLd';
 import { OptimizedImage } from '../components/OptimizedImage';
+// lexitrail#365: single source of truth with the static-page generator (ui/scripts/
+// generate-gloss-pages.js) -- importing the same constant means this section can never list a
+// slug the generator didn't actually produce a page for.
+import { PHASE1_QUERIES } from '../utils/glossPages';
 
 const Home = () => {
   const { user } = useAuth();
@@ -123,6 +127,22 @@ const Home = () => {
                   <p>Starting with Mandarin Chinese, we're building a platform that will soon support multiple languages. Join our growing community of language learners!</p>
                 </div>
               </div>
+            </div>
+
+            {/* lexitrail#365: internal links to the "<gloss> in Chinese" landers, so Googlebot
+                reaches them within 1 hop of the root -- until sitemap-gloss.xml is submitted and
+                crawled, this is the only discovery path for these pages. Plain <a> (not <Link>):
+                the destination is a static .html file served outside the SPA's router, not a
+                React route, so a client-side navigation would 404 against App.js's routes. */}
+            <div className="popular-words-section">
+              <h3>Popular words</h3>
+              <ul className="popular-words-list">
+                {PHASE1_QUERIES.map((q) => (
+                  <li key={q.slug}>
+                    <a href={`/${q.slug}.html`}>{q.gloss[0].toUpperCase()}{q.gloss.slice(1)} in Chinese</a>
+                  </li>
+                ))}
+              </ul>
             </div>
 
             <div className="cta-section">

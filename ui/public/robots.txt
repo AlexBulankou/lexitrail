@@ -21,7 +21,9 @@ Allow: /*.png$
 Allow: /*.gif$
 Allow: /*.svg$
 
-Sitemap: https://lexitrail.com/sitemap.xml 
+Sitemap: https://lexitrail.com/sitemap.xml
 # lexitrail#184: the ~5,000 per-word pages. A SECOND Sitemap line rather than a sitemap index --
 # robots.txt accepts multiple, which is the documented alternative and has fewer moving parts.
 Sitemap: https://lexitrail.com/sitemap-words.xml
+# lexitrail#365: the "<gloss> in Chinese" query-matching landers, root-level slugs.
+Sitemap: https://lexitrail.com/sitemap-gloss.xml
