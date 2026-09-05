@@ -21,19 +21,29 @@
   <meta name="keywords" content="Chinese learning, vocabulary app, Mandarin Chinese, language learning, flashcards, HSK, Chinese characters, pinyin">
   <meta name="author" content="Alex Bulankou">
 
+  <!-- lexitrail#368: ABSOLUTE, not %PUBLIC_URL%-relative. CRA substitutes
+       %PUBLIC_URL% with the empty string in a production build, so these emitted
+       `/images/og/...` — a root-relative path. Facebook, Pinterest and Twitter
+       scrapers require an absolute URL and treat a relative one as absent, so the
+       SPA shell failed Rich-Pin/unfurl checks even though the image exists and
+       returns 200. The static templates already do this correctly
+       (`ui/src/utils/{word,hsk,gloss}Pages.js` all emit `${ORIGIN}/images/og/...`);
+       this file was the odd one out. Pinned by ui/src/utils/ogAbsolute.test.js.
+       NOTE: %PUBLIC_URL% is still correct for favicon/manifest below — a browser
+       resolves those against the document, and only SCRAPERS need absolute. -->
   <!-- Open Graph / Facebook -->
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://lexitrail.com/">
   <meta property="og:title" content="Lexitrail - Smart Chinese Vocabulary Learning">
   <meta property="og:description" content="Master Chinese vocabulary with AI-powered learning tools, interactive flashcards, and personalized study paths.">
-  <meta property="og:image" content="%PUBLIC_URL%/images/og/generated/og-landscape.png">
+  <meta property="og:image" content="https://lexitrail.com/images/og/generated/og-landscape.png">
 
   <!-- Twitter -->
   <meta property="twitter:card" content="summary_large_image">
   <meta property="twitter:url" content="https://lexitrail.com/">
   <meta property="twitter:title" content="Lexitrail - Smart Chinese Vocabulary Learning">
   <meta property="twitter:description" content="Master Chinese vocabulary with AI-powered learning tools, interactive flashcards, and personalized study paths.">
-  <meta property="twitter:image" content="%PUBLIC_URL%/images/og/generated/og-landscape.png">
+  <meta property="twitter:image" content="https://lexitrail.com/images/og/generated/og-landscape.png">
 
   <link rel="icon" href="%PUBLIC_URL%/favicon.ico" />
   <!-- lexitrail#186: NO canonical here, deliberately.
@@ -73,7 +83,7 @@
   </script>
 
   <!-- Add image-specific meta tags -->
-  <meta name="thumbnail" content="%PUBLIC_URL%/images/thumbnails/app-preview.png" />
+  <meta name="thumbnail" content="https://lexitrail.com/images/thumbnails/app-preview.png" />
   <meta property="og:image:type" content="image/png" />
   <meta property="og:image:width" content="1200" />
   <meta property="og:image:height" content="630" />
