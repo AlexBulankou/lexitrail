@@ -149,7 +149,7 @@ describe('renderWordPage', () => {
     expect(bare).toContain('<!DOCTYPE html>');
   });
 
-  test('every word page carries the inline stylesheet + card chrome (lexitrail#369)', () => {
+  test('every word page carries the inline stylesheet + card chrome (lexitrail#372)', () => {
     // ~The bug Alex hit 2026-09-05 was pages shipping with NO <style> at all. Assert the fix
     // structurally so a future template edit that drops it fails here, not in a share preview.
     const p = renderWordPage({ level: 5, id: 1, word: '假设', pinyin: 'jiǎshè', english: 'in case of' });

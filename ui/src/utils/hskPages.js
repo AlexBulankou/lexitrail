@@ -49,7 +49,7 @@ export const HSK_LEVELS = [1, 2, 3, 4, 5, 6];
 
 export const ORIGIN = 'https://lexitrail.com';
 
-// lexitrail#369 — the shared, INLINE stylesheet for every static page (hsk list, per-word, gloss).
+// lexitrail#372 — the shared, INLINE stylesheet for every static page (hsk list, per-word, gloss).
 //
 // 🔴 INLINE ON PURPOSE, not a <link>. These files are served as-is by serve-handler and are the
 // crawlable half of the site; a stylesheet <link> would be a second request that can 404, mismatch
