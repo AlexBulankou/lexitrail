@@ -83,8 +83,15 @@ function main() {
     }
     const examples = examplesByWord.get(group.primary.word) || [];
     if (!examples.length) {
-      console.error(`  note ${query.slug}: no example sentences for ${group.primary.word} in `
-        + `${SENTENCES_DIR} -- page will render without an Example sentences block`);
+      // hcl@'s review Q on the PR: does a future drop-in slug with no matching sentence entry
+      // get skipped, or ship a thin page? Skipped -- "complete data" (the spec's own phasing
+      // filter) means a matching word AND example sentences, not just the word. A thin page here
+      // is exactly the "thin-content demotion" risk the phasing exists to avoid, and it is a
+      // silent one: nothing else about the page looks wrong.
+      console.error(`  SKIP ${query.slug}: matched ${group.primary.word} but has no example `
+        + `sentences in ${SENTENCES_DIR} -- not "complete data" per the spec's own phasing `
+        + `filter, not in Phase 1 until sentences are added`);
+      continue;
     }
     const html = gp.renderGlossPage(query, group, { examples });
     const file = path.join(OUT, `${query.slug}.html`);

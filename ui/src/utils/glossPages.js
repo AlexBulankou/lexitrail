@@ -33,15 +33,25 @@ const esc = (s) => String(s ?? '')
 const jsonSafe = (o) => JSON.stringify(o)
   .replace(/</g, '\\u003c').replace(/>/g, '\\u003e').replace(/&/g, '\\u0026');
 
-// The GSC-proven seed set (issue body, "The evidence" section). `impressions`/`clicks` are the
+// The GSC-proven seed set (issue body, "The evidence" section). `impressions`/`position` are the
 // 3-month Search Console figures as reported in the issue, kept here as the paper trail for WHY
 // each slug was chosen -- not used by the renderer, read by a human deciding whether to widen this.
+//
+// 🔴 `position`, NOT clicks (hcl@'s review catch on the PR, 2026-09-05). The issue's aggregate is
+// 2.87K impressions / **4 clicks total** across dozens of queries -- five queries alone at ~10
+// each would be an order of magnitude more clicks than the whole corpus has. The numbers below
+// (9.7-11.2) are a precise match for the issue's OTHER figure, "ranks ~position 10-11": the
+// `e.g. clarify(32 imp/9.7)` shorthand is imp/POSITION, not imp/clicks. Actual clicks per query
+// are near-zero BY CONSTRUCTION -- that near-zero-despite-real-impressions gap is the entire
+// premise of this issue (Google offers the traffic; there is no page to click), so mislabeling it
+// as "clicks: 9.7" inverted the one number a future widener would read as evidence the pages
+// already convert, when the opposite is true.
 export const PHASE1_QUERIES = [
-  { slug: 'clarify-in-chinese', gloss: 'clarify', impressions: 32, clicks: 9.7 },
-  { slug: 'tennis-in-chinese', gloss: 'tennis', impressions: 32, clicks: 11.2 },
-  { slug: 'vague-in-chinese', gloss: 'vague', impressions: 27, clicks: 9.9 },
-  { slug: 'reputation-in-chinese', gloss: 'reputation', impressions: 22, clicks: 10.7 },
-  { slug: 'decision-in-chinese', gloss: 'decision', impressions: 20, clicks: 10.7 },
+  { slug: 'clarify-in-chinese', gloss: 'clarify', impressions: 32, position: 9.7 },
+  { slug: 'tennis-in-chinese', gloss: 'tennis', impressions: 32, position: 11.2 },
+  { slug: 'vague-in-chinese', gloss: 'vague', impressions: 27, position: 9.9 },
+  { slug: 'reputation-in-chinese', gloss: 'reputation', impressions: 22, position: 10.7 },
+  { slug: 'decision-in-chinese', gloss: 'decision', impressions: 20, position: 10.7 },
 ];
 
 // ---------------------------------------------------------------------------------------------
