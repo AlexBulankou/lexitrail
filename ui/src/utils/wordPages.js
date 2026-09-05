@@ -209,7 +209,8 @@ export { HSK_LEVELS };
 export const WORD_PAGES_LASTMOD = '2026-08-29';
 
 /** The whole sitemap-words.xml document. Its own file rather than entries appended to sitemap.xml:
- * sitemap.xml is hand-maintained and reviewable at 21 URLs, and folding 4,999 generated entries
+ * sitemap.xml is hand-maintained and reviewable at 7 URLs (was 21 until #367
+ * dropped the 14 unrenderable SPA routes), and folding 4,999 generated entries
  * into it would make every future edit to it an unreviewable diff. robots.txt declares both, which
  * is the documented alternative to a sitemap index and has fewer moving parts. */
 export const renderWordSitemap = (words, lastmod = WORD_PAGES_LASTMOD, origin = ORIGIN) =>

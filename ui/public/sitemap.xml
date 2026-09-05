@@ -1,4 +1,20 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!-- lexitrail#367 (decided 2026-09-05, HCL): STATIC-ONLY INDEXING. This file lists
+     ONLY the homepage and the static hsk*.html indexes. The 14 SPA routes it used to
+     carry (/about, /wordsets, 12 /game/*) were removed deliberately, NOT by accident:
+     robots.txt blocks Googlebot from the CRA bundle, so every SPA route renders as a
+     3496-byte shell with zero links. Asserting an unrenderable shell as a canonical
+     index target is worse than not listing it.
+
+     🔴 Do NOT "restore" them without re-opening #367. Removing them does not hide them:
+     hsk1.html links every /game/*/PRACTICE route and the gloss landers link them too,
+     so they stay discoverable through the in-page link graph. The sitemap entry was the
+     only thing being dropped, which is what made this cheap.
+
+     Measured 2026-09-05 at the wire: /, /about, /wordsets and /game/1/PRACTICE were all
+     3496 B with 0 <a>; hsk1.html was 34917 B with 157 <a>. The static corpus is ~5010
+     URLs (4999 word pages + 6 hsk indexes + 5 gloss landers) and none of it depends on
+     JS. See ui/src/utils/sitemapStatic.test.js, which pins this. -->
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
         xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
 <url>
@@ -7,95 +23,10 @@
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
-  <url>
-    <loc>https://lexitrail.com/about</loc>
-    <lastmod>2026-08-20</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  
-  <url>
-    <loc>https://lexitrail.com/wordsets</loc>
-    <lastmod>2026-08-20</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.9</priority>
-  </url>
 
   <!-- HSK Practice Routes -->
-  <url>
-    <loc>https://lexitrail.com/game/1/PRACTICE</loc>
-    <lastmod>2026-08-20</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://lexitrail.com/game/2/PRACTICE</loc>
-    <lastmod>2026-08-20</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://lexitrail.com/game/3/PRACTICE</loc>
-    <lastmod>2026-08-20</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://lexitrail.com/game/4/PRACTICE</loc>
-    <lastmod>2026-08-20</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://lexitrail.com/game/5/PRACTICE</loc>
-    <lastmod>2026-08-20</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://lexitrail.com/game/6/PRACTICE</loc>
-    <lastmod>2026-08-20</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
 
   <!-- HSK Test Routes -->
-  <url>
-    <loc>https://lexitrail.com/game/1/TEST</loc>
-    <lastmod>2026-08-20</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://lexitrail.com/game/2/TEST</loc>
-    <lastmod>2026-08-20</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://lexitrail.com/game/3/TEST</loc>
-    <lastmod>2026-08-20</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://lexitrail.com/game/4/TEST</loc>
-    <lastmod>2026-08-20</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://lexitrail.com/game/5/TEST</loc>
-    <lastmod>2026-08-20</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://lexitrail.com/game/6/TEST</loc>
-    <lastmod>2026-08-20</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
   <url>
     <loc>https://lexitrail.com/hsk1.html</loc>
     <lastmod>2026-08-28</lastmod>
