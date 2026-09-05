@@ -33,6 +33,31 @@
       "type": 301
     },
     {
+      "source": "/clarify-in-chinese",
+      "destination": "/clarify-in-chinese.html",
+      "type": 301
+    },
+    {
+      "source": "/tennis-in-chinese",
+      "destination": "/tennis-in-chinese.html",
+      "type": 301
+    },
+    {
+      "source": "/vague-in-chinese",
+      "destination": "/vague-in-chinese.html",
+      "type": 301
+    },
+    {
+      "source": "/reputation-in-chinese",
+      "destination": "/reputation-in-chinese.html",
+      "type": 301
+    },
+    {
+      "source": "/decision-in-chinese",
+      "destination": "/decision-in-chinese.html",
+      "type": 301
+    },
+    {
       "source": "/go/ig-wod",
       "destination": "/?utm_source=instagram&utm_medium=social&utm_campaign=lt_wod",
       "type": 302
