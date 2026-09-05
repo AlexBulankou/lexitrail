@@ -54,11 +54,12 @@ const evalModule = (file, exportNames, injected = {}) => {
 
 const hsk = evalModule('hskPages.js', [
   'HSK_LEVELS', 'ORIGIN', 'isHskWordset', 'groupByLevel',
-  'pageFilename', 'pageUrl', 'renderPage', 'renderSitemapEntries']);
+  'pageFilename', 'pageUrl', 'renderPage', 'renderSitemapEntries', 'PAGE_STYLE', 'SITE_HEADER']);
 const wp = evalModule('wordPages.js',
   ['wordFilename', 'wordUrl', 'collectWords', 'renderWordPage', 'renderWordSitemapEntries',
    'renderWordSitemap', 'WORD_PAGES_LASTMOD', 'collectExamples'],
-  { HSK_LEVELS: hsk.HSK_LEVELS, ORIGIN: hsk.ORIGIN, isHskWordset: hsk.isHskWordset });
+  { HSK_LEVELS: hsk.HSK_LEVELS, ORIGIN: hsk.ORIGIN, isHskWordset: hsk.isHskWordset,
+    PAGE_STYLE: hsk.PAGE_STYLE, SITE_HEADER: hsk.SITE_HEADER });
 
 function main() {
   const check = process.argv.includes('--check');

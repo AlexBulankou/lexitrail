@@ -5,7 +5,7 @@
 // is COMMITTED rather than built (the Docker build context is `ui/`, so terraform/csv/words.csv —
 // one directory UP — does not exist inside the image; a build-time generator would work locally,
 // pass review, and produce nothing in production).
-import { HSK_LEVELS, ORIGIN, isHskWordset } from './hskPages';
+import { HSK_LEVELS, ORIGIN, isHskWordset, PAGE_STYLE, SITE_HEADER } from './hskPages';
 
 const esc = (s) => String(s ?? '')
   .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
@@ -162,14 +162,18 @@ ${prev ? `<link rel="prev" href="${wordUrl(prev.level, prev.word, origin)}">\n` 
 <meta property="twitter:title" content="${esc(title)}">
 <meta property="twitter:description" content="${esc(desc)}">
 <script type="application/ld+json">${jsonLd}</script>
+${PAGE_STYLE}
 </head>
 <body>
-<h1 lang="zh-Hans">${esc(w.word)}</h1>
-<dl>
-<dt>Pinyin</dt><dd>${esc(w.pinyin)}</dd>
-<dt>English</dt><dd>${esc(w.english)}</dd>
-<dt>HSK level</dt><dd><a href="${levelUrl}">HSK ${w.level}</a></dd>
-</dl>${senses.length > 1 ? `
+${SITE_HEADER}
+<main class="wrap">
+<div class="word-card">
+<h1 class="hanzi-big" lang="zh-Hans">${esc(w.word)}</h1>
+${w.pinyin ? `<p class="pinyin">${esc(w.pinyin)}</p>` : ''}
+${w.english ? `<p class="translation">${esc(w.english)}</p>` : ''}
+<p><a class="hsk-badge" href="${levelUrl}">HSK ${w.level}</a></p>
+<p><a class="cta" href="${origin}/game/${w.level}/PRACTICE">Practise HSK ${w.level} with ${esc(w.word)} &rarr;</a></p>
+</div>${senses.length > 1 ? `
 <h2>Senses</h2>
 <ol>
 ${senses.map((s) => `<li>${esc([s.pinyin, s.english].filter(Boolean).join(' — '))}</li>`).join('\n')}
@@ -181,8 +185,8 @@ ${examples.map((x) => `<li><span lang="zh-Hans">${esc(x.chinese)}</span>`
     + `${x.english ? `<br>${esc(x.english)}` : ''}</li>`).join('\n')}
 </ul>` : ''}
 <p><span lang="zh-Hans">${esc(w.word)}</span>${w.pinyin ? ` is pronounced <em>${esc(w.pinyin)}</em>` : ''}${w.english ? ` and means ${senses.length > 1 ? `&ldquo;${esc(senses[0].english)}&rdquo; (and ${senses.length - 1} further sense${senses.length > 2 ? 's' : ''} below)` : `&ldquo;${esc(w.english)}&rdquo;`}` : ''}. It is one of the words in the HSK ${w.level} vocabulary, a level of the Hanyu Shuiping Kaoshi, China&rsquo;s standardised Chinese proficiency test. Recognising a word on a page and recalling it when you need it are different skills, and only the second survives a conversation &mdash; which is why LexiTrail shows you <span lang="zh-Hans">${esc(w.word)}</span> again just before you would have forgotten it, rather than on a fixed schedule.</p>
-<p><a href="${origin}/game/${w.level}/PRACTICE">Practise HSK ${w.level} with ${esc(w.word)} &rarr;</a></p>
 <nav>${nav}</nav>
+</main>
 </body>
 </html>
 `;
