@@ -49,6 +49,80 @@ export const HSK_LEVELS = [1, 2, 3, 4, 5, 6];
 
 export const ORIGIN = 'https://lexitrail.com';
 
+// lexitrail#369 — the shared, INLINE stylesheet for every static page (hsk list, per-word, gloss).
+//
+// 🔴 INLINE ON PURPOSE, not a <link>. These files are served as-is by serve-handler and are the
+// crawlable half of the site; a stylesheet <link> would be a second request that can 404, mismatch
+// the SPA's hashed bundle, or arrive after first paint — the exact "broken styles" this fixes. A
+// self-contained <style> renders correctly the instant the HTML lands, for a crawler and a human
+// alike. It lives HERE (the base module both wordPages.js and glossPages.js import) so the three
+// page families cannot drift apart; the generate scripts inject it the same way they inject ORIGIN,
+// and that wiring fails LOUDLY if a script forgets it.
+//
+// Design vocabulary is the gloss page's: .word-card / .hanzi-big / .pinyin / .translation /
+// .hsk-badge, now shared by all three so a share of any of them looks like the same product.
+export const PAGE_STYLE = `<style>
+:root{color-scheme:light dark;
+  --bg:#fbf9f4;--surface:#fff;--ink:#1d1a16;--muted:#6d6558;--line:#eae3d6;
+  --accent:#b23b2e;--accent-ink:#fff;--accent-soft:#fbeeeb;--shadow:0 1px 2px rgba(40,30,20,.06),0 8px 24px rgba(40,30,20,.06)}
+@media (prefers-color-scheme:dark){:root{
+  --bg:#141310;--surface:#1f1c17;--ink:#f2ede2;--muted:#a79e8e;--line:#332f27;
+  --accent:#e6796a;--accent-ink:#1a0f0c;--accent-soft:#2b1d19;--shadow:0 1px 2px rgba(0,0,0,.3),0 10px 30px rgba(0,0,0,.35)}}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);
+  font-family:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  line-height:1.65;font-size:17px;-webkit-font-smoothing:antialiased}
+:lang(zh-Hans),.hanzi-big,td[lang]{font-family:"Noto Serif SC","Songti SC","STSong","Source Han Serif SC","SimSun",serif}
+.wrap{max-width:660px;margin:0 auto;padding:20px 20px 72px}
+.site{display:flex;align-items:center;gap:8px;padding:18px 0 8px;font-weight:700;letter-spacing:-.01em}
+.site a{color:var(--ink);text-decoration:none}
+.site .dot{width:10px;height:10px;border-radius:3px;background:var(--accent);display:inline-block}
+a{color:var(--accent);text-decoration:none}
+a:hover{text-decoration:underline}
+h1{font-size:clamp(1.5rem,5vw,2rem);line-height:1.2;letter-spacing:-.02em;margin:.6em 0 .4em}
+h2{font-size:1.15rem;letter-spacing:-.01em;margin:1.8em 0 .5em}
+p{margin:0 0 1em}
+.word-card{background:var(--surface);border:1px solid var(--line);border-radius:20px;
+  padding:34px 28px 30px;text-align:center;box-shadow:var(--shadow);margin:8px 0 26px}
+.hanzi-big{font-size:clamp(4.2rem,26vw,7.5rem);line-height:1;margin:0 0 .12em;letter-spacing:.02em}
+.pinyin{font-size:1.5rem;color:var(--accent);margin:0 0 .2em;font-weight:500}
+.tone-numbers{color:var(--muted);font-size:1rem;font-weight:400}
+.translation{font-size:1.25rem;color:var(--ink);margin:0 0 .8em}
+.hsk-badge{display:inline-block;background:var(--accent-soft);color:var(--accent);
+  font-size:.8rem;font-weight:700;letter-spacing:.03em;text-transform:uppercase;
+  padding:5px 11px;border-radius:999px;text-decoration:none}
+.cta,button{display:inline-block;background:var(--accent);color:var(--accent-ink);
+  font:inherit;font-weight:600;border:0;cursor:pointer;
+  padding:13px 22px;border-radius:999px;text-decoration:none;transition:transform .06s ease,filter .15s ease}
+.cta:hover,button:hover{filter:brightness(1.05);text-decoration:none}
+.cta:active,button:active{transform:translateY(1px)}
+.word-card button{margin-top:6px;background:var(--surface);color:var(--accent);border:1.5px solid var(--line);font-weight:600;padding:9px 16px}
+dl{display:grid;grid-template-columns:auto 1fr;gap:6px 18px;margin:0 0 22px;
+  background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:18px 20px}
+dt{color:var(--muted);font-size:.85rem;text-transform:uppercase;letter-spacing:.04em;align-self:center}
+dd{margin:0;font-size:1.1rem}
+table{width:100%;border-collapse:collapse;font-size:1rem;margin:8px 0 20px;
+  background:var(--surface);border:1px solid var(--line);border-radius:16px;overflow:hidden}
+thead th{text-align:left;font-size:.78rem;text-transform:uppercase;letter-spacing:.04em;
+  color:var(--muted);padding:12px 14px;border-bottom:1px solid var(--line)}
+td{padding:11px 14px;border-top:1px solid var(--line)}
+tbody tr:nth-child(odd){background:color-mix(in srgb,var(--surface) 100%,var(--bg) 55%)}
+td[lang]{font-size:1.3rem}
+td a{font-weight:500}
+ul.other-ways{list-style:none;padding:0;margin:0 0 18px;display:flex;flex-wrap:wrap;gap:8px}
+ul.other-ways li{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:8px 13px}
+h2 + ul:not(.other-ways){list-style:none;padding:0;margin:0 0 18px}
+h2 + ul:not(.other-ways) li{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:13px 16px;margin:0 0 10px}
+h2 + ul:not(.other-ways) em{color:var(--accent);font-style:normal}
+nav{margin-top:30px;padding-top:18px;border-top:1px solid var(--line);color:var(--muted);
+  font-size:.95rem;display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center}
+</style>`;
+
+/** The shared top wordmark, so every page reads as one product. Kept in the base module for the
+ * same reason as PAGE_STYLE — one source of truth the three families share. */
+export const SITE_HEADER = `<header class="site"><a href="${ORIGIN}/"><span class="dot"></span> LexiTrail</a></header>`;
+
 /** `wordset_id` in words.csv is 1..6 for HSK1..6; 7 is the internal `test` set. */
 export const isHskWordset = (id) => HSK_LEVELS.includes(Number(id));
 
@@ -136,8 +210,11 @@ export const renderPage = (level, words, origin = ORIGIN) => {
 <meta property="twitter:description" content="${esc(desc)}">
 <meta property="twitter:image" content="${origin}/images/og/generated/og-landscape.png">
 <script type="application/ld+json">${jsonLd}</script>
+${PAGE_STYLE}
 </head>
 <body>
+${SITE_HEADER}
+<main class="wrap">
 <h1>HSK ${level} vocabulary list</h1>
 <p>This page lists every word in the HSK ${level} vocabulary — ${words.length} entries, each with
 its simplified hanzi, pinyin and English meaning. HSK ${level} is one of the six levels of the
@@ -155,6 +232,7 @@ ${rows}
 <p><a href="${origin}/game/${level}/PRACTICE">Start practising HSK ${level} &rarr;</a></p>
 <nav><p>Other levels: ${HSK_LEVELS.filter((n) => n !== level)
     .map((n) => `<a href="${origin}/hsk${n}.html">HSK ${n}</a>`).join(' · ')}</p></nav>
+</main>
 </body>
 </html>
 `;

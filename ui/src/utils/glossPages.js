@@ -22,7 +22,7 @@
 // generator. Flagged to hcl@ on the issue rather than silently treated as "done" -- #365's own
 // quality-gate #3 says a scope change comes back to zz1, and this is the honest size of what
 // shipped, not a decision to widen or shrink it.
-import { HSK_LEVELS, ORIGIN, isHskWordset } from './hskPages';
+import { HSK_LEVELS, ORIGIN, isHskWordset, PAGE_STYLE, SITE_HEADER } from './hskPages';
 
 const esc = (s) => String(s ?? '')
   .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
@@ -281,8 +281,11 @@ export const renderGlossPage = (query, group, { examples = [], origin = ORIGIN }
 <meta property="twitter:description" content="${esc(desc)}">
 <script type="application/ld+json">${jsonLd}</script>
 <script>${AUDIO_BUTTON_SCRIPT}</script>
+${PAGE_STYLE}
 </head>
 <body>
+${SITE_HEADER}
+<main class="wrap">
 <h1>${esc(title)}</h1>
 <div class="word-card">
 <p class="hanzi-big" lang="zh-Hans">${esc(primary.word)}</p>
@@ -294,6 +297,7 @@ export const renderGlossPage = (query, group, { examples = [], origin = ORIGIN }
 <h2>Practise it</h2>
 <p>${ctaRow}</p>
 <nav><a href="${levelUrl}">HSK ${primary.level} word list</a> &middot; <a href="${origin}/">LexiTrail home</a></nav>
+</main>
 </body>
 </html>
 `;

@@ -38,11 +38,13 @@ const evalModule = (file, exportNames, injected = {}) => {
   return mod;
 };
 
-const hsk = evalModule('hskPages.js', ['HSK_LEVELS', 'ORIGIN', 'isHskWordset']);
+const hsk = evalModule('hskPages.js',
+  ['HSK_LEVELS', 'ORIGIN', 'isHskWordset', 'PAGE_STYLE', 'SITE_HEADER']);
 const gp = evalModule('glossPages.js',
   ['PHASE1_QUERIES', 'collectGlossGroup', 'renderGlossPage', 'renderGlossSitemap',
    'GLOSS_PAGES_LASTMOD', 'glossUrl'],
-  { HSK_LEVELS: hsk.HSK_LEVELS, ORIGIN: hsk.ORIGIN, isHskWordset: hsk.isHskWordset });
+  { HSK_LEVELS: hsk.HSK_LEVELS, ORIGIN: hsk.ORIGIN, isHskWordset: hsk.isHskWordset,
+    PAGE_STYLE: hsk.PAGE_STYLE, SITE_HEADER: hsk.SITE_HEADER });
 
 function main() {
   const check = process.argv.includes('--check');

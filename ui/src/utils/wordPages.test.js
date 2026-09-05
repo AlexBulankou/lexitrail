@@ -144,9 +144,18 @@ describe('renderWordPage', () => {
   test('a word with no pinyin/english still renders valid, non-empty prose', () => {
     // ~A CSV row can be missing def1/def2; the page must not emit "is pronounced  and means".
     const bare = renderWordPage({ level: 1, id: 1, word: '啊' });
-    expect(bare).toContain('<h1 lang="zh-Hans">啊</h1>');
+    expect(bare).toContain('<h1 class="hanzi-big" lang="zh-Hans">啊</h1>');
     expect(bare).not.toContain('is pronounced  and');
     expect(bare).toContain('<!DOCTYPE html>');
+  });
+
+  test('every word page carries the inline stylesheet + card chrome (lexitrail#369)', () => {
+    // ~The bug Alex hit 2026-09-05 was pages shipping with NO <style> at all. Assert the fix
+    // structurally so a future template edit that drops it fails here, not in a share preview.
+    const p = renderWordPage({ level: 5, id: 1, word: '假设', pinyin: 'jiǎshè', english: 'in case of' });
+    expect(p).toContain('<style>');
+    expect(p).toContain('class="word-card"');
+    expect(p).toContain('class="cta"');
   });
 });
 
