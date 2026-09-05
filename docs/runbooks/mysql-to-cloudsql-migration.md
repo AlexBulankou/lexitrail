@@ -94,9 +94,10 @@ STEP                       REVERSIBLE BY                    VERIFY BEFORE PROCEE
 ```
 
 🔴 **Step 2 verifies row counts AND blob lengths, never exit status.** `mysqldump` piped into
-`mysql` exits 0 on a partial import more readily than people expect, and 85% of the dump is
-`hint_img` blobs — so a row-count match with truncated blobs passes a count check and silently
-loses user data.
+`mysql` exits 0 on a partial import more readily than people expect, and **most of the dump is
+`hint_img` blobs** (79.7 MiB of the 106 MiB dump — see the retraction above; the exact percentage
+was never load-bearing and the three figures quoted for it were all wrong) — so a row-count match
+with truncated blobs passes a count check and silently loses user data.
 
 ```sql
 SELECT 'userwords' t, COUNT(*) n, SUM(LENGTH(hint_img)) b FROM userwords
