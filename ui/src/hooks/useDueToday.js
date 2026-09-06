@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { getWordsets } from '../services/wordsService';
-import { getUserWordsByWordset } from '../services/userService';
+import { getUserWordsByWordset, getDueCounts } from '../services/userService';
 import { dueByWordset, totalDue } from '../utils/srs';
 import { userwordsKey } from '../utils/wordsetCache';
 
@@ -38,14 +38,70 @@ import { userwordsKey } from '../utils/wordsetCache';
 // see. Passed in rather than imported so the pure `loadDueToday` stays
 // testable without a window — the hook supplies the real shared cache.
 //
+// ⚠️ issue-384: only the FALLBACK path below populates this now. The fast path
+// never fetches rows, so it has none to publish — opening a set for practice
+// fetches its own, once, instead of reusing what Today happened to have warmed.
+// That is a deliberate trade: the warm cost was being paid SEVEN times on every
+// Today load to save ONE fetch on a session that may never start.
+//
 // DIRECTIONAL ON PURPOSE: Today WRITES and never READS. Today is the surface
 // that has to reflect practice you just finished, so it must always ask the
 // network; the loader is the consumer. Reading here would make the due count
 // answer from before the session that changed it, which is the one wrong answer
 // this screen must never give (see the error path below for the same argument).
+// issue-384: the fan-out below is now the FALLBACK, not the path.
+//
+// It asked `/userwords/query` once per visible wordset, concurrently, and each
+// response carried every word in that set with up to three recall-history rows
+// — ~5,600 words and ~16,000 rows to render seven integers. Measured
+// user-visible result: 10s+ and then "Couldn't load today's reviews", because a
+// `Promise.all` fails whole when any one set is slow.
+//
+// `/userwords/due-counts` returns the seven integers. It is fast BY
+// CONSTRUCTION rather than by tuning: its response does not grow with the size
+// of a wordset, so this screen cannot drift back into the same shape.
+//
+// 🔴 THE FALLBACK IS SCOPED TO 404 ON PURPOSE, and that is the load-bearing
+// half. The UI and the backend deploy from two separate triggers, so a UI that
+// ships first would call an endpoint that does not exist yet; falling back
+// keeps the screen working (slowly, as today) through that window. But falling
+// back on ANY error would make a genuinely broken endpoint invisible forever —
+// the screen would quietly do the slow thing and nobody would ever learn the
+// fast path had stopped working. A 500, a timeout, or a bad payload must
+// surface as the error this screen already knows how to show.
+//
+// ⏳ DELETE THIS FALLBACK once the backend is deployed and verified. It is
+// transitional, and a transitional path with no expiry is how a codebase ends
+// up with two live implementations of the same screen.
+const isEndpointAbsent = (err) =>
+  Boolean(err && err.response && err.response.status === 404);
+
 export const loadDueToday = async (userId, cache = null) => {
   const wordsetsResponse = await getWordsets();
   const wordsets = (wordsetsResponse && wordsetsResponse.data) || [];
+
+  try {
+    const response = await getDueCounts(userId);
+    const rows = (response && response.data) || [];
+    const byId = new Map(rows.map((r) => [String(r.wordset_id), Number(r.due) || 0]));
+    // Mapped over the VISIBLE wordsets, not over the response: the hide-list
+    // for the internal `test`/`HSK7` sets lives in `getWordsets` and must stay
+    // in one place. A set the server did not count has nothing due, which is
+    // why a missing id defaults to 0 rather than being dropped — dropping it
+    // would remove the set from `pickStartSet`'s input as well.
+    const sets = wordsets.map((ws) => ({
+      wordsetId: ws.wordset_id,
+      description: ws.description,
+      due: byId.get(String(ws.wordset_id)) || 0,
+    }));
+    return { total: totalDue(sets), sets };
+  } catch (err) {
+    if (!isEndpointAbsent(err)) throw err;
+    if (typeof console !== 'undefined' && console.warn) {
+      console.warn('[due-today] /userwords/due-counts is absent (404) — '
+        + 'falling back to the per-wordset fan-out. This is the slow path.');
+    }
+  }
 
   const entries = await Promise.all(
     wordsets.map(async (ws) => {

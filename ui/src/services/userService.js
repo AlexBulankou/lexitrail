@@ -38,6 +38,21 @@ export const getUserWordsByWordset = async (userId, wordsetId) => {
   return await getData(`/userwords/query?user_id=${userId}&wordset_id=${wordsetId}`);
 };
 
+// issue-384: the Today home's per-wordset due COUNTS, in one request.
+//
+// `getUserWordsByWordset` above answers "which words", and the Today home only
+// ever needed "how many". Asking the row question seven times (once per
+// wordset, concurrently) downloaded ~5,600 words with their recall history to
+// render seven integers: measured 10s+, then an outright failure, because the
+// screen is a `Promise.all` and one slow set fails all of them.
+//
+// This response does not grow with the size of a wordset, so the screen cannot
+// regress into that shape again as the sets grow. Wordsets with nothing due are
+// ABSENT from the response rather than present with 0 — the caller defaults.
+export const getDueCounts = async (userId) => {
+  return await getData(`/userwords/due-counts?user_id=${userId}`);
+};
+
 // Update recall state for a word
 // `inclusionOnly` (#111): this call changes inclusion and is NOT a recall
 // event, so the backend must not append a RecallHistory row for it. Defaults

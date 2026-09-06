@@ -1,10 +1,11 @@
 from flask import Blueprint, request
 from ..models import db, UserWord, RecallHistory, Word
 from ..utils import to_dict, success_response, error_response, not_found_response
-from datetime import datetime
+from datetime import datetime, timedelta
 import logging
 from ..utils import validate_user_access  # Import the shared validation function
 from ..recall_policy import is_recall_event, recall_provenance
+from ..srs_ladder import distinct_state_intervals, interval_days
 from app.auth import authenticate_user  # Import from auth.py
 import time
 
@@ -123,6 +124,127 @@ def get_userwords_by_user_and_wordset():
         logger.error(f"Error retrieving userwords: {e}", exc_info=True)
         return error_response(str(e), 500)
 
+
+@bp.route('/due-counts', methods=['GET'])
+@authenticate_user
+def get_due_counts():
+    """Per-wordset count of words DUE today, for one user. issue-384.
+
+    ## Why this exists
+
+    The Today home needs one integer per wordset. It used to get them by asking
+    `/userwords/query` once per wordset -- seven concurrent requests, each
+    returning every word in the set with up to three recall-history rows, then
+    counting in the browser. ~5,600 words and ~16,000 rows of work to render
+    seven numbers. Measured user-visible result: 10s+, then an outright failure
+    ("Couldn't load today's reviews"), because the whole screen is a
+    `Promise.all` and one slow set fails all of them.
+
+    This returns the seven integers. It is fast BY CONSTRUCTION rather than by
+    optimisation: the response does not grow with the size of the set, so it
+    cannot regress back into the same shape as the sets grow.
+
+    ## The due rule, and where it is defined
+
+    `ui/src/utils/srs.js` remains the system of record for what "due" means.
+    Only the interval LADDER is mirrored here (`srs_ladder.py`), pinned rung for
+    rung by `test_srs_ladder_parity.py` against the actual arrays in that file.
+    The rest of the rule is expressed directly in the query:
+
+      * a word must be INCLUDED                     (`isWordDue`'s first line)
+      * a word never practised is DUE               (`isDue`'s null branch)
+      * otherwise DUE once its interval has elapsed since the MOST RECENT review
+
+    "Most recent" is `MAX(recall_time)`, matching `lastRecallTimeOf`, which
+    scans for the max rather than trusting order -- nothing sorts the history.
+
+    ## One clock
+
+    `now` is read ONCE and every cutoff derived from it, for the same reason
+    `dueByWordset` threads a single `now` through every word: a clock read per
+    row could count two words on the same rung against different instants, and
+    the total would then correspond to no single moment.
+    """
+    user_id = request.args.get('user_id')
+    if not user_id:
+        return error_response("Missing 'user_id' query parameter", 400)
+
+    validation_response = validate_user_access(user_id)
+    if validation_response:
+        return validation_response
+
+    try:
+        now = datetime.utcnow()
+
+        # The most recent review per word, for THIS user only.
+        #
+        # The filter is on the inside on purpose. `/userwords/query` builds a
+        # `row_number() OVER (PARTITION BY user_id, word_id)` with no WHERE at
+        # all, so every request ranks the entire recall_history table before
+        # anything is discarded -- seven times per page load. Here the user
+        # predicate is applied before the aggregate, and MAX is all the Today
+        # count needs; the ranked top-3 exists for the practice screen, which
+        # genuinely uses the last three answers.
+        latest = (
+            db.session.query(
+                RecallHistory.word_id.label('word_id'),
+                db.func.max(RecallHistory.recall_time).label('last_time'),
+            )
+            .filter(RecallHistory.user_id == user_id)
+            .group_by(RecallHistory.word_id)
+            .subquery()
+        )
+
+        # `recall_state` NULL is state 0, matching srs.js's `recallState | 0`.
+        state = db.func.coalesce(UserWord.recall_state, 0)
+
+        # One OR-arm per rung, with the cutoff datetime computed in PYTHON
+        # rather than as SQL date arithmetic -- portable across the sqlite the
+        # tests run on and the MySQL production uses, and it keeps the single
+        # `now` above authoritative instead of letting the database read its
+        # own clock mid-statement.
+        rungs = distinct_state_intervals()
+        lo_state, hi_state = rungs[0][0], rungs[-1][0]
+        arms = [latest.c.last_time.is_(None)]  # never practised -> always due
+        for st, days in rungs:
+            cutoff = now - timedelta(days=days)
+            if st == lo_state:
+                pred = state <= st          # saturated end of the graduation ladder
+            elif st == hi_state:
+                pred = state >= st          # saturated end of the learning ladder
+            else:
+                pred = state == st
+            arms.append(db.and_(pred, latest.c.last_time <= cutoff))
+
+        rows = (
+            db.session.query(
+                Word.wordset_id.label('wordset_id'),
+                db.func.count(db.distinct(UserWord.word_id)).label('due'),
+            )
+            .join(Word, UserWord.word_id == Word.word_id)
+            .outerjoin(latest, latest.c.word_id == UserWord.word_id)
+            .filter(
+                UserWord.user_id == user_id,
+                UserWord.is_included.is_(True),
+                db.or_(*arms),
+            )
+            .group_by(Word.wordset_id)
+            .all()
+        )
+
+        # Wordsets with nothing due are ABSENT from a GROUP BY, and the caller
+        # must not read absence as "no such set". Returning the counted sets
+        # only, with the caller defaulting to 0, keeps that explicit -- the
+        # alternative (a row per wordset) would need a second query for sets the
+        # user has no rows in at all, to say the same thing.
+        return success_response(
+            data=[{'wordset_id': r.wordset_id, 'due': int(r.due)} for r in rows],
+            query_metadata={'as_of': now.isoformat() + 'Z'},
+        )
+
+    except Exception as e:
+        logger.error(f"Error computing due counts: {e}", exc_info=True)
+        return error_response(str(e), 500)
 
 @bp.route('/<string:user_id>/<int:word_id>/recall', methods=['PUT'])
 @authenticate_user  # Protect this route

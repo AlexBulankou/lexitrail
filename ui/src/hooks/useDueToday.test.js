@@ -1,6 +1,6 @@
 import { loadDueToday } from './useDueToday';
 import { getWordsets } from '../services/wordsService';
-import { getUserWordsByWordset } from '../services/userService';
+import { getUserWordsByWordset, getDueCounts } from '../services/userService';
 import { userwordsKey } from '../utils/wordsetCache';
 
 // Factory mocks, not automocks: an automock still LOADS the real module to
@@ -8,7 +8,12 @@ import { userwordsKey } from '../utils/wordsetCache';
 // import time, which is undefined under jest. The factory replaces the module
 // outright so nothing in that chain executes.
 jest.mock('../services/wordsService', () => ({ getWordsets: jest.fn() }));
-jest.mock('../services/userService', () => ({ getUserWordsByWordset: jest.fn() }));
+jest.mock('../services/userService', () => ({
+  getUserWordsByWordset: jest.fn(), getDueCounts: jest.fn(),
+}));
+
+// issue-384: an axios 404, the ONLY error the fallback is allowed to swallow.
+const notFound = () => Object.assign(new Error('Not Found'), { response: { status: 404 } });
 
 const DAY = 24 * 60 * 60 * 1000;
 const ago = (ms) => new Date(Date.now() - ms).toISOString();
@@ -35,6 +40,11 @@ const uw = (over = {}) => ({
 
 beforeEach(() => {
   jest.clearAllMocks();
+  // issue-384: these suites describe the FAN-OUT, which is now the fallback.
+  // Default every case to "the fast endpoint is not deployed" so they keep
+  // exercising the path they were written for; the fast path has its own
+  // describe block below.
+  getDueCounts.mockRejectedValue(notFound());
 });
 
 describe('loadDueToday', () => {
@@ -179,5 +189,106 @@ describe('loadDueToday publishes userwords for reuse (issue-335)', () => {
     getWordsets.mockResolvedValue({ data: [{ wordset_id: 7 }] });
     getUserWordsByWordset.mockResolvedValue({ data: [uw()] });
     await expect(loadDueToday('user-1')).resolves.toHaveProperty('total');
+  });
+});
+
+// ── issue-384: the fast path ────────────────────────────────────────────────
+//
+// The Today home used to ask one request PER WORDSET and count in the browser.
+// That is what made it take 10s+ and then fail. These pin the replacement, and
+// in particular the two things a "just use the new endpoint" change gets wrong:
+// which list the result is keyed to, and which errors may be swallowed.
+describe('loadDueToday — the due-counts fast path (issue-384)', () => {
+  test('asks ONCE, not once per wordset', async () => {
+    getWordsets.mockResolvedValue({ data: [
+      { wordset_id: 1, description: 'HSK1' },
+      { wordset_id: 2, description: 'HSK2' },
+      { wordset_id: 3, description: 'HSK3' },
+    ] });
+    getDueCounts.mockResolvedValue({ data: [{ wordset_id: 2, due: 5 }] });
+
+    const { total, sets } = await loadDueToday('user-1');
+
+    expect(getDueCounts).toHaveBeenCalledTimes(1);
+    // The whole point: the per-wordset row fetch must not happen at all.
+    expect(getUserWordsByWordset).not.toHaveBeenCalled();
+    expect(total).toBe(5);
+    expect(sets).toEqual([
+      { wordsetId: 1, description: 'HSK1', due: 0 },
+      { wordsetId: 2, description: 'HSK2', due: 5 },
+      { wordsetId: 3, description: 'HSK3', due: 0 },
+    ]);
+  });
+
+  test('a wordset the server did not count is 0 and STAYS IN THE LIST', async () => {
+    // Absent means nothing due, not "no such set". Dropping it would also drop
+    // it from `pickStartSet`'s input, so Start could not open a set the learner
+    // can see — a silent narrowing of the screen's own options.
+    getWordsets.mockResolvedValue({ data: [{ wordset_id: 7, description: 'HSK7-ish' }] });
+    getDueCounts.mockResolvedValue({ data: [] });
+
+    const { total, sets } = await loadDueToday('user-1');
+    expect(total).toBe(0);
+    expect(sets).toEqual([{ wordsetId: 7, description: 'HSK7-ish', due: 0 }]);
+  });
+
+  test('counts are keyed to the VISIBLE wordsets, not to the response', async () => {
+    // `getWordsets` hides the internal `test`/`HSK7` sets. If the result were
+    // built from the server's rows instead, a hidden set with words due would
+    // reappear in the total — putting the hide-list in two places, which is the
+    // drift this keys against.
+    getWordsets.mockResolvedValue({ data: [{ wordset_id: 1, description: 'HSK1' }] });
+    getDueCounts.mockResolvedValue({ data: [
+      { wordset_id: 1, due: 3 },
+      { wordset_id: 8, due: 99 },   // a set the UI deliberately does not show
+    ] });
+
+    const { total, sets } = await loadDueToday('user-1');
+    expect(total).toBe(3);
+    expect(sets).toHaveLength(1);
+  });
+
+  test('a 404 falls back to the fan-out — the deploy-skew window', async () => {
+    getWordsets.mockResolvedValue({ data: [{ wordset_id: 1, description: 'HSK1' }] });
+    getDueCounts.mockRejectedValue(notFound());
+    getUserWordsByWordset.mockResolvedValue({ data: [uw({ word_id: 1, recall_state: 0,
+      recall_histories: [] })] });
+
+    const { total } = await loadDueToday('user-1');
+    expect(getUserWordsByWordset).toHaveBeenCalledTimes(1);
+    expect(total).toBe(1);
+  });
+
+  test('🔴 a 500 does NOT fall back — it surfaces', async () => {
+    // The load-bearing half. Swallowing every error would make a genuinely
+    // broken endpoint invisible: the screen would quietly serve the slow path
+    // forever and nobody would learn the fast one had stopped working. Only
+    // ABSENCE (404, the deploy-skew case) may be swallowed.
+    getWordsets.mockResolvedValue({ data: [{ wordset_id: 1, description: 'HSK1' }] });
+    getDueCounts.mockRejectedValue(
+      Object.assign(new Error('boom'), { response: { status: 500 } }));
+
+    await expect(loadDueToday('user-1')).rejects.toThrow('boom');
+    expect(getUserWordsByWordset).not.toHaveBeenCalled();
+  });
+
+  test('🔴 a TIMEOUT does NOT fall back either', async () => {
+    // An axios timeout has no `response` at all. It is the failure this screen
+    // was actually showing, and it must keep surfacing rather than being
+    // rewritten into a slow success.
+    getWordsets.mockResolvedValue({ data: [{ wordset_id: 1, description: 'HSK1' }] });
+    getDueCounts.mockRejectedValue(Object.assign(new Error('timeout of 8000ms exceeded'),
+      { code: 'ECONNABORTED' }));
+
+    await expect(loadDueToday('user-1')).rejects.toThrow(/timeout/);
+    expect(getUserWordsByWordset).not.toHaveBeenCalled();
+  });
+
+  test('tolerates a response with no data envelope', async () => {
+    getWordsets.mockResolvedValue({ data: [{ wordset_id: 1, description: 'HSK1' }] });
+    getDueCounts.mockResolvedValue({});
+    const { total, sets } = await loadDueToday('user-1');
+    expect(total).toBe(0);
+    expect(sets).toEqual([{ wordsetId: 1, description: 'HSK1', due: 0 }]);
   });
 });
