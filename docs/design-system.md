@@ -386,6 +386,12 @@ most-seen feedback signal. Landscape card height was a shipped bug (issue #341, 
 Build trigger, so any UI change builds and deploys on merge. Docs-only changes (like this file)
 build nothing.
 
+🔴 **The ~5,000-file commit may not be a constraint for much longer — check #379 before designing
+around it.** That issue proposes generating the static pages during the Cloud Build run instead of
+committing their output, which would make a static design change one edited constant plus a deploy.
+It is filed and unclaimed at the time of writing; if it has landed, §2.1's "re-run the generators
+and commit ~5,000 files" no longer applies and a design proposal can iterate much more freely.
+
 ---
 
 ## 6. Open design issues already filed
