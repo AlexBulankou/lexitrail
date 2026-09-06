@@ -22,12 +22,54 @@
 // because it was part of what you set out to do.
 import { DEFAULT_GOAL } from './streak';
 
-// The budget IS the daily streak goal, deliberately — not a second number that
-// happens to be 10 today. Finishing one session should be exactly what meets
-// the daily goal the streak badge and the Today home already show; two
-// independent constants would drift and the loop would stop closing (finish a
-// session, still 8/10 today).
+// The DEFAULT budget IS the daily streak goal, deliberately — not a second
+// number that happens to be 10 today. Finishing one default session should be
+// exactly what meets the daily goal the streak badge and the Today home
+// already show; two independent constants would drift and the loop would stop
+// closing (finish a session, still 8/10 today).
 export const SESSION_BUDGET = DEFAULT_GOAL;
+
+// revamp-2026-09: the learner CHOOSES the size before a session starts.
+//
+// #108 bounded every PRACTICE / DUE_TODAY session at 10 and, measured against
+// what shipped before it, that removed a workflow: the whole-set run-through
+// that advanced learners used the product for. The fix is not to unbound the
+// session (RD-2's finding stands — an endless list has no finish line) but to
+// let the learner pick the finish line. `SessionSize` (the interim screen
+// between Wordsets and Game) offers these four; the pick travels on the game
+// URL as `?n=` so a reload, a share, or "practice again" keep the same size.
+//
+// 'all' is the pre-#108 behaviour, opt-in. It still binds ONCE (`Infinity`
+// budget => `slice(0, Infinity)` captures the whole loaded queue), so the
+// progress bar denominates on the real set size rather than moving.
+export const SESSION_SIZES = [10, 20, 100, 'all'];
+export const DEFAULT_SESSION_SIZE = SESSION_BUDGET;
+
+// URL/storage token -> budget. Anything unrecognised falls back to the default,
+// so a hand-edited `?n=banana` degrades to the #108 behaviour rather than to
+// an unbounded or empty session.
+export const resolveSessionBudget = (token) => {
+  if (token === 'all' || token === Infinity) return Infinity;
+  const n = Number(token);
+  if (Number.isInteger(n) && SESSION_SIZES.includes(n)) return n;
+  return DEFAULT_SESSION_SIZE;
+};
+
+// budget -> URL token (the inverse of the above, for links and storage).
+export const sessionSizeToken = (budget) =>
+  (Number.isFinite(budget) ? String(budget) : 'all');
+
+// Last pick per wordset. Per-wordset because "whole set" is a sane default for
+// a 150-word HSK 1 and a bad one for a 2,500-word HSK 6.
+const SIZE_KEY = (wordsetId) => `lexitrail_session_size:${wordsetId}`;
+export const readSessionSize = (wordsetId) => {
+  try { return resolveSessionBudget(localStorage.getItem(SIZE_KEY(wordsetId))); }
+  catch { return DEFAULT_SESSION_SIZE; }
+};
+export const writeSessionSize = (wordsetId, budget) => {
+  try { localStorage.setItem(SIZE_KEY(wordsetId), sessionSizeToken(budget)); }
+  catch { /* private mode — the URL still carries it */ }
+};
 
 // Modes that are SESSIONS. Deliberately a whitelist rather than "everything
 // except X": a mode added later must opt in, because silently bounding a mode
@@ -58,7 +100,7 @@ export const bindSession = (words, budget = SESSION_BUDGET) => {
   const keys = (words || [])
     .map(wordKey)
     .filter((k) => k !== null)
-    .slice(0, Math.max(0, budget));
+    .slice(0, Number.isFinite(budget) ? Math.max(0, budget) : undefined);
   return new Set(keys);
 };
 
@@ -119,6 +161,9 @@ export const sessionProgress = (sessionKeys, remainingCount) => {
 //            BEST one ("nothing left due") — but it is a different sentence,
 //            and collapsing the two is what makes an endless list feel endless.
 // EMPTY      there was nothing to practice at all; never a celebration.
+//
+// A whole-set session (`Infinity` budget) with any words is COMPLETE: the
+// learner set out to do the whole set and did.
 export const SessionOutcome = {
   COMPLETE: 'COMPLETE',
   CLEARED: 'CLEARED',
@@ -128,6 +173,7 @@ export const SessionOutcome = {
 export const sessionOutcome = (sessionKeys, budget = SESSION_BUDGET) => {
   const total = sessionKeys ? sessionKeys.size : 0;
   if (total === 0) return SessionOutcome.EMPTY;
+  if (!Number.isFinite(budget)) return SessionOutcome.COMPLETE;
   return total >= budget ? SessionOutcome.COMPLETE : SessionOutcome.CLEARED;
 };
 
@@ -148,11 +194,14 @@ export const sessionOutcome = (sessionKeys, budget = SESSION_BUDGET) => {
 // left holding one assignment.
 export const EMPTY_BINDING = { key: null, keys: null };
 
-// A binding belongs to ONE (wordset, mode) pair. The wordset half is not
-// speculative padding: it is the same class of gap, costs nothing here, and a
-// binding that outlived a wordset change would silently filter one set's queue
-// by another set's word ids.
-export const sessionBindingKey = (wordsetId, mode) => `${wordsetId}|${mode}`;
+// A binding belongs to ONE (wordset, mode, budget) triple. The wordset half is
+// not speculative padding: it is the same class of gap, costs nothing here, and
+// a binding that outlived a wordset change would silently filter one set's
+// queue by another set's word ids. The budget joined the key with the size
+// picker: changing `?n=` on a live game must re-bind, or a learner who backs
+// out to "How many?" and picks 100 would keep the 10.
+export const sessionBindingKey = (wordsetId, mode, budget = SESSION_BUDGET) =>
+  `${wordsetId}|${mode}|${sessionSizeToken(budget)}`;
 
 export const nextSessionBinding = (
   previous,
@@ -164,16 +213,16 @@ export const nextSessionBinding = (
   // must clear rather than merely decline to bind, or the stale set survives.
   if (!isSessionMode(mode)) return EMPTY_BINDING;
 
-  const key = sessionBindingKey(wordsetId, mode);
+  const key = sessionBindingKey(wordsetId, mode, budget);
 
-  // Already bound to this exact pair: return the SAME object. Identity matters
+  // Already bound to this exact triple: return the SAME object. Identity matters
   // — this runs every render, and a fresh Set each time would re-bind the
   // session against the shrinking queue, which is the endless-list bug wearing
   // a different hat.
   if (prev.key === key) return prev;
 
   // Nothing loaded yet: stay unbound. Returning `prev` here would let a
-  // previous pair's set apply to this one for as long as the fetch takes.
+  // previous triple's set apply to this one for as long as the fetch takes.
   if (!loaded || !(words && words.length > 0)) return EMPTY_BINDING;
 
   return { key, keys: bindSession(words, budget) };

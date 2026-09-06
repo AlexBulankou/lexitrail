@@ -38,7 +38,11 @@ const Today = ({ userId }) => {
         start_surface: 'today_home',
       });
     }
-    navigate(`/game/${startSet.wordsetId}/DUE_TODAY`);
+    // revamp-2026-09 (Alex's ruling): EVERY session entry point goes through the
+    // "How many words?" picker — Today's Start included, so the same action never
+    // asks from one surface and not the other. The picker remembers the last size
+    // per wordset, so the habitual flow stays two taps with the second pre-lit.
+    navigate(`/session/${startSet.wordsetId}/DUE_TODAY`);
   };
 
   if (status === 'loading') {

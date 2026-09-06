@@ -1,16 +1,77 @@
+/* revamp-2026-09 — THE TOKEN LAYER. One :root for the SPA, byte-matched by PAGE_STYLE in
+ * utils/hskPages.js for the static pages (hskPages.test.js pins that the two agree). Before this
+ * the SPA had no tokens at all: four blues (#1a73e8 #4285f4 #007bff #2c6cd3), four greens, six
+ * font stacks, no dark mode. The static pages had a real system (warm paper, terracotta, serif
+ * hanzi, dark mode); this adopts it as the product's ONE system.
+ *
+ * Palette A (terracotta on warm paper) is active. Palette B (plum ink + jade) is the reviewed
+ * alternative; swap the two :root blocks to try it. New vs the shipped PAGE_STYLE: --surface-2,
+ * --font-*, --ok/--bad (the feedback pair the game needed), --t1..--t4 (pinyin tones), --r-*.
+ *
+ * MIGRATION of component CSS is mechanical: scripts/migrate-tokens.mjs rewrites the literals
+ * listed in its table to these vars. Run it, review the diff, commit. */
+:root {
+  /* NO `color-scheme: light dark` here, deliberately (zz3 validation, 2026-09-06): the static
+     pages ship dark mode (PAGE_TOKENS in hskPages.js — every pairing reviewed, AA-computed), but
+     the SPA's mechanically-migrated component CSS still holds literals the migration script
+     deliberately left for humans (`color: #fff` on coloured controls in NavBar/WordCard/Game).
+     Enabling the dark flip before those are tokenised was MEASURED to produce 1.17:1 stat chips
+     (token ink on literal-white backgrounds). To turn SPA dark mode on later: finish the literal
+     audit, then copy the dark block from PAGE_TOKENS here and restore color-scheme. */
+  --font-latin: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --font-display: var(--font-latin);
+  --font-hanzi: "Noto Serif SC", "Songti SC", "STSong", "Source Han Serif SC", "SimSun", serif;
+  --r-pill: 999px; --r-hero: 20px; --r-card: 16px; --r-item: 12px;
+
+  /* A — terracotta on warm paper */
+  --bg: #fbf9f4; --surface: #fff; --surface-2: #f4efe6; --ink: #1d1a16; --muted: #6d6558; --line: #eae3d6;
+  --accent: #b23b2e; --accent-ink: #fff; --accent-soft: #fbeeeb;
+  --ok: #3f7d4e; --ok-ink: #fff; --ok-soft: #e6f1e8; --bad: #b23b2e; --bad-soft: #fbeeeb;
+  --t1: #c8361f; --t2: #9c5410; --t3: #2a7130; --t4: #6b3fa0;
+  --shadow: 0 1px 2px rgba(40,30,20,.06), 0 8px 24px rgba(40,30,20,.06);
+}
+/* B — plum ink + jade on cool rice paper. Alternative :root, not additive.
+:root {
+  --font-display: "Source Serif 4", Georgia, serif;
+  --bg: #f5f3ee; --surface: #fffdf9; --surface-2: #ecebe4; --ink: #231c2b; --muted: #6b6472; --line: #e3dfe4;
+  --accent: #2f6f5e; --accent-ink: #fff; --accent-soft: #e1efe8;
+  --ok: #2f6f5e; --ok-ink: #fff; --ok-soft: #e1efe8; --bad: #a43b52; --bad-soft: #f7e6ea;
+  --t1: #c0392b; --t2: #b3701c; --t3: #2f7d4f; --t4: #6d3b8e;
+  --shadow: 0 1px 2px rgba(30,20,40,.06), 0 8px 24px rgba(30,20,40,.07);
+}
+@media (prefers-color-scheme: dark) { :root {
+  --bg: #15121a; --surface: #201c27; --surface-2: #2a2532; --ink: #efe9f1; --muted: #a59db0; --line: #352f3e;
+  --accent: #6fb59c; --accent-ink: #0d1a15; --accent-soft: #1c2a25;
+  --ok: #6fb59c; --ok-ink: #0d1a15; --ok-soft: #1c2a25; --bad: #e08497; --bad-soft: #33202a;
+  --t1: #ff8f7a; --t2: #f2b860; --t3: #84d3a2; --t4: #cfa3f2;
+  --shadow: 0 1px 2px rgba(0,0,0,.3), 0 10px 30px rgba(0,0,0,.4);
+} }
+*/
+
 body, html {
     margin: 0;
     padding: 0;
-    font-family: Arial, sans-serif;
+    font-family: var(--font-latin);
     height: 100%;
     width: 100%;
-    background-color: #f0f0f0;
+    background-color: var(--bg);
+    color: var(--ink);
+    -webkit-font-smoothing: antialiased;
     display: flex;
     justify-content: center;
     align-items: center;
     box-sizing: border-box;
   }
   
+:lang(zh-Hans), :lang(zh) { font-family: var(--font-hanzi); }
+
+/* Pinyin tones (PinyinText.js emits .t1–.t4 alongside the inline var; the static pages use the
+   class alone). Neutral tone has no class and inherits. */
+.t1 { color: var(--t1); font-weight: 700; }
+.t2 { color: var(--t2); font-weight: 700; }
+.t3 { color: var(--t3); font-weight: 700; }
+.t4 { color: var(--t4); font-weight: 700; }
+
 /* lexitrail#52 bug 4 (tappability half) — shared minimum touch target.
  *
  * Alex's bug 4 was "make each button easy to find and tap". PR #58 shipped the
@@ -115,6 +176,10 @@ body, html {
  * viewports, width unchanged at 110.6, and the screenshot shows no reflow — the
  * control sits in open whitespace. */
 .today-secondary,
+/* revamp-2026-09: the four size options on "How many words?" and its back link, added WITH
+ * the control rather than after a harness measured them (the issue-107 rule). */
+.session-size-option,
+.session-size-back,
 .google-signin-button {
   min-height: var(--min-tap-target);
 }

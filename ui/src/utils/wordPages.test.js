@@ -12,7 +12,7 @@
 import fs from 'fs';
 import path from 'path';
 import Papa from 'papaparse';
-import { HSK_LEVELS, renderPage } from './hskPages';
+import { HSK_LEVELS, renderPage, pinyinHtml } from './hskPages';
 import {
   wordFilename, wordUrl, collectWords, renderWordPage, renderWordSitemapEntries,
   renderWordSitemap, WORD_PAGES_LASTMOD, collectExamples,
@@ -128,17 +128,23 @@ describe('renderWordPage', () => {
   test('prev/next render when given and are ABSENT at the ends', () => {
     const prev = { level: 3, id: 0, word: '你' };
     const next = { level: 3, id: 2, word: '他' };
+    // revamp-2026-09: the stylesheet now contains `nav a[rel="next"]` as a SELECTOR, so the
+    // assertions name the actual link markup rather than the bare attribute string.
     const mid = renderWordPage(w, { prev, next });
-    expect(mid).toContain('rel="prev"');
-    expect(mid).toContain('rel="next"');
+    expect(mid).toContain('<link rel="prev"');
+    expect(mid).toContain('<link rel="next"');
+    expect(mid).toContain('<a rel="prev"');
+    expect(mid).toContain('<a rel="next"');
 
     const first = renderWordPage(w, { next });
-    expect(first).not.toContain('rel="prev"');
-    expect(first).toContain('rel="next"');
+    expect(first).not.toContain('<link rel="prev"');
+    expect(first).not.toContain('<a rel="prev"');
+    expect(first).toContain('<link rel="next"');
 
     const last = renderWordPage(w, { prev });
-    expect(last).toContain('rel="prev"');
-    expect(last).not.toContain('rel="next"');
+    expect(last).toContain('<link rel="prev"');
+    expect(last).not.toContain('<link rel="next"');
+    expect(last).not.toContain('<a rel="next"');
   });
 
   test('a word with no pinyin/english still renders valid, non-empty prose', () => {
@@ -197,10 +203,12 @@ describe('example sentences — #184 AC1', () => {
     const w = { level: 2, id: 9, word: '颜色', pinyin: 'yánsè', english: 'color' };
     const html = renderWordPage(w, { examples: collectExamples([BANK_A]).get('颜色') });
     expect(html).toContain('<h2>Example sentences</h2>');
-    expect(html).toContain('你喜欢什么颜色？');
-    expect(html).toContain('Nǐ xǐhuan shénme yánsè?');
+    // revamp-2026-09: the headword is <mark>ed in the sentence and toned vowels carry .tN spans,
+    // so the plain strings are asserted through those wrappers.
+    expect(html).toContain('你喜欢什么<mark class="w">颜色</mark>？');
+    expect(html).toContain(pinyinHtml('Nǐ xǐhuan shénme yánsè?'));
     expect(html).toContain('Which color do you like?');
-    expect(html).toContain('lang="zh-Hans">你喜欢什么颜色？');
+    expect(html).toContain('lang="zh-Hans">你喜欢什么<mark class="w">颜色</mark>？');
   });
 
   test('sentence text is HTML-escaped', () => {
@@ -334,6 +342,9 @@ describe('the committed pages are NOT stale', () => {
           // `examples` here passed for every uncovered word and failed the moment a covered one
           // (您) landed in the sample -- a reader wired in the generator and not in its own test.
           examples: exampleMap.get(w.word) || [],
+          // revamp-2026-09: same lesson, same rule — the generator passes the breadcrumb data.
+          position: i + 1,
+          count: lvl.length,
         }));
       }
     }

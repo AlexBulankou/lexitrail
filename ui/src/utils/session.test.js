@@ -165,7 +165,7 @@ describe('nextSessionBinding — the read-time gate hc2 caught missing on #134',
 
   it('binds on a session mode with a loaded queue', () => {
     const b = nextSessionBinding(EMPTY_BINDING, practice);
-    expect(b.key).toBe('1|PRACTICE');
+    expect(b.key).toBe('1|PRACTICE|10'); // revamp-2026-09: key carries the size token
     expect(b.keys.size).toBe(10);
   });
 
@@ -192,7 +192,7 @@ describe('nextSessionBinding — the read-time gate hc2 caught missing on #134',
     const browsing = nextSessionBinding(bound, { ...practice, mode: 'SHOW_EXCLUDED' });
     const back = nextSessionBinding(browsing, practice);
 
-    expect(back.key).toBe('1|PRACTICE');
+    expect(back.key).toBe('1|PRACTICE|10');
     expect(back.keys.size).toBe(10);
     expect(back).not.toBe(bound); // a new session, not the old set resurrected
   });
@@ -211,7 +211,7 @@ describe('nextSessionBinding — the read-time gate hc2 caught missing on #134',
     const bound = nextSessionBinding(EMPTY_BINDING, practice);
     const other = nextSessionBinding(bound, { ...practice, wordsetId: 2, words: many(25, 100) });
 
-    expect(other.key).toBe('2|PRACTICE');
+    expect(other.key).toBe('2|PRACTICE|10');
     expect(other.keys.has(100)).toBe(true);
     expect(other.keys.has(1)).toBe(false);
   });

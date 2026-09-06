@@ -132,7 +132,13 @@ def enter_practice(page) -> None:
     try:
         page.get_by_role("link", name="Word Sets").first.click(timeout=10_000)
         page.wait_for_timeout(4_000)
-        page.get_by_text("Practice", exact=True).first.click(timeout=10_000)
+        # revamp-2026-09: the button is labelled "Practise" and routes through the
+        # "How many words?" picker on /session/<id>/PRACTICE; picking a size is what
+        # lands on /game/. "10 words" keeps the pre-revamp #108 session shape, so
+        # every downstream measurement stays comparable with earlier runs.
+        page.get_by_text("Practise", exact=True).first.click(timeout=10_000)
+        page.wait_for_timeout(2_000)
+        page.get_by_text("10 words", exact=True).first.click(timeout=10_000)
         page.wait_for_timeout(8_000)
     except PlaywrightError as e:
         raise RuntimeError(f"could not reach the practice view: {e}") from e

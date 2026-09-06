@@ -9,7 +9,7 @@
     height: 48px; /* Fixed height */
     width: 100%;
     /* Make it stretch across the full width of the screen */
-    background-color: #333;
+    background-color: var(--ink);
     padding: 0 0.5rem 0 0.25rem; /* Reduce padding, especially on left */
     box-sizing: border-box;
     z-index: 1000;
@@ -50,15 +50,15 @@
 }
 
 .navbar a:hover {
-    color: #007bff;
+    color: var(--accent);
 }
 
 .nav-button {
-    background: #007bff;
-    color: white;
+    background: var(--accent);
+    color: var(--surface);
     border: none;
     padding: 0.25rem 0.75rem;
-    border-radius: 4px;
+    border-radius: 8px;
     cursor: pointer;
     font-weight: bold;
     white-space: nowrap;
@@ -66,7 +66,7 @@
 }
 
 .nav-button:hover {
-    background: #0056b3;
+    background: var(--accent);
 }
 
 .nav-list {
@@ -109,7 +109,7 @@
 
 .logout-button,
 .login-button {
-    background-color: #4CAF50;
+    background-color: var(--ok);
     color: #fff;
     border: none;
     padding: 2px 5px;
@@ -154,7 +154,7 @@
 /* Add styles for active links */
 .nav-link-active {
     background-color: rgba(255, 255, 255, 0.1);
-    border-radius: 4px;
+    border-radius: 8px;
 }
 
 .nav-right {
@@ -215,7 +215,7 @@
   cursor: pointer;
   border: none;
   background: none;
-  color: white;
+  color: var(--surface);
   font-size: 0.8rem;
 }
 
@@ -264,7 +264,7 @@
   top: 100%;
   right: 0;
   background: #2a2a2a;
-  border-radius: 4px;
+  border-radius: 8px;
   box-shadow: 0 2px 10px rgba(0,0,0,0.2);
   min-width: 160px;
   z-index: 1001;
@@ -273,7 +273,7 @@
 
 .dropdown-item {
   padding: 0.5rem 1rem;
-  color: white;
+  color: var(--surface);
   text-decoration: none;
   display: block;
   white-space: nowrap;
@@ -295,10 +295,10 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  background: white;
-  color: #3c4043;
-  border: 1px solid #dadce0;
-  border-radius: 4px;
+  background: var(--surface);
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: 8px;
   padding: 4px 12px;
   /* issue-52: the fixed 32px height declaration was removed. Once this
    * control carries the shared 44px floor it can never render that small —
@@ -314,7 +314,7 @@
    * with nothing flagging it. Same reasoning as the dropped grid-template-rows
    * in Wordsets.css — a declaration that cannot reach the rendered box should
    * not sit there looking authoritative. */
-  font-family: "Google Sans", Roboto, Arial, sans-serif;
+  font-family: var(--font-latin);
   font-size: 14px;
   font-weight: 500;
   cursor: pointer;
@@ -327,10 +327,10 @@
 }
 
 .try-button {
-  background-color: #4285f4;
-  color: white;
+  background-color: var(--accent);
+  color: var(--surface);
   padding: 6px 12px;
-  border-radius: 4px;
+  border-radius: 8px;
   border: none;
   cursor: pointer;
   font-size: 14px;

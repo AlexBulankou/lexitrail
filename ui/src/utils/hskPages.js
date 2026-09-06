@@ -44,6 +44,11 @@
 // PURE ON PURPOSE. Nothing here touches the filesystem, so every claim below is unit-testable and
 // the generator script is a thin shell around it. The committed HTML is checked against these
 // functions by a drift test — a generated artifact nobody re-generates is a stale artifact.
+//
+// 🔴 revamp-2026-09 CHANGES PAGE_STYLE AND renderPage. Every committed page under build/ and
+// public/ is therefore stale until `generate-hsk-pages` / `generate-word-pages` /
+// `generate-gloss-pages` are re-run — the drift test will red until they are. That is the cost
+// the design-system doc (§ "any static change costs ~5,000 regenerated files") priced in.
 
 export const HSK_LEVELS = [1, 2, 3, 4, 5, 6];
 
@@ -59,64 +64,102 @@ export const ORIGIN = 'https://lexitrail.com';
 // page families cannot drift apart; the generate scripts inject it the same way they inject ORIGIN,
 // and that wiring fails LOUDLY if a script forgets it.
 //
-// Design vocabulary is the gloss page's: .word-card / .hanzi-big / .pinyin / .translation /
-// .hsk-badge, now shared by all three so a share of any of them looks like the same product.
-export const PAGE_STYLE = `<style>
-:root{color-scheme:light dark;
-  --bg:#fbf9f4;--surface:#fff;--ink:#1d1a16;--muted:#6d6558;--line:#eae3d6;
-  --accent:#b23b2e;--accent-ink:#fff;--accent-soft:#fbeeeb;--shadow:0 1px 2px rgba(40,30,20,.06),0 8px 24px rgba(40,30,20,.06)}
+// revamp-2026-09 — THIS IS NOW THE TOKEN LAYER, shared with the SPA. The :root block below is
+// byte-identical to ui/src/styles/Global.css's (hskPages.test.js pins it), so the crawlable half
+// and the app are one system. New since #372: --surface-2, --font-*, --ok/--bad, --t1..--t4
+// (pinyin tone colours, the same mapping PinyinText.js uses in the practice screen), --r-*.
+// No webfont: the static family stays at one request. `--font-display` therefore resolves to the
+// system stack here; the SPA may override it.
+export const PAGE_TOKENS = `:root{color-scheme:light dark;
+  --font-latin:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  --font-display:var(--font-latin);
+  --font-hanzi:"Noto Serif SC","Songti SC","STSong","Source Han Serif SC","SimSun",serif;
+  --r-pill:999px;--r-hero:20px;--r-card:16px;--r-item:12px;--tap:44px;
+  --bg:#fbf9f4;--surface:#fff;--surface-2:#f4efe6;--ink:#1d1a16;--muted:#6d6558;--line:#eae3d6;
+  --accent:#b23b2e;--accent-ink:#fff;--accent-soft:#fbeeeb;
+  --ok:#3f7d4e;--ok-ink:#fff;--ok-soft:#e6f1e8;--bad:#b23b2e;--bad-soft:#fbeeeb;
+  --t1:#c8361f;--t2:#9c5410;--t3:#2a7130;--t4:#6b3fa0;
+  --shadow:0 1px 2px rgba(40,30,20,.06),0 8px 24px rgba(40,30,20,.06)}
 @media (prefers-color-scheme:dark){:root{
-  --bg:#141310;--surface:#1f1c17;--ink:#f2ede2;--muted:#a79e8e;--line:#332f27;
-  --accent:#e6796a;--accent-ink:#1a0f0c;--accent-soft:#2b1d19;--shadow:0 1px 2px rgba(0,0,0,.3),0 10px 30px rgba(0,0,0,.35)}}
+  --bg:#141310;--surface:#1f1c17;--surface-2:#28241d;--ink:#f2ede2;--muted:#a79e8e;--line:#332f27;
+  --accent:#e6796a;--accent-ink:#1a0f0c;--accent-soft:#2b1d19;
+  --ok:#7fc08f;--ok-ink:#0d1a10;--ok-soft:#1d2a20;--bad:#e6796a;--bad-soft:#2b1d19;
+  --t1:#ff8a6f;--t2:#f0b45a;--t3:#7fd08a;--t4:#c39cf0;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 10px 30px rgba(0,0,0,.35)}}`;
+
+export const PAGE_STYLE = `<style>
+${PAGE_TOKENS}
 *{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%}
-body{margin:0;background:var(--bg);color:var(--ink);
-  font-family:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font-latin);
   line-height:1.65;font-size:17px;-webkit-font-smoothing:antialiased}
-:lang(zh-Hans),.hanzi-big,td[lang]{font-family:"Noto Serif SC","Songti SC","STSong","Source Han Serif SC","SimSun",serif}
-.wrap{max-width:660px;margin:0 auto;padding:20px 20px 72px}
-.site{display:flex;align-items:center;gap:8px;padding:18px 0 8px;font-weight:700;letter-spacing:-.01em}
-.site a{color:var(--ink);text-decoration:none}
+:lang(zh-Hans),.hanzi-big,td[lang]{font-family:var(--font-hanzi)}
+.wrap{max-width:660px;margin:0 auto;padding:16px 20px 72px}
+.wrap-wide{max-width:1000px;margin:0 auto;padding:16px 24px 64px}
+.site{display:flex;align-items:center;gap:8px;min-height:var(--tap);font-weight:700;letter-spacing:-.01em}
+.site a{color:var(--ink);text-decoration:none;display:inline-flex;align-items:center;gap:8px;min-height:var(--tap)}
 .site .dot{width:10px;height:10px;border-radius:3px;background:var(--accent);display:inline-block}
+.crumbs{display:flex;flex-wrap:wrap;gap:6px;align-items:center;color:var(--muted);font-size:.85rem;margin:2px 0 8px}
+.crumbs a{color:var(--muted);display:inline-flex;align-items:center;min-height:var(--tap)}
 a{color:var(--accent);text-decoration:none}
 a:hover{text-decoration:underline}
-h1{font-size:clamp(1.5rem,5vw,2rem);line-height:1.2;letter-spacing:-.02em;margin:.6em 0 .4em}
-h2{font-size:1.15rem;letter-spacing:-.01em;margin:1.8em 0 .5em}
+h1{font-family:var(--font-display);font-size:clamp(1.5rem,5vw,2rem);line-height:1.2;letter-spacing:-.02em;margin:.5em 0 .3em}
+h2{font-family:var(--font-display);font-size:1.05rem;letter-spacing:-.01em;margin:1.6em 0 .6em}
 p{margin:0 0 1em}
-.word-card{background:var(--surface);border:1px solid var(--line);border-radius:20px;
-  padding:34px 28px 30px;text-align:center;box-shadow:var(--shadow);margin:8px 0 26px}
-.hanzi-big{font-size:clamp(4.2rem,26vw,7.5rem);line-height:1;margin:0 0 .12em;letter-spacing:.02em}
-.pinyin{font-size:1.5rem;color:var(--accent);margin:0 0 .2em;font-weight:500}
-.tone-numbers{color:var(--muted);font-size:1rem;font-weight:400}
-.translation{font-size:1.25rem;color:var(--ink);margin:0 0 .8em}
-.hsk-badge{display:inline-block;background:var(--accent-soft);color:var(--accent);
+.word-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-hero);
+  padding:30px 24px 26px;text-align:center;box-shadow:var(--shadow);margin:8px 0 8px}
+.hanzi-big{font-size:clamp(4.2rem,26vw,7.5rem);line-height:1;margin:0 0 .12em;letter-spacing:.02em;font-weight:400}
+.pinyin{font-family:var(--font-display);font-size:1.5rem;color:var(--ink);margin:0 0 .1em;font-weight:500;white-space:nowrap}
+.t1{color:var(--t1);font-weight:700}.t2{color:var(--t2);font-weight:700}.t3{color:var(--t3);font-weight:700}.t4{color:var(--t4);font-weight:700}
+.tone-numbers{color:var(--muted);font-size:.95rem;font-weight:400}
+.translation{font-size:1.25rem;color:var(--ink);margin:.3em 0 1em}
+.actions{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin:0}
+.hsk-badge{display:inline-flex;align-items:center;min-height:var(--tap);background:var(--accent-soft);color:var(--accent);
   font-size:.8rem;font-weight:700;letter-spacing:.03em;text-transform:uppercase;
-  padding:5px 11px;border-radius:999px;text-decoration:none}
-.cta,button{display:inline-block;background:var(--accent);color:var(--accent-ink);
+  padding:0 16px;border-radius:var(--r-pill);text-decoration:none}
+.cta,button{display:inline-flex;align-items:center;min-height:var(--tap);background:var(--accent);color:var(--accent-ink);
   font:inherit;font-weight:600;border:0;cursor:pointer;
-  padding:13px 22px;border-radius:999px;text-decoration:none;transition:transform .06s ease,filter .15s ease}
+  padding:0 22px;border-radius:var(--r-pill);text-decoration:none;transition:transform .06s ease,filter .15s ease}
 .cta:hover,button:hover{filter:brightness(1.05);text-decoration:none}
 .cta:active,button:active{transform:translateY(1px)}
-.word-card button{margin-top:6px;background:var(--surface);color:var(--accent);border:1.5px solid var(--line);font-weight:600;padding:9px 16px}
+.word-card button{background:var(--surface);color:var(--accent);border:1.5px solid var(--line);font-weight:600;padding:0 16px}
+mark.w{background:var(--accent-soft);color:var(--accent);border-radius:4px;padding:0 2px}
 dl{display:grid;grid-template-columns:auto 1fr;gap:6px 18px;margin:0 0 22px;
-  background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:18px 20px}
+  background:var(--surface);border:1px solid var(--line);border-radius:var(--r-card);padding:18px 20px}
 dt{color:var(--muted);font-size:.85rem;text-transform:uppercase;letter-spacing:.04em;align-self:center}
 dd{margin:0;font-size:1.1rem}
-table{width:100%;border-collapse:collapse;font-size:1rem;margin:8px 0 20px;
-  background:var(--surface);border:1px solid var(--line);border-radius:16px;overflow:hidden}
-thead th{text-align:left;font-size:.78rem;text-transform:uppercase;letter-spacing:.04em;
+.filter-bar{position:sticky;top:0;z-index:2;background:var(--bg);padding:10px 0 8px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.filter-bar label{flex:1 1 240px;display:flex;align-items:center;gap:10px;min-height:var(--tap);padding:0 16px;
+  border:1px solid var(--line);border-radius:var(--r-pill);background:var(--surface);color:var(--muted)}
+.filter-bar input{flex:1;min-width:0;border:0;background:transparent;font:inherit;color:var(--ink);outline:none}
+.filter-bar input::placeholder{color:var(--muted)}
+.filter-count{color:var(--muted);font-size:.9rem}
+table{width:100%;border-collapse:separate;border-spacing:0;font-size:1rem;margin:6px 0 20px;
+  background:var(--surface);border:1px solid var(--line);border-radius:var(--r-card);overflow:hidden}
+thead th{position:sticky;top:62px;z-index:1;background:var(--surface);text-align:left;font-size:.78rem;text-transform:uppercase;letter-spacing:.04em;
   color:var(--muted);padding:12px 14px;border-bottom:1px solid var(--line)}
-td{padding:11px 14px;border-top:1px solid var(--line)}
+td{padding:9px 14px;border-top:1px solid var(--line)}
 tbody tr:nth-child(odd){background:color-mix(in srgb,var(--surface) 100%,var(--bg) 55%)}
+tbody tr:hover{background:var(--accent-soft)}
+tbody tr[hidden]{display:none}
 td[lang]{font-size:1.3rem}
-td a{font-weight:500}
+td a{font-weight:500;color:var(--ink);display:inline-flex;align-items:center;min-height:32px}
 ul.other-ways{list-style:none;padding:0;margin:0 0 18px;display:flex;flex-wrap:wrap;gap:8px}
-ul.other-ways li{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:8px 13px}
-h2 + ul:not(.other-ways){list-style:none;padding:0;margin:0 0 18px}
-h2 + ul:not(.other-ways) li{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:13px 16px;margin:0 0 10px}
-h2 + ul:not(.other-ways) em{color:var(--accent);font-style:normal}
-nav{margin-top:30px;padding-top:18px;border-top:1px solid var(--line);color:var(--muted);
-  font-size:.95rem;display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center}
+ul.other-ways li{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-item);padding:8px 13px}
+ul.sentences{list-style:none;padding:0;margin:0 0 18px;display:grid;gap:10px}
+ul.sentences li{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:13px 16px}
+ul.sentences li [lang]{font-size:1.25rem;line-height:1.5;display:block}
+ul.sentences li em{font-style:normal;color:var(--muted);font-size:.95rem;display:block}
+ul.related{list-style:none;padding:0;margin:0 0 18px;display:flex;flex-wrap:wrap;gap:8px}
+ul.related a{display:inline-flex;align-items:center;gap:8px;min-height:var(--tap);padding:0 14px;background:var(--surface);
+  border:1px solid var(--line);border-radius:var(--r-item);color:var(--ink)}
+ul.related a span{color:var(--muted);font-size:.85rem}
+ol{padding-left:1.2em}
+nav{margin-top:28px;padding-top:16px;border-top:1px solid var(--line);color:var(--muted);
+  font-size:.95rem;display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:center}
+nav a{display:inline-flex;align-items:center;min-height:var(--tap);gap:6px}
+nav a[rel="next"]{justify-content:flex-end}
+nav a:not([rel]){color:var(--muted);justify-content:center}
 </style>`;
 
 /** The shared top wordmark, so every page reads as one product. Kept in the base module for the
@@ -129,6 +172,19 @@ export const isHskWordset = (id) => HSK_LEVELS.includes(Number(id));
 const esc = (s) => String(s ?? '')
   .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
   .replace(/"/g, '&quot;');
+
+// revamp-2026-09 — tone-coloured pinyin for STATIC pages, the same table PinyinText.js uses.
+//
+// Alex, 2026-09-06: "I want multi color rendering of tones in the indexed pages just like in
+// practice screen." Emits one <span class="tN"> per toned vowel and leaves everything else as
+// text, so the HTML cost is ~20 bytes per syllable. Mirrors PinyinText.getTone character for
+// character; hskPages.test.js pins the two tables equal so they cannot drift.
+const TONE_MARKS = ['', 'āēīōūǖĀĒĪŌŪǕ', 'áéíóúǘÁÉÍÓÚǗ', 'ǎěǐǒǔǚǍĚǏǑǓǙ', 'àèìòùǜÀÈÌÒÙǛ'];
+export const toneOf = (ch) => TONE_MARKS.findIndex((set, i) => i > 0 && set.includes(ch));
+export const pinyinHtml = (text) => Array.from(String(text ?? '')).map((ch) => {
+  const t = toneOf(ch);
+  return t > 0 ? `<span class="t${t}">${esc(ch)}</span>` : esc(ch);
+}).join('');
 
 /** Rows -> {1: [...], ... 6: [...]}, each sorted by word_id so output is DETERMINISTIC.
  *
@@ -150,6 +206,14 @@ export const groupByLevel = (rows) => {
 
 export const pageFilename = (level) => `hsk${level}.html`;
 export const pageUrl = (level, origin = ORIGIN) => `${origin}/hsk${level}.html`;
+
+// revamp-2026-09 — the ONE script on a static page, inline and ~600 bytes: a client-side filter
+// for the list. hsk6.html is 2,500 rows; without this the page is a scroll, with it every word is
+// two keystrokes away. Progressive: the table is complete HTML before the script runs, so a
+// crawler and a no-JS reader see the whole list. Matches hanzi, pinyin with OR without tone marks
+// (NFD + strip combining marks), and English; hides rows with the `hidden` attribute and updates
+// the count. No framework, no fetch, no state outside the DOM.
+const FILTER_SCRIPT = `<script>(function(){var i=document.getElementById('q'),c=document.getElementById('n'),r=[].slice.call(document.querySelectorAll('tbody tr'));if(!i)return;function s(t){return t.normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').toLowerCase()}var d=r.map(function(x){return s(x.textContent)});i.addEventListener('input',function(){var q=s(i.value.trim()),k=0;r.forEach(function(x,j){var h=q&&d[j].indexOf(q)<0;x.hidden=h;if(!h)k++});c.textContent=k+' shown'})})();</script>`;
 
 /** The full page. Self-canonical, unique title, the whole table, ItemList JSON-LD, one CTA.
  *
@@ -173,7 +237,7 @@ export const renderPage = (level, words, origin = ORIGIN) => {
   const rows = words.map((w, i) => `<tr><td>${i + 1}</td>`
     + `<td lang="zh-Hans"><a href="${origin}/hsk${level}/${encodeURIComponent(w.word)}.html">`
     + `${esc(w.word)}</a></td>`
-    + `<td>${esc(w.pinyin)}</td><td>${esc(w.english)}</td></tr>`).join('\n');
+    + `<td class="pinyin-cell">${pinyinHtml(w.pinyin)}</td><td>${esc(w.english)}</td></tr>`).join('\n');
   // 🔴 `JSON.stringify` does NOT escape `<`, so a `</script>` in the source data would CLOSE this
   // block and everything after it becomes markup. My own escape test caught this before merge:
   // the table cells were escaped and the JSON-LD was not, which is the classic split -- one
@@ -213,16 +277,18 @@ export const renderPage = (level, words, origin = ORIGIN) => {
 ${PAGE_STYLE}
 </head>
 <body>
+<main class="wrap-wide">
 ${SITE_HEADER}
-<main class="wrap">
 <h1>HSK ${level} vocabulary list</h1>
-<p>This page lists every word in the HSK ${level} vocabulary — ${words.length} entries, each with
-its simplified hanzi, pinyin and English meaning. HSK ${level} is one of the six levels of the
+<p>All ${words.length} words with pinyin and English. HSK ${level} is one of the six levels of the
 Hanyu Shuiping Kaoshi, China's standardised Chinese proficiency test. Reading a list is not the
 same as knowing it: the words that stick are the ones you are asked to recall just as you are about
-to forget them. LexiTrail drills this list with spaced repetition, free and without an account, so
-you can start on the words below straight away.</p>
-<p><a href="${origin}/game/${level}/PRACTICE">Practise the HSK ${level} list now &rarr;</a></p>
+to forget them. <a href="${origin}/game/${level}/PRACTICE">Practise the HSK ${level} list &rarr;</a></p>
+<div class="filter-bar">
+<label><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg><input id="q" type="search" autocomplete="off" placeholder="Filter ${words.length} words — hanzi, pinyin or English" aria-label="Filter the word list"></label>
+<span class="filter-count" id="n" aria-live="polite">${words.length} shown</span>
+<a class="cta" href="${origin}/game/${level}/PRACTICE">Practise &rarr;</a>
+</div>
 <table>
 <thead><tr><th>#</th><th>Hanzi</th><th>Pinyin</th><th>English</th></tr></thead>
 <tbody>
@@ -230,9 +296,10 @@ ${rows}
 </tbody>
 </table>
 <p><a href="${origin}/game/${level}/PRACTICE">Start practising HSK ${level} &rarr;</a></p>
-<nav><p>Other levels: ${HSK_LEVELS.filter((n) => n !== level)
-    .map((n) => `<a href="${origin}/hsk${n}.html">HSK ${n}</a>`).join(' · ')}</p></nav>
+<nav style="display:flex;flex-wrap:wrap;gap:6px 14px"><span>Other levels:</span> ${HSK_LEVELS.filter((n) => n !== level)
+    .map((n) => `<a href="${origin}/hsk${n}.html">HSK ${n}</a>`).join(' ')}</nav>
 </main>
+${FILTER_SCRIPT}
 </body>
 </html>
 `;

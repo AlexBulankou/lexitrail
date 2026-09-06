@@ -5,7 +5,20 @@
 // is COMMITTED rather than built (the Docker build context is `ui/`, so terraform/csv/words.csv —
 // one directory UP — does not exist inside the image; a build-time generator would work locally,
 // pass review, and produce nothing in production).
-import { HSK_LEVELS, ORIGIN, isHskWordset, PAGE_STYLE, SITE_HEADER } from './hskPages';
+//
+// revamp-2026-09 — what changed on the page (see docs/design-system.md and the handoff README):
+//   * breadcrumb (HSK N › word i of N) under the wordmark, replacing the bare wordmark line
+//   * pinyin tone-coloured per vowel (hskPages.pinyinHtml — the practice screen's mapping)
+//   * example sentences as cards, with the headword <mark>ed inside the sentence
+//   * "Related words" = the neighbours in the level, as chips, so a reader has somewhere to go
+//     besides prev/next; these are the SAME URLs the nav already links, so the crawl graph is
+//     unchanged and no new soft-404 risk is introduced
+//   * prev / list / next as a three-column nav with 44px targets (was inline text, 29px)
+//   * 44px HSK badge and CTA (were 29px / 39px)
+// Not added, and why: audio (needs a TTS decision — the SPA uses speechSynthesis; a static page
+// can too, but that is a product call), character breakdown and stroke order (no data source in
+// the repo). The prototypes show where they go.
+import { HSK_LEVELS, ORIGIN, isHskWordset, PAGE_STYLE, SITE_HEADER, pinyinHtml } from './hskPages';
 
 const esc = (s) => String(s ?? '')
   .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
@@ -116,14 +129,27 @@ export const collectExamples = (banks) => {
   return byWord;
 };
 
+// The headword highlighted inside an example sentence. Escapes first, then marks, so a `<` in the
+// data cannot ride in on the mark; a word absent from its own sentence renders unmarked.
+const markWord = (sentence, word) => {
+  const s = esc(sentence), w = esc(word);
+  return w ? s.split(w).join(`<mark class="w">${w}</mark>`) : s;
+};
+
 /** One word page. `prev`/`next` are the adjacent words IN THE SAME LEVEL, or null at the ends.
+ * `position` / `count` (optional) feed the breadcrumb; `related` (optional, default = the
+ * neighbours) feeds the chips.
  *
  * 🔴 The prev/next links are not decoration — they are the CRAWL PATH. Until sitemap.xml carries
  * these ~5,600 URLs, a chain of prev/next from the six level pages is the only way Googlebot can
  * reach a word page at all. They also mean the pages are discoverable in the order a human would
  * read them, which is what makes this a list rather than 5,600 orphans.
  */
-export const renderWordPage = (w, { prev = null, next = null, examples = [] } = {}, origin = ORIGIN) => {
+export const renderWordPage = (
+  w,
+  { prev = null, next = null, examples = [], position = null, count = null, related = null } = {},
+  origin = ORIGIN,
+) => {
   const url = wordUrl(w.level, w.word, origin);
   const senses = w.senses || [{ pinyin: w.pinyin, english: w.english }];
   const levelUrl = `${origin}/hsk${w.level}.html`;
@@ -139,11 +165,12 @@ export const renderWordPage = (w, { prev = null, next = null, examples = [] } = 
     description: gloss,
     inDefinedTermSet: { '@type': 'DefinedTermSet', name: `HSK ${w.level}`, url: levelUrl },
   });
-  const nav = [
-    prev ? `<a rel="prev" href="${wordUrl(prev.level, prev.word, origin)}">&larr; ${esc(prev.word)}</a>` : '',
-    `<a href="${levelUrl}">All HSK ${w.level} words</a>`,
-    next ? `<a rel="next" href="${wordUrl(next.level, next.word, origin)}">${esc(next.word)} &rarr;</a>` : '',
-  ].filter(Boolean).join(' &middot; ');
+  const chips = (related || [prev, next].filter(Boolean)).map((r) =>
+    `<li><a href="${wordUrl(r.level, r.word, origin)}"><span lang="zh-Hans" style="font-size:1.15rem;color:var(--ink)">${esc(r.word)}</span>`
+    + `${r.english ? `<span>${esc(r.english)}</span>` : ''}</a></li>`).join('\n');
+  const crumb = position && count
+    ? `<div class="crumbs"><a href="${levelUrl}">HSK ${w.level}</a><span>&rsaquo;</span><span>${position} of ${count}</span></div>`
+    : `<div class="crumbs"><a href="${levelUrl}">HSK ${w.level}</a></div>`;
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -165,27 +192,31 @@ ${prev ? `<link rel="prev" href="${wordUrl(prev.level, prev.word, origin)}">\n` 
 ${PAGE_STYLE}
 </head>
 <body>
-${SITE_HEADER}
 <main class="wrap">
+${SITE_HEADER}
+${crumb}
 <div class="word-card">
 <h1 class="hanzi-big" lang="zh-Hans">${esc(w.word)}</h1>
-${w.pinyin ? `<p class="pinyin">${esc(w.pinyin)}</p>` : ''}
+${w.pinyin ? `<p class="pinyin">${pinyinHtml(w.pinyin)}</p>` : ''}
 ${w.english ? `<p class="translation">${esc(w.english)}</p>` : ''}
-<p><a class="hsk-badge" href="${levelUrl}">HSK ${w.level}</a></p>
-<p><a class="cta" href="${origin}/game/${w.level}/PRACTICE">Practise HSK ${w.level} with ${esc(w.word)} &rarr;</a></p>
+<p class="actions"><a class="hsk-badge" href="${levelUrl}">HSK ${w.level}</a><a class="cta" href="${origin}/game/${w.level}/PRACTICE">Practise with ${esc(w.word)} &rarr;</a></p>
 </div>${senses.length > 1 ? `
 <h2>Senses</h2>
 <ol>
-${senses.map((s) => `<li>${esc([s.pinyin, s.english].filter(Boolean).join(' — '))}</li>`).join('\n')}
+${senses.map((s) => `<li>${s.pinyin ? `${pinyinHtml(s.pinyin)} — ` : ''}${esc(s.english)}</li>`).join('\n')}
 </ol>` : ''}${examples.length ? `
 <h2>Example sentences</h2>
-<ul>
-${examples.map((x) => `<li><span lang="zh-Hans">${esc(x.chinese)}</span>`
-    + `${x.pinyin ? `<br><em>${esc(x.pinyin)}</em>` : ''}`
-    + `${x.english ? `<br>${esc(x.english)}` : ''}</li>`).join('\n')}
+<ul class="sentences">
+${examples.map((x) => `<li><span lang="zh-Hans">${markWord(x.chinese, w.word)}</span>`
+    + `${x.pinyin ? `<em>${pinyinHtml(x.pinyin)}</em>` : ''}`
+    + `${x.english ? `${esc(x.english)}` : ''}</li>`).join('\n')}
 </ul>` : ''}
-<p><span lang="zh-Hans">${esc(w.word)}</span>${w.pinyin ? ` is pronounced <em>${esc(w.pinyin)}</em>` : ''}${w.english ? ` and means ${senses.length > 1 ? `&ldquo;${esc(senses[0].english)}&rdquo; (and ${senses.length - 1} further sense${senses.length > 2 ? 's' : ''} below)` : `&ldquo;${esc(w.english)}&rdquo;`}` : ''}. It is one of the words in the HSK ${w.level} vocabulary, a level of the Hanyu Shuiping Kaoshi, China&rsquo;s standardised Chinese proficiency test. Recognising a word on a page and recalling it when you need it are different skills, and only the second survives a conversation &mdash; which is why LexiTrail shows you <span lang="zh-Hans">${esc(w.word)}</span> again just before you would have forgotten it, rather than on a fixed schedule.</p>
-<nav>${nav}</nav>
+<p><span lang="zh-Hans">${esc(w.word)}</span>${w.pinyin ? ` is pronounced <em>${pinyinHtml(w.pinyin)}</em>` : ''}${w.english ? ` and means ${senses.length > 1 ? `&ldquo;${esc(senses[0].english)}&rdquo; (and ${senses.length - 1} further sense${senses.length > 2 ? 's' : ''} above)` : `&ldquo;${esc(w.english)}&rdquo;`}` : ''}. It is one of the words in the HSK ${w.level} vocabulary, a level of the Hanyu Shuiping Kaoshi, China&rsquo;s standardised Chinese proficiency test. Recognising a word on a page and recalling it when you need it are different skills, and only the second survives a conversation &mdash; which is why LexiTrail shows you <span lang="zh-Hans">${esc(w.word)}</span> again just before you would have forgotten it, rather than on a fixed schedule.</p>${chips ? `
+<h2>Related words</h2>
+<ul class="related">
+${chips}
+</ul>` : ''}
+<nav>${prev ? `<a rel="prev" href="${wordUrl(prev.level, prev.word, origin)}">&larr; <span lang="zh-Hans">${esc(prev.word)}</span></a>` : '<span></span>'}<a href="${levelUrl}">HSK ${w.level} list</a>${next ? `<a rel="next" href="${wordUrl(next.level, next.word, origin)}"><span lang="zh-Hans">${esc(next.word)}</span> &rarr;</a>` : '<span></span>'}</nav>
 </main>
 </body>
 </html>
@@ -209,8 +240,11 @@ export { HSK_LEVELS };
  * than fixed -- and a sitemap claiming everything changed today is a freshness signal crawlers
  * learn to discount. Bumping this by hand is the point: it is a claim about the CONTENT, and a
  * human is the only thing that knows whether the content changed.
+ *
+ * Bumped for the revamp: the pages' content changed (breadcrumb, related words, marked sentences),
+ * not just their style.
  */
-export const WORD_PAGES_LASTMOD = '2026-08-29';
+export const WORD_PAGES_LASTMOD = '2026-09-06';
 
 /** The whole sitemap-words.xml document. Its own file rather than entries appended to sitemap.xml:
  * sitemap.xml is hand-maintained and reviewable at 7 URLs (was 21 until #367

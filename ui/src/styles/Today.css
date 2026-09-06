@@ -24,28 +24,28 @@
 .today-headline {
   margin: 0;
   font-size: 1.5rem;
-  color: #333;
+  color: var(--ink);
 }
 
 .today-count {
   font-size: 3.5rem;
   font-weight: bold;
   line-height: 1;
-  color: #007bff;
+  color: var(--accent);
   display: block;
 }
 
 .today-done {
   font-size: 2rem;
   font-weight: bold;
-  color: #28a745;
+  color: var(--ok);
 }
 
 .today-sub,
 .today-streak,
 .today-target {
   margin: 0;
-  color: #666;
+  color: var(--muted);
   font-size: 0.95rem;
 }
 
@@ -56,10 +56,10 @@
 .today-start {
   margin-top: 0.5rem;
   padding: 1rem 3rem;
-  background: #007bff;
-  color: white;
+  background: var(--accent);
+  color: var(--surface);
   border: none;
-  border-radius: 4px;
+  border-radius: 8px;
   font-size: 1.25rem;
   font-weight: bold;
   cursor: pointer;
@@ -67,11 +67,11 @@
 }
 
 .today-start:hover {
-  background: #0056b3;
+  background: var(--accent);
 }
 
 .today-secondary {
-  color: #007bff;
+  color: var(--accent);
   text-decoration: none;
   font-size: 0.95rem;
   /* issue-214: the layout half of the 44px tap floor. The NUMBER is in
@@ -91,7 +91,7 @@
 
 .today-status {
   margin: 0;
-  color: #666;
+  color: var(--muted);
 }
 
 .today-error {

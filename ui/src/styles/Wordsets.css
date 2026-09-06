@@ -1,4 +1,5 @@
-/* src/styles/Wordsets.css */
+/* src/styles/Wordsets.css — revamp-2026-09: token layer (Global.css :root), no local colour
+   literals. Layout notes from issue-177 / issue-214 kept where they still apply. */
 
 .wordsets-container {
   display: flex;
@@ -17,23 +18,13 @@
 
 .wordsets-grid {
   display: grid;
-  /* issue-214: 205px, not 170px, and the number is derived rather than chosen.
-     `.wordset-button-group` has a min-content width of 201.8px at 1440x900 --
-     the three secondary labels at their own min-content (48.1 Due Today / 66.6
-     Show Excluded / 41.0 Test!) plus 2x8px gap and 2x14px padding. At a 170px
-     floor, auto-fit put FOUR tracks in the 760px grid, giving 175px tiles --
-     27px NARROWER than the row they have to hold. The group overflowed its own
-     tile by 26.8px and spilled 7px into the neighbouring card, and the buttons
-     collapsed to min-content, which is why `Test!` measured exactly 41.0px
-     against the 44px tap floor.
-     205 forces three tracks (240px tiles), so the row fits with room and the
-     buttons get 63.7px each. Measured on live prod by injection before shipping:
-     overflow 26.8 -> 0, Test! 41 -> 63.7, zero text clipping, mobile unchanged.
-     🔴 The floor must stay ABOVE the group's min-content. If a fourth secondary
-     button or a longer label is ever added, re-measure -- this reverts silently
-     to squeezed buttons rather than failing. */
-  grid-template-columns: repeat(auto-fit, minmax(205px, 1fr));
-  gap: 20px;
+  /* issue-214 derived 205px from the three-secondary-button row's min-content. The revamp
+     row is Practise | Test (two equal buttons) + a text button below, so the min-content is
+     lower; 240 is chosen for the card to breathe, not to fit. Re-measure if a label grows:
+     🔴 issue-214's constraint still applies -- the floor must stay ABOVE the group's
+     min-content, or this reverts silently to squeezed buttons rather than failing. */
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 14px;
   width: 100%;
   margin: 0 auto;
 }
@@ -41,106 +32,99 @@
 .wordset-tile {
   display: flex;
   flex-direction: row;
-  align-items: center;
+  align-items: stretch;
   justify-content: space-between;
-  margin-bottom: 15px;
+  margin-bottom: 0;
 }
 
 /* issue-194: was a dotted-gray box on a darkgray fill -- "reads as a
    prototype" per the issue's own framing. Replaced with the app's real card
-   language (white, subtle border+shadow), matching `.feature-card` /
-   `.login-card` elsewhere in this app rather than inventing a fourth look. */
+   language -- now the shared --surface/--line/--shadow tokens, matching
+   `.login-card` below -- rather than inventing a fourth look. */
 .wordset-button-group {
   display: grid;
-  align-items: center;
-  background-color: #ffffff;
-  border: 1px solid #e0e0e0;
-  border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-  /* issue-194: 3 columns, not 2 -- Practice spans all 3 (one primary action
-     per tile); Due Today / Show Excluded / Test share a row underneath as
-     equal-weight secondary actions instead of Test spanning three button
-     heights as a giant fourth slab. */
-  grid-template-columns: repeat(3, 1fr);
-  gap: 8px;
-  padding: 14px;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  width: 100%;
+  padding: 16px 16px 14px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-card);
+  box-shadow: var(--shadow);
+  box-sizing: border-box;
 }
 
 .wordset-button {
   margin: 0;
+  font: inherit;
   font-size: 1rem;
   cursor: pointer;
-  width:auto;
-  height:100%;
-  color:#ffffff;
-  border-radius: 8px;
-  border: none;
+  width: auto;
+  border-radius: var(--r-pill);
+  border: 1.5px solid transparent;
+  transition: filter .15s ease, background-color .15s ease;
 }
 
 .wordset-header {
-  grid-row:1;
-  grid-column: 1 / 4;
-  justify-items: center;
+  grid-row: 1;
+  grid-column: 1 / 3;
 }
 
 .wordset-header-text {
-  text-align: center;
-  margin: 0 0 8px 0;
-  padding: 0;
-  border: none;
-  background: transparent;
+  text-align: left;
+  margin: 0 0 4px;
   /* issue-194: was 2rem -- larger than any heading on the surrounding page
-     and a direct contributor to the "prototype" read. */
-  font-size: 1.3rem;
-  font-weight: 600;
-  color: #202124;
-}
-
-/* issue-194: the ONE visually primary action per tile. Real app palette
-   (`#1a73e8`, matching `.login-card h2` / `.start-button` / `.cta-button`)
-   instead of the pure `blue` keyword. */
-.wordset-button-practice {
-  grid-row: 2;
-  grid-column: 1 / 4;
-  background-color: #1a73e8;
-  font-weight: 600;
+     and a direct contributor to the "prototype" read. 1.3rem after that
+     issue; 1.05rem in the revamp. */
   font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--ink);
 }
 
-/* issue-194: Due Today / Show Excluded / Test are secondary -- present, not
-   competing. One shared muted treatment rather than purple/black/green each
-   fighting for the eye; `color` overrides `.wordset-button`'s white because
-   these rules load later in the file at equal specificity. */
-.wordset-button-due,
-.wordset-button-excluded,
-.wordset-button-test {
-  background-color: transparent;
-  color: #5f6368;
-  border: 1px solid #dadce0;
-  font-size: 0.8rem;
-  font-weight: 500;
-}
-
-.wordset-button-due:hover,
-.wordset-button-excluded:hover,
-.wordset-button-test:hover {
-  background-color: #f1f3f4;
-}
-
+/* Primary: Due today. Full-width accent pill -- issue-194's "ONE visually
+   primary action per tile"; the revamp moves that slot from Practice to Due. */
 .wordset-button-due {
-  grid-row: 3;
-  grid-column: 1;
+  grid-row: 2;
+  grid-column: 1 / 3;
+  /* Taller than the shared floor BY the floor: the primary action reads bigger, and the 44px
+     single-source in Global.css stays the only tap-size literal (tapTargets.test.js contract). */
+  min-height: calc(var(--min-tap-target) + 4px);
+  padding: 0 18px;
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-weight: 600;
 }
+.wordset-button-due:hover { filter: brightness(1.05); }
 
-.wordset-button-excluded {
-  grid-row: 3;
-  grid-column: 2;
-}
-
+/* Secondary pair: outline pills in accent ink (issue-194: secondary actions
+   share one quiet treatment -- present, not competing). */
+.wordset-button-practice,
 .wordset-button-test {
   grid-row: 3;
-  grid-column: 3;
+  padding: 0 14px;
+  background: var(--surface);
+  color: var(--accent);
+  border-color: var(--line);
+  font-weight: 600;
 }
+.wordset-button-practice { grid-column: 1; }
+.wordset-button-test { grid-column: 2; }
+.wordset-button-practice:hover,
+.wordset-button-test:hover { background: var(--accent-soft); }
+
+/* Tertiary: Excluded, a text button. `.wordset-button` is still in Global.css's tap-floor
+   list, so it keeps min-height 44 without a local literal (hc2@'s finding on #73). */
+.wordset-button-excluded {
+  grid-row: 4;
+  grid-column: 1 / 3;
+  padding: 0 10px;
+  background: transparent;
+  color: var(--muted);
+  font-size: .9rem;
+  font-weight: 500;
+  justify-self: start;
+}
+.wordset-button-excluded:hover { color: var(--ink); }
 
 .wordsets-login-container {
   display: flex;
@@ -148,64 +132,50 @@
   align-items: center;
   min-height: calc(100vh - 64px);
   padding: 2rem;
-  background: #f8f9fa;
+  background: var(--bg);
 }
 
 .login-card {
-  background: white;
+  background: var(--surface);
   padding: 2.5rem;
-  border-radius: 12px;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+  border-radius: var(--r-hero);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow);
   max-width: 480px;
   width: 100%;
   text-align: center;
 }
 
 .login-card h2 {
-  color: #1a73e8;
+  color: var(--ink);
+  font-family: var(--font-display);
   margin-bottom: 1rem;
   font-size: 1.8rem;
+  letter-spacing: -.02em;
 }
 
 .login-card p {
-  color: #5f6368;
+  color: var(--muted);
   margin-bottom: 2rem;
   line-height: 1.6;
 }
 
-.features-list {
-  text-align: left;
-  margin: 1rem 0;
-}
-
-.feature-item {
-  margin: 1rem 0;
-  color: #3c4043;
-  font-size: 1.1rem;
-}
-
-.feature-item:before {
-  content: "✓";
-  color: #34a853;
-  margin-right: 0.5rem;
-  font-weight: bold;
-}
+.features-list { text-align: left; margin: 1rem 0; }
+.feature-item { margin: 1rem 0; color: var(--ink); font-size: 1.1rem; }
+.feature-item:before { content: "✓"; color: var(--ok); margin-right: 0.5rem; font-weight: bold; }
 
 .login-button {
-  background: #1a73e8;
-  color: white;
+  background: var(--accent);
+  color: var(--accent-ink);
   border: none;
   padding: 1rem 2rem;
-  border-radius: 4px;
+  border-radius: var(--r-pill);
   font-size: 1.1rem;
-  font-weight: 500;
+  font-weight: 600;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: filter 0.2s;
 }
-
-.login-button:hover {
-  background: #1557b0;
-}
+.login-button:hover { filter: brightness(1.05); }
 
 /* lexitrail#52 bug 6: status / error / retry states for the wordset picker.
    Previously an error or a hung request showed a permanent "Loading…" line;
@@ -214,30 +184,22 @@
   width: 100%;
   text-align: center;
   padding: 32px 16px;
-  color: #555;
+  color: var(--muted);
   font-size: 1rem;
 }
 
-.wordsets-error {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 12px;
-}
+.wordsets-error { display: flex; flex-direction: column; align-items: center; gap: 12px; }
 
 .wordsets-retry {
   padding: 10px 20px;
   /* issue-52: 44px min-height removed — carried by the shared
      --min-tap-target rule in Global.css so it tracks the floor. */
   border: none;
-  border-radius: 8px;
-  background-color: #4285f4;
-  color: #fff;
+  border-radius: var(--r-pill);
+  background-color: var(--accent);
+  color: var(--accent-ink);
   font-size: 1rem;
   font-weight: 600;
   cursor: pointer;
 }
-
-.wordsets-retry:hover {
-  background-color: #2c6cd3;
-}
+.wordsets-retry:hover { filter: brightness(1.05); }
