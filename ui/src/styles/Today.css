@@ -95,6 +95,6 @@
 }
 
 .today-error {
-  color: #b00020;
+  color: var(--bad);
   font-weight: bold;
 }

@@ -135,6 +135,29 @@
   background-color: var(--accent);
 }
 
+/* issue-385: give the two answers different weight, not just different glyphs.
+   Both were var(--accent), so "wrong" and "right" were the same red and the
+   affirmative action had no more presence than the negative one. The emoji
+   carry their own colour and ignore `color:`, so the distinction has to be
+   the SURFACE.
+
+   Solid green for the affirmative (the action the learner is aiming for), a
+   soft outline for the negative — present and easy to hit, but not competing.
+   Contrast checked rather than eyeballed: --ok-ink on --ok is 5.79:1, and
+   --bad on --bad-soft is 6.57:1. */
+.practice-buttons button.answer-yes,
+.practice-buttons button.answer-yes:hover {
+  background-color: var(--ok);
+  color: var(--ok-ink);
+}
+
+.practice-buttons button.answer-no,
+.practice-buttons button.answer-no:hover {
+  background-color: var(--bad-soft);
+  color: var(--bad);
+  box-shadow: inset 0 0 0 2px var(--bad);
+}
+
 
 .test-buttons {
   display: grid;
@@ -218,6 +241,25 @@
 
 .green {
   background-color: var(--ok);
+}
+
+/* issue-385: Exclude is a small SECONDARY toggle and was rendering as a solid
+   brand-red slab on every card — the same weight as the answer buttons and the
+   bulk action, so four different jobs shouted equally.
+
+   Scoped to `.exclude-button` rather than changing `.red`/`.green`, which are
+   shared utility classes with other users; restyling those would reach code
+   this change has no opinion about. */
+.exclude-button.red {
+  background-color: var(--bad-soft);
+  color: var(--bad);
+  box-shadow: inset 0 0 0 1px var(--bad);
+}
+
+.exclude-button.green {
+  background-color: var(--ok-soft);
+  color: var(--ok);
+  box-shadow: inset 0 0 0 1px var(--ok);
 }
 
 .mastery-indicator {

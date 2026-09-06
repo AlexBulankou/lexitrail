@@ -414,11 +414,17 @@ const WordCard = ({ mode, word, isFlipped, isHintDisplayed, handleMemorized, han
             {/* issue-52: aria-label, not the emoji, is the accessible name.
                 Without it the name is "❌"/"✔️" — and it CHANGES to "⏳" while
                 loading, so any name-keyed selector breaks intermittently. */}
+            {/* issue-385: the two answers were IDENTICAL blocks of var(--accent) —
+                same colour for "I got it wrong" and "I got it right", the only
+                difference being the emoji's own colour. Named so the styling can
+                distinguish them; the aria-labels above already did. */}
             <button onClick={onNotMemorized} disabled={loadingWord}
+                    className="answer-no"
                     aria-label="Mark as not memorized">
               {loadingWord ? '⏳' : '❌'}
             </button>
             <button onClick={onMemorized} disabled={loadingWord}
+                    className="answer-yes"
                     aria-label="Mark as memorized">
               {loadingWord ? '⏳' : '✔️'}
             </button>
