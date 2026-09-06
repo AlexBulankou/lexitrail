@@ -465,6 +465,11 @@ def run_start_flow(browser, base, unexpected, failures):
 
     try:
         page.click(".today-start", timeout=8000)
+        # revamp-2026-09: Start now routes through the "How many words?" picker
+        # (unified with Wordsets per Alex's ruling); picking a size lands on /game.
+        # "10 words" preserves the session shape this flow's history measured.
+        page.wait_for_url("**/session/**", timeout=10000)
+        page.get_by_text("10 words", exact=True).first.click(timeout=8000)
         page.wait_for_url("**/game/**", timeout=10000)
     except PlaywrightError:
         failures.append("start-flow: Start did not navigate")
