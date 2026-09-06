@@ -139,6 +139,14 @@
       "destination": "/index.html"
     },
     {
+      "source": "/session/:wordsetId",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/session/:wordsetId/:mode",
+      "destination": "/index.html"
+    },
+    {
       "source": "/privacy",
       "destination": "/index.html"
     },

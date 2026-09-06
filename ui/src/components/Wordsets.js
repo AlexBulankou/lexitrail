@@ -60,6 +60,12 @@ const Wordsets = ({ profileDetails, login }) => {
       });
     }
     
+    // revamp-2026-09: session modes go through "How many words?" first. TEST keeps its own
+    // 20-cap and SHOW_EXCLUDED is a browse view, so both still go straight to the game.
+    if (mode === GameMode.PRACTICE || mode === GameMode.DUE_TODAY) {
+      navigate(`/session/${wordsetId}/${mode}`);
+      return;
+    }
     // Navigate to the game route
     navigate(`/game/${wordsetId}/${mode}`);
   };
@@ -89,28 +95,23 @@ const Wordsets = ({ profileDetails, login }) => {
                   <div className="wordset-header-text">{wordset.description}</div>
                 </div>
 
+                {/* revamp-2026-09: Due Today is the primary action — it is where a returning
+                    learner starts — and Practice / Test share the row under it. Show Excluded
+                    is demoted to a text button: it is a browse view, not a way to learn. */}
+                <button
+                  className="wordset-button wordset-button-due"
+                  onClick={() => handleWordsetClick(wordset.wordset_id, GameMode.DUE_TODAY)}
+                  aria-label={`Due today in ${wordset.description}`}
+                >
+                  Due today
+                </button>
+
                 <button
                   className="wordset-button wordset-button-practice"
                   onClick={() => handleWordsetClick(wordset.wordset_id, GameMode.PRACTICE)}
                   aria-label={`Practice ${wordset.description}`}
                 >
-                  Practice
-                </button>
-
-                <button
-                  className="wordset-button wordset-button-due"
-                  onClick={() => handleWordsetClick(wordset.wordset_id, GameMode.DUE_TODAY)}
-                >
-                  Due Today
-                </button>
-
-
-                <button
-                  className="wordset-button wordset-button-excluded"
-                  onClick={() => handleWordsetClick(wordset.wordset_id, GameMode.SHOW_EXCLUDED)}
-                  aria-label={`Show excluded words in ${wordset.description}`}
-                >
-                  Show Excluded
+                  Practise
                 </button>
 
                 <button
@@ -118,7 +119,15 @@ const Wordsets = ({ profileDetails, login }) => {
                   onClick={() => handleWordsetClick(wordset.wordset_id, GameMode.TEST)}
                   aria-label={`Test ${wordset.description}`}
                 >
-                  Test!
+                  Test
+                </button>
+
+                <button
+                  className="wordset-button wordset-button-excluded"
+                  onClick={() => handleWordsetClick(wordset.wordset_id, GameMode.SHOW_EXCLUDED)}
+                  aria-label={`Show excluded words in ${wordset.description}`}
+                >
+                  Excluded
                 </button>
               </div>
             </div>

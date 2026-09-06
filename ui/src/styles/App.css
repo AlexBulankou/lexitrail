@@ -6,8 +6,8 @@ body, html {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-family: Arial, sans-serif;
-  background-color: #f0f0f0;
+  font-family: var(--font-latin);
+  background-color: var(--bg);
   box-sizing: border-box;
 }
 

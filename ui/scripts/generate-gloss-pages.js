@@ -39,12 +39,14 @@ const evalModule = (file, exportNames, injected = {}) => {
 };
 
 const hsk = evalModule('hskPages.js',
-  ['HSK_LEVELS', 'ORIGIN', 'isHskWordset', 'PAGE_STYLE', 'SITE_HEADER']);
+  ['HSK_LEVELS', 'ORIGIN', 'isHskWordset', 'PAGE_STYLE', 'SITE_HEADER', 'pinyinHtml']);
 const gp = evalModule('glossPages.js',
   ['PHASE1_QUERIES', 'collectGlossGroup', 'renderGlossPage', 'renderGlossSitemap',
    'GLOSS_PAGES_LASTMOD', 'glossUrl'],
   { HSK_LEVELS: hsk.HSK_LEVELS, ORIGIN: hsk.ORIGIN, isHskWordset: hsk.isHskWordset,
-    PAGE_STYLE: hsk.PAGE_STYLE, SITE_HEADER: hsk.SITE_HEADER });
+    PAGE_STYLE: hsk.PAGE_STYLE, SITE_HEADER: hsk.SITE_HEADER,
+    // revamp-2026-09: tone-coloured example pinyin, same renderer as word pages.
+    pinyinHtml: hsk.pinyinHtml });
 
 function main() {
   const check = process.argv.includes('--check');

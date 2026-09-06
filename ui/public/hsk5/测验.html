@@ -20,74 +20,111 @@
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"DefinedTerm","name":"测验","url":"https://lexitrail.com/hsk5/%E6%B5%8B%E9%AA%8C.html","description":"cèyàn — test","inDefinedTermSet":{"@type":"DefinedTermSet","name":"HSK 5","url":"https://lexitrail.com/hsk5.html"}}</script>
 <style>
 :root{color-scheme:light dark;
-  --bg:#fbf9f4;--surface:#fff;--ink:#1d1a16;--muted:#6d6558;--line:#eae3d6;
-  --accent:#b23b2e;--accent-ink:#fff;--accent-soft:#fbeeeb;--shadow:0 1px 2px rgba(40,30,20,.06),0 8px 24px rgba(40,30,20,.06)}
+  --font-latin:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  --font-display:var(--font-latin);
+  --font-hanzi:"Noto Serif SC","Songti SC","STSong","Source Han Serif SC","SimSun",serif;
+  --r-pill:999px;--r-hero:20px;--r-card:16px;--r-item:12px;--tap:44px;
+  --bg:#fbf9f4;--surface:#fff;--surface-2:#f4efe6;--ink:#1d1a16;--muted:#6d6558;--line:#eae3d6;
+  --accent:#b23b2e;--accent-ink:#fff;--accent-soft:#fbeeeb;
+  --ok:#3f7d4e;--ok-ink:#fff;--ok-soft:#e6f1e8;--bad:#b23b2e;--bad-soft:#fbeeeb;
+  --t1:#c8361f;--t2:#9c5410;--t3:#2a7130;--t4:#6b3fa0;
+  --shadow:0 1px 2px rgba(40,30,20,.06),0 8px 24px rgba(40,30,20,.06)}
 @media (prefers-color-scheme:dark){:root{
-  --bg:#141310;--surface:#1f1c17;--ink:#f2ede2;--muted:#a79e8e;--line:#332f27;
-  --accent:#e6796a;--accent-ink:#1a0f0c;--accent-soft:#2b1d19;--shadow:0 1px 2px rgba(0,0,0,.3),0 10px 30px rgba(0,0,0,.35)}}
+  --bg:#141310;--surface:#1f1c17;--surface-2:#28241d;--ink:#f2ede2;--muted:#a79e8e;--line:#332f27;
+  --accent:#e6796a;--accent-ink:#1a0f0c;--accent-soft:#2b1d19;
+  --ok:#7fc08f;--ok-ink:#0d1a10;--ok-soft:#1d2a20;--bad:#e6796a;--bad-soft:#2b1d19;
+  --t1:#ff8a6f;--t2:#f0b45a;--t3:#7fd08a;--t4:#c39cf0;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 10px 30px rgba(0,0,0,.35)}}
 *{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%}
-body{margin:0;background:var(--bg);color:var(--ink);
-  font-family:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font-latin);
   line-height:1.65;font-size:17px;-webkit-font-smoothing:antialiased}
-:lang(zh-Hans),.hanzi-big,td[lang]{font-family:"Noto Serif SC","Songti SC","STSong","Source Han Serif SC","SimSun",serif}
-.wrap{max-width:660px;margin:0 auto;padding:20px 20px 72px}
-.site{display:flex;align-items:center;gap:8px;padding:18px 0 8px;font-weight:700;letter-spacing:-.01em}
-.site a{color:var(--ink);text-decoration:none}
+:lang(zh-Hans),.hanzi-big,td[lang]{font-family:var(--font-hanzi)}
+.wrap{max-width:660px;margin:0 auto;padding:16px 20px 72px}
+.wrap-wide{max-width:1000px;margin:0 auto;padding:16px 24px 64px}
+.site{display:flex;align-items:center;gap:8px;min-height:var(--tap);font-weight:700;letter-spacing:-.01em}
+.site a{color:var(--ink);text-decoration:none;display:inline-flex;align-items:center;gap:8px;min-height:var(--tap)}
 .site .dot{width:10px;height:10px;border-radius:3px;background:var(--accent);display:inline-block}
+.crumbs{display:flex;flex-wrap:wrap;gap:6px;align-items:center;color:var(--muted);font-size:.85rem;margin:2px 0 8px}
+.crumbs a{color:var(--muted);display:inline-flex;align-items:center;min-height:var(--tap)}
 a{color:var(--accent);text-decoration:none}
 a:hover{text-decoration:underline}
-h1{font-size:clamp(1.5rem,5vw,2rem);line-height:1.2;letter-spacing:-.02em;margin:.6em 0 .4em}
-h2{font-size:1.15rem;letter-spacing:-.01em;margin:1.8em 0 .5em}
+h1{font-family:var(--font-display);font-size:clamp(1.5rem,5vw,2rem);line-height:1.2;letter-spacing:-.02em;margin:.5em 0 .3em}
+h2{font-family:var(--font-display);font-size:1.05rem;letter-spacing:-.01em;margin:1.6em 0 .6em}
 p{margin:0 0 1em}
-.word-card{background:var(--surface);border:1px solid var(--line);border-radius:20px;
-  padding:34px 28px 30px;text-align:center;box-shadow:var(--shadow);margin:8px 0 26px}
-.hanzi-big{font-size:clamp(4.2rem,26vw,7.5rem);line-height:1;margin:0 0 .12em;letter-spacing:.02em}
-.pinyin{font-size:1.5rem;color:var(--accent);margin:0 0 .2em;font-weight:500}
-.tone-numbers{color:var(--muted);font-size:1rem;font-weight:400}
-.translation{font-size:1.25rem;color:var(--ink);margin:0 0 .8em}
-.hsk-badge{display:inline-block;background:var(--accent-soft);color:var(--accent);
+.word-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-hero);
+  padding:30px 24px 26px;text-align:center;box-shadow:var(--shadow);margin:8px 0 8px}
+.hanzi-big{font-size:clamp(4.2rem,26vw,7.5rem);line-height:1;margin:0 0 .12em;letter-spacing:.02em;font-weight:400}
+.pinyin{font-family:var(--font-display);font-size:1.5rem;color:var(--ink);margin:0 0 .1em;font-weight:500;white-space:nowrap}
+.t1{color:var(--t1);font-weight:700}.t2{color:var(--t2);font-weight:700}.t3{color:var(--t3);font-weight:700}.t4{color:var(--t4);font-weight:700}
+.tone-numbers{color:var(--muted);font-size:.95rem;font-weight:400}
+.translation{font-size:1.25rem;color:var(--ink);margin:.3em 0 1em}
+.actions{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin:0}
+.hsk-badge{display:inline-flex;align-items:center;min-height:var(--tap);background:var(--accent-soft);color:var(--accent);
   font-size:.8rem;font-weight:700;letter-spacing:.03em;text-transform:uppercase;
-  padding:5px 11px;border-radius:999px;text-decoration:none}
-.cta,button{display:inline-block;background:var(--accent);color:var(--accent-ink);
+  padding:0 16px;border-radius:var(--r-pill);text-decoration:none}
+.cta,button{display:inline-flex;align-items:center;min-height:var(--tap);background:var(--accent);color:var(--accent-ink);
   font:inherit;font-weight:600;border:0;cursor:pointer;
-  padding:13px 22px;border-radius:999px;text-decoration:none;transition:transform .06s ease,filter .15s ease}
+  padding:0 22px;border-radius:var(--r-pill);text-decoration:none;transition:transform .06s ease,filter .15s ease}
 .cta:hover,button:hover{filter:brightness(1.05);text-decoration:none}
 .cta:active,button:active{transform:translateY(1px)}
-.word-card button{margin-top:6px;background:var(--surface);color:var(--accent);border:1.5px solid var(--line);font-weight:600;padding:9px 16px}
+.word-card button{background:var(--surface);color:var(--accent);border:1.5px solid var(--line);font-weight:600;padding:0 16px}
+mark.w{background:var(--accent-soft);color:var(--accent);border-radius:4px;padding:0 2px}
 dl{display:grid;grid-template-columns:auto 1fr;gap:6px 18px;margin:0 0 22px;
-  background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:18px 20px}
+  background:var(--surface);border:1px solid var(--line);border-radius:var(--r-card);padding:18px 20px}
 dt{color:var(--muted);font-size:.85rem;text-transform:uppercase;letter-spacing:.04em;align-self:center}
 dd{margin:0;font-size:1.1rem}
-table{width:100%;border-collapse:collapse;font-size:1rem;margin:8px 0 20px;
-  background:var(--surface);border:1px solid var(--line);border-radius:16px;overflow:hidden}
-thead th{text-align:left;font-size:.78rem;text-transform:uppercase;letter-spacing:.04em;
+.filter-bar{position:sticky;top:0;z-index:2;background:var(--bg);padding:10px 0 8px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.filter-bar label{flex:1 1 240px;display:flex;align-items:center;gap:10px;min-height:var(--tap);padding:0 16px;
+  border:1px solid var(--line);border-radius:var(--r-pill);background:var(--surface);color:var(--muted)}
+.filter-bar input{flex:1;min-width:0;border:0;background:transparent;font:inherit;color:var(--ink);outline:none}
+.filter-bar input::placeholder{color:var(--muted)}
+.filter-count{color:var(--muted);font-size:.9rem}
+table{width:100%;border-collapse:separate;border-spacing:0;font-size:1rem;margin:6px 0 20px;
+  background:var(--surface);border:1px solid var(--line);border-radius:var(--r-card);overflow:hidden}
+thead th{position:sticky;top:62px;z-index:1;background:var(--surface);text-align:left;font-size:.78rem;text-transform:uppercase;letter-spacing:.04em;
   color:var(--muted);padding:12px 14px;border-bottom:1px solid var(--line)}
-td{padding:11px 14px;border-top:1px solid var(--line)}
+td{padding:9px 14px;border-top:1px solid var(--line)}
 tbody tr:nth-child(odd){background:color-mix(in srgb,var(--surface) 100%,var(--bg) 55%)}
+tbody tr:hover{background:var(--accent-soft)}
+tbody tr[hidden]{display:none}
 td[lang]{font-size:1.3rem}
-td a{font-weight:500}
+td a{font-weight:500;color:var(--ink);display:inline-flex;align-items:center;min-height:32px}
 ul.other-ways{list-style:none;padding:0;margin:0 0 18px;display:flex;flex-wrap:wrap;gap:8px}
-ul.other-ways li{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:8px 13px}
-h2 + ul:not(.other-ways){list-style:none;padding:0;margin:0 0 18px}
-h2 + ul:not(.other-ways) li{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:13px 16px;margin:0 0 10px}
-h2 + ul:not(.other-ways) em{color:var(--accent);font-style:normal}
-nav{margin-top:30px;padding-top:18px;border-top:1px solid var(--line);color:var(--muted);
-  font-size:.95rem;display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center}
+ul.other-ways li{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-item);padding:8px 13px}
+ul.sentences{list-style:none;padding:0;margin:0 0 18px;display:grid;gap:10px}
+ul.sentences li{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:13px 16px}
+ul.sentences li [lang]{font-size:1.25rem;line-height:1.5;display:block}
+ul.sentences li em{font-style:normal;color:var(--muted);font-size:.95rem;display:block}
+ul.related{list-style:none;padding:0;margin:0 0 18px;display:flex;flex-wrap:wrap;gap:8px}
+ul.related a{display:inline-flex;align-items:center;gap:8px;min-height:var(--tap);padding:0 14px;background:var(--surface);
+  border:1px solid var(--line);border-radius:var(--r-item);color:var(--ink)}
+ul.related a span{color:var(--muted);font-size:.85rem}
+ol{padding-left:1.2em}
+nav{margin-top:28px;padding-top:16px;border-top:1px solid var(--line);color:var(--muted);
+  font-size:.95rem;display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:center}
+nav a{display:inline-flex;align-items:center;min-height:var(--tap);gap:6px}
+nav a[rel="next"]{justify-content:flex-end}
+nav a:not([rel]){color:var(--muted);justify-content:center}
 </style>
 </head>
 <body>
-<header class="site"><a href="https://lexitrail.com/"><span class="dot"></span> LexiTrail</a></header>
 <main class="wrap">
+<header class="site"><a href="https://lexitrail.com/"><span class="dot"></span> LexiTrail</a></header>
+<div class="crumbs"><a href="https://lexitrail.com/hsk5.html">HSK 5</a><span>&rsaquo;</span><span>681 of 1300</span></div>
 <div class="word-card">
 <h1 class="hanzi-big" lang="zh-Hans">测验</h1>
-<p class="pinyin">cèyàn</p>
+<p class="pinyin">c<span class="t4">è</span>y<span class="t4">à</span>n</p>
 <p class="translation">test</p>
-<p><a class="hsk-badge" href="https://lexitrail.com/hsk5.html">HSK 5</a></p>
-<p><a class="cta" href="https://lexitrail.com/game/5/PRACTICE">Practise HSK 5 with 测验 &rarr;</a></p>
+<p class="actions"><a class="hsk-badge" href="https://lexitrail.com/hsk5.html">HSK 5</a><a class="cta" href="https://lexitrail.com/game/5/PRACTICE">Practise with 测验 &rarr;</a></p>
 </div>
-<p><span lang="zh-Hans">测验</span> is pronounced <em>cèyàn</em> and means &ldquo;test&rdquo;. It is one of the words in the HSK 5 vocabulary, a level of the Hanyu Shuiping Kaoshi, China&rsquo;s standardised Chinese proficiency test. Recognising a word on a page and recalling it when you need it are different skills, and only the second survives a conversation &mdash; which is why LexiTrail shows you <span lang="zh-Hans">测验</span> again just before you would have forgotten it, rather than on a fixed schedule.</p>
-<nav><a rel="prev" href="https://lexitrail.com/hsk5/%E5%86%8C.html">&larr; 册</a> &middot; <a href="https://lexitrail.com/hsk5.html">All HSK 5 words</a> &middot; <a rel="next" href="https://lexitrail.com/hsk5/%E6%9B%BE%E7%BB%8F.html">曾经 &rarr;</a></nav>
+<p><span lang="zh-Hans">测验</span> is pronounced <em>c<span class="t4">è</span>y<span class="t4">à</span>n</em> and means &ldquo;test&rdquo;. It is one of the words in the HSK 5 vocabulary, a level of the Hanyu Shuiping Kaoshi, China&rsquo;s standardised Chinese proficiency test. Recognising a word on a page and recalling it when you need it are different skills, and only the second survives a conversation &mdash; which is why LexiTrail shows you <span lang="zh-Hans">测验</span> again just before you would have forgotten it, rather than on a fixed schedule.</p>
+<h2>Related words</h2>
+<ul class="related">
+<li><a href="https://lexitrail.com/hsk5/%E5%86%8C.html"><span lang="zh-Hans" style="font-size:1.15rem;color:var(--ink)">册</span><span>volume, book</span></a></li>
+<li><a href="https://lexitrail.com/hsk5/%E6%9B%BE%E7%BB%8F.html"><span lang="zh-Hans" style="font-size:1.15rem;color:var(--ink)">曾经</span><span>once</span></a></li>
+</ul>
+<nav><a rel="prev" href="https://lexitrail.com/hsk5/%E5%86%8C.html">&larr; <span lang="zh-Hans">册</span></a><a href="https://lexitrail.com/hsk5.html">HSK 5 list</a><a rel="next" href="https://lexitrail.com/hsk5/%E6%9B%BE%E7%BB%8F.html"><span lang="zh-Hans">曾经</span> &rarr;</a></nav>
 </main>
 </body>
 </html>

@@ -148,6 +148,15 @@ def one_run(ctx, url: str, timeout_ms: int,
         else:
             page.query_selector_all("button.wordset-button-practice")[0].click()
 
+        # revamp-2026-09: Practise now goes through the "How many words?" picker
+        # (/session/<id>/PRACTICE); the mark cannot fire until a size lands us on
+        # /game/. "10 words" preserves the pre-revamp session shape the metric's
+        # history was recorded against.
+        page.wait_for_timeout(1_500)
+        picker = page.query_selector_all("button.session-size-option")
+        if picker:
+            picker[0].click()
+
         # Wait for the MARK, not for a selector. If it never arrives we say so.
         try:
             page.wait_for_function(

@@ -22,7 +22,7 @@
 // generator. Flagged to hcl@ on the issue rather than silently treated as "done" -- #365's own
 // quality-gate #3 says a scope change comes back to zz1, and this is the honest size of what
 // shipped, not a decision to widen or shrink it.
-import { HSK_LEVELS, ORIGIN, isHskWordset, PAGE_STYLE, SITE_HEADER } from './hskPages';
+import { HSK_LEVELS, ORIGIN, isHskWordset, PAGE_STYLE, SITE_HEADER, pinyinHtml } from './hskPages';
 
 const esc = (s) => String(s ?? '')
   .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
@@ -228,7 +228,8 @@ const exampleBlock = (examples) => {
   if (!examples.length) return '';
   return `\n<h2>Example sentences</h2>\n<ul>\n${examples.map((x) =>
     `<li><span lang="zh-Hans">${esc(x.chinese)}</span>`
-    + `${x.pinyin ? `<br><em>${esc(x.pinyin)}</em>` : ''}`
+    // revamp-2026-09: tone-coloured pinyin, same rendering as wordPages / the practice screen.
+    + `${x.pinyin ? `<br><em>${pinyinHtml(x.pinyin)}</em>` : ''}`
     + `${x.english ? `<br>${esc(x.english)}` : ''}</li>`).join('\n')}\n</ul>`;
 };
 
@@ -289,7 +290,7 @@ ${SITE_HEADER}
 <h1>${esc(title)}</h1>
 <div class="word-card">
 <p class="hanzi-big" lang="zh-Hans">${esc(primary.word)}</p>
-<p class="pinyin">${esc(primary.pinyin)}${numbered ? ` <span class="tone-numbers">(${esc(numbered)})</span>` : ''}</p>
+<p class="pinyin">${pinyinHtml(primary.pinyin)}${numbered ? ` <span class="tone-numbers">(${esc(numbered)})</span>` : ''}</p>
 <p class="translation">${esc(primary.english)}</p>
 <p><span class="hsk-badge">HSK ${primary.level}</span>
 <button type="button" onclick="ltSpeak('${primary.word.replace(/'/g, "\\'")}')">&#128266; Play audio</button></p>
@@ -310,7 +311,7 @@ export const renderGlossSitemapEntries = (queries, lastmod, origin = ORIGIN) =>
 
 // A committed constant, same reasoning as wordPages.WORD_PAGES_LASTMOD -- bumped by hand when the
 // content actually changes, never `new Date()`.
-export const GLOSS_PAGES_LASTMOD = '2026-09-05';
+export const GLOSS_PAGES_LASTMOD = '2026-09-06';
 
 export const renderGlossSitemap = (queries, lastmod = GLOSS_PAGES_LASTMOD, origin = ORIGIN) =>
   `<?xml version="1.0" encoding="UTF-8"?>\n`

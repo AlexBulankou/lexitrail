@@ -1,0 +1,77 @@
+/* revamp-2026-09 — "How many words?" (SessionSize.js). Token-only: every colour is a var from
+   Global.css :root, so it follows palette and dark mode with no local literals. */
+.session-size {
+  max-width: 560px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 28px 24px 72px;
+  box-sizing: border-box;
+  color: var(--ink);
+}
+
+.session-size-back {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--min-tap-target);
+  margin-left: -8px;
+  padding: 0 8px;
+  color: var(--muted);
+  text-decoration: none;
+}
+
+.session-size-title {
+  font-family: var(--font-display);
+  font-size: 1.7rem;
+  line-height: 1.2;
+  letter-spacing: -.02em;
+  margin: 10px 0 4px;
+}
+
+.session-size-sub {
+  margin: 0 0 20px;
+  color: var(--muted);
+}
+
+.session-size-options {
+  display: grid;
+  gap: 10px;
+}
+
+.session-size-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 64px;
+  padding: 0 18px;
+  border-radius: var(--r-card);
+  border: 2px solid var(--line);
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color .15s ease;
+}
+
+.session-size-option:hover,
+.session-size-option:focus-visible {
+  border-color: var(--accent);
+  outline: none;
+}
+
+.session-size-option.is-selected {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.session-size-option-text { display: grid; gap: 2px; }
+.session-size-option-label { font-weight: 700; font-size: 1.1rem; }
+.session-size-option-hint { color: var(--muted); font-size: .85rem; }
+.session-size-option-time { color: var(--muted); font-size: .9rem; white-space: nowrap; }
+
+.session-size-note {
+  margin: 18px 0 0;
+  color: var(--muted);
+  font-size: .85rem;
+}

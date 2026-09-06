@@ -46,7 +46,7 @@
 }
 
 .completed-incorrect-indicator {
-  color:red;
+  color: var(--bad);
   font-variant: small-caps;
   vertical-align: super;
   font-size: x-small;
@@ -87,7 +87,7 @@
 }
 
 .completed-review-def {
-  color: #555;
+  color: var(--muted);
   font-size: 1rem;
 }
 
@@ -101,15 +101,15 @@
 
 .completed-share-message {
   margin-top: 12px;
-  color: #2c6cd3;
+  color: var(--accent);
   font-size: 1rem;
 }
 
 .completed-button {
-  background-color: #4285f4;
+  background-color: var(--accent);
   border: none;
   border-radius: 8px;
-  color: white;
+  color: var(--surface);
   font-size: 1.5rem;
   padding: 10px 20px;
   cursor: pointer;
@@ -122,7 +122,7 @@
 }
 
 .completed-button-share {
-  background-color: #34a853;
+  background-color: var(--ok);
 }
 
 .completed-button-share:hover {
@@ -130,7 +130,7 @@
 }
 
 .completed-button:hover {
-  background-color: #2c6cd3;
+  background-color: var(--accent);
 }
 /* issue-108 (RD-2): the session's terminal state. Sits ABOVE the time and
    percentage, because the first thing a finished session should say is that it
@@ -143,10 +143,10 @@
 .completed-session-title {
   font-size: 1.75rem;
   font-weight: bold;
-  color: #28a745;
+  color: var(--ok);
 }
 
 .completed-session-sub {
-  color: #666;
+  color: var(--muted);
   font-size: 0.95rem;
 }

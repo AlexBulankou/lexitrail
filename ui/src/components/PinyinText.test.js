@@ -41,14 +41,16 @@ describe('the token cannot break mid-syllable', () => {
 
 describe('CONTROL: the tone colouring the component exists for still works', () => {
   // Without these, "delete the per-character spans" passes every assertion above.
+  // revamp-2026-09: colours are the shared --t1..--t4 tokens (Global.css/PAGE_TOKENS), so the
+  // control asserts the token wiring instead of literal hexes.
   test('a first-tone vowel is coloured and bold', () => {
     const out = html('shāng');
-    expect(out).toMatch(/color:#FF4500/);   // tone 1
+    expect(out).toMatch(/color:var\(--t1\)/);   // tone 1
     expect(out).toMatch(/font-weight:bold/);
   });
 
   test('all four tones map to four distinct colours', () => {
-    const colours = ['ā', 'á', 'ǎ', 'à'].map((c) => html(c).match(/color:(#[0-9A-Fa-f]{6})/)[1]);
+    const colours = ['ā', 'á', 'ǎ', 'à'].map((c) => html(c).match(/color:(var\(--t[1-4]\))/)[1]);
     expect(new Set(colours).size).toBe(4);
   });
 

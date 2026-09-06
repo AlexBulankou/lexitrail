@@ -5,6 +5,7 @@ import Profile from './components/Profile.js';
 import PrivateRoute from './components/PrivateRoute.js';
 import NavBar from './components/NavBar.js';
 import Wordsets from './components/Wordsets';
+import SessionSize from './components/SessionSize';
 import PrivacyPolicy from './components/PrivacyPolicy.js';
 import TermsOfService from './components/TermsOfService.js';
 import './styles/Global.css';
@@ -36,6 +37,13 @@ const App = () => {
                   </PrivateRoute>
                 }
               />
+              {/* revamp-2026-09: the "How many words?" step. Wordsets sends PRACTICE and
+                  DUE_TODAY here; the pick lands on /game/:id/:mode?n=… */}
+              <Route path="/session/:wordsetId/:mode?" element={
+                <PrivateRoute>
+                  <SessionSize />
+                </PrivateRoute>
+              } />
               <Route path="/game/:wordsetId/:mode?" element={
                 <PrivateRoute>
                   <Game />

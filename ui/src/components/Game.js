@@ -4,16 +4,15 @@ import { markOnce, FIRST_CARD_MARK } from '../utils/perfMark';
 import MiniWordCard from './MiniWordCard';
 import Completed from './Completed';
 import {
-  SESSION_BUDGET, sessionRemaining, sessionProgress, sessionOutcome,
+  sessionRemaining, sessionProgress, sessionOutcome, resolveSessionBudget,
   nextSessionBinding, sessionVisibleIndices, EMPTY_BINDING, progressLabel } from '../utils/session';
 import OnboardingOverlay from './OnboardingOverlay';
 import Timer from './Timer';
-import { useParams } from 'react-router-dom';
+import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
 import { useWordsetLoader } from '../hooks/useWordsetLoader';
 import { gridDimensions, selectLayout } from '../utils/cardLayout';
 import { useAuth } from '../contexts/AuthContext';
 import '../styles/Game.css';
-import { useNavigate } from 'react-router-dom';
 import Logo from './Logo';
 
 const GameMode = {
@@ -31,6 +30,13 @@ const Game = () => {
     : GameMode.PRACTICE;
 
   mode = validMode;
+
+  // revamp-2026-09: the session size the learner picked on /session/:id/:mode travels here as
+  // `?n=10|20|100|all`. Absent or malformed => the #108 default (10). `session.js` owns the
+  // parsing so a bad value can never yield an unbounded or empty session from here.
+  const [searchParams] = useSearchParams();
+  const sessionBudget = resolveSessionBudget(searchParams.get('n'));
+  const sizeQuery = searchParams.get('n') ? `?n=${encodeURIComponent(searchParams.get('n'))}` : '';
 
 
   const { user } = useAuth();
@@ -66,7 +72,7 @@ const Game = () => {
     mode
   );
 
-  // issue-108 (RD-2): bind the session ONCE per (wordset, mode).
+  // issue-108 (RD-2): bind the session ONCE per (wordset, mode, budget).
   //
   // A ref rather than state because this must NOT re-derive on re-render:
   // `displayWords` shrinks as words are memorized, so any expression that
@@ -81,7 +87,7 @@ const Game = () => {
     mode,
     loaded: loading.status === 'loaded',
     words: displayWords,
-    budget: SESSION_BUDGET,
+    budget: sessionBudget,
   });
   const sessionKeys = sessionRef.current.keys;
 
@@ -324,13 +330,13 @@ const Game = () => {
   };
 
   const handleCardInclusionStateChanged = (index, isIncluded) => {
-    const word = displayWords[index];
     toggleExclusion(index, maxCardsToShow);
   };
 
   const toggleWordsetFilter = () => {
     const reversedPracticeMode = mode == GameMode.PRACTICE ? GameMode.SHOW_EXCLUDED : GameMode.PRACTICE;
-    navigate(`/game/${wordsetId}/${reversedPracticeMode}`);
+    // Keep `?n=` across the toggle so returning to PRACTICE re-binds at the chosen size.
+    navigate(`/game/${wordsetId}/${reversedPracticeMode}${sizeQuery}`);
   };
 
   const toggleShowHints = () => {
@@ -350,8 +356,9 @@ const Game = () => {
     // Clear the binding so the next loaded queue starts a FRESH session.
     // Without this, "practice again" would re-enter a session whose words are
     // all already done and land straight back on the completion screen.
+    // `sizeQuery` is preserved: "practice again" means again AT THIS SIZE.
     sessionRef.current = EMPTY_BINDING;
-    navigate(`/game/${wordsetId}/${mode}`);
+    navigate(`/game/${wordsetId}/${mode}${sizeQuery}`);
     loadWordsForWordset();
   }
 
@@ -429,7 +436,7 @@ const Game = () => {
         incorrectAttempts={incorrectAttempts}
         incorrectWords={incorrectWords}
         resetGame={resetGame}
-        outcome={sessionKeys ? sessionOutcome(sessionKeys, SESSION_BUDGET) : null}
+        outcome={sessionKeys ? sessionOutcome(sessionKeys, sessionBudget) : null}
         sessionDone={progress.done}
         sessionTotal={progress.total}
       />

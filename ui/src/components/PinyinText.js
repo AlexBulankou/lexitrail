@@ -1,16 +1,22 @@
 import React from 'react';
 
 // Define tone colors
+// revamp-2026-09: tone colours are TOKENS, not literals. `--t1..--t4` live in Global.css :root
+// (and in PAGE_STYLE for the static pages, so an indexed page and the practice screen colour the
+// same vowel the same way). The shipped literals (#FF4500 / #FFA500 / #32CD32 / #800080) failed
+// contrast on white for tones 2 and 3 and had no dark-mode counterpart; the tokens are tuned per
+// palette and flip with `prefers-color-scheme`. Neutral tone inherits the surrounding text colour.
 const toneColors = {
-    1: '#FF4500', // Red for first tone
-    2: '#FFA500', // Orange for second tone
-    3: '#32CD32', // Green for third tone
-    4: '#800080', // Purple for fourth tone
-    0: '#000000', // Black for neutral tone
+    1: 'var(--t1)', // --t1 for first tone
+    2: 'var(--t2)', // --t2 for second tone
+    3: 'var(--t3)', // --t3 for third tone
+    4: 'var(--t4)', // --t4 for fourth tone
+    0: 'inherit', // inherit for neutral tone
 };
 
-// Function to determine the tone based on accented characters
-const getTone = (char) => {
+// Function to determine the tone based on accented characters. Exported so the static-page
+// generators (hskPages.pinyinHtml) use the SAME table — one source for which vowel is which tone.
+export const getTone = (char) => {
     if ('āēīōūǖĀĒĪŌŪǕ'.includes(char)) return 1;
     if ('áéíóúǘÁÉÍÓÚǗ'.includes(char)) return 2;
     if ('ǎěǐǒǔǚǍĚǏǑǓǙ'.includes(char)) return 3;
@@ -25,6 +31,7 @@ const splitSyllables = (text) => {
     return text.match(syllableRegex) || []; // Returns an array of syllables
 };
 
+// 📌 DEAD (see lexitrail#190 note below) — kept as the design for mid-token wrapping.
 // Function to render pinyin with colored tones and syllable separation
 const renderPinyinWithSyllables = (text) => {
     const syllables = splitSyllables(text); // Split text into syllables
@@ -38,7 +45,7 @@ const renderPinyinWithSyllables = (text) => {
             const color = toneColors[tone];
 
             return (
-                <span key={`${index}-${charIndex}`} style={{ backgroundColor: tone > 0 ? '#fff' : 'inherit', color: tone > 0 ? color : 'inherit' }}>
+                <span key={`${index}-${charIndex}`} style={{ color: tone > 0 ? color : 'inherit' }}>
                     {char}
                 </span>
             );
@@ -64,7 +71,7 @@ const renderPinyin = (text) => {
 
         // Return each character with a span, only applying color to vowels with tones
         return (
-            <span key={index} style={{ fontWeight: tone > 0 ? 'bold' : 'inherit', color: tone > 0 ? color : 'inherit' }}>
+            <span key={index} className={tone > 0 ? `t${tone}` : undefined} style={{ fontWeight: tone > 0 ? 'bold' : 'inherit', color: tone > 0 ? color : 'inherit' }}>
                 {char}
             </span>
         );

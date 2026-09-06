@@ -1,14 +1,14 @@
 .mini-word-card {
 
     border-radius: 7px;
-    border:1px solid #333;
+    border:1px solid var(--ink);
     min-height: 70px;
     width: 98px;
     display: flex;
     justify-content: space-between;
     flex-direction: row;
     margin:1px;
-    background-color: #fff;
+    background-color: var(--surface);
     align-items: center;
     word-wrap: break-word;
     overflow-wrap: break-word;
