@@ -26,7 +26,16 @@
   /* A — terracotta on warm paper */
   --bg: #fbf9f4; --surface: #fff; --surface-2: #f4efe6; --ink: #1d1a16; --muted: #6d6558; --line: #eae3d6;
   --accent: #b23b2e; --accent-ink: #fff; --accent-soft: #fbeeeb;
-  --ok: #3f7d4e; --ok-ink: #fff; --ok-soft: #e6f1e8; --bad: #b23b2e; --bad-soft: #fbeeeb;
+  /* issue-385: `--bad` WAS #b23b2e — byte-identical to `--accent`. Wrong and brand
+     were the same colour, so the practice screen's ✗, its ✓, Exclude and the bulk
+     action all rendered the same red and nothing had any hierarchy. The dark and
+     alternate palettes always kept them distinct; only the LIGHT one — the one that
+     ships — collapsed them. Now a cooler crimson, 7.67:1 on white.
+     `--ok` moved #3f7d4e -> #397146 because #3f7d4e measured 4.26:1 against its own
+     --ok-soft, i.e. it FAILED AA for the soft-chip pairing the token layer offers.
+     Darker helps both readings at once (5.79:1 on white, 5.00:1 on --ok-soft). */
+  --ok: #397146; --ok-ink: #fff; --ok-soft: #e6f1e8;
+  --bad: #a4133c; --bad-ink: #fff; --bad-soft: #fbe9ee;
   --t1: #c8361f; --t2: #9c5410; --t3: #2a7130; --t4: #6b3fa0;
   --shadow: 0 1px 2px rgba(40,30,20,.06), 0 8px 24px rgba(40,30,20,.06);
 }
@@ -35,14 +44,16 @@
   --font-display: "Source Serif 4", Georgia, serif;
   --bg: #f5f3ee; --surface: #fffdf9; --surface-2: #ecebe4; --ink: #231c2b; --muted: #6b6472; --line: #e3dfe4;
   --accent: #2f6f5e; --accent-ink: #fff; --accent-soft: #e1efe8;
-  --ok: #2f6f5e; --ok-ink: #fff; --ok-soft: #e1efe8; --bad: #a43b52; --bad-soft: #f7e6ea;
+  --ok: #2f6f5e; --ok-ink: #fff; --ok-soft: #e1efe8;
+  --bad: #a43b52; --bad-ink: #fff; --bad-soft: #f7e6ea;
   --t1: #c0392b; --t2: #b3701c; --t3: #2f7d4f; --t4: #6d3b8e;
   --shadow: 0 1px 2px rgba(30,20,40,.06), 0 8px 24px rgba(30,20,40,.07);
 }
 @media (prefers-color-scheme: dark) { :root {
   --bg: #15121a; --surface: #201c27; --surface-2: #2a2532; --ink: #efe9f1; --muted: #a59db0; --line: #352f3e;
   --accent: #6fb59c; --accent-ink: #0d1a15; --accent-soft: #1c2a25;
-  --ok: #6fb59c; --ok-ink: #0d1a15; --ok-soft: #1c2a25; --bad: #e08497; --bad-soft: #33202a;
+  --ok: #6fb59c; --ok-ink: #0d1a15; --ok-soft: #1c2a25;
+  --bad: #e08497; --bad-ink: #33202a; --bad-soft: #33202a;
   --t1: #ff8f7a; --t2: #f2b860; --t3: #84d3a2; --t4: #cfa3f2;
   --shadow: 0 1px 2px rgba(0,0,0,.3), 0 10px 30px rgba(0,0,0,.4);
 } }

@@ -15,7 +15,11 @@ body, html {
 /* General container for the game */
 .container {
   display: flex;
-  background-color: #a9a9a9;
+  /* issue-385: was #a9a9a9 — a flat mid-grey the token migration had no mapping
+     for, so it survived. It is the single biggest reason the practice screen did
+     not look like the rest of the product: every surface around it is warm paper
+     and this one was battleship. */
+  background-color: var(--bg);
   flex-direction: column;
   align-items: center;
   justify-content: space-between;
@@ -26,7 +30,7 @@ body, html {
   box-sizing: border-box;
   border-radius: 8px;
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-  border: 2px solid #d3d3d3;
+  border: 2px solid var(--line);
   margin-top:60px;
 }
 
@@ -344,7 +348,9 @@ body, html {
 }
 
 .not-memorized {
-  color: #f44336; /* Red color for not memorized stats */
+  color: var(--bad); /* issue-385: was a raw #f44336, sitting next to a
+     properly-tokenised var(--ok) on the very next rule — one half migrated,
+     its sibling forgotten. */
 }
 
 .memorized {
@@ -362,13 +368,20 @@ body, html {
   border: none;
   border-radius: 10%;
   cursor: pointer;
-  color: var(--surface);
   font-size:0.8rem;
   text-wrap-mode: wrap;
   height: 100%;
   width:60px;
-  color:#ffffff;
-  background-color: #000000;
+  /* issue-385: was pure #000 with #fff text — three black slabs across the top of
+     a warm-paper screen, and the only pure black anywhere in the product. These
+     are SECONDARY controls (Show Hints / Flip all / Show Excluded), so they read
+     as secondary now: the raised surface, ink text, a hairline. 15.13:1.
+     The duplicate `color` declaration above them is gone too — it set
+     var(--surface) and was immediately overridden by the literal, so the token
+     was decorative. */
+  color: var(--ink);
+  background-color: var(--surface-2);
+  border: 1px solid var(--line);
 }
 
 .game-settings-button:hover {
@@ -378,10 +391,13 @@ body, html {
 .mark-all-memorized-button{
   width:100%;
   background-color: var(--accent);
-  color:#ffffff;
+  color: var(--accent-ink);
   border-radius: 10px;
-  border:1px;
-  border-color: #ffffff;
+  /* issue-385: `border:1px` with no style is INERT — no border was ever drawn, so
+     the #fff border-color beside it was decorative. Made explicit rather than
+     silently kept: the bulk action is the loudest control on the screen and it
+     should be the accent with nothing competing. */
+  border: none;
   padding:2px;
   font-size:1.6rem;
   margin:2px 0 0 0;
