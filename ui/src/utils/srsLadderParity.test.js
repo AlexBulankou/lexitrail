@@ -5,12 +5,21 @@
 // computed in SQL instead of by downloading ~5,600 words to the browser to render seven
 // integers (10s+, then an outright failure — that is the bug this endpoint replaces).
 //
-// 🔴 WHY THIS TEST LIVES IN THE JEST SUITE AND NOT BESIDE THE PYTHON IT CHECKS.
-// `cloudbuild.yaml` (the backend trigger) builds and pushes an image; it does NOT run
-// pytest. So a parity test in `backend/tests/` would never execute on a merge — a drift
-// guard that cannot fire is indistinguishable from one that passed, and this one exists
-// precisely for an edit nobody thought to check. `jest` DOES run on every PR, so the
-// guard is live here and inert there.
+// 🔴 THIS IS HALF OF THE GUARD. Its twin is `backend/tests/test_srs_ladder_parity_384.py`,
+// and BOTH are required — see that file's docstring for the retraction that produced them.
+//
+// Short version: I first shipped only this half, arguing that `cloudbuild.yaml` builds an
+// image without running pytest so a test there would never fire. The premise is true; the
+// conclusion was false. `.github/workflows/backend-tests.yml` runs pytest on every PR — I
+// checked one CI surface and generalised a true negative from it without enumerating the
+// other. The real reason needs both halves, because the workflows are PATH-FILTERED:
+//
+//     edit ui/src/utils/srs.js        -> ui-tests runs,      backend-tests does NOT
+//     edit backend/app/srs_ladder.py  -> backend-tests runs, ui-tests does NOT
+//
+// So a single parity test is blind to half the edits it exists to catch — and blind to
+// the half MORE likely to drift silently, since nobody editing the Python ladder has any
+// reason to touch `ui/`. This file covers the JS-side edit; its twin covers the other.
 //
 // Same shape and same reason as `designTokens.test.js`, which pins the two copies of the
 // token layer declaration-for-declaration.
