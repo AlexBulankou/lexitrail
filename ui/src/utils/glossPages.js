@@ -22,7 +22,7 @@
 // generator. Flagged to hcl@ on the issue rather than silently treated as "done" -- #365's own
 // quality-gate #3 says a scope change comes back to zz1, and this is the honest size of what
 // shipped, not a decision to widen or shrink it.
-import { HSK_LEVELS, ORIGIN, isHskWordset, PAGE_STYLE, SITE_HEADER, pinyinHtml } from './hskPages';
+import { HSK_LEVELS, ORIGIN, isHskWordset, PAGE_STYLE, GA4_SNIPPET, SITE_HEADER, pinyinHtml } from './hskPages';
 
 const esc = (s) => String(s ?? '')
   .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
@@ -283,6 +283,7 @@ export const renderGlossPage = (query, group, { examples = [], origin = ORIGIN }
 <script type="application/ld+json">${jsonLd}</script>
 <script>${AUDIO_BUTTON_SCRIPT}</script>
 ${PAGE_STYLE}
+${GA4_SNIPPET}
 </head>
 <body>
 ${SITE_HEADER}

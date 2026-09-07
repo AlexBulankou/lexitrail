@@ -87,6 +87,33 @@ export const PAGE_TOKENS = `:root{color-scheme:light dark;
   --t1:#ff8a6f;--t2:#f0b45a;--t3:#7fd08a;--t4:#c39cf0;
   --shadow:0 1px 2px rgba(0,0,0,.3),0 10px 30px rgba(0,0,0,.35)}}`;
 
+// issue-393: GA4 on the STATIC surface. These ~5,600 word/HSK/gloss pages are
+// deliberately standalone HTML (the 404.html precedent) and were generated
+// without the tag, so every arrival on the whole lighthouse-program funnel
+// — #184/#365/#367 — reached a page the property never saw. GSC showed 2.87K
+// impressions at pos ~10 while GA4 showed 2 Organic Search sessions total and
+// zero /hsk* pagePaths: not a low number, a BLIND one.
+//
+// Shared here for the same reason PAGE_STYLE is: one source of truth the three
+// families import, so a page cannot be generated with the style and without
+// the tag. Same measurement id as the SPA shell (ui/public/index.html) so a
+// visitor crossing from a word page into the app stays one session — which is
+// what makes the issue's AC3 (word page -> / -> wordset_click) measurable at
+// all rather than two disjoint visits.
+//
+// Inline and async, with NO dependency on the SPA bundle: these pages must stay
+// self-contained. A page that needed the bundle to report would report nothing
+// on exactly the arrivals this exists to count.
+export const GA4_ID = 'G-910V8PX54C';
+export const GA4_SNIPPET = `<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=${GA4_ID}"></script>
+<script>
+window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+gtag('js', new Date());
+gtag('config', '${GA4_ID}');
+</script>`;
+
 export const PAGE_STYLE = `<style>
 ${PAGE_TOKENS}
 *{box-sizing:border-box}
@@ -275,6 +302,7 @@ export const renderPage = (level, words, origin = ORIGIN) => {
 <meta property="twitter:image" content="${origin}/images/og/generated/og-landscape.png">
 <script type="application/ld+json">${jsonLd}</script>
 ${PAGE_STYLE}
+${GA4_SNIPPET}
 </head>
 <body>
 <main class="wrap-wide">
