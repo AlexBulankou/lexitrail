@@ -18,7 +18,7 @@
 // Not added, and why: audio (needs a TTS decision — the SPA uses speechSynthesis; a static page
 // can too, but that is a product call), character breakdown and stroke order (no data source in
 // the repo). The prototypes show where they go.
-import { HSK_LEVELS, ORIGIN, isHskWordset, PAGE_STYLE, SITE_HEADER, pinyinHtml } from './hskPages';
+import { HSK_LEVELS, ORIGIN, isHskWordset, PAGE_STYLE, GA4_SNIPPET, SITE_HEADER, pinyinHtml } from './hskPages';
 
 const esc = (s) => String(s ?? '')
   .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
@@ -197,6 +197,7 @@ ${prev ? `<link rel="prev" href="${wordUrl(prev.level, prev.word, origin)}">\n` 
 <meta property="twitter:description" content="${esc(desc)}">
 <script type="application/ld+json">${jsonLd}</script>
 ${PAGE_STYLE}
+${GA4_SNIPPET}
 </head>
 <body>
 <main class="wrap">

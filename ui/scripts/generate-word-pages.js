@@ -54,13 +54,13 @@ const evalModule = (file, exportNames, injected = {}) => {
 
 const hsk = evalModule('hskPages.js', [
   'HSK_LEVELS', 'ORIGIN', 'isHskWordset', 'groupByLevel',
-  'pageFilename', 'pageUrl', 'renderPage', 'renderSitemapEntries', 'PAGE_STYLE', 'SITE_HEADER',
+  'pageFilename', 'pageUrl', 'renderPage', 'renderSitemapEntries', 'PAGE_STYLE', 'GA4_SNIPPET', 'SITE_HEADER',
   'pinyinHtml']);
 const wp = evalModule('wordPages.js',
   ['wordFilename', 'wordUrl', 'collectWords', 'renderWordPage', 'renderWordSitemapEntries',
    'renderWordSitemap', 'WORD_PAGES_LASTMOD', 'collectExamples'],
   { HSK_LEVELS: hsk.HSK_LEVELS, ORIGIN: hsk.ORIGIN, isHskWordset: hsk.isHskWordset,
-    PAGE_STYLE: hsk.PAGE_STYLE, SITE_HEADER: hsk.SITE_HEADER,
+    PAGE_STYLE: hsk.PAGE_STYLE, GA4_SNIPPET: hsk.GA4_SNIPPET, SITE_HEADER: hsk.SITE_HEADER,
     // revamp-2026-09: wordPages' tone-coloured pinyin comes from hskPages' shared renderer.
     pinyinHtml: hsk.pinyinHtml });
 
