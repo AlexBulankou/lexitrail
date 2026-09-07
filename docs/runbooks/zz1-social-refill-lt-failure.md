@@ -11,9 +11,16 @@ means.
 alarming one and acts on it is wrong most of the time.
 
 ```bash
-journalctl --user -u zz1-social-refill-lt.service --since "36 hours ago" -o short-iso \
+journalctl --user -u zz1-social-refill-lt.service --since "7 days ago" -o short-iso \
   | grep -E "Finished|Failed with result|refusing"
 ```
+
+⚠️ **7 days, not 36 hours, and the window is load-bearing.** Step 3 below escalates on
+*"failing for three or more days"* — a 36h window **structurally cannot see that case**, so
+the recipe would be blind to the exact condition the rule exists for. And because the
+alerter is delta-gated (below), a run of consecutive failures pages **once**: you can
+arrive days after the page, get only `Finished` lines in a short window, and match neither
+row of the table. The 7-day output is ten lines.
 
 🔴 **Use those exact tokens.** systemd logs a success as **`Finished`** — *not* `Succeeded`,
 *not* `Started` (which a failed run prints too). A grep for the wrong word returns the
@@ -32,9 +39,12 @@ discriminator that needs no success line at all: **scheduled fires land at ~02:0
 (~09:0xZ); a boot replay lands at an odd hour.** Measured on bp:
 
 ```
+08-31 02:05:04 PDT  Finished          <- scheduled
+09-01 00:08:42 PDT  Failed             <- replay #1
+09-01 02:02:13 PDT  Finished          <- recovered ~2h later, same pattern
 09-02 02:05:45 PDT  Finished          <- scheduled
 09-02 22:20:42 PDT  Failed  "refusing to run a refill off a checkout of unknown age"
-09-03 02:01:00 PDT  Finished          <- the recovery, next morning
+09-03 02:01:00 PDT  Finished          <- replay #2 recovered, next morning
 09-04 / 09-05 / 09-06 / 09-07 02:0x   Finished, Finished, Finished, Finished
 ```
 
