@@ -116,6 +116,10 @@ describe('renderGlossPage', () => {
   const group = collectGlossGroup(ROWS, 'decision');
   const html = renderGlossPage(query, group, {});
 
+  it('every gloss page carries the support footer (pigeon 2026-09-07)', () => {
+    expect(html).toContain('mailto:support@lexitrail.com');
+  });
+
   test('title/h1 matches the query verbatim (case-normalized), per the spec\'s page model', () => {
     expect(html).toMatch(/<title>Decision in Chinese<\/title>/);
     expect(html).toMatch(/<h1>Decision in Chinese<\/h1>/);

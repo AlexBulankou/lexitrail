@@ -1,4 +1,5 @@
 import React from 'react';
+import SiteFooter from './SiteFooter';
 
 const About = () => {
   return (
@@ -86,6 +87,7 @@ const About = () => {
           </div>
 
         </div>
+        <SiteFooter />
       </div>
     </div>
   );

@@ -2,7 +2,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { getWordsets } from '../services/wordsService'; // Assuming getWordsets is implemented in wordsService.js
 import { useNavigate } from 'react-router-dom';
-import '../styles/Wordsets.css'; // Create a CSS file for styling the wordsets grid
+import '../styles/Wordsets.css';
+import SiteFooter from './SiteFooter'; // Create a CSS file for styling the wordsets grid
 import { GameMode } from './Game';
 import { resolveWordsetsView } from '../utils/wordsetsView';
 
@@ -134,6 +135,7 @@ const Wordsets = ({ profileDetails, login }) => {
           ))}
         </div>
       )}
+      <SiteFooter />
     </div>
   );
 };

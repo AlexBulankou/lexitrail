@@ -105,6 +105,8 @@ nav{margin-top:28px;padding-top:16px;border-top:1px solid var(--line);color:var(
 nav a{display:inline-flex;align-items:center;min-height:var(--tap);gap:6px}
 nav a[rel="next"]{justify-content:flex-end}
 nav a:not([rel]){color:var(--muted);justify-content:center}
+.site-footer{margin-top:8px;color:var(--muted);font-size:.9rem;display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center}
+.site-footer a{color:var(--muted);text-decoration:underline;display:inline-flex;align-items:center;min-height:var(--tap)}
 </style>
 </head>
 <body>
@@ -277,6 +279,7 @@ to forget them. <a href="https://lexitrail.com/game/2/PRACTICE">Practise the HSK
 </table>
 <p><a href="https://lexitrail.com/game/2/PRACTICE">Start practising HSK 2 &rarr;</a></p>
 <nav style="display:flex;flex-wrap:wrap;gap:6px 14px"><span>Other levels:</span> <a href="https://lexitrail.com/hsk1.html">HSK 1</a> <a href="https://lexitrail.com/hsk3.html">HSK 3</a> <a href="https://lexitrail.com/hsk4.html">HSK 4</a> <a href="https://lexitrail.com/hsk5.html">HSK 5</a> <a href="https://lexitrail.com/hsk6.html">HSK 6</a></nav>
+<footer class="site-footer"><a href="mailto:support@lexitrail.com">Support: support@lexitrail.com</a><span>&copy; LexiTrail</span></footer>
 </main>
 <script>(function(){var i=document.getElementById('q'),c=document.getElementById('n'),r=[].slice.call(document.querySelectorAll('tbody tr'));if(!i)return;function s(t){return t.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase()}var d=r.map(function(x){return s(x.textContent)});i.addEventListener('input',function(){var q=s(i.value.trim()),k=0;r.forEach(function(x,j){var h=q&&d[j].indexOf(q)<0;x.hidden=h;if(!h)k++});c.textContent=k+' shown'})})();</script>
 </body>
