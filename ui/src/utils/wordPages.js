@@ -154,7 +154,14 @@ export const renderWordPage = (
   const senses = w.senses || [{ pinyin: w.pinyin, english: w.english }];
   const levelUrl = `${origin}/hsk${w.level}.html`;
   const gloss = [w.pinyin, w.english].filter(Boolean).join(' — ');
-  const title = `${w.word}${gloss ? ` (${gloss})` : ''} — HSK ${w.level} Chinese word`;
+  // lexitrail#368: English-gloss-first. GSC's 28d window shows the ranking queries are
+  // "<gloss> in chinese" (English-first searchers, pos ~10-14) — a hanzi-first title like
+  // "网球 (wǎngqiú — Tennis) — HSK 4 Chinese word" buries the term the searcher typed and scans
+  // as unreadable at a glance, which measured CTR 0.049% on 4,110 impressions. Falls back to the
+  // old hanzi-first form when there's no gloss to lead with (the "bare word" case above).
+  const title = w.english
+    ? `${w.english} in Chinese — ${w.word}${w.pinyin ? ` (${w.pinyin})` : ''} | HSK ${w.level}`
+    : `${w.word}${gloss ? ` (${gloss})` : ''} — HSK ${w.level} Chinese word`;
   const desc = `${w.word}${w.pinyin ? `, pinyin ${w.pinyin}` : ''}${w.english ? `, means "${w.english}"` : ''}. `
     + `An HSK ${w.level} word. Practise it with spaced repetition on LexiTrail, free.`;
   const jsonLd = jsonSafe({
