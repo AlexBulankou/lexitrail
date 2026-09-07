@@ -1,12 +1,57 @@
 # `zz1-social-refill-lt.service` failed — what it costs, and what to do
 
-**One line: LexiTrail's Instagram and Pinterest queues did not get topped up today.**
-Posting does not stop immediately; it stops in about three days.
-
 You are probably here because a `#7638` Slack alert named the unit. That alert reports a
 **unit**, not a consequence — closing lexitrail#334's AC2, which observed that the page
 says `` `zz1-social-refill-lt.service` `` and nobody had written down what its failure
 means.
+
+## 🔴 STEP 0 — which fire failed? The two answers are opposite.
+
+**Do not skip this.** The modal page is the *harmless* case, so a reader who assumes the
+alarming one and acts on it is wrong most of the time.
+
+```bash
+journalctl --user -u zz1-social-refill-lt.service --since "36 hours ago" -o short-iso \
+  | grep -E "Finished|Failed with result|refusing"
+```
+
+🔴 **Use those exact tokens.** systemd logs a success as **`Finished`** — *not* `Succeeded`,
+*not* `Started` (which a failed run prints too). A grep for the wrong word returns the
+failure and no success, which reads as *"it never recovered"* and sends you down the wrong
+branch. This is not hypothetical: the first draft of this section shipped
+`grep -iE "Started|Succeeded|fail|refus"`, and against the real journal it hid all six
+successes below.
+
+| what you see | what it means | do |
+|---|---|---|
+| a failure, **then a later `Finished`** | a **boot replay** failed; the scheduled fire did its job | nothing — record it and stop |
+| the most recent line is a failure, **no `Finished` after it** | the refill genuinely did not happen | continue below |
+
+⚠️ **The first row is the common one, and it is what a page usually means.** A second
+discriminator that needs no success line at all: **scheduled fires land at ~02:0x PDT
+(~09:0xZ); a boot replay lands at an odd hour.** Measured on bp:
+
+```
+09-02 02:05:45 PDT  Finished          <- scheduled
+09-02 22:20:42 PDT  Failed  "refusing to run a refill off a checkout of unknown age"
+09-03 02:01:00 PDT  Finished          <- the recovery, next morning
+09-04 / 09-05 / 09-06 / 09-07 02:0x   Finished, Finished, Finished, Finished
+```
+
+The 22:20 PDT timestamp alone tells you it was a replay. Measured at filing: **12 of 12**
+on-schedule fires finished, **0 of 4** `Persistent=true` boot replays did.
+
+📌 This section exists because the first version of this runbook opened with *"LexiTrail's
+queues did not get topped up today"* — which contradicted its own 12/12-vs-0/4 split for
+the modal case (adm@, reviewing lex#399). The body was right and the headline was the part
+a reader acts on first. Left as a note rather than a silent rewrite: **a one-liner that
+disagrees with the evidence three paragraphs below it is not a wording problem, it is the
+only sentence most readers will use.**
+
+## If the refill genuinely did not run
+
+**LexiTrail's Instagram and Pinterest queues did not get topped up.** Posting does not stop
+immediately; it stops in about three days.
 
 ## What the unit does
 
@@ -37,7 +82,8 @@ alert, not one per day.
 
 ```bash
 systemctl --user status zz1-social-refill-lt.service
-journalctl --user -u zz1-social-refill-lt.service --since "7 days ago" | grep -iE "fail|refus"
+journalctl --user -u zz1-social-refill-lt.service --since "7 days ago" -o short-iso \
+  | grep -E "Finished|Failed with result|refusing"    # BOTH outcomes — see step 0
 ```
 
 ## The two known failure messages, and what they mean
