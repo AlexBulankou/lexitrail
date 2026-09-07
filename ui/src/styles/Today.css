@@ -53,6 +53,23 @@
   font-weight: bold;
 }
 
+/* issue-392 — the definition of "review" (Alex, 2026-09-06: "reviews concept
+ * is confusing, explain what it means").
+ *
+ * Deliberately the QUIETEST thing on the screen: smaller than .today-sub and
+ * width-capped. This file's own header rule is that "anything competing with
+ * the Start control for attention is a regression here rather than a
+ * flourish", and an explainer is exactly the kind of addition that breaks it
+ * — so it is sized to be read once by a first-time learner and skipped by a
+ * returning one, not to be noticed. */
+.today-explainer {
+  margin: 0;
+  max-width: 30ch;
+  color: var(--muted);
+  font-size: 0.85rem;
+  line-height: 1.4;
+}
+
 .today-start {
   margin-top: 0.5rem;
   padding: 1rem 3rem;

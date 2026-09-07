@@ -1,5 +1,6 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { TODAY_COPY, REVIEW_DEFINITION, dueHeadlineSuffix } from '../utils/todayCopy';
 import { useDueToday } from '../hooks/useDueToday';
 import { useStreakSnapshot } from '../hooks/useStreakSnapshot';
 import { pickStartSet } from '../utils/srs';
@@ -48,7 +49,7 @@ const Today = ({ userId }) => {
   if (status === 'loading') {
     return (
       <div className="today" role="status" aria-live="polite">
-        <p className="today-status">Checking today's reviews…</p>
+        <p className="today-status">{TODAY_COPY.loading}</p>
       </div>
     );
   }
@@ -60,7 +61,7 @@ const Today = ({ userId }) => {
     return (
       <div className="today">
         <p className="today-status today-error" role="alert">
-          Couldn't load today's reviews.
+          {TODAY_COPY.error}
         </p>
         <button type="button" className="today-start" onClick={reload}>
           Try again
@@ -80,11 +81,16 @@ const Today = ({ userId }) => {
   if (total === 0) {
     return (
       <div className="today">
-        <p className="today-headline today-done">All caught up</p>
-        <p className="today-sub">Nothing is due right now. Come back tomorrow.</p>
+        <p className="today-headline today-done">{TODAY_COPY.emptyHeadline}</p>
+        <p className="today-sub">{TODAY_COPY.emptySub}</p>
+        {/* issue-392 AC2: the empty state carries the SAME definition as the
+            populated one. A learner who lands here first would otherwise never
+            meet the explanation at all -- and "all caught up" on a concept you
+            were never told about explains nothing. */}
+        <p className="today-explainer">{REVIEW_DEFINITION}</p>
         <p className="today-streak" role="status">{streakLine}</p>
         <Link to="/wordsets" className="today-secondary">
-          Practice anyway
+          {TODAY_COPY.emptyAction}
         </Link>
       </div>
     );
@@ -94,8 +100,12 @@ const Today = ({ userId }) => {
     <div className="today">
       <p className="today-headline">
         <span className="today-count">{total}</span>{' '}
-        {total === 1 ? 'review due today' : 'reviews due today'}
+        {dueHeadlineSuffix(total)}
       </p>
+      {/* issue-392, Alex 2026-09-06 ("reviews concept is confusing, explain
+          what it means"). The answer went to him in Slack and never to the
+          screen; this is the screen. */}
+      <p className="today-explainer">{REVIEW_DEFINITION}</p>
       <p className="today-streak" role="status">{streakLine}</p>
       <button type="button" className="today-start" onClick={start}>
         Start
