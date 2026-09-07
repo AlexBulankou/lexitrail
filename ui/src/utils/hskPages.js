@@ -187,11 +187,17 @@ nav{margin-top:28px;padding-top:16px;border-top:1px solid var(--line);color:var(
 nav a{display:inline-flex;align-items:center;min-height:var(--tap);gap:6px}
 nav a[rel="next"]{justify-content:flex-end}
 nav a:not([rel]){color:var(--muted);justify-content:center}
+.site-footer{margin-top:8px;color:var(--muted);font-size:.9rem;display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center}
+.site-footer a{color:var(--muted);text-decoration:underline;display:inline-flex;align-items:center;min-height:var(--tap)}
 </style>`;
 
 /** The shared top wordmark, so every page reads as one product. Kept in the base module for the
  * same reason as PAGE_STYLE — one source of truth the three families share. */
 export const SITE_HEADER = `<header class="site"><a href="${ORIGIN}/"><span class="dot"></span> LexiTrail</a></header>`;
+
+/** The shared bottom strip, same one-source-of-truth rationale as SITE_HEADER: every static page
+ * shows the support address prominently (pigeon 2026-09-07). */
+export const SITE_FOOTER = `<footer class="site-footer"><a href="mailto:support@lexitrail.com">Support: support@lexitrail.com</a><span>&copy; LexiTrail</span></footer>`;
 
 /** `wordset_id` in words.csv is 1..6 for HSK1..6; 7 is the internal `test` set. */
 export const isHskWordset = (id) => HSK_LEVELS.includes(Number(id));
@@ -326,6 +332,7 @@ ${rows}
 <p><a href="${origin}/game/${level}/PRACTICE">Start practising HSK ${level} &rarr;</a></p>
 <nav style="display:flex;flex-wrap:wrap;gap:6px 14px"><span>Other levels:</span> ${HSK_LEVELS.filter((n) => n !== level)
     .map((n) => `<a href="${origin}/hsk${n}.html">HSK ${n}</a>`).join(' ')}</nav>
+${SITE_FOOTER}
 </main>
 ${FILTER_SCRIPT}
 </body>

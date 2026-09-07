@@ -1,4 +1,5 @@
 import React from 'react';
+import SiteFooter from './SiteFooter';
 import '../styles/Policy.css';
 
 const TermsOfService = () => {

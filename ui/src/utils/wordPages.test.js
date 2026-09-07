@@ -102,6 +102,10 @@ describe('collectWords', () => {
 });
 
 describe('renderWordPage', () => {
+  test('every word page carries the support footer (pigeon 2026-09-07)', () => {
+    expect(renderWordPage({ level: 3, id: 1, word: '我', pinyin: 'wǒ', english: 'I, me' })).toContain('mailto:support@lexitrail.com');
+  });
+
   const w = { level: 3, id: 1, word: '我', pinyin: 'wǒ', english: 'I, me' };
 
   test('is self-canonical', () => {

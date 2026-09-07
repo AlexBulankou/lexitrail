@@ -1,0 +1,22 @@
+/* pigeon 2026-09-07 — the shared support strip. Tokens WITH fallbacks so the component
+   renders identically with the Global.css token layer (design revamp) or without it. */
+.site-footer {
+  margin-top: 32px;
+  padding: 12px 0 24px;
+  border-top: 1px solid var(--line, #eae3d6);
+  color: var(--muted, #6d6558);
+  font-size: .9rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+  align-items: center;
+  justify-content: center;
+}
+
+.site-footer a {
+  color: var(--muted, #6d6558);
+  text-decoration: underline;
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--min-tap-target, 44px);
+}

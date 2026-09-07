@@ -22,7 +22,7 @@
 // generator. Flagged to hcl@ on the issue rather than silently treated as "done" -- #365's own
 // quality-gate #3 says a scope change comes back to zz1, and this is the honest size of what
 // shipped, not a decision to widen or shrink it.
-import { HSK_LEVELS, ORIGIN, isHskWordset, PAGE_STYLE, GA4_SNIPPET, SITE_HEADER, pinyinHtml } from './hskPages';
+import { HSK_LEVELS, ORIGIN, isHskWordset, PAGE_STYLE, GA4_SNIPPET, SITE_HEADER, SITE_FOOTER, pinyinHtml } from './hskPages';
 
 const esc = (s) => String(s ?? '')
   .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
@@ -299,6 +299,7 @@ ${SITE_HEADER}
 <h2>Practise it</h2>
 <p>${ctaRow}</p>
 <nav><a href="${levelUrl}">HSK ${primary.level} word list</a> &middot; <a href="${origin}/">LexiTrail home</a></nav>
+${SITE_FOOTER}
 </main>
 </body>
 </html>
@@ -312,7 +313,7 @@ export const renderGlossSitemapEntries = (queries, lastmod, origin = ORIGIN) =>
 
 // A committed constant, same reasoning as wordPages.WORD_PAGES_LASTMOD -- bumped by hand when the
 // content actually changes, never `new Date()`.
-export const GLOSS_PAGES_LASTMOD = '2026-09-06';
+export const GLOSS_PAGES_LASTMOD = '2026-09-07';
 
 export const renderGlossSitemap = (queries, lastmod = GLOSS_PAGES_LASTMOD, origin = ORIGIN) =>
   `<?xml version="1.0" encoding="UTF-8"?>\n`
