@@ -62,6 +62,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from lt_routes import enter_practice  # noqa: E402  (sys.path shim above)
+from ga_abort import install_ga_abort, watch_page  # noqa: E402  (issue-394)
 
 EXIT_PASS, EXIT_FAIL, EXIT_BLIND = 0, 1, 2
 
@@ -166,7 +167,14 @@ def main(argv: list[str] | None = None) -> int:
 
     with sync_playwright() as pw:
         browser = pw.chromium.launch()
-        page = browser.new_page(viewport={"width": 1200, "height": 900})
+        # issue-394: an explicit context so the GA4 abort can be installed
+        # BEFORE new_page/goto. This script measured live prod with no abort at
+        # all, so every run minted a real GA4 session from bp's egress -- ~1.6%
+        # of monthly LT sessions per run, clustered during investigation bursts.
+        ctx = browser.new_context(viewport={"width": 1200, "height": 900})
+        _ga = install_ga_abort(ctx)
+        page = ctx.new_page()
+        watch_page(page, _ga)
         try:
             page.goto(args.url, wait_until="domcontentloaded", timeout=args.timeout_ms)
             enter_practice(page)
@@ -178,6 +186,11 @@ def main(argv: list[str] | None = None) -> int:
                   f"{str(e)[:200]}", file=sys.stderr)
             return EXIT_BLIND
         finally:
+            # issue-394: REPORT it. A LeakReport nothing reads is the gap this
+            # module was written to close, one level up (hc2@ review). In the
+            # `finally` deliberately -- a BLIND run still navigated, so it can
+            # still have leaked, and that is the run you least want silent.
+            print(_ga.summary(), file=sys.stderr)
             browser.close()
 
     rc, reason = classify(label, budget)

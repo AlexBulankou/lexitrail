@@ -74,6 +74,9 @@ import sys
 
 from playwright.sync_api import sync_playwright
 
+sys.path.insert(0, __file__.rsplit("/", 1)[0])
+from ga_abort import install_ga_abort, watch_page  # noqa: E402  (issue-394)
+
 MARK = "lt:first-card"
 # issue-266 follow-up: the two cuts INSIDE `app`. Optional by construction --
 # a build predating them still measures network/parse/app exactly as before,
@@ -86,7 +89,8 @@ DEFAULT_URL = "https://lexitrail.com/"
 
 
 def one_run(ctx, url: str, timeout_ms: int,
-            wordset: str | None = None) -> tuple[float | None, str | None, dict]:
+            wordset: str | None = None,
+            ga_report=None) -> tuple[float | None, str | None, dict]:
     """Drive the guest journey to practice and read the mark.
 
     (ms, error, nav). `nav` carries the navigation-timing cut points for
@@ -94,6 +98,12 @@ def one_run(ctx, url: str, timeout_ms: int,
     timeline that failed the navCount check, and `phase_split` distinguishes
     them: `{}` yields None because `.get("navCount")` is None, never 1."""
     page = ctx.new_page()
+    # issue-394 (hc2@ review): the page is created HERE, so watch_page can only
+    # be attached here -- install_ga_abort at the call site records `blocked`
+    # but never `completed`, and `completed` is the only direct evidence the
+    # abort failed. Optional so the signature stays usable without a report.
+    if ga_report is not None:
+        watch_page(page, ga_report)
     try:
         page.goto(url, wait_until="domcontentloaded", timeout=timeout_ms)
         # Same journey shape as redundant_fetches.py -- deliberately, so the two
@@ -552,7 +562,11 @@ def main() -> int:
             # warm cache, which measures the wrong journey -- the issue is about a
             # user arriving, not about re-entering.
             ctx = browser.new_context(viewport={"width": 390, "height": 844})
-            ms, err, nav = one_run(ctx, args.url, args.timeout_ms, args.wordset)
+            # issue-394: BEFORE the helper's new_page/goto.
+            _ga = install_ga_abort(ctx)
+            ms, err, nav = one_run(ctx, args.url, args.timeout_ms, args.wordset,
+                                   ga_report=_ga)
+            print(f"  run {i+1}: {_ga.summary()}", file=sys.stderr)
             ctx.close()
             if err:
                 errors.append(f"run {i+1}: {err}")
