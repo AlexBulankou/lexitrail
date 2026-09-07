@@ -154,6 +154,9 @@ def run(url: str, viewports: list[str]) -> tuple[int, dict]:
                     print(f"=== {name}: BLIND -- {e}", file=sys.stderr)
                     blind.append(name)
                 finally:
+                    # issue-394 (hc2@ review): report per viewport, and inside
+                    # the finally so a BLIND viewport still says whether it leaked.
+                    print(f"  {name}: {_ga.summary()}", file=sys.stderr)
                     ctx.close()
         finally:
             browser.close()

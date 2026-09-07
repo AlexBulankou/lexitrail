@@ -186,6 +186,11 @@ def main(argv: list[str] | None = None) -> int:
                   f"{str(e)[:200]}", file=sys.stderr)
             return EXIT_BLIND
         finally:
+            # issue-394: REPORT it. A LeakReport nothing reads is the gap this
+            # module was written to close, one level up (hc2@ review). In the
+            # `finally` deliberately -- a BLIND run still navigated, so it can
+            # still have leaked, and that is the run you least want silent.
+            print(_ga.summary(), file=sys.stderr)
             browser.close()
 
     rc, reason = classify(label, budget)
