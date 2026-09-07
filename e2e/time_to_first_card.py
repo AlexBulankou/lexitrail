@@ -74,6 +74,9 @@ import sys
 
 from playwright.sync_api import sync_playwright
 
+sys.path.insert(0, __file__.rsplit("/", 1)[0])
+from ga_abort import install_ga_abort  # noqa: E402  (issue-394)
+
 MARK = "lt:first-card"
 # issue-266 follow-up: the two cuts INSIDE `app`. Optional by construction --
 # a build predating them still measures network/parse/app exactly as before,
@@ -552,6 +555,8 @@ def main() -> int:
             # warm cache, which measures the wrong journey -- the issue is about a
             # user arriving, not about re-entering.
             ctx = browser.new_context(viewport={"width": 390, "height": 844})
+            # issue-394: BEFORE the helper's new_page/goto.
+            _ga = install_ga_abort(ctx)
             ms, err, nav = one_run(ctx, args.url, args.timeout_ms, args.wordset)
             ctx.close()
             if err:

@@ -65,6 +65,7 @@ sys.path.insert(0, __file__.rsplit("/", 1)[0])
 
 from lt_measure import EXIT_PASS, EXIT_FAIL, EXIT_BLIND, VIEWPORTS  # noqa: E402
 from lt_routes import enter_practice  # noqa: E402
+from ga_abort import install_ga_abort, watch_page  # noqa: E402  (issue-394)
 
 #: Viewports whose overflow is a DEFECT. Landscape is deliberately absent --
 #: see the module docstring; it is measured and printed, never asserted.
@@ -138,7 +139,12 @@ def run(url: str, viewports: list[str]) -> tuple[int, dict]:
         try:
             for name in viewports:
                 ctx = browser.new_context(**VIEWPORTS[name])
+                # issue-394: BEFORE new_page/goto. This script measured live
+                # prod with no abort at all, so every run minted a real GA4
+                # session from bp's egress.
+                _ga = install_ga_abort(ctx)
                 page = ctx.new_page()
+                watch_page(page, _ga)
                 try:
                     page.goto(url, wait_until="domcontentloaded", timeout=60000)
                     enter_practice(page)
