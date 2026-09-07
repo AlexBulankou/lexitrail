@@ -1,5 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import SiteFooter from './SiteFooter';
 
 const NotFound = () => {
   return (
@@ -11,6 +12,7 @@ const NotFound = () => {
         </p>
         <Link to="/" className="home-link">Back to home</Link>
       </div>
+      <SiteFooter />
     </div>
   );
 };

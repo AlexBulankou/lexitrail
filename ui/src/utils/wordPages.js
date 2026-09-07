@@ -18,7 +18,7 @@
 // Not added, and why: audio (needs a TTS decision — the SPA uses speechSynthesis; a static page
 // can too, but that is a product call), character breakdown and stroke order (no data source in
 // the repo). The prototypes show where they go.
-import { HSK_LEVELS, ORIGIN, isHskWordset, PAGE_STYLE, GA4_SNIPPET, SITE_HEADER, pinyinHtml } from './hskPages';
+import { HSK_LEVELS, ORIGIN, isHskWordset, PAGE_STYLE, GA4_SNIPPET, SITE_HEADER, SITE_FOOTER, pinyinHtml } from './hskPages';
 
 const esc = (s) => String(s ?? '')
   .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
@@ -225,6 +225,7 @@ ${examples.map((x) => `<li><span lang="zh-Hans">${markWord(x.chinese, w.word)}</
 ${chips}
 </ul>` : ''}
 <nav>${prev ? `<a rel="prev" href="${wordUrl(prev.level, prev.word, origin)}">&larr; <span lang="zh-Hans">${esc(prev.word)}</span></a>` : '<span></span>'}<a href="${levelUrl}">HSK ${w.level} list</a>${next ? `<a rel="next" href="${wordUrl(next.level, next.word, origin)}"><span lang="zh-Hans">${esc(next.word)}</span> &rarr;</a>` : '<span></span>'}</nav>
+${SITE_FOOTER}
 </main>
 </body>
 </html>
@@ -252,7 +253,7 @@ export { HSK_LEVELS };
  * Bumped for the revamp: the pages' content changed (breadcrumb, related words, marked sentences),
  * not just their style.
  */
-export const WORD_PAGES_LASTMOD = '2026-09-06';
+export const WORD_PAGES_LASTMOD = '2026-09-07';
 
 /** The whole sitemap-words.xml document. Its own file rather than entries appended to sitemap.xml:
  * sitemap.xml is hand-maintained and reviewable at 7 URLs (was 21 until #367

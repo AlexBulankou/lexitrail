@@ -49,6 +49,10 @@ describe('grouping', () => {
 });
 
 describe('the rendered page meets #183 acceptance', () => {
+  test('every list page carries the support footer (pigeon 2026-09-07)', () => {
+    expect(renderPage(1, [])).toContain('mailto:support@lexitrail.com');
+  });
+
   const g = groupByLevel(SAMPLE);
   const html = renderPage(2, g[2]);
 

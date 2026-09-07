@@ -4,6 +4,7 @@ import '../styles/Home.css';
 import Logo from './Logo';
 import WordSets from './Wordsets';
 import Today from './Today';
+import SiteFooter from './SiteFooter';
 import { useAuth } from '../contexts/AuthContext';
 import { SEO } from '../components/SEO';
 import { JsonLd } from '../components/JsonLd';
@@ -53,6 +54,7 @@ const Home = () => {
         <div className="page-wrapper">
           <div className="page-container">
             <Today userId={user.email} />
+            <SiteFooter />
           </div>
         </div>
       ) : (
@@ -148,6 +150,7 @@ const Home = () => {
             <div className="cta-section">
               <Link to="/wordsets" className="cta-button" data-cta="footer">Start Learning Chinese</Link>
             </div>
+            <SiteFooter />
           </div>
         </div>
       </div>

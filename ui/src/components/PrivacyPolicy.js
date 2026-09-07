@@ -1,4 +1,5 @@
 import React from 'react';
+import SiteFooter from './SiteFooter';
 import '../styles/Policy.css';
 
 const PrivacyPolicy = () => {
@@ -60,6 +61,7 @@ const PrivacyPolicy = () => {
             <p>If you have any questions about this Privacy Policy, please contact us at: support@lexitrail.com</p>
           </section>
         </div>
+        <SiteFooter />
       </div>
     </div>
   );
