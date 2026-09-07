@@ -14,6 +14,19 @@ Stated rather than left implicit, because a proxy that is mostly right returns
 a plausible, correctly-typed, mostly-right list and the gap is invisible in
 both directions (my-hermes#2229's Form 7).
 
+🔴 AND THE IMPORT IS ITSELF A PROXY — one rung up from the one above (adm@,
+reviewing lex#397). This gate keys on `from ga_abort import ...`, which stands
+for "interception is installed". **A script can import `ANALYTICS_RE` and never
+route with it, and go green.** Three of the five do exactly the legitimate
+version of that: they import the regex only and wire their own route.
+
+That is this file's own argument turned on itself — hostnames were rejected
+because copies drift, and the import is the next proxy along. It is recorded
+rather than fixed because the honest gate is a RUNTIME one (`leaked == 0` on a
+real navigation), and running it mints the GA4 sessions the module exists to
+prevent. So: FLOOR, not ceiling, in both dimensions — which scripts it selects,
+and what it proves about the ones it finds.
+
 ⚠️ WHY THE ASSERTION IS `ga_abort`, NOT `google-analytics`.
 Three of the five carried their own correct `ANALYTICS_RE` copy and would pass
 a substring check for the hostnames — while free to drift apart from each
