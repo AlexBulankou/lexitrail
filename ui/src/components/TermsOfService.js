@@ -72,6 +72,7 @@ const TermsOfService = () => {
                         <p>If you have any questions about these Terms of Service, please contact us at: support@lexitrail.com</p>
                     </section>
                 </div>
+                <SiteFooter />
             </div>
         </div>
     );
