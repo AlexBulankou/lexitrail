@@ -50,6 +50,7 @@ Usage:
         --build ui/build --out ui/public/images/screenshots
 """
 import argparse
+from ga_abort import install_ga_abort  # noqa: E402  (issue-394)
 import json
 import os
 import re
@@ -106,8 +107,7 @@ def _stub_wordsets_route(ctx, unexpected):
         unexpected.append(url)
         return r.abort()
     ctx.route(f"{ts.API_ORIGIN}/**", route)
-    ctx.route("**/*google-analytics*/**", lambda r: r.abort())
-    ctx.route("**/*googletagmanager*/**", lambda r: r.abort())
+    install_ga_abort(ctx)  # issue-394: regex, not the glob
 
 
 def capture_wordsets(browser, base, out, unexpected, failures):
@@ -194,8 +194,7 @@ def capture_practice(browser, base, out, unexpected, failures):
         return r.abort()
 
     ctx.route(f"{ts.API_ORIGIN}/**", route)
-    ctx.route("**/*google-analytics*/**", lambda r: r.abort())
-    ctx.route("**/*googletagmanager*/**", lambda r: r.abort())
+    install_ga_abort(ctx)  # issue-394: regex, not the glob
 
     page = ctx.new_page()
     page.add_init_script("window.gtag = window.gtag || function () {};")

@@ -64,8 +64,9 @@ URL_DEFAULT = "https://lexitrail.com"
 # traffic on a page that issued no API call at all.
 HINT_RE = re.compile(r"/hint/generate_hint")
 
-ANALYTICS_RE = re.compile(
-    r"googletagmanager\.com|google-analytics\.com|analytics\.google\.com")
+from ga_abort import ANALYTICS_RE  # noqa: E402  (issue-394: one definition,
+# so the three local copies cannot drift apart — and the glob comment they
+# each carried was measurably WRONG, see ga_abort.py.)
 
 EXIT_PASS, EXIT_FAIL, EXIT_BLIND = 0, 1, 2
 

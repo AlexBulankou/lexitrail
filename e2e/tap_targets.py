@@ -41,7 +41,7 @@ FUNNEL SAFETY (docs/itp-playwright-usability.md 2.3)
 ----------------------------------------------------
 GA4 beacons fire on the guest path. They are aborted on the CONTEXT, with the
 REGEX matcher, BEFORE the first navigation — a glob like `**/google-analytics.com/**`
-silently misses the real `www.`/`region1.` subdomains and lets live analytics
+misses the `analytics.google.com` host outright and lets live analytics
 through. The run reports how many were blocked and asserts that ZERO completed,
 so the clean-funnel claim is measured rather than asserted.
 
@@ -92,11 +92,9 @@ except ImportError:  # pragma: no cover - environment guard
     raise SystemExit(2)
 
 
-#: Regex, NOT a glob — see the module docstring and doc 2.3. Substring-matches
-#: the full request URL, so it catches www./region1. subdomains that a glob
-#: pattern silently misses.
-ANALYTICS_RE = re.compile(
-    r"googletagmanager\.com|google-analytics\.com|analytics\.google\.com")
+from ga_abort import ANALYTICS_RE  # noqa: E402  (issue-394: one definition,
+# so the three local copies cannot drift apart — and the glob comment they
+# each carried was measurably WRONG, see ga_abort.py.)
 
 
 

@@ -52,7 +52,7 @@ account.
 Unlike `tap_targets.py` this harness *clicks*, and the Try button fires a GA4
 `try_with_demo_account` event, so the analytics abort is not optional here: it
 is installed on the CONTEXT with the REGEX matcher BEFORE the first navigation
-(a glob misses the real `www.`/`region1.` subdomains). The run reports how many
+(a glob misses the `analytics.google.com` host). The run reports how many
 beacons were blocked and FAILS if any completed, so the clean-funnel claim is
 measured rather than asserted.
 """
@@ -90,10 +90,9 @@ DATA_RE = re.compile(r"/wordsets/[^/]+/words|/userwords/")
 MODES = ["PRACTICE", "DUE_TODAY", "SHOW_EXCLUDED", "TEST"]
 WORDSETS = [1, 2, 3]
 
-# Regex, not a glob — a glob like `**/google-analytics.com/**` silently misses
-# the real `www.`/`region1.` subdomains and lets live beacons through.
-ANALYTICS_RE = re.compile(
-    r"googletagmanager\.com|google-analytics\.com|analytics\.google\.com")
+from ga_abort import ANALYTICS_RE  # noqa: E402  (issue-394: one definition,
+# so the three local copies cannot drift apart — and the glob comment they
+# each carried was measurably WRONG, see ga_abort.py.)
 
 EXIT_PASS, EXIT_FAIL, EXIT_BLIND = 0, 1, 2
 
