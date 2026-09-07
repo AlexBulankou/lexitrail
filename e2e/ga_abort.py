@@ -5,11 +5,28 @@ users / 28d, one harness run is ~1.6% of monthly LT sessions, and runs cluster
 during investigation bursts — so they inflate exactly the weeks an agent is most
 active. `w/o 07-20: 43 sessions` is that signature.
 
-🔴 REGEX, NOT A GLOB. `**/*google-analytics*/**` silently misses the real
-`www.` and `region1.` subdomains GA4 actually beacons to. The repo's own
-docstrings already said so; two scripts still used the glob, which is the
-worse of the two failure modes — it *looks* installed and passes review while
-letting the traffic through.
+🔴 REGEX, NOT A GLOB — but NOT for the reason this repo kept giving.
+
+The claim carried here, in three script docstrings and in issue-394's own
+body, was that `**/*google-analytics*/**` "silently misses the real `www.`
+and `region1.` subdomains". **That is measurably FALSE.** Against Playwright's
+own `glob_to_regex_pattern`:
+
+    GLOB-HIT   https://www.google-analytics.com/g/collect?v=2&tid=G-X
+    GLOB-HIT   https://region1.google-analytics.com/g/collect?v=2
+    GLOB-MISS  https://analytics.google.com/g/collect          <- the real gap
+    GLOB-MISS  https://www.googletagmanager.com/gtag/js?id=G-X <- 2nd glob route
+
+So the glob's actual hole is the `analytics.google.com` HOST, and it needed a
+second route for googletagmanager that a single regex covers on its own. The
+conclusion (use the regex) survives; the stated reason did not, and it was
+repeated verbatim across five files without anyone running it.
+
+📌 Left as a correction rather than quietly rewritten: a wrong reason that
+yields the right action is the kind nothing ever refutes, because the action
+keeps working. The glob is still the worse failure mode for the original
+reason — it *looks* installed and passes review while letting traffic
+through.
 
 🔴 WHY THIS IS ITS OWN MODULE AND NOT IN `lt_measure`. `lt_measure` excludes
 interception BY DESIGN ("harness/interception, not measurement"), and that

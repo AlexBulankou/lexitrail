@@ -49,6 +49,13 @@ import re
 import socketserver
 import sys
 import threading
+from pathlib import Path
+
+# issue-394: this module has no sys.path shim of its own — running it as a
+# script puts e2e/ on the path, but importing it from another cwd does not.
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+
+from ga_abort import install_ga_abort  # noqa: E402  (issue-394)
 
 API_ORIGIN = "https://api.lexitrail.com"
 USER = {"email": "screenshot@lexitrail.demo", "name": "Screenshot User"}
@@ -259,8 +266,7 @@ def run_game(browser, base, out, unexpected, failures):
             return r.abort()
 
         ctx.route(f"{API_ORIGIN}/**", route)
-        ctx.route("**/*google-analytics*/**", lambda r: r.abort())
-        ctx.route("**/*googletagmanager*/**", lambda r: r.abort())
+        install_ga_abort(ctx)  # issue-394: regex, not the glob
         page = ctx.new_page()
         # gtag is called unguarded by Game.handleCardGuessed; without a stub the
         # first recall throws and the session cannot be driven at all.
@@ -440,8 +446,7 @@ def run_start_flow(browser, base, unexpected, failures):
         return r.abort()
 
     ctx.route(f"{API_ORIGIN}/**", route)
-    ctx.route("**/*google-analytics*/**", lambda r: r.abort())
-    ctx.route("**/*googletagmanager*/**", lambda r: r.abort())
+    install_ga_abort(ctx)  # issue-394: regex, not the glob
 
     page = ctx.new_page()
     page.add_init_script("window.gtag = window.gtag || function () {};")
@@ -619,8 +624,7 @@ def main():
 
                     ctx.route(f"{API_ORIGIN}/**", route)
                     # Analytics never leaves the machine (itp-playwright 2.3).
-                    ctx.route("**/*google-analytics*/**", lambda r: r.abort())
-                    ctx.route("**/*googletagmanager*/**", lambda r: r.abort())
+                    install_ga_abort(ctx)  # issue-394: regex, not the glob
 
                     page = ctx.new_page()
                     page.goto(base, wait_until="domcontentloaded")
