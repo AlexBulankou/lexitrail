@@ -29,12 +29,30 @@
 // are deliberately separate: this half is a storage change with a bounded blast
 // radius, that half touches the sign-in flow.
 //
-// 🔴 GUEST SESSIONS STAY IN sessionStorage, deliberately (#185 AC3, "guest
-// behaviour unchanged"). A guest identity is a throwaway `<random>@lexitrail.demo`
-// row; persisting it across browser sessions would accumulate orphan accounts
-// and would also let a shared machine hand one visitor's practice data to the
-// next. The migration path in AuthContext reads the PRIOR guest session at
-// sign-in, and that read is unchanged because guests never moved.
+// 🔴 GUESTS MOVED TO localStorage — lexitrail#348, zz1 RULING A (2026-09-05).
+// This paragraph used to say the opposite and is CORRECTED rather than deleted,
+// because the reasoning it carried is still the live objection and a reader who
+// meets only the new behaviour would re-derive it as a defect.
+//
+// It read: guests stay per-tab, since "persisting it across browser sessions
+// would accumulate orphan accounts and would also let a shared machine hand one
+// visitor's practice data to the next."
+//
+// The first half was BACKWARDS and #348 measured it: sessionStorage is per-TAB,
+// so a second tab finds no `user`, hits the login wall, and mints ANOTHER
+// `<random>@lexitrail.demo` row. Per-tab storage is what accumulates orphans;
+// one identity per browser is what stops it.
+//
+// ⚠️ The second half stands and is the accepted cost, not an oversight: on a
+// SHARED machine the next visitor now inherits the previous visitor's guest
+// practice data. Weighed and accepted — a guest row holds Chinese-vocabulary
+// recall state and no personal data, and the retention gain (a returning
+// visitor keeps their progress) was zz1's stated basis. If that trade is ever
+// revisited, this is the sentence to revisit; it is not a thing nobody thought
+// about.
+//
+// #185 deliberately scoped guests OUT ("guest behaviour unchanged") and named
+// this issue as where the trade would be decided. It has been.
 
 const USER_KEY = 'user';
 const TOKEN_KEY = 'access_token';
@@ -80,18 +98,43 @@ export const saveMemberSession = (user, token, expiresInSeconds, now = Date.now(
   }
 };
 
-/** Persist a guest for THIS tab only — the pre-#185 behaviour, unchanged. */
+/** Persist a guest per BROWSER (#348). Falls back to per-tab if storage throws.
+ *
+ * The try/catch is zz1's explicit rail on the ruling, and it is not defensive
+ * noise: a private window can throw on `localStorage` access outright, and the
+ * failure mode without it is a crash during sign-in rather than a degraded
+ * guest. Falling back to `sessionStorage` restores exactly the pre-#348
+ * behaviour — one identity per tab — which is worse than the new behaviour and
+ * far better than not signing in at all.
+ *
+ * ⚠️ The inner write is guarded too. A browser that refuses `localStorage`
+ * usually refuses `sessionStorage` as well, so an unguarded fallback turns one
+ * throw into another throw from a different line — the same crash, harder to
+ * read.
+ */
 export const saveGuestSession = (user, token) => {
   clearSession();
-  window.sessionStorage.setItem(USER_KEY, JSON.stringify(user));
-  window.sessionStorage.setItem(TOKEN_KEY, token);
+  try {
+    window.localStorage.setItem(USER_KEY, JSON.stringify(user));
+    window.localStorage.setItem(TOKEN_KEY, token);
+  } catch (_) {
+    try {
+      window.sessionStorage.setItem(USER_KEY, JSON.stringify(user));
+      window.sessionStorage.setItem(TOKEN_KEY, token);
+    } catch (__) {
+      // Both stores refused. The caller already has the identity in React
+      // state, so this session works and simply does not survive a reload.
+    }
+  }
 };
 
 /** The usable session, or null. Never returns an expired member session.
  *
- * Order matters: sessionStorage (this tab's guest) wins over localStorage,
- * so a guest session started in this tab is not shadowed by a stale member
- * row left in localStorage.
+ * Order matters: sessionStorage wins over localStorage. Post-#348 a guest is
+ * normally written to localStorage, so this branch now covers two narrower
+ * cases and is still load-bearing for both — a tab that was already open when
+ * #348 deployed, and a browser where the localStorage write threw and
+ * `saveGuestSession` fell back to per-tab.
  */
 export const loadSession = (now = Date.now()) => {
   const guestUser = safeParse(window.sessionStorage.getItem(USER_KEY));
@@ -116,6 +159,20 @@ export const loadSession = (now = Date.now()) => {
   const token = window.localStorage.getItem(TOKEN_KEY);
   const expiresAt = Number(window.localStorage.getItem(EXPIRES_KEY));
   if (!user || !token) return null;
+
+  // lexitrail#348: a guest now lives HERE, and carries no expiry — the backend
+  // accepts its token on SHAPE, not time. Without this the expiry gate below
+  // sees an unstamped session, clears it, and signs every guest out on their
+  // first reload: the move to localStorage would have made guests strictly
+  // worse than the per-tab behaviour it replaced.
+  //
+  // 🔴 Gated on `isGuestToken`, NOT on "no expiry". Those look interchangeable
+  // here and are not: an unstamped MEMBER session is exactly what this module
+  // exists to refuse (a UI that says signed-in over a token that 401s), so a
+  // bypass keyed on the absent expiry would re-open that hole while looking
+  // like the same fix. `test_a_member_row_with_no_expiry_is_STILL_refused` is
+  // the control on that distinction.
+  if (isGuestToken(token)) return { user, token };
 
   if (!Number.isFinite(expiresAt) || expiresAt <= now) {
     // Expired or unstamped. Clear it so the next read is not asked the same

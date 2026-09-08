@@ -76,26 +76,142 @@ describe('an EXPIRED session is signed-out, not restored', () => {
   });
 });
 
-describe('guests are unchanged (#185 AC3)', () => {
-  test('a guest is stored tab-scoped, never in localStorage', () => {
-    saveGuestSession(GUEST, 'UNAUTH_USER:xk39f@lexitrail.demo');
-    expect(window.localStorage.getItem('user')).toBeNull();
-    expect(loadSession(T0)).toEqual({ user: GUEST, token: 'UNAUTH_USER:xk39f@lexitrail.demo' });
+describe('a guest is per-BROWSER, not per-tab (#348, zz1 RULING A)', () => {
+  // 🔴 This block asserted the OPPOSITE until #348 ("a guest is stored
+  // tab-scoped, never in localStorage"). Rewritten rather than deleted-and-
+  // replaced so the inversion is visible in the diff: #185 deliberately left
+  // guests alone and named #348 as where the trade would be decided.
+  const GTOK = 'UNAUTH_USER:xk39f@lexitrail.demo';
+
+  test('a guest is stored per-browser, in localStorage', () => {
+    saveGuestSession(GUEST, GTOK);
+    expect(window.localStorage.getItem('user')).not.toBeNull();
+    expect(loadSession(T0)).toEqual({ user: GUEST, token: GTOK });
   });
 
-  test('a guest never expires -- the backend accepts that token on SHAPE, not time', () => {
-    saveGuestSession(GUEST, 'UNAUTH_USER:xk39f@lexitrail.demo');
-    expect(loadSession(T0 + 1000 * HOUR)).not.toBeNull();
+  test('🔴 A SECOND TAB FINDS THE SAME GUEST — the whole point of #348', () => {
+    // The defect, as a fixture. sessionStorage is per-tab, so the second tab
+    // saw nothing, hit the login wall and minted another @lexitrail.demo row.
+    // A new tab is modelled by clearing sessionStorage ONLY: localStorage is
+    // origin-shared and survives, which is exactly the asymmetry under test.
+    saveGuestSession(GUEST, GTOK);
+    window.sessionStorage.clear();
+    expect(loadSession(T0)).toEqual({ user: GUEST, token: GTOK });
   });
 
-  test('a guest in THIS tab is not shadowed by a stale member row', () => {
-    // Order-dependence made explicit: sessionStorage wins. Reversed, a member
-    // row left in localStorage would silently hijack a guest's practice.
+  test('🔴 a guest carries NO expiry and must survive the expiry gate', () => {
+    // The load-bearing one. Moving guests into localStorage puts them behind
+    // the gate that refuses unstamped sessions -- so without the isGuestToken
+    // bypass in loadSession, every guest is signed out on their first reload
+    // and #348 makes guests strictly WORSE than the per-tab behaviour it
+    // replaced. A thousand hours later, still valid.
+    saveGuestSession(GUEST, GTOK);
+    expect(loadSession(T0 + 1000 * HOUR)).toEqual({ user: GUEST, token: GTOK });
+  });
+
+  test('🔴 CONTROL: a member row with NO expiry is STILL refused', () => {
+    // The bypass above must key on the TOKEN SHAPE, not on the expiry being
+    // absent. Keyed on the absence instead, this row would be returned -- a
+    // signed-in UI over a token that 401s, which is the one failure this whole
+    // module exists to prevent. Same input shape as the test above; only the
+    // token differs.
+    window.localStorage.setItem('user', JSON.stringify(MEMBER));
+    window.localStorage.setItem('access_token', 'ya29.a0AfRealGoogleToken');
+    expect(loadSession(T0)).toBeNull();
+  });
+
+  test('a guest started in THIS tab still wins over a stale member row', () => {
+    // The legacy path: a tab open across the #348 deploy, or a browser where
+    // the localStorage write threw. sessionStorage still wins.
     window.localStorage.setItem('user', JSON.stringify(MEMBER));
     window.localStorage.setItem('access_token', 'stale');
     window.localStorage.setItem('access_token_expires_at', String(T0 + HOUR));
-    saveGuestSession(GUEST, 'UNAUTH_USER:xk39f@lexitrail.demo');
+    window.sessionStorage.setItem('user', JSON.stringify(GUEST));
+    window.sessionStorage.setItem('access_token', GTOK);
     expect(loadSession(T0)?.user).toEqual(GUEST);
+  });
+
+  // zz1's explicit rail on the ruling: a private window can throw on storage
+  // access outright, and a crash during sign-in is not an acceptable degraded
+  // mode. Two arms, because they exercise DIFFERENT catches and the second one
+  // is the arm I only wrote after the first accidentally produced it.
+  //
+  // ⚠️ The mock has to replace the localStorage INSTANCE, not patch
+  // `Storage.prototype.setItem`. jsdom gives both stores the SAME prototype, so
+  // a prototype spy breaks sessionStorage too and the "falls back" arm silently
+  // becomes the "both refused" arm — passing its `not.toThrow()` while
+  // asserting nothing about the fallback. That is how I first wrote it.
+  const withBrokenLocalStorage = (fn) => {
+    const real = window.localStorage;
+    Object.defineProperty(window, 'localStorage', {
+      configurable: true,
+      value: { getItem: () => null, removeItem: () => {},
+               setItem: () => { throw new DOMException('QuotaExceededError'); } },
+    });
+    try { fn(); } finally {
+      Object.defineProperty(window, 'localStorage', { configurable: true, value: real });
+    }
+  };
+
+  test('storage-blocked: a throwing localStorage falls back to PER-TAB, not a crash', () => {
+    withBrokenLocalStorage(() => {
+      expect(() => saveGuestSession(GUEST, GTOK)).not.toThrow();
+      expect(window.sessionStorage.getItem('user')).not.toBeNull();
+      expect(loadSession(T0)).toEqual({ user: GUEST, token: GTOK });
+    });
+  });
+
+  test('a HALF-WRITE (user lands, token throws) does not become a session — hc2@ PR #407', () => {
+    // The write is two setItem calls, so quota can be reached BETWEEN them and
+    // leave localStorage holding `user` with no `access_token`. Modelled by
+    // throwing on the SECOND localStorage write only.
+    //
+    // 🔴 TWO INDEPENDENT GUARDS refuse the orphan, and I only know that because
+    // the mutation I predicted would red this test DIDN'T. Relaxing
+    // `!user || !token` to `!user` changes nothing: the orphan then reaches the
+    // expiry gate, where `Number(null)` is 0 — finite, and `<= now` — so it is
+    // cleared there instead. Removing EITHER guard alone leaves this green;
+    // removing BOTH reds it (verified).
+    //
+    // ⚠️ So this test pins the OUTCOME, not a mechanism, and the comment says so
+    // rather than naming a guard it cannot attribute the pass to. My first
+    // version claimed `!user || !token` was doing the work. That would have been
+    // a pin whose stated reason was wrong — green for a reason other than the
+    // one a future reader would trust it for.
+    const real = window.localStorage;
+    let writes = 0;
+    Object.defineProperty(window, 'localStorage', {
+      configurable: true,
+      value: {
+        getItem: (k) => (k === 'user' ? JSON.stringify(GUEST) : null),  // the half-write, on read
+        removeItem: () => {},
+        setItem: () => { if (++writes === 2) throw new DOMException('QuotaExceededError'); },
+      },
+    });
+    try {
+      expect(() => saveGuestSession(GUEST, GTOK)).not.toThrow();
+      // (1) the fallback took it, and the guest is usable
+      expect(loadSession(T0)).toEqual({ user: GUEST, token: GTOK });
+      // (2) with the fallback gone too, the orphan `user` is NOT a session
+      window.sessionStorage.clear();
+      expect(loadSession(T0)).toBeNull();
+    } finally {
+      Object.defineProperty(window, 'localStorage', { configurable: true, value: real });
+    }
+  });
+
+  test('BOTH stores refused: still no crash, and no session survives the reload', () => {
+    // The honest end state. React state carries the identity for this page
+    // view; nothing persists. Asserting the null explicitly so a future change
+    // that "fixes" it by writing somewhere else has to say so here.
+    const spy = jest.spyOn(Storage.prototype, 'setItem')
+      .mockImplementation(() => { throw new DOMException('QuotaExceededError'); });
+    try {
+      expect(() => saveGuestSession(GUEST, GTOK)).not.toThrow();
+    } finally {
+      spy.mockRestore();
+    }
+    expect(loadSession(T0)).toBeNull();
   });
 
   test('isGuestToken discriminates, in both directions', () => {
