@@ -99,8 +99,22 @@ kubectl -n lexitrail rollout status deploy/lexitrail-backend --timeout=60s
 it. Re-run inside the freeze or every write since is silently lost — and it would be
 lost in `recall_history`, the table users would notice.
 
+**Both commands below were run verbatim on 2026-09-08; nothing here is adapted.**
+
 ```bash
-# proxy up (local), then:
+# (a) START THE PROXY. Needs a gcloud identity with cloudsql.instances.connect;
+#     it uses ADC, so pin the account rather than trusting whichever is active.
+export CLOUDSDK_CORE_ACCOUNT=hermes-automation@yojowa-claw.iam.gserviceaccount.com
+nohup /usr/local/bin/cloud_sql_proxy --port 3307 \
+  lexitrail:us-central1:lexitrail-mysql > /tmp/csqlproxy.log 2>&1 &
+PROXY_PID=$!                 # <- capture it NOW; see the teardown note below
+grep -q "ready for new connections" /tmp/csqlproxy.log   # wait for this line
+
+# (b) THE PASSWORD. The key is MYSQL_ROOT_PASSWORD -- NOT `password`.
+PW=$(kubectl -n lexitrail get secret mysql-root \
+       -o jsonpath='{.data.MYSQL_ROOT_PASSWORD}' | base64 -d)
+
+# (c) dump -> import
 kubectl -n lexitrail exec mysql-0 -- sh -c \
   'mysqldump -uroot -p"$MYSQL_ROOT_PASSWORD" --single-transaction --set-gtid-purged=OFF \
      --routines --triggers --databases lexitraildb 2>/dev/null' \
@@ -109,6 +123,15 @@ kubectl -n lexitrail exec mysql-0 -- sh -c \
      mysql -h127.0.0.1 -P3307 -uroot
 echo "PIPESTATUS: ${PIPESTATUS[@]}"   # ALL THREE must be 0
 ```
+
+🔴 **Tear the proxy down by the PID you captured — never `pkill -f`.** A pattern
+specific enough to name the proxy (`cloud_sql_proxy`, `port 3307`, the instance name)
+also matches the shell command that contains it, so `pkill -f`/`pgrep -f` kills your own
+command. That happened **twice in one session** while writing this runbook, the second
+time minutes after naming it. Use `kill "$PROXY_PID"`, and check with `ps -p "$PROXY_PID"`.
+
+⚠️ There are other `cloud_sql_proxy` processes on bp serving unrelated instances
+(`ensemble-db`, `marketmind-postgres`). A broad pattern reaches those too.
 
 ⚠️ **Check all three exit codes, not `$?`.** A pipeline reports only its last stage, so a
 failed `mysqldump` feeding a successful `mysql` looks like success.
@@ -165,9 +188,21 @@ Then one write (a recall) and re-read it, to confirm read **and** write on the n
 
 ## 7. Rollback
 
-Flip the `Service/mysql` selector back to `{app: mysql}` and scale back up. `mysql-0` was never stopped and still holds
-everything up to the freeze, so no data is lost by rolling back. **Do not decommission
-anything in the cutover window** — that is what keeps this reversible.
+**Rollback is ONE action, not two** (hc2's review Q on PR #412 — worth stating because
+the sidecar shape it would have been is a two-field revert):
+
+```bash
+kubectl -n lexitrail patch svc mysql -p '{"spec":{"selector":{"app":"mysql"}}}'
+```
+
+The `cloud-sql-proxy` Deployment can **stay**. Once nothing selects it, it is inert — it
+holds no app state and costs one small pod. Deleting it is cleanup for a later day, not a
+rollback step, and doing it during a rollback adds a second thing that can fail while you
+are already recovering.
+
+`mysql-0` was never stopped and still holds everything up to the freeze, so no data is
+lost by rolling back. **Do not decommission anything in the cutover window** — that is
+what keeps this reversible.
 
 ## 8. Decommission — only after 48h clean
 
