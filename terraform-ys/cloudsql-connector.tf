@@ -93,6 +93,19 @@ resource "kubernetes_deployment_v1" "cloudsql_proxy" {
           args = [
             "--address=0.0.0.0",
             "--port=3306",
+            # hc2 #413 review: serve the proxy's OWN health endpoints so
+            # readiness can mean "can actually serve", not just "bound a port".
+            #
+            # ⚠️ --http-address is load-bearing for the SAME reason --address is,
+            # and defaults the same wrong way: `--http-address string  Address for
+            # Prometheus and health check server (default "localhost")`. Left at
+            # the default the kubelet cannot reach the probe, every check fails,
+            # and with a readiness probe attached the pod never becomes Ready --
+            # so the Service would have NO endpoints. Verified against the 2.8.0
+            # binary's own --help, not from memory.
+            "--health-check",
+            "--http-address=0.0.0.0",
+            "--http-port=9090",
             # DERIVED, not reconstructed: `connection_name` IS the
             # project:region:instance string the proxy wants, so it cannot drift
             # from the instance if the region or name ever changes.
@@ -103,6 +116,11 @@ resource "kubernetes_deployment_v1" "cloudsql_proxy" {
             container_port = 3306
           }
 
+          port {
+            name           = "health"
+            container_port = 9090
+          }
+
           # The proxy is a TCP forwarder; these are the documented small-footprint
           # values and were enough for the probe. Revisit if the cutover shows
           # throttling under real query load -- it has NOT been load-tested.
@@ -111,16 +129,45 @@ resource "kubernetes_deployment_v1" "cloudsql_proxy" {
             limits   = { cpu = "200m", memory = "128Mi" }
           }
 
-          # Liveness only, deliberately -- and NOT a DB-dependent readiness probe.
-          # workloads.tf records why for the backend (issue-301): a DB-dependent
-          # liveness probe converts a brief DB blip into a total outage by
-          # restarting every replica. The same reasoning applies here, more so:
-          # this pod IS the path to the DB, so a probe that fails when the DB is
-          # unreachable would restart the thing that reconnects to it.
+          # LIVENESS: restart-on-stuck only. issue-301's reasoning (workloads.tf)
+          # applies here more strongly than it does to the backend -- this pod IS
+          # the path to the DB, so a liveness probe that fails when Cloud SQL is
+          # unreachable would restart the very thing that reconnects to it. So
+          # liveness stays on the proxy's own /liveness, which reports the
+          # PROCESS, not the upstream.
           liveness_probe {
-            tcp_socket { port = 3306 }
+            http_get {
+              path = "/liveness"
+              port = 9090
+            }
             initial_delay_seconds = 10
             period_seconds        = 30
+          }
+
+          # READINESS: gates ROUTING, never restarts -- orthogonal to the above,
+          # and NOT covered by issue-301's rationale (hc2 #413 review, correctly).
+          # Without it Kubernetes defaults readiness to true the instant the
+          # container is Running, so with replicas=2 any future rollout can route
+          # live post-cutover traffic to a proxy that is not serving yet.
+          #
+          # 🔴 A tcp_socket probe on 3306 would NOT be enough, and this session
+          # has the direct evidence: the scratch probe logged
+          #     "Listening on [::]:3306"
+          #     "The proxy has started successfully and is ready for new connections!"
+          # and only THEN failed every connection with
+          #     403 ... missing permission cloudsql.instances.get
+          # The port was bound and accepting the whole time. A TCP check passes on
+          # a proxy that cannot reach Cloud SQL at all -- it would have called that
+          # pod Ready. /readiness reports whether the proxy can actually SERVE,
+          # which is the question routing needs answered.
+          readiness_probe {
+            http_get {
+              path = "/readiness"
+              port = 9090
+            }
+            initial_delay_seconds = 3
+            period_seconds        = 5
+            failure_threshold     = 3
           }
         }
       }
