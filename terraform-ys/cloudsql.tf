@@ -46,6 +46,12 @@
 # that baseline, `tier = "db-g1-small"` and re-apply. Without the baseline,
 # "degraded" has nothing to be measured against.
 #
+# ⚠️ The baseline must include CPU UTILISATION, not just latency (hc2 review).
+# f1-micro is SHARED-CORE and burstable, so once the burst budget is spent the
+# symptom is CPU throttling, not buffer-pool misses — a latency-only capture
+# would show the degradation and misattribute the cause, and the two point at
+# the same remedy here only by luck.
+#
 # ── Deliberate choices, stated so a reviewer can disagree with the reason ───
 #  1. availability_type ZONAL (no HA). The root cause was SPOT EVICTION, which
 #     managed Cloud SQL removes whether or not it is HA. Paying for REGIONAL
@@ -95,6 +101,15 @@ resource "google_sql_database_instance" "lexitrail" {
       ipv4_enabled = true
       # No authorized_networks: reachable via the Cloud SQL Auth Proxy / IAM
       # only. Adding a CIDR here would open it to the internet.
+      #
+      # ssl_mode pinned EXPLICITLY rather than inherited (hc2 review). Today the
+      # network layer already blocks direct TCP because authorized_networks is
+      # empty, so this is belt-and-braces — but the two protections have
+      # DIFFERENT lifetimes: someone adding a CIDR later for a debug session
+      # removes the network protection and would silently remove encryption
+      # enforcement with it if that were left to a provider default. This holds
+      # 2,276 users' data; a security default worth having is worth stating.
+      ssl_mode = "ENCRYPTED_ONLY"
     }
 
     maintenance_window {
