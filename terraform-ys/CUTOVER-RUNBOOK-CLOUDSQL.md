@@ -13,8 +13,8 @@ different cutover and reuses its write-freeze shape deliberately — that runboo
 proven template, not a coincidence.
 
 🔴 **Rollback here is better than #905's.** Nothing is decommissioned at cutover and
-`mysql-0` keeps serving its own data, so rollback is reverting `DATABASE_URL` — a config
-change, not a DNS propagation wait.
+`mysql-0` keeps serving its own data, so rollback is flipping the `Service/mysql` selector
+back — seconds, no rebuild, not a DNS propagation wait.
 
 ---
 
@@ -38,11 +38,37 @@ change, not a DNS propagation wait.
 
 🔴 **NOT done — the cutover is BLOCKED on this and it is a separate slice:**
 
-**Connector wiring.** The backend Deployment has `containers = ['lexitrail-backend']` —
-no `cloud-sql-proxy` sidecar — and there is no app-scoped DB user. `cloudsql.tf`
-deliberately omits the app user ("creating it now would leave an unused grant"). Until
-that slice lands, **nothing in the cluster can reach the instance**, which is the
-designed security property (`ipv4_enabled` with empty `authorized_networks`), not a gap.
+**Connector wiring.** Nothing in the cluster can reach the instance today — the designed
+security property (`ipv4_enabled` with empty `authorized_networks`), not a gap.
+
+🔴 **And it is NOT a sidecar. There is no `DATABASE_URL` to repoint.** The connection
+string is built in code and the host is a template:
+
+```python
+# backend/app/config.py — the in-cluster branch
+'mysql+pymysql://root:{}@mysql.{}.svc.cluster.local:3306/{}'.format(
+    DB_ROOT_PASSWORD, os.getenv('SQL_NAMESPACE'), DATABASE_NAME)
+```
+
+`SQL_NAMESPACE` fills the **namespace** slot, so it cannot produce any host but
+`mysql.<ns>.svc.cluster.local`. ⚠️ The `else` branch dials `localhost` and looks like
+sidecar support already exists — it is not: its gate is `KUBERNETES_SERVICE_HOST`, which
+Kubernetes injects into every pod, so in-cluster that branch is unreachable. It is the
+local-dev path.
+
+⇒ **Prefer the Service swap over a sidecar.** A sidecar listens on `127.0.0.1` and would
+need a `backend/**` code change, an image rebuild, a build unit, and an app redeploy
+*inside the DB window* — two variables moving at once, rollback = redeploy. Instead run
+`cloud-sql-proxy` as a Deployment in `lexitrail` and point the existing headless
+`Service/mysql` (`selector={app: mysql}`, 3306→3306) at it. The app keeps dialling the
+same hostname and never learns anything changed; **rollback is flipping the selector
+back, in seconds, with no build.**
+
+⏳ NOT yet verified: that a headless Service re-pointed at a proxy Deployment serves
+end-to-end. Prove it in a scratch Service before any window — not by editing `mysql`.
+
+⚠️ The app connects as **`root`**. The app-scoped user `cloudsql.tf` defers is still
+right, but adopting it is a SECOND change; do not also do it in the cutover window.
 
 ⚠️ **This runbook does not cover writing that slice, and its steps below assume it has
 landed.** Do not start §3 before then.
@@ -98,8 +124,11 @@ data will collide.
 
 ## 5. Repoint and unfreeze
 
+Repoint by **flipping the `Service/mysql` selector** at the proxy Deployment (see §1) —
+not by editing any app config, because there is none to edit.
+
 ```bash
-# repoint DATABASE_URL to the proxy endpoint, then:
+# after the selector points at the proxy:
 kubectl -n lexitrail scale deploy/lexitrail-backend --replicas=<original>
 kubectl -n lexitrail rollout status deploy/lexitrail-backend --timeout=180s
 ```
@@ -136,7 +165,7 @@ Then one write (a recall) and re-read it, to confirm read **and** write on the n
 
 ## 7. Rollback
 
-Revert `DATABASE_URL` and scale back up. `mysql-0` was never stopped and still holds
+Flip the `Service/mysql` selector back to `{app: mysql}` and scale back up. `mysql-0` was never stopped and still holds
 everything up to the freeze, so no data is lost by rolling back. **Do not decommission
 anything in the cutover window** — that is what keeps this reversible.
 
