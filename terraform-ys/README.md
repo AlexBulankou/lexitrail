@@ -94,8 +94,40 @@ exactly -- because a human ran `kubectl patch` on 08-29, not because terraform
 applied. The check above compares *who last wrote the object* rather than any
 field value, which is why a coincidence cannot fool it.
 
-🔴 **`terraform apply` is not a safe no-op today** -- ten live Gateway/TLS objects
-are absent from state and plan as `+ create`. Read **my-hermes#1338** first -- the import is owned and gated there.
+⏳ **RESOLVED 2026-09-08 — kept rather than deleted, because a reader who has seen
+the old warning needs to meet its retirement, not its absence.**
+
+> 🔴 ~~`terraform apply` is not a safe no-op today -- ten live Gateway/TLS objects
+> are absent from state and plan as `+ create`. Read **my-hermes#1338** first -- the
+> import is owned and gated there.~~
+
+**my-hermes#1338 is CLOSED (2026-09-08T15:34Z)** and its closing evidence is a value
+the tool computed, not a rendering someone read:
+
+```
+terraform plan -detailed-exitcode   ->  0     ("No changes")
+   0 = no changes, 2 = changes. Chosen deliberately over reading the plan's DISPLAY.
+state list | grep ingress_v1        ->  none  (the 2 ghosts gone)
+state now holds 43 resources, 20 of them the kubectl_manifest / PDB / www-TLS
+classes the import existed to bring in.
+```
+
+✅ **Independently corroborated the same day, from a different direction**: a
+`terraform plan` for lexitrail#358's connector slice returned **`2 to add, 0 to
+change, 0 to destroy`** — exactly its own two new resources. Had the ten objects
+still been absent from state they would have appeared as `+ create` in that same
+plan, making it 12+. **A plan run for an unrelated reason is the better witness,
+because it was not looking for this.**
+
+⚠️ Two things this does NOT license:
+- **Merging is still not applying.** Nothing in CI applies this directory — the
+  workflows are `backend-tests.yml` / `ui-tests.yml` only. Apply is the manual
+  recipe below, and a merged `.tf` changes nothing until someone runs it.
+- **Re-check before a big apply anyway.** The claim above is "state matched config
+  on 2026-09-08", not an invariant. `plan -detailed-exitcode` is one command and
+  the whole point of this section's history is that a stale safety note is worse
+  than none — it either blocks work that is fine, or gets routed around, and the
+  routing becomes the habit.
 
 Its reader is manual until lexitrail has a scheduler at all
 (`GET /projects/lexitrail/schedules` -> `Unknown project`, ensemble#9032).
