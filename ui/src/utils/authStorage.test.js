@@ -161,6 +161,45 @@ describe('a guest is per-BROWSER, not per-tab (#348, zz1 RULING A)', () => {
     });
   });
 
+  test('a HALF-WRITE (user lands, token throws) does not become a session — hc2@ PR #407', () => {
+    // The write is two setItem calls, so quota can be reached BETWEEN them and
+    // leave localStorage holding `user` with no `access_token`. Modelled by
+    // throwing on the SECOND localStorage write only.
+    //
+    // 🔴 TWO INDEPENDENT GUARDS refuse the orphan, and I only know that because
+    // the mutation I predicted would red this test DIDN'T. Relaxing
+    // `!user || !token` to `!user` changes nothing: the orphan then reaches the
+    // expiry gate, where `Number(null)` is 0 — finite, and `<= now` — so it is
+    // cleared there instead. Removing EITHER guard alone leaves this green;
+    // removing BOTH reds it (verified).
+    //
+    // ⚠️ So this test pins the OUTCOME, not a mechanism, and the comment says so
+    // rather than naming a guard it cannot attribute the pass to. My first
+    // version claimed `!user || !token` was doing the work. That would have been
+    // a pin whose stated reason was wrong — green for a reason other than the
+    // one a future reader would trust it for.
+    const real = window.localStorage;
+    let writes = 0;
+    Object.defineProperty(window, 'localStorage', {
+      configurable: true,
+      value: {
+        getItem: (k) => (k === 'user' ? JSON.stringify(GUEST) : null),  // the half-write, on read
+        removeItem: () => {},
+        setItem: () => { if (++writes === 2) throw new DOMException('QuotaExceededError'); },
+      },
+    });
+    try {
+      expect(() => saveGuestSession(GUEST, GTOK)).not.toThrow();
+      // (1) the fallback took it, and the guest is usable
+      expect(loadSession(T0)).toEqual({ user: GUEST, token: GTOK });
+      // (2) with the fallback gone too, the orphan `user` is NOT a session
+      window.sessionStorage.clear();
+      expect(loadSession(T0)).toBeNull();
+    } finally {
+      Object.defineProperty(window, 'localStorage', { configurable: true, value: real });
+    }
+  });
+
   test('BOTH stores refused: still no crash, and no session survives the reload', () => {
     // The honest end state. React state carries the identity for this page
     // view; nothing persists. Asserting the null explicitly so a future change
