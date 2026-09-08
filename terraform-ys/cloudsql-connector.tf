@@ -29,6 +29,19 @@
 # the app already dials, so the backend never learns anything changed, and
 # rollback is flipping a selector — seconds, no build.
 
+# 🔴 APPLYING THIS FILE NEEDS A CREDENTIAL THAT CAN SET IAM ON `lexitrail`, AND THE
+# NORMAL APPLY IDENTITY CANNOT. Measured 2026-09-08, with a control:
+#
+#   testIamPermissions on lexitrail  as hermes-automation
+#     ["resourcemanager.projects.setIamPolicy","...getIamPolicy"]  ->  {}   NEITHER
+#   CONTROL, same identity, project yojowa-claw
+#     ["...getIamPolicy"]                                          ->  echoed back
+#
+# The control is what makes the empty result a verdict rather than a broken probe.
+# So resource (1) below cannot be created by the identity that applies the rest of
+# this directory -- see lexitrail#358 for the authorization ask. Everything else here
+# applies normally.
+#
 # (1) The grant. MEASURED, not assumed: a scratch proxy running under the REAL
 # `lexitrail-backend` KSA authorized via Workload Identity, accepted a connection
 # through a headless Service, and then failed OUTBOUND with
@@ -58,11 +71,35 @@ resource "google_project_iam_member" "backend_gsa_cloudsql_client" {
 # That is also why the probe was run under that KSA and not a convenience one:
 # a probe under a different identity would have proven nothing about this path.
 resource "kubernetes_deployment_v1" "cloudsql_proxy" {
+  # 🔴 BOTH of the next two lines were learned from a REAL apply on 2026-09-08 that
+  # DEADLOCKED ON ITSELF, and neither is defensive:
+  #
+  #   1. depends_on -- terraform has no implicit edge between an IAM grant and a
+  #      Deployment, so it starts them together. The proxy's /readiness reports
+  #      whether it can REACH Cloud SQL, which needs the grant. Without the edge the
+  #      pods sit unready while the apply waits on them.
+  #
+  #   2. wait_for_rollout = false -- the provider's default WAITS for rollout, and
+  #      rollout waits for readiness, and readiness waits on a GCP IAM grant whose
+  #      propagation is outside this apply's control. The observed failure was the
+  #      apply hanging until its own timeout killed it, then leaving the Deployment
+  #      in the CLUSTER but NOT IN STATE -- an orphan terraform no longer knows about.
+  #      (Cleaned up by hand; the site was never affected, nothing selects these pods.)
+  #
+  # ⚠️ Do NOT "restore" the rollout wait to be careful. Readiness here is a claim about
+  # an EXTERNAL system, so blocking the apply on it converts a slow IAM propagation into
+  # a failed apply plus an orphaned object. The readiness probe still does its job --
+  # it keeps unready pods out of Service endpoints, which is what it is FOR. The apply
+  # simply stops being the thing that waits.
+  depends_on = [google_project_iam_member.backend_gsa_cloudsql_client]
+
   metadata {
     name      = "cloudsql-proxy"
     namespace = var.namespace
     labels    = { app = "cloudsql-proxy" }
   }
+
+  wait_for_rollout = false
 
   spec {
     # 2 replicas: during the cutover this sits on the app's data path, so a
