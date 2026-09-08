@@ -31,6 +31,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import statistics
 import subprocess
 import sys
@@ -43,14 +44,58 @@ DEFAULT_URL = "https://api.lexitrail.com/wordsets"
 
 
 def _pct(xs: list[float], p: float) -> float:
-    """Nearest-rank percentile. Explicit because `statistics.quantiles`
-    interpolates, and an interpolated p95 over n=40 invents a value that was
-    never observed."""
+    """Nearest-rank percentile: rank = ceil(p/100 * n), 1-based.
+
+    Explicit because `statistics.quantiles` INTERPOLATES, and an interpolated
+    p95 over n=40 invents a value that was never observed.
+
+    🔴 Uses `math.ceil`, NOT `round(x + 0.5)` (hc2, PR #410). Those look
+    equivalent and are not: Python's `round` is round-half-to-EVEN, so when
+    `p/100*n` is an ODD integer, `x + 0.5` is exactly a half-value and rounds
+    UP to the next even integer instead of staying at `ceil(x) == x` — shifting
+    the reported rank by one.
+
+        n=100 p=95   x=95.0   round(95.5)=96  -> 96th value, correct is 95th
+        n=100 p=99   x=99.0   round(99.5)=100 -> the MAX, correct is 99th
+        n=20  p=95   x=19.0   same shift
+
+    It fires only on odd integers, so it is invisible at some sample sizes and
+    wrong at others — and `--n` is a CLI flag. An instrument whose correctness
+    depends on the sample size cannot support the before/after comparison this
+    file exists for. See `--self-test`.
+    """
     if not xs:
         return float("nan")
     s = sorted(xs)
-    k = max(0, min(len(s) - 1, int(round(p / 100.0 * len(s) + 0.5)) - 1))
+    k = max(0, min(len(s) - 1, math.ceil(p / 100.0 * len(s)) - 1))
     return s[k]
+
+
+def _self_test() -> int:
+    """Validate the instrument itself before trusting a capture.
+
+    Sister to `e2e/tap_targets.py --self-test` in this repo: a measurement tool
+    that cannot be checked is one whose failures look like results.
+    """
+    fails = []
+    # Nearest-rank contract, including the odd-integer cases where round-as-ceil
+    # diverges. Values are 1..n so the expected value IS the expected rank.
+    for n, p, want in ((100, 95, 95), (100, 99, 99), (20, 95, 19),
+                       (40, 50, 20), (40, 95, 38), (40, 99, 40),
+                       (10, 100, 10), (1, 95, 1), (3, 50, 2)):
+        got = _pct(list(range(1, n + 1)), p)
+        if got != want:
+            fails.append(f"_pct(1..{n}, p{p}) = {got}, want {want}")
+    # p50 of an even-length sample must be an OBSERVED value, never a mean --
+    # the property that separates nearest-rank from interpolation.
+    if _pct([10.0, 20.0], 50) != 10.0:
+        fails.append("p50 of [10,20] interpolated; nearest-rank must give 10")
+    if not math.isnan(_pct([], 95)):
+        fails.append("_pct([]) must be nan, not a value")
+    for f in fails:
+        sys.stderr.write(f"SELF-TEST FAIL: {f}\n")
+    print(f"self-test: {'PASS' if not fails else f'FAIL ({len(fails)})'}")
+    return 0 if not fails else 1
 
 
 def sample(url: str, n: int, warmup: int, timeout: float) -> dict:
@@ -113,10 +158,16 @@ def main() -> int:
                     help="pod selector for the CURRENT database; after the "
                          "cutover the DB is managed and this yields no rows, "
                          "which is reported rather than treated as 0 CPU")
-    ap.add_argument("--label", required=True,
+    ap.add_argument("--self-test", action="store_true",
+                    help="validate the instrument (nearest-rank contract) and exit")
+    ap.add_argument("--label", required=False, default=None,
                     help="what this run is, e.g. 'before-cutover-selfhosted'")
     ap.add_argument("--out", default="")
     a = ap.parse_args()
+    if a.self_test:
+        return _self_test()
+    if not a.label:
+        ap.error("--label is required (say what the capture is)")
 
     s = sample(a.url, a.n, a.warmup, a.timeout)
     lat = s["latency_ms"]
