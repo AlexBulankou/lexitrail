@@ -4,6 +4,11 @@ Cut `lexitraildb` from the in-cluster `mysql-0` StatefulSet (spot GKE) to the ma
 Cloud SQL instance `lexitrail:us-central1:lexitrail-mysql`, with a short write-freeze
 and a config-only rollback.
 
+✅ **EXECUTED 2026-09-09T03:57:23Z.** LexiTrail serves from Cloud SQL; verified by zz1's
+close-check plus an independent discriminator (§6). `mysql-0` is deliberately NOT retired —
+it is the rollback path (§7). Everything below is the as-run procedure, corrected against
+what actually happened; three defects in the pre-run version are marked 🔴 CORRECTED.
+
 **Why:** lexitrail#331 — on 2026-09-03 the site was functionally down ~8h because
 `mysql-0` was evicted from a spot node with nowhere to reschedule. A stateful DB on
 spot capacity is the root cause.
@@ -32,14 +37,18 @@ back — seconds, no rebuild, not a DNS propagation wait.
 | instance provisioned | `lexitrail-mysql`, `db-f1-micro`, MYSQL_8_0, single-zone, 10GB, `RUNNABLE` (lexitrail#409) |
 | `lexitraildb` + `root@%` | created; the root password is the **same value** as the in-cluster `mysql-root` secret, by design (`cloudsql.tf`) |
 | seed dump → import | **63 seconds**, `PIPESTATUS: dump=0 sed=0 import=0` |
-| verified by exact `COUNT(*)` | all 6 tables + the view identical source↔target |
+| verified by exact `COUNT(*)` | all 6 tables + the view identical source↔target — ⚠️ **but `COUNT(*)` cannot see blob corruption**; see §6 for the CRC32 check that can |
 | Auth Proxy reachability | `cloud_sql_proxy 2.8.0` → `127.0.0.1:3307`, connected as `root@%` |
 | the guest-token probe | headless, no browser session needed (see §6) |
 
-🔴 **NOT done — the cutover is BLOCKED on this and it is a separate slice:**
+✅ **Connector wiring — DONE** (lexitrail#415 applied 2026-09-09T02:0xZ; the
+`roles/cloudsql.client` grant is lexitrail#416). `cloudsql-proxy` runs 2/2 in `lexitrail`
+and its own log shows `Authorizing with ADC` -> `Listening on 3306` -> `ready for new
+connections`, so the grant is proven **at the wire**, not merely read from the IAM policy.
 
-**Connector wiring.** Nothing in the cluster can reach the instance today — the designed
-security property (`ipv4_enabled` with empty `authorized_networks`), not a gap.
+*(Historical: this section previously read "NOT done — the cutover is BLOCKED on this."
+Nothing in the cluster could reach the instance — the designed security property
+`ipv4_enabled` with empty `authorized_networks`, not a gap.)*
 
 🔴 **And it is NOT a sidecar. There is no `DATABASE_URL` to repoint.** The connection
 string is built in code and the host is a template:
@@ -64,8 +73,17 @@ need a `backend/**` code change, an image rebuild, a build unit, and an app rede
 same hostname and never learns anything changed; **rollback is flipping the selector
 back, in seconds, with no build.**
 
-⏳ NOT yet verified: that a headless Service re-pointed at a proxy Deployment serves
-end-to-end. Prove it in a scratch Service before any window — not by editing `mysql`.
+✅ **VERIFIED 2026-09-09T03:45Z** — a scratch `Service` selecting `app=cloudsql-proxy` on
+3306, probed from a throwaway `mysql:8` pod, **with the control arm run**:
+
+| path | `@@hostname` | `@@version_comment` | users |
+|---|---|---|---|
+| scratch -> proxy | `localhost` | **`(Google)`** | 2533 |
+| `Service/mysql` -> mysql-0 (CONTROL) | `mysql-0` | `MySQL Community Server - GPL` | 2533 |
+
+🔑 **`users` is 2533 on BOTH — a row count could never have discriminated.** The
+discriminator is `@@version_comment`, and it is only a verdict because the control arm was
+run. Do not verify a repoint with a row count.
 
 ⚠️ The app connects as **`root`**. The app-scoped user `cloudsql.tf` defers is still
 right, but adopting it is a SECOND change; do not also do it in the cutover window.
@@ -90,14 +108,41 @@ which is wrong and understates the cost in the reassuring direction — kept vis
 than silently corrected, because anyone who read it once will otherwise carry it into the
 switch and mis-read a 200-less window as a fault.
 
+### 🔴 CORRECTED — THE FREEZE MUST BE CRASH-SAFE. ARM A DEADMAN FIRST.
+
+**A freeze whose undo depends on the freezer surviving is not an acceptable design for a
+live site.** On 2026-09-08 an agent scaled the backend to 0 and its process exited
+mid-cutover; the backend stayed at zero and the API was down **5.3 minutes** until a peer
+noticed and scaled it back. That is not hypothetical — it happened, and it is why this step
+is mandatory (zz1 ruling, 2026-09-08 20:43 PT).
+
+Arm a detached deadman **before** scaling to 0. Cancel-file based, not PID-based: killing a
+PID can leave an orphaned `sleep`, and `setsid` is what makes it outlive your session.
+
 ```bash
+cat > /tmp/deadman.sh <<'EOS'
+#!/bin/bash
+T=$1; CANCEL=$2
+for i in $(seq 1 "$T"); do sleep 1; [ -f "$CANCEL" ] && { echo CANCELLED; exit 0; }; done
+echo "DEADMAN FIRING"; kubectl -n lexitrail scale deploy/lexitrail-backend --replicas=2
+EOS
+chmod +x /tmp/deadman.sh
+setsid /tmp/deadman.sh 300 /tmp/cutover.cancel > /tmp/deadman.log 2>&1 < /dev/null &
+
 kubectl -n lexitrail scale deploy/lexitrail-backend --replicas=0
 kubectl -n lexitrail rollout status deploy/lexitrail-backend --timeout=60s
+# ... window ...  then, after unfreezing:  touch /tmp/cutover.cancel
 ```
 
-> Budget: the dump→import measured **63s**, so the freeze is ~2 minutes including
-> verification — not an outage. That number is why this shape is affordable; it was
-> measured on real data rather than estimated.
+🔴 **Control-test the deadman before you trust it — a deadman that cannot fire is worse than
+none.** All three arms, verified 2026-09-09: cancelled -> did NOT scale; not cancelled ->
+scaled; **parent shell exits -> still fired** (that last one is the actual failure mode).
+
+> 🔴 **CORRECTED BUDGET — the freeze is NOT the outage.** The as-run freeze was **85s**
+> (03:55:58 -> 03:57:23Z), but scaling back to 2 adds **~60-90s of pod startup** before the
+> API answers again. Real API downtime was **~2.7 minutes**. The old "~2 minutes including
+> verification — not an outage" was wrong twice over: it ignored the read path *and* pod
+> startup. **Budget ~3 minutes of API downtime, and tell stakeholders that number.**
 
 ## 4. FINAL dump → import (inside the freeze)
 
@@ -105,7 +150,30 @@ kubectl -n lexitrail rollout status deploy/lexitrail-backend --timeout=60s
 it. Re-run inside the freeze or every write since is silently lost — and it would be
 lost in `recall_history`, the table users would notice.
 
-**Both commands below were run verbatim on 2026-09-08; nothing here is adapted.**
+### 🔴 CORRECTED — TWO INDEPENDENT DEFECTS BROKE THIS STEP. Both fixes are required.
+
+The pre-run command below failed twice on 2026-09-08/09. **Two separate causes stacked, and
+fixing the first made the second look fixed** — a single green run is not evidence when the
+second failure is intermittent.
+
+**Defect 1 — raw binary blobs break the parse. Fix: `--hex-blob`.**
+`words.hint_img` and `userwords.hint_img` are BLOB columns holding JPEGs (106 MB across 360
+lines). The import died with `ERROR 1064 ... near ''?\??\?\0JFIF...'`. ⚠️ Two hypotheses
+tested and **disproved** before fixing anything: `sed` is byte-clean (md5 of the failing line
+identical through `sed`, `LC_ALL=C sed`, and no sed), and `max_allowed_packet` is not it
+(longest line 1.0 MB vs Cloud SQL's 33 MB).
+
+**Defect 2 — `docker run -i` silently truncates a large stdin stream. Fix: mount the file.**
+With `--hex-blob` in place the import still failed intermittently:
+`ERROR 1064 at line 358 ... near ''` — an **empty** statement 84% through. "near ''" is a
+**truncated stream, not a syntax error**, and the cut position moved between runs (line 288,
+then 358). Stage isolation: `kubectl exec` produced 177,935,283 B / 426 lines with the
+`Dump completed` marker, byte-identical across two runs; `sed` removed exactly 18 bytes.
+**The pipeline still exited 0 at the docker stage while delivering short input.**
+
+⇒ **Dump to a file, check the marker, then import with the file MOUNTED** (`-v`), never piped.
+
+**The commands below are the as-run 2026-09-09 versions; nothing here is adapted.**
 
 ```bash
 # (a) START THE PROXY. Needs a gcloud identity with cloudsql.instances.connect;
@@ -120,14 +188,21 @@ grep -q "ready for new connections" /tmp/csqlproxy.log   # wait for this line
 PW=$(kubectl -n lexitrail get secret mysql-root \
        -o jsonpath='{.data.MYSQL_ROOT_PASSWORD}' | base64 -d)
 
-# (c) dump -> import
+# (c) DUMP TO A FILE  (note --hex-blob).  Took 5s as-run.
 kubectl -n lexitrail exec mysql-0 -- sh -c \
   'mysqldump -uroot -p"$MYSQL_ROOT_PASSWORD" --single-transaction --set-gtid-purged=OFF \
-     --routines --triggers --databases lexitraildb 2>/dev/null' \
- | sed -E 's/DEFINER=`[^`]+`@`[^`]+`//g' \
- | docker run --rm -i --network=host -e MYSQL_PWD="$PW" mysql:8 \
-     mysql -h127.0.0.1 -P3307 -uroot
-echo "PIPESTATUS: ${PIPESTATUS[@]}"   # ALL THREE must be 0
+     --hex-blob --routines --triggers --databases lexitraildb 2>/dev/null' \
+ | LC_ALL=C sed -E 's/DEFINER=`[^`]+`@`[^`]+`//g' > /tmp/final.sql
+echo "PIPESTATUS: ${PIPESTATUS[@]}"   # BOTH must be 0
+
+# (d) GATE ON THE MARKER -- this is what catches a truncated stream.
+tail -c 200 /tmp/final.sql | LC_ALL=C grep -q 'Dump completed on' \
+  || { echo "TRUNCATED -- ABORT, do not import"; }
+
+# (e) IMPORT FROM THE MOUNTED FILE, never piped stdin.  Took 67s as-run.
+docker run --rm --network=host -v /tmp:/d:ro -e MYSQL_PWD="$PW" mysql:8 \
+  sh -c 'mysql -h127.0.0.1 -P3307 -uroot < /d/final.sql'
+echo "import rc=$?"   # must be 0
 ```
 
 🔴 **Tear the proxy down by the PID you captured — never `pkill -f`.** A pattern
@@ -164,6 +239,23 @@ kubectl -n lexitrail rollout status deploy/lexitrail-backend --timeout=180s
 
 ## 6. Verify (end of the freeze)
 
+### 🔴 Row counts are NOT sufficient on their own — add the blob check
+
+`COUNT(*)` cannot see blob corruption, and this database is ~83 MB of JPEGs in
+`words.hint_img` / `userwords.hint_img`. Compare **byte totals and CRC32 sums** on both
+sides. As-run 2026-09-09, identical source↔target:
+
+```sql
+SELECT COUNT(hint_img), SUM(LENGTH(hint_img)), SUM(CRC32(hint_img)) FROM words;
+--   2223   35664463   4816591608870
+SELECT COUNT(hint_img), SUM(LENGTH(hint_img)), SUM(CRC32(hint_img)) FROM userwords;
+--   4044   47910294   8504667140746
+```
+
+🔑 **Gate the selector flip on this comparison, computed WHILE FROZEN.** The as-run script
+flipped only on an exact source==target match of all counts plus both CRC32 sums; on any
+mismatch it unfreezes and does not flip.
+
 **Row counts, exact — not `information_schema`:**
 
 ```sql
@@ -184,6 +276,9 @@ Anything quoting a user count should say **2,533**.
 
 ```bash
 curl -s https://api.lexitrail.com/wordsets | head -c 200        # expect wordset_id
+# ⚠️ Use /wordsets, NOT /users/me. A guest token is correctly REFUSED by /users/me with
+#    403 "You can only access your own data" -- that is the endpoint working, not a fault.
+#    Probing the wrong endpoint here reads as a broken cutover.
 # guest path, with BOTH controls so a 200 is a verdict:
 #   no Authorization header                    -> 401
 #   Bearer UNAUTH_USER:x@notlexitrail.example  -> 401 invalid guest token
@@ -191,6 +286,22 @@ curl -s https://api.lexitrail.com/wordsets | head -c 200        # expect wordset
 ```
 
 Then one write (a recall) and re-read it, to confirm read **and** write on the new DB.
+
+### 🔑 THE CLOSE DISCRIMINATOR — 200s prove NOTHING here
+
+A repoint that silently fails leaves the site perfectly healthy **on mysql-0**. So health
+checks cannot close this. Two discriminators, both run as-run:
+
+1. **mysql-0's own `Questions` counter** (zz1's `zz1-tools/zz1-lexitrail-cutover-verify.sh`):
+   read it, drive real traffic through the public endpoint, read it again. Control taken
+   while demonstrably on mysql-0: **delta 45 under 12 API reads**. After cutover: **delta 3**
+   — and an idle control showed **+3 per 30s with zero API calls**, with `processlist`
+   holding only `event_scheduler` and the probe's own connection. So the residual is not app
+   traffic.
+2. **Ask the app's own hostname what it is.** `mysql.lexitrail.svc.cluster.local` now answers
+   `@@version_comment = (Google)`; mysql-0 answers `MySQL Community Server - GPL`.
+
+Use both — they are independent, and the second does not depend on traffic shape.
 
 ## 7. Rollback
 
