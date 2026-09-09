@@ -82,7 +82,13 @@ landed.** Do not start §3 before then.
 
 ## 3. WRITE-FREEZE (start of the window)
 
-Reads keep serving; only writes stop. The UI is static and stays up.
+🔴 **This is a brief API OUTAGE, not a reads-keep-serving freeze.** The freeze is
+`--replicas=0` on the backend, and the backend serves reads as well as writes — so
+`api/wordsets` returns nothing for the ~2 minutes below. The static UI stays up; the API
+does not. An earlier version of this line said *"Reads keep serving; only writes stop"*,
+which is wrong and understates the cost in the reassuring direction — kept visible rather
+than silently corrected, because anyone who read it once will otherwise carry it into the
+switch and mis-read a 200-less window as a fault.
 
 ```bash
 kubectl -n lexitrail scale deploy/lexitrail-backend --replicas=0
