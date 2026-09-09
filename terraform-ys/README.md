@@ -49,11 +49,40 @@ state + the in-cluster Secrets. No local `.env`, no Secret Manager, no Alex hand
 
 ## Cross-project IAM — ownership + re-apply runbook (Path B)
 
-The two GCP-IAM grants in `iam.tf` (AR-reader on `lexitrail-repo`; WI binding on the
-`lexitrail-sa` GSA) target the **lexitrail** project. The apply identity
-(`epod-d-sa@yojowa-ensemble`) owns the GKE *clusters* but lacks `setIamPolicy` on the
-lexitrail project, so it **cannot apply or drift-correct these two grants** — they
-are operator-applied (Path B) and `terraform import`ed so `plan` stays clean.
+The **three** GCP-IAM grants targeting the **lexitrail** project — AR-reader on
+`lexitrail-repo` and the WI binding on the `lexitrail-sa` GSA (both `iam.tf`), plus
+`roles/cloudsql.client` on `lexitrail-sa` (`cloudsql-connector.tf`, added by #416) —
+are not appliable from this root. The apply identity (`epod-d-sa@yojowa-ensemble`)
+owns the GKE *clusters* but lacks `setIamPolicy` on the lexitrail project, so it
+**cannot apply or drift-correct them** — they are operator-applied (Path B) and
+`terraform import`ed so `plan` stays clean.
+
+🔴 **The IMPORT needs a different identity than the STATE BACKEND, and that split is
+the thing that will stop you.** `backend.tf` correctly names
+`hermes-automation@yojowa-claw` as the principal that reaches the state bucket. That
+same principal is **403 on `lexitrail:getIamPolicy`**, so `terraform import` of any of
+these three fails on the *resource read* — after the state lock is acquired, which is
+why it reads as a lock or a state problem rather than a permissions one. Measured
+2026-09-08 across all eight accounts on the bp host:
+
+```
+bulankou@gmail.com                                    getIamPolicy OK
+ensemble-sa · familylore-sa · hermes-automation
+sandbox-sa · sbs-agent-ops · sp-k8s-sa · yojowa-site-sa   all DENIED
+```
+
+⇒ Run the import with the operator credential:
+`GOOGLE_OAUTH_ACCESS_TOKEN="$(gcloud auth print-access-token --account=bulankou@gmail.com)"`.
+
+⚠️ **`--account=` is a REQUEST, not an assertion.** On a seat that cannot honour it,
+gcloud falls back to the active account and mints a perfectly valid token for the
+*wrong* identity — exit 0, no warning. Assert the realised identity before using it:
+
+```bash
+TK=$(gcloud auth print-access-token --account=bulankou@gmail.com)
+curl -s "https://oauth2.googleapis.com/tokeninfo?access_token=$TK" | python3 -c 'import json,sys;print(json.load(sys.stdin)["email"])'
+# must print bulankou@gmail.com before you proceed
+```
 
 If either grant is ever removed/drifts (terraform `plan` would want to "create" it but
 `apply` 403s), an **operator** (or anyone with lexitrail-project IAM-admin) re-applies:
