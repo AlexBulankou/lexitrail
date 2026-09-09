@@ -232,7 +232,7 @@ word_id,word,wordset_id,def1,def2
 233,票,2,piào,ticket
 234,意思,2,yìsi,meaning
 235,颜色,2,yánsè,color
-236,铅笔,2,qiánbǐ,pencil
+236,铅笔,2,qiānbǐ,pencil
 237,面条,2,miàntiáo,noodle
 238,火车站,2,huǒchēzhàn,train station
 239,公司,2,gōngsī,company
@@ -5247,7 +5247,7 @@ word_id,word,wordset_id,def1,def2
 7230,票,8,piào,ticket
 7231,意思,8,yìsi,meaning
 7232,颜色,8,yánsè,color
-7233,铅笔,8,qiánbǐ,pencil
+7233,铅笔,8,qiānbǐ,pencil
 7234,面条,8,miàntiáo,noodle
 7235,火车站,8,huǒchēzhàn,train station
 7236,公司,8,gōngsī,company
