@@ -57,6 +57,13 @@ owns the GKE *clusters* but lacks `setIamPolicy` on the lexitrail project, so it
 **cannot apply or drift-correct them** — they are operator-applied (Path B) and
 `terraform import`ed so `plan` stays clean.
 
+📌 **Provenance, because this paragraph now carries two claims of different ages.**
+The APPLY-side sentence immediately above predates this section's 2026-09-08 edit and
+is inherited from the original Path B text — it was not re-measured then, and the
+`epod-d-sa` identity in it is not one any current bp seat holds (see `backend.tf`'s
+own note on that name going stale). The IMPORT-side block below IS from that night's
+measurement. Do not read the two as equally fresh.
+
 🔴 **The IMPORT needs a different identity than the STATE BACKEND, and that split is
 the thing that will stop you.** `backend.tf` correctly names
 `hermes-automation@yojowa-claw` as the principal that reaches the state bucket. That
