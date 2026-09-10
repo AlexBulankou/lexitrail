@@ -291,7 +291,24 @@ def generate_quiz_options(word, words_by_syllable, syllable_count, corpus_by_syl
                 existing_words = {word.word} | {
                     w.word for w in all_available_words if w.word_id in used_word_ids
                 }
-                if concatenated_word in existing_words:
+                # lexitrail#280: a single character-replacement is not re-checked
+                # against existing_words -- it can escape the collision it was
+                # fixing only to land on a *different* member (or even the same
+                # one, when the '的'/'一' swap has nowhere else to go). Loop until
+                # the result is clean, bounded so a saturated existing_words set
+                # (both swap targets already taken) fails loudly instead of
+                # spinning or silently shipping a colliding option.
+                _MAX_REPLACEMENT_ATTEMPTS = 10
+                _replacement_attempts = 0
+                while concatenated_word in existing_words:
+                    if _replacement_attempts >= _MAX_REPLACEMENT_ATTEMPTS:
+                        error_msg = (
+                            f"Could not find a non-colliding replacement for "
+                            f"'{concatenated_word}' after {_MAX_REPLACEMENT_ATTEMPTS} "
+                            f"attempts (existing_words={existing_words})."
+                        )
+                        logger.error(error_msg)
+                        raise ValueError(error_msg)
                     # Replace a character to ensure uniqueness
                     replace_index = random.randint(0, len(concatenated_word) - 1)
                     replacement_char = '的' if concatenated_word[replace_index] != '的' else '一'
@@ -302,6 +319,7 @@ def generate_quiz_options(word, words_by_syllable, syllable_count, corpus_by_syl
                         f"Replaced character at index {replace_index} in '{concatenated_word}' "
                         f"to avoid duplication, new word: '{concatenated_word}'"
                     )
+                    _replacement_attempts += 1
                 logger.debug(f"After concatenation: {concatenated_word} ({total_syllables}/{syllable_count} syllables)")
 
             # Append the final concatenated option
