@@ -126,6 +126,70 @@ def test_headword_already_covered_by_another_bank_FAILS(tmp_path):
     assert m.check(b, c, "3", g)[0] == 1
 
 
+# ── #467: a function word must not ship a content gloss ──────────────────
+#
+# These use their OWN register rather than sentences/function-words.json, so a
+# future edit to the real register cannot turn a unit test red for a reason that
+# has nothing to do with the checker.
+def _register(tmp_path, words):
+    p = tmp_path / "function-words.json"
+    p.write_text(json.dumps({"words": {k: {"gloss": v} for k, v in words.items()}},
+                            ensure_ascii=False), encoding="utf-8")
+    return str(p)
+
+
+def _run_fw(tmp_path, sentences, register):
+    b, c, g = _write(tmp_path, sentences, CSV)
+    return m.check(b, c, "3", g, _register(tmp_path, register))
+
+
+def test_a_registered_function_word_with_the_registered_gloss_PASSES(tmp_path):
+    """The positive arm, and the one that matters: the checks added for #467 must
+    not make a correct bank unshippable."""
+    s = _good()
+    for x in s:
+        x["word"]["english"] = "fronts the object"
+    code, lines = _run_fw(tmp_path, s, {"好": "fronts the object"})
+    assert code == 0, "\n".join(lines)
+
+
+def test_a_registered_function_word_under_a_CONTENT_gloss_FAILS(tmp_path):
+    """把 shipping as "hold" beside 把书给我 — the defect itself."""
+    code, lines = _run_fw(tmp_path, _good(), {"好": "fronts the object"})
+    assert code == 1, "a content gloss on a registered function word must FAIL"
+    assert any("register says" in x for x in lines), "the failure must name both glosses"
+
+
+def test_an_UNregistered_headword_is_not_judged_against_the_register(tmp_path):
+    """The negative-space arm. 地方 / 地铁 / 地图 are content words beginning with a
+    registered character, so a substring rule would break six correct glosses."""
+    code, lines = _run_fw(tmp_path, _good(), {"地": "makes an adverb"})
+    assert code == 0, "\n".join(lines)
+
+
+def test_an_EMPTY_gloss_FAILS_even_when_the_word_is_not_registered(tmp_path):
+    """An empty gloss is not a neutral omission: the card centres `word.english`
+    with no fallback, so it ships a hole. Unregistered, so this is the empty
+    check firing alone rather than the register check."""
+    s = _good()
+    s[0]["word"]["english"] = ""
+    assert _run_fw(tmp_path, s, {})[0] == 1
+
+
+def test_a_missing_register_is_CANNOT_TELL_not_a_silent_pass(tmp_path):
+    """A register that cannot be read must not read as 'no function words here'."""
+    b, c, g = _write(tmp_path, _good())
+    assert m.check(b, c, "3", g, str(tmp_path / "nope.json"))[0] == 3
+
+
+def test_the_REAL_register_loads_and_answers_for_the_word_that_filed_this(tmp_path):
+    """One integration arm against the committed register, because every test
+    above supplies its own -- a register that stopped parsing would otherwise be
+    invisible here."""
+    fw = m.load_function_words()
+    assert fw["把"] and fw["把"] != "hold"
+
+
 # ── CANNOT-TELL is its own state, never folded into PASS or FAIL ────────────
 def test_empty_bank_is_CANNOT_TELL_not_pass(tmp_path):
     assert _run(tmp_path, [])[0] == 3

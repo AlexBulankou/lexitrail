@@ -534,7 +534,7 @@
         "no": 23,
         "chinese": "就",
         "pinyin": "jiù",
-        "english": "at once"
+        "english": "then; right away"
       },
       "chinese": "我就去买苹果。",
       "pinyin": "Wǒ jiù qù mǎi píngguǒ.",
@@ -546,7 +546,7 @@
         "no": 23,
         "chinese": "就",
         "pinyin": "jiù",
-        "english": "at once"
+        "english": "then; right away"
       },
       "chinese": "它就走了。",
       "pinyin": "Tā jiù zǒu le.",
@@ -702,7 +702,7 @@
         "no": 30,
         "chinese": "得",
         "pinyin": "de",
-        "english": ""
+        "english": "links verb to degree"
       },
       "chinese": "我走得很快。",
       "pinyin": "Wǒ zǒu de hěn kuài.",
@@ -714,7 +714,7 @@
         "no": 30,
         "chinese": "得",
         "pinyin": "de",
-        "english": ""
+        "english": "links verb to degree"
       },
       "chinese": "您说得非常好。",
       "pinyin": "Nín shuō de fēicháng hǎo.",
@@ -726,7 +726,7 @@
         "no": 31,
         "chinese": "着",
         "pinyin": "zhe",
-        "english": ""
+        "english": "marks ongoing action"
       },
       "chinese": "它玩着球。",
       "pinyin": "Tā wán zhe qiú.",
@@ -738,7 +738,7 @@
         "no": 31,
         "chinese": "着",
         "pinyin": "zhe",
-        "english": ""
+        "english": "marks ongoing action"
       },
       "chinese": "我看着书，不说话。",
       "pinyin": "Wǒ kàn zhe shū, bù shuōhuà.",
@@ -750,7 +750,7 @@
         "no": 32,
         "chinese": "过",
         "pinyin": "guò",
-        "english": ""
+        "english": "marks past experience"
       },
       "chinese": "我去过北京。",
       "pinyin": "Wǒ qù guò Běijīng.",
@@ -762,7 +762,7 @@
         "no": 32,
         "chinese": "过",
         "pinyin": "guò",
-        "english": ""
+        "english": "marks past experience"
       },
       "chinese": "您吃过那种菜吗？",
       "pinyin": "Nín chī guò nà zhǒng cài ma?",
@@ -774,7 +774,7 @@
         "no": 33,
         "chinese": "吧",
         "pinyin": "ba",
-        "english": ""
+        "english": "suggestion particle"
       },
       "chinese": "我们走吧。",
       "pinyin": "Wǒmen zǒu ba.",
@@ -786,7 +786,7 @@
         "no": 33,
         "chinese": "吧",
         "pinyin": "ba",
-        "english": ""
+        "english": "suggestion particle"
       },
       "chinese": "吃米饭吧。",
       "pinyin": "Chī mǐfàn ba.",

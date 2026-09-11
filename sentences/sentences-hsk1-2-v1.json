@@ -882,7 +882,7 @@
         "no": 39,
         "chinese": "的",
         "pinyin": "de",
-        "english": ""
+        "english": "possessive particle"
       },
       "chinese": "这是我的书。",
       "pinyin": "Zhè shì wǒ de shū.",
@@ -916,7 +916,7 @@
         "no": 39,
         "chinese": "的",
         "pinyin": "de",
-        "english": ""
+        "english": "possessive particle"
       },
       "chinese": "那是谁的猫？",
       "pinyin": "Nà shì shéi de māo?",
@@ -950,7 +950,7 @@
         "no": 40,
         "chinese": "了",
         "pinyin": "le",
-        "english": ""
+        "english": "marks completion"
       },
       "chinese": "他来了。",
       "pinyin": "Tā lái le.",
@@ -976,7 +976,7 @@
         "no": 40,
         "chinese": "了",
         "pinyin": "le",
-        "english": ""
+        "english": "marks completion"
       },
       "chinese": "我买了一本书。",
       "pinyin": "Wǒ mǎi le yì běn shū.",
@@ -1014,7 +1014,7 @@
         "no": 41,
         "chinese": "吗",
         "pinyin": "ma",
-        "english": ""
+        "english": "yes-or-no question"
       },
       "chinese": "你是学生吗？",
       "pinyin": "Nǐ shì xuésheng ma?",
@@ -1044,7 +1044,7 @@
         "no": 41,
         "chinese": "吗",
         "pinyin": "ma",
-        "english": ""
+        "english": "yes-or-no question"
       },
       "chinese": "你喜欢中国菜吗？",
       "pinyin": "Nǐ xǐhuan Zhōngguó cài ma?",
@@ -1078,7 +1078,7 @@
         "no": 42,
         "chinese": "呢",
         "pinyin": "ne",
-        "english": ""
+        "english": "question particle"
       },
       "chinese": "我很好，你呢？",
       "pinyin": "Wǒ hěn hǎo, nǐ ne?",
@@ -1112,7 +1112,7 @@
         "no": 42,
         "chinese": "呢",
         "pinyin": "ne",
-        "english": ""
+        "english": "question particle"
       },
       "chinese": "我的书呢？",
       "pinyin": "Wǒ de shū ne?",

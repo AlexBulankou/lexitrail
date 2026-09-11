@@ -72,14 +72,14 @@
       },
       {
         "no": 11,
-        "word": {"no":6, "chinese":"把", "pinyin": "bǎ", "english": "hold"},
+        "word": {"no":6, "chinese":"把", "pinyin": "bǎ", "english": "fronts the object"},
         "chinese": "请把门打开。",
         "pinyin": "Qǐng bǎ mén dǎkāi.",
         "english": "Please open the door."
       },
       {
         "no": 12,
-        "word": {"no":6, "chinese":"把", "pinyin": "bǎ", "english": "hold"},
+        "word": {"no":6, "chinese":"把", "pinyin": "bǎ", "english": "fronts the object"},
         "chinese": "把书给我。",
         "pinyin": "Bǎ shū gěi wǒ.",
         "english": "Give me the book."
@@ -632,14 +632,14 @@
       },
       {
         "no": 91,
-        "word": {"no":46, "chinese":"地", "pinyin": "de", "english": ""},
+        "word": {"no":46, "chinese":"地", "pinyin": "de", "english": "makes an adverb"},
         "chinese": "他高兴地笑了。",
         "pinyin": "Tā gāoxìng de xiào le.",
         "english": "He smiled happily."
       },
       {
         "no": 92,
-        "word": {"no":46, "chinese":"地", "pinyin": "de", "english": ""},
+        "word": {"no":46, "chinese":"地", "pinyin": "de", "english": "makes an adverb"},
         "chinese": "请慢慢地说。",
         "pinyin": "Qǐng màn man de shuō.",
         "english": "Please speak slowly."

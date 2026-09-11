@@ -55,6 +55,10 @@ import sys
 
 TONE_MARKS = set("āáǎàēéěèīíǐìōóǒòūúǔùǖǘǚǜ")
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+# #467 -- the headwords whose gloss slot must name a STRUCTURE rather than a
+# content word. See sentences/function-words.json for why, and for the rule that
+# it is keyed on the FULL headword (地 is registered; 地方 / 地铁 / 地图 are not).
+FUNCTION_WORDS = os.path.join(REPO, "sentences", "function-words.json")
 
 
 def bare_headword(word: str) -> str:
@@ -65,6 +69,18 @@ def bare_headword(word: str) -> str:
     there is no parenthetical, so it is safe to call on every headword.
     """
     return re.split(r"[（(]", word)[0].strip()
+
+
+def load_function_words(path: str | None = None) -> dict[str, str]:
+    """headword -> the structural gloss it must carry (#467).
+
+    Returns a plain `{hanzi: gloss}`; the register's `structure` and `pinyin`
+    fields are documentation for a human and are deliberately NOT enforced --
+    the corpus spells 就 as both `jiù` and `jiǜ`, and that disagreement belongs
+    to the def1 check above, not here.
+    """
+    with open(path or FUNCTION_WORDS, encoding="utf-8") as fh:
+        return {k: v["gloss"] for k, v in json.load(fh)["words"].items()}
 
 
 def load_wordset(csv_path: str, wordset_id: str) -> dict[str, dict]:
@@ -93,12 +109,13 @@ def other_banks(bank_path: str, bank_glob: str) -> set[str]:
 
 
 def check(bank_path: str, csv_path: str, wordset_id: str,
-          bank_glob: str) -> tuple[int, list[str]]:
+          bank_glob: str, fw_path: str | None = None) -> tuple[int, list[str]]:
     """Return (exit_code, report_lines)."""
     try:
         with open(bank_path, encoding="utf-8") as fh:
             sentences = json.load(fh)["sentences"]
         words = load_wordset(csv_path, wordset_id)
+        fw = load_function_words(fw_path)
     except (OSError, KeyError, json.JSONDecodeError) as exc:
         return 3, [f"CANNOT-TELL: {exc}"]
     if not sentences:
@@ -139,6 +156,27 @@ def check(bank_path: str, csv_path: str, wordset_id: str,
     record("every pinyin is sentence-capitalised, with tone marks",
            len(sentences) - len(bad), len(sentences), bad)
 
+    # #467 -- an EMPTY gloss is not a neutral omission. The social card centres
+    # `word.english` at 60pt with no fallback, so a blank one ships a card with a
+    # hole where the meaning goes. All nine empties in the corpus at filing were
+    # function words (的 了 吗 呢 得 着 过 吧 地), which is the same defect arriving
+    # as absence rather than as a wrong word.
+    bad = [f"#{s['no']} {s['word']['chinese']}" for s in sentences
+           if not (s["word"].get("english") or "").strip()]
+    record("every headword carries a non-empty gloss",
+           len(sentences) - len(bad), len(sentences), bad)
+
+    # #467 -- the defect itself: 把 shipping as "hold" beside 把书给我, where it is
+    # the disposal particle. Exact equality against the register, because the
+    # alternative (look for the word "particle") is a heuristic that a future
+    # gloss can pass while still naming a content sense.
+    reg = [s for s in sentences if s["word"]["chinese"] in fw]
+    off = [s for s in reg if (s["word"].get("english") or "") != fw[s["word"]["chinese"]]]
+    record("function words carry a registered structural gloss",
+           len(reg) - len(off), len(reg),
+           sorted({f'{s["word"]["chinese"]} says "{s["word"].get("english") or ""}",'
+                   f' register says "{fw[s["word"]["chinese"]]}"' for s in off}))
+
     nos = [s["no"] for s in sentences]
     ok = nos == list(range(1, len(sentences) + 1))
     out.append(f"  {'sentence numbering is 1..N contiguous':<52} {'yes' if ok else 'NO'}")
@@ -157,6 +195,8 @@ def main() -> int:
     ap.add_argument("--csv", default=os.path.join(REPO, "terraform/csv/words.csv"))
     ap.add_argument("--bank-glob",
                     default=os.path.join(REPO, "sentences/sentences-*.json"))
+    ap.add_argument("--function-words", default=None,
+                    help=f"function-word register (default: {FUNCTION_WORDS})")
     args = ap.parse_args()
 
     wordset = args.wordset_id
@@ -168,7 +208,8 @@ def main() -> int:
             return 3
         wordset = m.group(1)
 
-    code, lines = check(args.bank, args.csv, wordset, args.bank_glob)
+    code, lines = check(args.bank, args.csv, wordset, args.bank_glob,
+                        args.function_words)
     print(f"{os.path.basename(args.bank)} (wordset_id {wordset})")
     for line in lines:
         print(line)
