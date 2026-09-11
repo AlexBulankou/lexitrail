@@ -364,3 +364,77 @@ describe('the committed pages are NOT stale', () => {
     }
   });
 });
+
+// lexitrail#433 — the shared boilerplate. Half the corpus ranks at GSC position 8-11 with 2
+// clicks per 4,407 impressions, and a 692-char page that was 40% byte-identical across 4,999
+// pages gives near-duplicate detection a large surface. These pin the variation itself, because
+// the failure mode is somebody "simplifying" the pools back to one string — which is silent:
+// the pages still render, the drift check still passes once regenerated, and the only symptom
+// is a ranking signal nobody reads for weeks.
+describe('lexitrail#433 boilerplate variation', () => {
+  const corpus = () => collectWords(rows()).words;
+
+  test('CONTROL — the corpus is large and the renderer produces pages', () => {
+    // Guards every assertion below from passing vacuously on an empty list.
+    const ws = corpus();
+    expect(ws.length).toBeGreaterThan(4000);
+    expect(renderWordPage(ws[0]).length).toBeGreaterThan(500);
+  });
+
+  test('🔴 two different words get DIFFERENT closing PROSE — the whole point', () => {
+    const ws = corpus();
+    // 🔴 Compare the VARIANT, not the rendered string. Every closing paragraph embeds its own
+    // hanzi, so raw strings differ for a reason that has nothing to do with the pool — an
+    // earlier version of this test counted those and passed with the pool collapsed to ONE
+    // entry, i.e. it went green on exactly the regression it is named for. Stripping the CJK
+    // and the level digit leaves the prose, which is the thing that must vary.
+    const prose = (w) => {
+      const ps = renderWordPage(w).match(/<p>[\s\S]*?<\/p>/g) || [];
+      // The TAIL of the paragraph is pure variant prose — the word, its pinyin and its gloss
+      // all sit at the FRONT. Stripping CJK is not enough on its own: an earlier version did
+      // only that and still saw 400 distinct strings with the pool collapsed to ONE, because
+      // the pinyin and the English gloss survive the strip.
+      return (ps[ps.length - 1] || '').replace(/[\u4e00-\u9fff]/g, '')
+        .replace(/HSK \d/g, 'HSK').slice(-100);
+    };
+    const seen = new Set(ws.slice(0, 400).map(prose));
+    // Not "> 1": one variant plus one oddball would pass that. The pool is 6, and 400 words
+    // over 6 hash buckets should reach every one.
+    expect(seen.size).toBeGreaterThanOrEqual(6);
+  });
+
+  test('every variant in each pool is REACHABLE over the real corpus — no dead prose', () => {
+    const ws = corpus();
+    const descs = new Set();
+    const closings = new Set();
+    for (const w of ws.slice(0, 600)) {
+      const html = renderWordPage(w);
+      descs.add((html.match(/<meta name="description" content="([^"]*)"/) || [])[1]);
+      const ps = html.match(/<p>[\s\S]*?<\/p>/g) || [];
+      closings.add((ps[ps.length - 1] || '').replace(/[一-鿿]/g, '').slice(-80));
+    }
+    // Descriptions embed the word, so dedupe on the shared tail instead.
+    const descTails = new Set([...descs].map((d) => (d || '').slice(-60)));
+    expect(descTails.size).toBeGreaterThanOrEqual(4);
+    expect(closings.size).toBeGreaterThanOrEqual(6);
+  });
+
+  test('selection is a PURE FUNCTION of the word — the drift check depends on it', () => {
+    const w = corpus()[7];
+    // Ten renders, one result. A counter or Math.random would make every page permanently
+    // stale against the committed artifact and the --check mode unusable.
+    const out = new Set(Array.from({ length: 10 }, () => renderWordPage(w)));
+    expect(out.size).toBe(1);
+  });
+
+  test('every page still names its own word and HSK level in the closing prose', () => {
+    // The variation must not cost the page its subject: whichever variant is drawn, the hanzi
+    // and the level have to survive. This is what stops a future pool entry being generic.
+    for (const w of corpus().slice(0, 300)) {
+      const ps = renderWordPage(w).match(/<p>[\s\S]*?<\/p>/g) || [];
+      const last = ps[ps.length - 1];
+      expect(last).toContain(w.word);
+      expect(last).toContain(`HSK ${w.level}`);
+    }
+  });
+});
