@@ -1,0 +1,116 @@
+# lexitrail#450 — give the repo-root checkers a moment of execution.
+#
+# WHY THIS EXISTS: nine Python test files (218 tests) were invoked by NOTHING.
+# `backend-tests.yml` runs `pytest tests/` under `working-directory: backend`,
+# so it covers `backend/tests` and nothing else; `ui-tests.yml` runs jest. No
+# Cloud Build config invoked any of them. Among the nine are
+# `scripts/build_budget/`'s own tests — the quota gate that decides whether a
+# build may run at all had 44 tests that never executed.
+#
+# 🔴 One of the nine was ALREADY RED and had been for an unknown span:
+# `test_the_REAL_migrations_dir_is_silent_today` asserted "no additive
+# migration has landed yet", #187's migrations landed, and nothing noticed.
+# A test nobody runs cannot tell you when it stops being true. Fixed in the
+# same PR as this file — it now pins the durable property (every migration
+# PARSES) instead of a temporal one.
+#
+# ─── WHY NO `paths:` FILTER ───────────────────────────────────────────────
+# Deliberate, and it is the load-bearing decision in this file.
+#
+# `ui-tests.yml` is path-filtered to `ui/**` while the test that guards
+# committed-page consistency reads `sentences/**` — so a bank-only PR runs zero
+# checks, and that is precisely the change that breaks the pages (#445, which
+# has already fired once). A filter scoped to the CONSUMER's directory is blind
+# to the INPUT that breaks the consumer.
+#
+# These nine have cross-cutting inputs by nature: `backend/migrations/`,
+# `terraform/`, `cloudbuild*.yaml`, deploy state, the build-budget config. Any
+# filter I could write here would be a guess at that set, and a wrong guess
+# fails SILENTLY — zero check-runs renders on the PR surface as "nothing to
+# run", which is indistinguishable from "checks passed".
+#
+# The cost of running always is ~10s of GitHub-hosted runner time. Per
+# `ui-tests.yml`'s own note, **Actions minutes are free here; Cloud Build
+# minutes are not** — and lexitrail's constrained resource is Cloud Build's
+# `daily_build_count: 5`, which this workflow does not touch at all.
+#
+# ─── WHY THE LIST IS DERIVED ──────────────────────────────────────────────
+# A hardcoded list is how this happened. decipher#3411 is the same defect in
+# that repo: a comment asked each future author to add a line per new file and
+# named exactly why — "a test file that nothing runs is the same defect class
+# as a guard that scans the wrong population" — and the very next file added by
+# the SAME issue was never added to it. A reminder that did not fire for the
+# person who wrote it is the signal to mechanise.
+#
+# ⚠️ `middle_layer/agones` is EXCLUDED, not overlooked: 17 test files whose
+# last commit is 2024-11-03, for a component nothing deploys. Excluded by not
+# looking there rather than by a filter entry, so an unexplained carve-out
+# cannot rot in a list. If that tree comes back to life, add it here.
+name: repo checks
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: repo-checks-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  checkers:
+    runs-on: ubuntu-latest
+    steps:
+      # fetch-depth 0: `test_is_ancestor_still_answers_the_two_real_cases`
+      # needs real ancestry (HEAD~3). With the default depth-1 checkout it
+      # SKIPS — and a test that always skips in CI is back to being unrun,
+      # which is the defect this whole workflow exists to fix. The repo is
+      # small and Actions minutes are free here.
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      # The only third-party imports across the derived set. Everything else is
+      # stdlib or a sibling module pytest puts on sys.path itself.
+      #
+      # 🔴 This list is hand-maintained and was ALREADY WRONG ONCE: I derived it
+      # over the nine stranded files, then added a tenth (the workflow's own
+      # regression test) which imports `yaml`, and never re-ran the scan. The
+      # population changed under the measurement. CI caught it in 12s.
+      #
+      # ⚠️ Hand-maintaining it is nonetheless FINE, and the distinction is this
+      # PR's whole subject: a missing dependency fails LOUDLY at collection time
+      # (`ModuleNotFoundError`, exit 2, red step) — it does not silently skip the
+      # test. That is the opposite of the stranding this workflow exists to fix,
+      # where the failure mode was invisible. A reminder is only unsafe where
+      # forgetting it is silent.
+      - run: pip install --quiet pytest pyyaml
+
+      - name: repo-root checkers
+        shell: bash
+        run: |
+          set -euo pipefail
+          files="$(find scripts tools -name 'test_*.py' -type f | sort)"
+          # `grep -c` EXITS 1 on a zero count while still printing "0", so under
+          # `-eo pipefail` the assignment dies and the refusal below never
+          # prints — a bare exit 1 on a step that ran no visible command.
+          # `|| true` keeps grep's own "0" and lets the guard speak.
+          # NOT `|| echo 0`: grep already printed it, so that concatenates to
+          # "0\n0", `[ -eq ]` errors, and the step would EXIT 0 — the vacuous
+          # green this guard exists to refuse. (decipher#3389, measured.)
+          n="$(printf '%s\n' "$files" | grep -c . || true)"
+          if [ "$n" -eq 0 ]; then
+            echo "ERROR: derived 0 repo checkers from scripts/ and tools/ — glob broken or wrong cwd; refusing vacuous-green" >&2
+            exit 1
+          fi
+          echo "running $n repo-root checker files"
+          # `-e` is load-bearing: pytest exits non-zero on failure and that is
+          # what fails the step. Do not drop it to quieten anything.
+          python3 -m pytest -q $files

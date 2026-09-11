@@ -180,13 +180,34 @@ def test_is_ancestor_fails_toward_the_common_wording():
 
 
 def test_is_ancestor_still_answers_the_two_real_cases():
-    """The fail-toward-True branch must not swallow a genuine negative."""
+    """The fail-toward-True branch must not swallow a genuine negative.
+
+    🔴 issue-450: the shallow-clone guard here was BLIND, and nothing noticed
+    because no CI surface ran this file. `git rev-parse HEAD~3` on a shallow
+    checkout does not print nothing — it prints the literal string `HEAD~3` on
+    stdout and exits 128:
+
+        stdout='HEAD~3'  rc=128
+
+    So `if not older` was False, the guard did not fire, and the test ran
+    `_is_ancestor("HEAD~3", head)` against a string that is not a sha. Both
+    directions then took `_is_ancestor`'s deliberate fail-toward-True branch and
+    the second assertion failed — which is what `actions/checkout@v4` produced
+    the first time this file was ever run in CI.
+
+    ⚠️ A guard keyed on EMPTINESS, blind to a failure mode that returns a
+    non-empty value. Key on the exit code, which is the thing that actually
+    reports it.
+    """
     import subprocess
-    head = subprocess.run(["git", "rev-parse", "HEAD"], capture_output=True,
-                          text=True).stdout.strip()
-    older = subprocess.run(["git", "rev-parse", "HEAD~3"], capture_output=True,
-                           text=True).stdout.strip()
-    if not head or not older:
-        return  # shallow clone: nothing to assert, and that is this test's point
+    head_p = subprocess.run(["git", "rev-parse", "HEAD"],
+                            capture_output=True, text=True)
+    older_p = subprocess.run(["git", "rev-parse", "HEAD~3"],
+                             capture_output=True, text=True)
+    if head_p.returncode != 0 or older_p.returncode != 0:
+        import pytest
+        pytest.skip("shallow clone — HEAD~3 does not resolve, so there is no "
+                    "real ancestry to assert against")
+    head, older = head_p.stdout.strip(), older_p.stdout.strip()
     assert mod._is_ancestor(older, head) is True
     assert mod._is_ancestor(head, older) is False

@@ -191,10 +191,33 @@ def test_pure_DML_migrations_are_silent_and_not_unparsed(tmp_path):
     assert mod.cols_from_migrations(tmp_path) == (set(), [])
 
 
-def test_the_REAL_migrations_dir_is_silent_today(tmp_path):
-    """Behaviour is unchanged until the first additive migration lands — the
-    no-op-today property that makes this safe to ship ahead of #187."""
-    assert mod.cols_from_migrations() == (set(), [])
+def test_the_REAL_migrations_dir_parses_with_no_CANNOT_TELL(tmp_path):
+    """issue-450: the property this used to assert has EXPIRED, correctly.
+
+    It read `cols_from_migrations() == (set(), [])` — "no additive migration
+    has landed yet", the no-op-today property that made the checker safe to
+    ship ahead of #187. #187's migrations HAVE landed (`users.timezone`,
+    `recall_history.provenance`), so the real dir legitimately contributes
+    columns and the old assertion has been false since.
+
+    🔴 It went red at some point between then and 2026-09-11 and NOTHING
+    NOTICED, because no CI surface ran this file — that is issue-450, and this
+    test is its load-bearing example: a test nobody runs cannot tell you when
+    it stops being true.
+
+    What is durable is the OTHER half. A migration this parser cannot read
+    lands in `unparsed`, and the drift check then refuses forever — so "every
+    file in the real dir parses" is the property worth pinning, and it does not
+    expire the next time someone adds a column.
+    """
+    cols, unparsed = mod.cols_from_migrations()
+    assert unparsed == [], f"unparseable migration(s) in the real dir: {unparsed}"
+    # Non-vacuity: without this, a parser that silently returned an empty set
+    # for everything would satisfy the line above — which is the shape the
+    # assertion this replaced had, pointed the other way.
+    assert cols, ("the real migrations dir contributed NO columns — either "
+                  "#187's additive migrations were reverted, or the parser "
+                  "stopped seeing them")
 
 
 def test_excluded_tables_are_excluded_here_too(tmp_path):
