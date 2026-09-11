@@ -127,15 +127,8 @@ describe('issue-393: the EMITTED corpus, not the renderers', () => {
   it('every tagged page carries BOTH halves, not just the id', () => {
     const broken = PAGES
       .filter((p) => !(p.rel in EXEMPT))
-      // issue-NNN: the closing paren is deliberately NOT matched any more. The
-      // config call now takes a third argument (`gtag('config', ID, ltCfg)`) so
-      // internal traffic can be marked at source. Pinning `')` pinned the ARGUMENT
-      // COUNT, which was never this test's subject -- it asks whether both halves
-      // of the install are present, and a third argument makes neither half absent.
-      // The measurement id is still matched EXACTLY, so a wrong, truncated or
-      // missing id still reds, and the loader half is untouched.
       .filter((p) => !(p.html.includes(`googletagmanager.com/gtag/js?id=${GA4_ID}`)
-                    && p.html.includes(`gtag('config', '${GA4_ID}'`)))
+                    && p.html.includes(`gtag('config', '${GA4_ID}')`)))
       .map((p) => p.rel);
     expect(broken).toEqual([]);
   });

@@ -9,41 +9,7 @@
     function gtag() { dataLayer.push(arguments); }
     gtag('js', new Date());
 
-    // lexitrail#NNN: mark internal traffic AT SOURCE, replacing the GA4 console's
-    // IP-address rules. This only MARKS -- nothing is excluded until the GA4
-    // "Internal Traffic" data filter is set Active in the console, which has no
-    // Admin API method at all and so stays a console action.
-    //
-    // Marking beats an IP rule for exactly the traffic we most need gone: the
-    // Playwright e2e runs, the agent probes and Alex's own phone. bp's egress is
-    // residential Sammamish/Seattle and the phone sits behind carrier NAT, so no
-    // stable IP covers them -- #394's own evidence, where one harness run is
-    // ~1.6% of monthly sessions and runs cluster during investigation bursts.
-    //
-    // THE MARKING MUST STAY CONDITIONAL. An unconditional traffic_type tags every
-    // real visitor internal, and once that console filter is Active it strips 100%
-    // of live traffic -- non-retroactively, so the data is simply gone and the
-    // reports read as "nobody visited". `ltInternal` starts false and only two
-    // things can raise it, neither reachable by accident: a URL a visitor had to
-    // be told to type, and a flag no human browser sets.
-    var ltInternal = false;
-    try {
-      if (location.search.indexOf('internal=1') !== -1) localStorage.setItem('lexitrail.internal', '1');
-      if (location.search.indexOf('internal=0') !== -1) localStorage.removeItem('lexitrail.internal');
-      ltInternal = localStorage.getItem('lexitrail.internal') === '1';
-    } catch (e) { /* private mode / storage disabled: stays false, fall through */ }
-    // Automation never carries a human's opt-in, so catch it without anyone having
-    // to remember. Playwright and Selenium both set this; a real browser reports
-    // false, and `=== true` means an older browser's `undefined` cannot trip it.
-    if (navigator.webdriver === true) ltInternal = true;
-
-    // ES5, no object spread: this block ships to the browser verbatim and a
-    // SyntaxError here costs the whole tag, not just the marking. The empty object
-    // is the gate -- traffic_type is assigned inside the `if` and nowhere else, so
-    // no code path marks unconditionally.
-    var ltCfg = {};
-    if (ltInternal) ltCfg.traffic_type = 'internal';
-    gtag('config', 'G-910V8PX54C', ltCfg);
+    gtag('config', 'G-910V8PX54C');
   </script>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
