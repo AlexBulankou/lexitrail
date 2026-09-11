@@ -64,6 +64,55 @@ schedules:
   # schedule rests on and I have NOT verified it end-to-end** — if a red run
   # here reaches nobody, this is another unwatched signal and #331's AC is not
   # met. Verify with a deliberate failure before calling #331 done.
+  # issue-457. `check_deploy_current.py` has existed since #273 -- built, validated
+  # against live data with a negative control, and closed COMPLETED -- and nothing
+  # ran it. On 2026-09-11 a merge's `lexitrail-ui-deploy-main` build failed at step
+  # 0 (`quota-gate`, remaining five steps QUEUED), so `bb3d2339` sat on main and
+  # not in production. The checker names that exact pair when run by hand. It was
+  # noticed only because someone listed builds for an unrelated reason -- the
+  # SECOND time this class was found by accident (#273's body records the first,
+  # ~75 minutes).
+  #
+  # 🔴 CADENCE IS A TRADE-OFF, NOT A SOLVED PROBLEM. The check compares the newest
+  # commit on a deploy path against the sha production reports, and those
+  # legitimately differ WHILE A DEPLOY IS RUNNING. So any cadence can sample a
+  # normal deploy mid-flight and go red for a few minutes:
+  #
+  #     too frequent -> transient reds -> the alarm gets muted -> gone when it matters
+  #     too rare     -> a real silent non-deploy sits undetected for the gap
+  #
+  # 2h bounds a real miss at ~2h (against that 75-minute incident) while sampling a
+  # ~5-minute deploy window rarely. That is a MITIGATION. The fix is a
+  # consecutive-run gate -- red only when main has been ahead across two runs --
+  # which needs durable state the checker does not have. Tracked separately; do not
+  # read this number as the answer.
+  #
+  # ⚠️ A RED HERE MAY BE A DEPLOY IN FLIGHT. Re-run the command before chasing it:
+  # if it clears, it was transient. If it persists, read the deploy trigger's most
+  # recent build and check whether `quota-gate` DECLINED it (`used_before ==
+  # used_after` in the gate's JSON) rather than the build failing -- a refusal
+  # carries no information about the code.
+  #
+  # ⚠️ `on_failure: log` for the same reason its sibling below gives: `page` and
+  # `alert` are parsed but not consumer-wired, so a non-zero exit surfaces on the
+  # fleet cron-health surface. That sibling's comment also says plainly that the
+  # assumption was never verified end-to-end. It is not verified here either.
+  - name: lexitrail-deploy-currency-audit
+    cron: "20 */2 * * *"
+    timezone: UTC
+    type: script
+    workspace: /home/alexb/src/github.com/lexitrail
+    command: python3 scripts/check_deploy_current.py
+    max_runtime: 120
+    capture_output: true
+    on_failure: log
+    description: >-
+      issue-457. Every 2 hours, assert production is built from the newest commit
+      that should have deployed it -- for ui/** and backend/** separately. Catches
+      a merge that landed and silently did not deploy, which reds nothing today:
+      the merge succeeds, the PR closes, the checks are green, and the artifact
+      never moves. A red may be a deploy in flight; re-run before acting.
+
   - name: lexitrail-backend-content-smoke
     cron: "*/15 * * * *"
     timezone: UTC
