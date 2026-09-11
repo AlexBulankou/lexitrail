@@ -242,7 +242,7 @@ describe('example sentences — #184 AC1', () => {
     // not having it. A floor still catches a silent REGRESSION (a bank file dropped, a
     // key format change that unjoins half the corpus) and is silent on growth.
     // Raise it when a batch lands; never lower it without saying why.
-    expect(m.size).toBeGreaterThanOrEqual(349);  // 08-29: 224 · 09-11 b1 249 · b2 274 · b3 299 · b4 324 · b5 349
+    expect(m.size).toBeGreaterThanOrEqual(374);  // 08-29: 224 · 09-11 b1 249 · b2 274 · b3 299 · b4 324 · b5 349 · b6 374 (HSK1 COMPLETE)
   });
 });
 
