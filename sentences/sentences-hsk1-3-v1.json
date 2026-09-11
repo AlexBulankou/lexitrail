@@ -1,0 +1,1528 @@
+{
+  "sentences": [
+    {
+      "no": 1,
+      "word": {
+        "no": 51,
+        "chinese": "上",
+        "pinyin": "shàng",
+        "english": "up"
+      },
+      "chinese": "书在桌子上。",
+      "pinyin": "Shū zài zhuōzi shàng.",
+      "english": "The book is on the table.",
+      "origin": [
+        [
+          "书",
+          "hsk1"
+        ],
+        [
+          "在",
+          "hsk1"
+        ],
+        [
+          "桌子",
+          "hsk1"
+        ],
+        [
+          "上",
+          "hsk1"
+        ]
+      ]
+    },
+    {
+      "no": 2,
+      "word": {
+        "no": 51,
+        "chinese": "上",
+        "pinyin": "shàng",
+        "english": "up"
+      },
+      "chinese": "他上午去学校。",
+      "pinyin": "Tā shàngwǔ qù xuéxiào.",
+      "english": "He goes to school in the morning.",
+      "origin": [
+        [
+          "他",
+          "hsk1"
+        ],
+        [
+          "上午",
+          "hsk1"
+        ],
+        [
+          "去",
+          "hsk1"
+        ],
+        [
+          "学校",
+          "hsk1"
+        ]
+      ]
+    },
+    {
+      "no": 3,
+      "word": {
+        "no": 52,
+        "chinese": "下",
+        "pinyin": "xià",
+        "english": "down"
+      },
+      "chinese": "猫在椅子下。",
+      "pinyin": "Māo zài yǐzi xià.",
+      "english": "The cat is under the chair.",
+      "origin": [
+        [
+          "猫",
+          "hsk1"
+        ],
+        [
+          "在",
+          "hsk1"
+        ],
+        [
+          "椅子",
+          "hsk1"
+        ],
+        [
+          "下",
+          "hsk1"
+        ]
+      ]
+    },
+    {
+      "no": 4,
+      "word": {
+        "no": 52,
+        "chinese": "下",
+        "pinyin": "xià",
+        "english": "down"
+      },
+      "chinese": "我们下午去商店。",
+      "pinyin": "Wǒmen xiàwǔ qù shāngdiàn.",
+      "english": "We go to the store in the afternoon.",
+      "origin": [
+        [
+          "我们",
+          "hsk1"
+        ],
+        [
+          "下午",
+          "hsk1"
+        ],
+        [
+          "去",
+          "hsk1"
+        ],
+        [
+          "商店",
+          "hsk1"
+        ]
+      ]
+    },
+    {
+      "no": 5,
+      "word": {
+        "no": 53,
+        "chinese": "前面",
+        "pinyin": "qiánmiàn",
+        "english": "front"
+      },
+      "chinese": "学校在前面。",
+      "pinyin": "Xuéxiào zài qiánmiàn.",
+      "english": "The school is ahead.",
+      "origin": [
+        [
+          "学校",
+          "hsk1"
+        ],
+        [
+          "在",
+          "hsk1"
+        ],
+        [
+          "前面",
+          "hsk1"
+        ]
+      ]
+    },
+    {
+      "no": 6,
+      "word": {
+        "no": 53,
+        "chinese": "前面",
+        "pinyin": "qiánmiàn",
+        "english": "front"
+      },
+      "chinese": "他在我前面。",
+      "pinyin": "Tā zài wǒ qiánmiàn.",
+      "english": "He is in front of me.",
+      "origin": [
+        [
+          "他",
+          "hsk1"
+        ],
+        [
+          "在",
+          "hsk1"
+        ],
+        [
+          "我",
+          "hsk1"
+        ],
+        [
+          "前面",
+          "hsk1"
+        ]
+      ]
+    },
+    {
+      "no": 7,
+      "word": {
+        "no": 54,
+        "chinese": "后面",
+        "pinyin": "hòumiàn",
+        "english": "behind"
+      },
+      "chinese": "饭店在后面。",
+      "pinyin": "Fàndiàn zài hòumiàn.",
+      "english": "The restaurant is behind.",
+      "origin": [
+        [
+          "饭店",
+          "hsk1"
+        ],
+        [
+          "在",
+          "hsk1"
+        ],
+        [
+          "后面",
+          "hsk1"
+        ]
+      ]
+    },
+    {
+      "no": 8,
+      "word": {
+        "no": 54,
+        "chinese": "后面",
+        "pinyin": "hòumiàn",
+        "english": "behind"
+      },
+      "chinese": "我在你后面。",
+      "pinyin": "Wǒ zài nǐ hòumiàn.",
+      "english": "I am behind you.",
+      "origin": [
+        [
+          "我",
+          "hsk1"
+        ],
+        [
+          "在",
+          "hsk1"
+        ],
+        [
+          "你",
+          "hsk1"
+        ],
+        [
+          "后面",
+          "hsk1"
+        ]
+      ]
+    },
+    {
+      "no": 9,
+      "word": {
+        "no": 55,
+        "chinese": "里",
+        "pinyin": "lǐmiàn",
+        "english": "inside"
+      },
+      "chinese": "他在家里。",
+      "pinyin": "Tā zài jiā lǐmiàn.",
+      "english": "He is inside the house.",
+      "origin": [
+        [
+          "他",
+          "hsk1"
+        ],
+        [
+          "在",
+          "hsk1"
+        ],
+        [
+          "家",
+          "hsk1"
+        ],
+        [
+          "里",
+          "hsk1"
+        ]
+      ]
+    },
+    {
+      "no": 10,
+      "word": {
+        "no": 55,
+        "chinese": "里",
+        "pinyin": "lǐmiàn",
+        "english": "inside"
+      },
+      "chinese": "水在杯子里。",
+      "pinyin": "Shuǐ zài bēizi lǐmiàn.",
+      "english": "The water is in the cup.",
+      "origin": [
+        [
+          "水",
+          "hsk1"
+        ],
+        [
+          "在",
+          "hsk1"
+        ],
+        [
+          "杯子",
+          "hsk1"
+        ],
+        [
+          "里",
+          "hsk1"
+        ]
+      ]
+    },
+    {
+      "no": 11,
+      "word": {
+        "no": 56,
+        "chinese": "今天",
+        "pinyin": "jīntiān",
+        "english": "today"
+      },
+      "chinese": "今天很热。",
+      "pinyin": "Jīntiān hěn rè.",
+      "english": "Today is very hot.",
+      "origin": [
+        [
+          "今天",
+          "hsk1"
+        ],
+        [
+          "很",
+          "hsk1"
+        ],
+        [
+          "热",
+          "hsk1"
+        ]
+      ]
+    },
+    {
+      "no": 12,
+      "word": {
+        "no": 56,
+        "chinese": "今天",
+        "pinyin": "jīntiān",
+        "english": "today"
+      },
+      "chinese": "今天是星期一。",
+      "pinyin": "Jīntiān shì xīngqī yī.",
+      "english": "Today is Monday.",
+      "origin": [
+        [
+          "今天",
+          "hsk1"
+        ],
+        [
+          "是",
+          "hsk1"
+        ],
+        [
+          "星期",
+          "hsk1"
+        ],
+        [
+          "一",
+          "hsk1"
+        ]
+      ]
+    },
+    {
+      "no": 13,
+      "word": {
+        "no": 57,
+        "chinese": "明天",
+        "pinyin": "míngtiān",
+        "english": "tomorrow"
+      },
+      "chinese": "明天我不来。",
+      "pinyin": "Míngtiān wǒ bù lái.",
+      "english": "I am not coming tomorrow.",
+      "origin": [
+        [
+          "明天",
+          "hsk1"
+        ],
+        [
+          "我",
+          "hsk1"
+        ],
+        [
+          "不",
+          "hsk1"
+        ],
+        [
+          "来",
+          "hsk1"
+        ]
+      ]
+    },
+    {
+      "no": 14,
+      "word": {
+        "no": 57,
+        "chinese": "明天",
+        "pinyin": "míngtiān",
+        "english": "tomorrow"
+      },
+      "chinese": "明天我不工作。",
+      "pinyin": "Míngtiān wǒ bù gōngzuò.",
+      "english": "I am not working tomorrow.",
+      "origin": [
+        [
+          "明天",
+          "hsk1"
+        ],
+        [
+          "我",
+          "hsk1"
+        ],
+        [
+          "不",
+          "hsk1"
+        ],
+        [
+          "工作",
+          "hsk1"
+        ]
+      ]
+    },
+    {
+      "no": 15,
+      "word": {
+        "no": 58,
+        "chinese": "昨天",
+        "pinyin": "zuótiān",
+        "english": "yesterday"
+      },
+      "chinese": "昨天下雨了。",
+      "pinyin": "Zuótiān xià yǔ le.",
+      "english": "It rained yesterday.",
+      "origin": [
+        [
+          "昨天",
+          "hsk1"
+        ],
+        [
+          "下雨",
+          "hsk1"
+        ],
+        [
+          "了",
+          "hsk1"
+        ]
+      ]
+    },
+    {
+      "no": 16,
+      "word": {
+        "no": 58,
+        "chinese": "昨天",
+        "pinyin": "zuótiān",
+        "english": "yesterday"
+      },
+      "chinese": "昨天我在家。",
+      "pinyin": "Zuótiān wǒ zài jiā.",
+      "english": "I was at home yesterday.",
+      "origin": [
+        [
+          "昨天",
+          "hsk1"
+        ],
+        [
+          "我",
+          "hsk1"
+        ],
+        [
+          "在",
+          "hsk1"
+        ],
+        [
+          "家",
+          "hsk1"
+        ]
+      ]
+    },
+    {
+      "no": 17,
+      "word": {
+        "no": 59,
+        "chinese": "上午",
+        "pinyin": "shàngwǔ",
+        "english": "morning"
+      },
+      "chinese": "上午我在医院。",
+      "pinyin": "Shàngwǔ wǒ zài yīyuàn.",
+      "english": "I was at the hospital in the morning.",
+      "origin": [
+        [
+          "上午",
+          "hsk1"
+        ],
+        [
+          "我",
+          "hsk1"
+        ],
+        [
+          "在",
+          "hsk1"
+        ],
+        [
+          "医院",
+          "hsk1"
+        ]
+      ]
+    },
+    {
+      "no": 18,
+      "word": {
+        "no": 59,
+        "chinese": "上午",
+        "pinyin": "shàngwǔ",
+        "english": "morning"
+      },
+      "chinese": "上午我学习汉语。",
+      "pinyin": "Shàngwǔ wǒ xuéxí Hànyǔ.",
+      "english": "I study Chinese in the morning.",
+      "origin": [
+        [
+          "上午",
+          "hsk1"
+        ],
+        [
+          "我",
+          "hsk1"
+        ],
+        [
+          "学习",
+          "hsk1"
+        ],
+        [
+          "汉语",
+          "hsk1"
+        ]
+      ]
+    },
+    {
+      "no": 19,
+      "word": {
+        "no": 60,
+        "chinese": "中午",
+        "pinyin": "zhōngwǔ",
+        "english": "noon"
+      },
+      "chinese": "中午我们吃米饭。",
+      "pinyin": "Zhōngwǔ wǒmen chī mǐfàn.",
+      "english": "We eat rice at noon.",
+      "origin": [
+        [
+          "中午",
+          "hsk1"
+        ],
+        [
+          "我们",
+          "hsk1"
+        ],
+        [
+          "吃",
+          "hsk1"
+        ],
+        [
+          "米饭",
+          "hsk1"
+        ]
+      ]
+    },
+    {
+      "no": 20,
+      "word": {
+        "no": 60,
+        "chinese": "中午",
+        "pinyin": "zhōngwǔ",
+        "english": "noon"
+      },
+      "chinese": "中午太热了。",
+      "pinyin": "Zhōngwǔ tài rè le.",
+      "english": "It is too hot at noon.",
+      "origin": [
+        [
+          "中午",
+          "hsk1"
+        ],
+        [
+          "太",
+          "hsk1"
+        ],
+        [
+          "热",
+          "hsk1"
+        ],
+        [
+          "了",
+          "hsk1"
+        ]
+      ]
+    },
+    {
+      "no": 21,
+      "word": {
+        "no": 61,
+        "chinese": "下午",
+        "pinyin": "xiàwǔ",
+        "english": "afternoon"
+      },
+      "chinese": "下午他去工作。",
+      "pinyin": "Xiàwǔ tā qù gōngzuò.",
+      "english": "He goes to work in the afternoon.",
+      "origin": [
+        [
+          "下午",
+          "hsk1"
+        ],
+        [
+          "他",
+          "hsk1"
+        ],
+        [
+          "去",
+          "hsk1"
+        ],
+        [
+          "工作",
+          "hsk1"
+        ]
+      ]
+    },
+    {
+      "no": 22,
+      "word": {
+        "no": 61,
+        "chinese": "下午",
+        "pinyin": "xiàwǔ",
+        "english": "afternoon"
+      },
+      "chinese": "下午我看电视。",
+      "pinyin": "Xiàwǔ wǒ kàn diànshì.",
+      "english": "I watch TV in the afternoon.",
+      "origin": [
+        [
+          "下午",
+          "hsk1"
+        ],
+        [
+          "我",
+          "hsk1"
+        ],
+        [
+          "看",
+          "hsk1"
+        ],
+        [
+          "电视",
+          "hsk1"
+        ]
+      ]
+    },
+    {
+      "no": 23,
+      "word": {
+        "no": 62,
+        "chinese": "年",
+        "pinyin": "nián",
+        "english": "year"
+      },
+      "chinese": "这一年我在中国。",
+      "pinyin": "Zhè yī nián wǒ zài Zhōngguó.",
+      "english": "I was in China this year.",
+      "origin": [
+        [
+          "这",
+          "hsk1"
+        ],
+        [
+          "一",
+          "hsk1"
+        ],
+        [
+          "年",
+          "hsk1"
+        ],
+        [
+          "我",
+          "hsk1"
+        ],
+        [
+          "在",
+          "hsk1"
+        ],
+        [
+          "中国",
+          "hsk1"
+        ]
+      ]
+    },
+    {
+      "no": 24,
+      "word": {
+        "no": 62,
+        "chinese": "年",
+        "pinyin": "nián",
+        "english": "year"
+      },
+      "chinese": "他学习了一年汉语。",
+      "pinyin": "Tā xuéxí le yī nián Hànyǔ.",
+      "english": "He studied Chinese for one year.",
+      "origin": [
+        [
+          "他",
+          "hsk1"
+        ],
+        [
+          "学习",
+          "hsk1"
+        ],
+        [
+          "了",
+          "hsk1"
+        ],
+        [
+          "一",
+          "hsk1"
+        ],
+        [
+          "年",
+          "hsk1"
+        ],
+        [
+          "汉语",
+          "hsk1"
+        ]
+      ]
+    },
+    {
+      "no": 25,
+      "word": {
+        "no": 63,
+        "chinese": "月",
+        "pinyin": "yuè",
+        "english": "month"
+      },
+      "chinese": "这个月很热。",
+      "pinyin": "Zhège yuè hěn rè.",
+      "english": "This month is very hot.",
+      "origin": [
+        [
+          "这",
+          "hsk1"
+        ],
+        [
+          "个",
+          "hsk1"
+        ],
+        [
+          "月",
+          "hsk1"
+        ],
+        [
+          "很",
+          "hsk1"
+        ],
+        [
+          "热",
+          "hsk1"
+        ]
+      ]
+    },
+    {
+      "no": 26,
+      "word": {
+        "no": 63,
+        "chinese": "月",
+        "pinyin": "yuè",
+        "english": "month"
+      },
+      "chinese": "九月天气很好。",
+      "pinyin": "Jiǔ yuè tiānqì hěn hǎo.",
+      "english": "The weather is nice in September.",
+      "origin": [
+        [
+          "九",
+          "hsk1"
+        ],
+        [
+          "月",
+          "hsk1"
+        ],
+        [
+          "天气",
+          "hsk1"
+        ],
+        [
+          "很",
+          "hsk1"
+        ],
+        [
+          "好",
+          "hsk1"
+        ]
+      ]
+    },
+    {
+      "no": 27,
+      "word": {
+        "no": 64,
+        "chinese": "号",
+        "pinyin": "hào",
+        "english": "number/date"
+      },
+      "chinese": "今天是十号。",
+      "pinyin": "Jīntiān shì shí hào.",
+      "english": "Today is the tenth.",
+      "origin": [
+        [
+          "今天",
+          "hsk1"
+        ],
+        [
+          "是",
+          "hsk1"
+        ],
+        [
+          "十",
+          "hsk1"
+        ],
+        [
+          "号",
+          "hsk1"
+        ]
+      ]
+    },
+    {
+      "no": 28,
+      "word": {
+        "no": 64,
+        "chinese": "号",
+        "pinyin": "hào",
+        "english": "number/date"
+      },
+      "chinese": "我三号回家。",
+      "pinyin": "Wǒ sān hào huí jiā.",
+      "english": "I go home on the third.",
+      "origin": [
+        [
+          "我",
+          "hsk1"
+        ],
+        [
+          "三",
+          "hsk1"
+        ],
+        [
+          "号",
+          "hsk1"
+        ],
+        [
+          "回",
+          "hsk1"
+        ],
+        [
+          "家",
+          "hsk1"
+        ]
+      ]
+    },
+    {
+      "no": 29,
+      "word": {
+        "no": 65,
+        "chinese": "星期",
+        "pinyin": "xīngqī",
+        "english": "week"
+      },
+      "chinese": "这个星期我在北京。",
+      "pinyin": "Zhège xīngqī wǒ zài Běijīng.",
+      "english": "I am in Beijing this week.",
+      "origin": [
+        [
+          "这",
+          "hsk1"
+        ],
+        [
+          "个",
+          "hsk1"
+        ],
+        [
+          "星期",
+          "hsk1"
+        ],
+        [
+          "我",
+          "hsk1"
+        ],
+        [
+          "在",
+          "hsk1"
+        ],
+        [
+          "北京",
+          "hsk1"
+        ]
+      ]
+    },
+    {
+      "no": 30,
+      "word": {
+        "no": 65,
+        "chinese": "星期",
+        "pinyin": "xīngqī",
+        "english": "week"
+      },
+      "chinese": "下个星期他来。",
+      "pinyin": "Xià ge xīngqī tā lái.",
+      "english": "He is coming next week.",
+      "origin": [
+        [
+          "下",
+          "hsk1"
+        ],
+        [
+          "个",
+          "hsk1"
+        ],
+        [
+          "星期",
+          "hsk1"
+        ],
+        [
+          "他",
+          "hsk1"
+        ],
+        [
+          "来",
+          "hsk1"
+        ]
+      ]
+    },
+    {
+      "no": 31,
+      "word": {
+        "no": 66,
+        "chinese": "点",
+        "pinyin": "diǎn",
+        "english": "o'clock"
+      },
+      "chinese": "现在八点。",
+      "pinyin": "Xiànzài bā diǎn.",
+      "english": "It is eight o'clock now.",
+      "origin": [
+        [
+          "现在",
+          "hsk1"
+        ],
+        [
+          "八",
+          "hsk1"
+        ],
+        [
+          "点",
+          "hsk1"
+        ]
+      ]
+    },
+    {
+      "no": 32,
+      "word": {
+        "no": 66,
+        "chinese": "点",
+        "pinyin": "diǎn",
+        "english": "o'clock"
+      },
+      "chinese": "我们六点吃米饭。",
+      "pinyin": "Wǒmen liù diǎn chī mǐfàn.",
+      "english": "We eat rice at six.",
+      "origin": [
+        [
+          "我们",
+          "hsk1"
+        ],
+        [
+          "六",
+          "hsk1"
+        ],
+        [
+          "点",
+          "hsk1"
+        ],
+        [
+          "吃",
+          "hsk1"
+        ],
+        [
+          "米饭",
+          "hsk1"
+        ]
+      ]
+    },
+    {
+      "no": 33,
+      "word": {
+        "no": 67,
+        "chinese": "分钟",
+        "pinyin": "fēnzhōng",
+        "english": "minute"
+      },
+      "chinese": "五分钟不多。",
+      "pinyin": "Wǔ fēnzhōng bù duō.",
+      "english": "Five minutes is not long.",
+      "origin": [
+        [
+          "五",
+          "hsk1"
+        ],
+        [
+          "分钟",
+          "hsk1"
+        ],
+        [
+          "不",
+          "hsk1"
+        ],
+        [
+          "多",
+          "hsk1"
+        ]
+      ]
+    },
+    {
+      "no": 34,
+      "word": {
+        "no": 67,
+        "chinese": "分钟",
+        "pinyin": "fēnzhōng",
+        "english": "minute"
+      },
+      "chinese": "我看电视十分钟。",
+      "pinyin": "Wǒ kàn diànshì shí fēnzhōng.",
+      "english": "I watch TV for ten minutes.",
+      "origin": [
+        [
+          "我",
+          "hsk1"
+        ],
+        [
+          "看",
+          "hsk1"
+        ],
+        [
+          "电视",
+          "hsk1"
+        ],
+        [
+          "十",
+          "hsk1"
+        ],
+        [
+          "分钟",
+          "hsk1"
+        ]
+      ]
+    },
+    {
+      "no": 35,
+      "word": {
+        "no": 68,
+        "chinese": "现在",
+        "pinyin": "xiànzài",
+        "english": "now"
+      },
+      "chinese": "现在下雨。",
+      "pinyin": "Xiànzài xià yǔ.",
+      "english": "It is raining now.",
+      "origin": [
+        [
+          "现在",
+          "hsk1"
+        ],
+        [
+          "下雨",
+          "hsk1"
+        ]
+      ]
+    },
+    {
+      "no": 36,
+      "word": {
+        "no": 68,
+        "chinese": "现在",
+        "pinyin": "xiànzài",
+        "english": "now"
+      },
+      "chinese": "现在几点了",
+      "pinyin": "Xiànzài jǐ diǎn le?",
+      "english": "What time is it now?",
+      "origin": [
+        [
+          "现在",
+          "hsk1"
+        ],
+        [
+          "几",
+          "hsk1"
+        ],
+        [
+          "点",
+          "hsk1"
+        ],
+        [
+          "了",
+          "hsk1"
+        ]
+      ]
+    },
+    {
+      "no": 37,
+      "word": {
+        "no": 69,
+        "chinese": "时候",
+        "pinyin": "shíhou",
+        "english": "time"
+      },
+      "chinese": "什么时候来",
+      "pinyin": "Shénme shíhou lái?",
+      "english": "When are you coming?",
+      "origin": [
+        [
+          "什么",
+          "hsk1"
+        ],
+        [
+          "时候",
+          "hsk1"
+        ],
+        [
+          "来",
+          "hsk1"
+        ]
+      ]
+    },
+    {
+      "no": 38,
+      "word": {
+        "no": 69,
+        "chinese": "时候",
+        "pinyin": "shíhou",
+        "english": "time"
+      },
+      "chinese": "小的时候我在北京。",
+      "pinyin": "Xiǎo de shíhou wǒ zài Běijīng.",
+      "english": "When I was little I was in Beijing.",
+      "origin": [
+        [
+          "小",
+          "hsk1"
+        ],
+        [
+          "的",
+          "hsk1"
+        ],
+        [
+          "时候",
+          "hsk1"
+        ],
+        [
+          "我",
+          "hsk1"
+        ],
+        [
+          "在",
+          "hsk1"
+        ],
+        [
+          "北京",
+          "hsk1"
+        ]
+      ]
+    },
+    {
+      "no": 39,
+      "word": {
+        "no": 70,
+        "chinese": "爸爸",
+        "pinyin": "bàba",
+        "english": "father"
+      },
+      "chinese": "我爸爸是医生。",
+      "pinyin": "Wǒ bàba shì yīshēng.",
+      "english": "My father is a doctor.",
+      "origin": [
+        [
+          "我",
+          "hsk1"
+        ],
+        [
+          "爸爸",
+          "hsk1"
+        ],
+        [
+          "是",
+          "hsk1"
+        ],
+        [
+          "医生",
+          "hsk1"
+        ]
+      ]
+    },
+    {
+      "no": 40,
+      "word": {
+        "no": 70,
+        "chinese": "爸爸",
+        "pinyin": "bàba",
+        "english": "father"
+      },
+      "chinese": "爸爸在看书。",
+      "pinyin": "Bàba zài kàn shū.",
+      "english": "Father is reading.",
+      "origin": [
+        [
+          "爸爸",
+          "hsk1"
+        ],
+        [
+          "在",
+          "hsk1"
+        ],
+        [
+          "看",
+          "hsk1"
+        ],
+        [
+          "书",
+          "hsk1"
+        ]
+      ]
+    },
+    {
+      "no": 41,
+      "word": {
+        "no": 71,
+        "chinese": "妈妈",
+        "pinyin": "māma",
+        "english": "mother"
+      },
+      "chinese": "妈妈在做菜。",
+      "pinyin": "Māma zài zuò cài.",
+      "english": "Mother is cooking.",
+      "origin": [
+        [
+          "妈妈",
+          "hsk1"
+        ],
+        [
+          "在",
+          "hsk1"
+        ],
+        [
+          "做",
+          "hsk1"
+        ],
+        [
+          "菜",
+          "hsk1"
+        ]
+      ]
+    },
+    {
+      "no": 42,
+      "word": {
+        "no": 71,
+        "chinese": "妈妈",
+        "pinyin": "māma",
+        "english": "mother"
+      },
+      "chinese": "我妈妈很漂亮。",
+      "pinyin": "Wǒ māma hěn piàoliang.",
+      "english": "My mother is very beautiful.",
+      "origin": [
+        [
+          "我",
+          "hsk1"
+        ],
+        [
+          "妈妈",
+          "hsk1"
+        ],
+        [
+          "很",
+          "hsk1"
+        ],
+        [
+          "漂亮",
+          "hsk1"
+        ]
+      ]
+    },
+    {
+      "no": 43,
+      "word": {
+        "no": 72,
+        "chinese": "儿子",
+        "pinyin": "érzi",
+        "english": "son"
+      },
+      "chinese": "他儿子五岁。",
+      "pinyin": "Tā érzi wǔ suì.",
+      "english": "His son is five years old.",
+      "origin": [
+        [
+          "他",
+          "hsk1"
+        ],
+        [
+          "儿子",
+          "hsk1"
+        ],
+        [
+          "五",
+          "hsk1"
+        ],
+        [
+          "岁",
+          "hsk1"
+        ]
+      ]
+    },
+    {
+      "no": 44,
+      "word": {
+        "no": 72,
+        "chinese": "儿子",
+        "pinyin": "érzi",
+        "english": "son"
+      },
+      "chinese": "我儿子在学校。",
+      "pinyin": "Wǒ érzi zài xuéxiào.",
+      "english": "My son is at school.",
+      "origin": [
+        [
+          "我",
+          "hsk1"
+        ],
+        [
+          "儿子",
+          "hsk1"
+        ],
+        [
+          "在",
+          "hsk1"
+        ],
+        [
+          "学校",
+          "hsk1"
+        ]
+      ]
+    },
+    {
+      "no": 45,
+      "word": {
+        "no": 73,
+        "chinese": "女儿",
+        "pinyin": "nǚér",
+        "english": "daughter"
+      },
+      "chinese": "我女儿是学生。",
+      "pinyin": "Wǒ nǚér shì xuéshēng.",
+      "english": "My daughter is a student.",
+      "origin": [
+        [
+          "我",
+          "hsk1"
+        ],
+        [
+          "女儿",
+          "hsk1"
+        ],
+        [
+          "是",
+          "hsk1"
+        ],
+        [
+          "学生",
+          "hsk1"
+        ]
+      ]
+    },
+    {
+      "no": 46,
+      "word": {
+        "no": 73,
+        "chinese": "女儿",
+        "pinyin": "nǚér",
+        "english": "daughter"
+      },
+      "chinese": "她女儿很喜欢猫。",
+      "pinyin": "Tā nǚér hěn xǐhuān māo.",
+      "english": "Her daughter likes cats very much.",
+      "origin": [
+        [
+          "她",
+          "hsk1"
+        ],
+        [
+          "女儿",
+          "hsk1"
+        ],
+        [
+          "很",
+          "hsk1"
+        ],
+        [
+          "喜欢",
+          "hsk1"
+        ],
+        [
+          "猫",
+          "hsk1"
+        ]
+      ]
+    },
+    {
+      "no": 47,
+      "word": {
+        "no": 74,
+        "chinese": "老师",
+        "pinyin": "lǎoshī",
+        "english": "teacher"
+      },
+      "chinese": "我们老师很好。",
+      "pinyin": "Wǒmen lǎoshī hěn hǎo.",
+      "english": "Our teacher is very good.",
+      "origin": [
+        [
+          "我们",
+          "hsk1"
+        ],
+        [
+          "老师",
+          "hsk1"
+        ],
+        [
+          "很",
+          "hsk1"
+        ],
+        [
+          "好",
+          "hsk1"
+        ]
+      ]
+    },
+    {
+      "no": 48,
+      "word": {
+        "no": 74,
+        "chinese": "老师",
+        "pinyin": "lǎoshī",
+        "english": "teacher"
+      },
+      "chinese": "老师在前面。",
+      "pinyin": "Lǎoshī zài qiánmiàn.",
+      "english": "The teacher is in front.",
+      "origin": [
+        [
+          "老师",
+          "hsk1"
+        ],
+        [
+          "在",
+          "hsk1"
+        ],
+        [
+          "前面",
+          "hsk1"
+        ]
+      ]
+    },
+    {
+      "no": 49,
+      "word": {
+        "no": 75,
+        "chinese": "学生",
+        "pinyin": "xuéshēng",
+        "english": "student"
+      },
+      "chinese": "他是中国学生。",
+      "pinyin": "Tā shì Zhōngguó xuéshēng.",
+      "english": "He is a Chinese student.",
+      "origin": [
+        [
+          "他",
+          "hsk1"
+        ],
+        [
+          "是",
+          "hsk1"
+        ],
+        [
+          "中国",
+          "hsk1"
+        ],
+        [
+          "学生",
+          "hsk1"
+        ]
+      ]
+    },
+    {
+      "no": 50,
+      "word": {
+        "no": 75,
+        "chinese": "学生",
+        "pinyin": "xuéshēng",
+        "english": "student"
+      },
+      "chinese": "学生都在学校。",
+      "pinyin": "Xuéshēng dōu zài xuéxiào.",
+      "english": "The students are all at school.",
+      "origin": [
+        [
+          "学生",
+          "hsk1"
+        ],
+        [
+          "都",
+          "hsk1"
+        ],
+        [
+          "在",
+          "hsk1"
+        ],
+        [
+          "学校",
+          "hsk1"
+        ]
+      ]
+    }
+  ]
+}
