@@ -1,0 +1,604 @@
+{
+  "sentences": [
+    {
+      "no": 1,
+      "word": {
+        "no": 1,
+        "chinese": "个子",
+        "pinyin": "gèzi",
+        "english": "height"
+      },
+      "chinese": "他的个子很高。",
+      "pinyin": "Tā de gèzi hěn gāo.",
+      "english": "He is very tall."
+    },
+    {
+      "no": 2,
+      "word": {
+        "no": 1,
+        "chinese": "个子",
+        "pinyin": "gèzi",
+        "english": "height"
+      },
+      "chinese": "我妹妹的个子比我矮。",
+      "pinyin": "Wǒ mèimei de gèzi bǐ wǒ ǎi.",
+      "english": "My younger sister is shorter than me."
+    },
+    {
+      "no": 3,
+      "word": {
+        "no": 2,
+        "chinese": "跟",
+        "pinyin": "gēn",
+        "english": "with"
+      },
+      "chinese": "我跟朋友一起去公园。",
+      "pinyin": "Wǒ gēn péngyou yìqǐ qù gōngyuán.",
+      "english": "I go to the park with friends."
+    },
+    {
+      "no": 4,
+      "word": {
+        "no": 2,
+        "chinese": "跟",
+        "pinyin": "gēn",
+        "english": "with"
+      },
+      "chinese": "你跟我说说这件事。",
+      "pinyin": "Nǐ gēn wǒ shuōshuo zhè jiàn shì.",
+      "english": "Tell me about this matter."
+    },
+    {
+      "no": 5,
+      "word": {
+        "no": 3,
+        "chinese": "根据",
+        "pinyin": "gēnjù",
+        "english": "according to"
+      },
+      "chinese": "根据天气预报，明天会下雨。",
+      "pinyin": "Gēnjù tiānqì yùbào, míngtiān huì xià yǔ.",
+      "english": "According to the weather forecast, it will rain tomorrow."
+    },
+    {
+      "no": 6,
+      "word": {
+        "no": 3,
+        "chinese": "根据",
+        "pinyin": "gēnjù",
+        "english": "according to"
+      },
+      "chinese": "根据老师的要求，我们完成了作业。",
+      "pinyin": "Gēnjù lǎoshī de yāoqiú, wǒmen wánchéngle zuòyè.",
+      "english": "We finished the homework according to the teacher's requirements."
+    },
+    {
+      "no": 7,
+      "word": {
+        "no": 4,
+        "chinese": "更",
+        "pinyin": "gèng",
+        "english": "more"
+      },
+      "chinese": "今天比昨天更热。",
+      "pinyin": "Jīntiān bǐ zuótiān gèng rè.",
+      "english": "Today is hotter than yesterday."
+    },
+    {
+      "no": 8,
+      "word": {
+        "no": 4,
+        "chinese": "更",
+        "pinyin": "gèng",
+        "english": "more"
+      },
+      "chinese": "他比我更喜欢运动。",
+      "pinyin": "Tā bǐ wǒ gèng xǐhuan yùndòng.",
+      "english": "He likes sport more than I do."
+    },
+    {
+      "no": 9,
+      "word": {
+        "no": 5,
+        "chinese": "公斤",
+        "pinyin": "gōngjīn",
+        "english": "kilogram"
+      },
+      "chinese": "这个箱子有十公斤重。",
+      "pinyin": "Zhège xiāngzi yǒu shí gōngjīn zhòng.",
+      "english": "This box weighs ten kilograms."
+    },
+    {
+      "no": 10,
+      "word": {
+        "no": 5,
+        "chinese": "公斤",
+        "pinyin": "gōngjīn",
+        "english": "kilogram"
+      },
+      "chinese": "我买了两公斤苹果。",
+      "pinyin": "Wǒ mǎile liǎng gōngjīn píngguǒ.",
+      "english": "I bought two kilograms of apples."
+    },
+    {
+      "no": 11,
+      "word": {
+        "no": 6,
+        "chinese": "公园",
+        "pinyin": "gōngyuán",
+        "english": "park"
+      },
+      "chinese": "我们每天早上去公园散步。",
+      "pinyin": "Wǒmen měitiān zǎoshang qù gōngyuán sànbù.",
+      "english": "We go for a walk in the park every morning."
+    },
+    {
+      "no": 12,
+      "word": {
+        "no": 6,
+        "chinese": "公园",
+        "pinyin": "gōngyuán",
+        "english": "park"
+      },
+      "chinese": "这个公园里有很多树。",
+      "pinyin": "Zhège gōngyuán lǐ yǒu hěn duō shù.",
+      "english": "There are a lot of trees in this park."
+    },
+    {
+      "no": 13,
+      "word": {
+        "no": 7,
+        "chinese": "故事",
+        "pinyin": "gùshi",
+        "english": "story"
+      },
+      "chinese": "妈妈每天晚上给我讲故事。",
+      "pinyin": "Māma měitiān wǎnshang gěi wǒ jiǎng gùshi.",
+      "english": "Mum tells me a story every evening."
+    },
+    {
+      "no": 14,
+      "word": {
+        "no": 7,
+        "chinese": "故事",
+        "pinyin": "gùshi",
+        "english": "story"
+      },
+      "chinese": "这个故事很有意思。",
+      "pinyin": "Zhège gùshi hěn yǒu yìsi.",
+      "english": "This story is very interesting."
+    },
+    {
+      "no": 15,
+      "word": {
+        "no": 8,
+        "chinese": "刮风",
+        "pinyin": "guāfēng",
+        "english": "to be windy"
+      },
+      "chinese": "今天外面刮风了。",
+      "pinyin": "Jīntiān wàimiàn guāfēng le.",
+      "english": "It has turned windy outside today."
+    },
+    {
+      "no": 16,
+      "word": {
+        "no": 8,
+        "chinese": "刮风",
+        "pinyin": "guāfēng",
+        "english": "to be windy"
+      },
+      "chinese": "刮风的时候别开窗户。",
+      "pinyin": "Guāfēng de shíhou bié kāi chuānghu.",
+      "english": "Do not open the window when it is windy."
+    },
+    {
+      "no": 17,
+      "word": {
+        "no": 9,
+        "chinese": "关",
+        "pinyin": "guān",
+        "english": "to shut"
+      },
+      "chinese": "请把门关上。",
+      "pinyin": "Qǐng bǎ mén guānshàng.",
+      "english": "Please close the door."
+    },
+    {
+      "no": 18,
+      "word": {
+        "no": 9,
+        "chinese": "关",
+        "pinyin": "guān",
+        "english": "to shut"
+      },
+      "chinese": "走的时候记得关灯。",
+      "pinyin": "Zǒu de shíhou jìde guān dēng.",
+      "english": "Remember to turn off the light when you leave."
+    },
+    {
+      "no": 19,
+      "word": {
+        "no": 10,
+        "chinese": "关系",
+        "pinyin": "guānxì",
+        "english": "relationship"
+      },
+      "chinese": "他们两个人的关系很好。",
+      "pinyin": "Tāmen liǎng ge rén de guānxì hěn hǎo.",
+      "english": "The two of them get on very well."
+    },
+    {
+      "no": 20,
+      "word": {
+        "no": 10,
+        "chinese": "关系",
+        "pinyin": "guānxì",
+        "english": "relationship"
+      },
+      "chinese": "这件事跟我没有关系。",
+      "pinyin": "Zhè jiàn shì gēn wǒ méiyǒu guānxì.",
+      "english": "This matter has nothing to do with me."
+    },
+    {
+      "no": 21,
+      "word": {
+        "no": 11,
+        "chinese": "关心",
+        "pinyin": "guānxīn",
+        "english": "to care for"
+      },
+      "chinese": "妈妈很关心我的身体。",
+      "pinyin": "Māma hěn guānxīn wǒ de shēntǐ.",
+      "english": "Mum cares a great deal about my health."
+    },
+    {
+      "no": 22,
+      "word": {
+        "no": 11,
+        "chinese": "关心",
+        "pinyin": "guānxīn",
+        "english": "to care for"
+      },
+      "chinese": "谢谢你关心我。",
+      "pinyin": "Xièxie nǐ guānxīn wǒ.",
+      "english": "Thank you for your concern."
+    },
+    {
+      "no": 23,
+      "word": {
+        "no": 12,
+        "chinese": "关于",
+        "pinyin": "guānyú",
+        "english": "about"
+      },
+      "chinese": "这本书是关于中国历史的。",
+      "pinyin": "Zhè běn shū shì guānyú Zhōngguó lìshǐ de.",
+      "english": "This book is about Chinese history."
+    },
+    {
+      "no": 24,
+      "word": {
+        "no": 12,
+        "chinese": "关于",
+        "pinyin": "guānyú",
+        "english": "about"
+      },
+      "chinese": "我们谈了关于工作的事情。",
+      "pinyin": "Wǒmen tánle guānyú gōngzuò de shìqing.",
+      "english": "We talked about matters to do with work."
+    },
+    {
+      "no": 25,
+      "word": {
+        "no": 13,
+        "chinese": "国家",
+        "pinyin": "guójiā",
+        "english": "country"
+      },
+      "chinese": "我去过很多国家。",
+      "pinyin": "Wǒ qùguo hěn duō guójiā.",
+      "english": "I have been to many countries."
+    },
+    {
+      "no": 26,
+      "word": {
+        "no": 13,
+        "chinese": "国家",
+        "pinyin": "guójiā",
+        "english": "country"
+      },
+      "chinese": "每个国家都有自己的文化。",
+      "pinyin": "Měi ge guójiā dōu yǒu zìjǐ de wénhuà.",
+      "english": "Every country has its own culture."
+    },
+    {
+      "no": 27,
+      "word": {
+        "no": 14,
+        "chinese": "过去",
+        "pinyin": "guòqù",
+        "english": "the past"
+      },
+      "chinese": "过去的事情别再想了。",
+      "pinyin": "Guòqù de shìqing bié zài xiǎng le.",
+      "english": "Stop thinking about things that are past."
+    },
+    {
+      "no": 28,
+      "word": {
+        "no": 14,
+        "chinese": "过去",
+        "pinyin": "guòqù",
+        "english": "the past"
+      },
+      "chinese": "过去我在这里工作。",
+      "pinyin": "Guòqù wǒ zài zhèlǐ gōngzuò.",
+      "english": "I used to work here."
+    },
+    {
+      "no": 29,
+      "word": {
+        "no": 15,
+        "chinese": "还是",
+        "pinyin": "háishì",
+        "english": "or; still"
+      },
+      "chinese": "你喝茶还是喝咖啡？",
+      "pinyin": "Nǐ hē chá háishì hē kāfēi?",
+      "english": "Would you like tea or coffee?"
+    },
+    {
+      "no": 30,
+      "word": {
+        "no": 15,
+        "chinese": "还是",
+        "pinyin": "háishì",
+        "english": "or; still"
+      },
+      "chinese": "下雨了，我们还是坐车去吧。",
+      "pinyin": "Xià yǔ le, wǒmen háishì zuò chē qù ba.",
+      "english": "It is raining — let us take a car after all."
+    },
+    {
+      "no": 31,
+      "word": {
+        "no": 16,
+        "chinese": "害怕",
+        "pinyin": "hàipà",
+        "english": "to fear"
+      },
+      "chinese": "我妹妹很害怕狗。",
+      "pinyin": "Wǒ mèimei hěn hàipà gǒu.",
+      "english": "My younger sister is very afraid of dogs."
+    },
+    {
+      "no": 32,
+      "word": {
+        "no": 16,
+        "chinese": "害怕",
+        "pinyin": "hàipà",
+        "english": "to fear"
+      },
+      "chinese": "别害怕，我在这儿。",
+      "pinyin": "Bié hàipà, wǒ zài zhèr.",
+      "english": "Do not be afraid — I am right here."
+    },
+    {
+      "no": 33,
+      "word": {
+        "no": 17,
+        "chinese": "黑板",
+        "pinyin": "hēibǎn",
+        "english": "blackboard"
+      },
+      "chinese": "老师在黑板上写字。",
+      "pinyin": "Lǎoshī zài hēibǎn shàng xiě zì.",
+      "english": "The teacher writes on the blackboard."
+    },
+    {
+      "no": 34,
+      "word": {
+        "no": 17,
+        "chinese": "黑板",
+        "pinyin": "hēibǎn",
+        "english": "blackboard"
+      },
+      "chinese": "请看黑板上的题。",
+      "pinyin": "Qǐng kàn hēibǎn shàng de tí.",
+      "english": "Please look at the question on the blackboard."
+    },
+    {
+      "no": 35,
+      "word": {
+        "no": 18,
+        "chinese": "后来",
+        "pinyin": "hòulái",
+        "english": "later"
+      },
+      "chinese": "后来他搬到了北京。",
+      "pinyin": "Hòulái tā bāndàole Běijīng.",
+      "english": "Later he moved to Beijing."
+    },
+    {
+      "no": 36,
+      "word": {
+        "no": 18,
+        "chinese": "后来",
+        "pinyin": "hòulái",
+        "english": "later"
+      },
+      "chinese": "我开始不认识他，后来我们成了朋友。",
+      "pinyin": "Wǒ kāishǐ bù rènshi tā, hòulái wǒmen chéngle péngyou.",
+      "english": "At first I did not know him; later we became friends."
+    },
+    {
+      "no": 37,
+      "word": {
+        "no": 19,
+        "chinese": "护照",
+        "pinyin": "hùzhào",
+        "english": "passport"
+      },
+      "chinese": "出国要带护照。",
+      "pinyin": "Chū guó yào dài hùzhào.",
+      "english": "You need to take your passport to go abroad."
+    },
+    {
+      "no": 38,
+      "word": {
+        "no": 19,
+        "chinese": "护照",
+        "pinyin": "hùzhào",
+        "english": "passport"
+      },
+      "chinese": "我的护照放在包里了。",
+      "pinyin": "Wǒ de hùzhào fàng zài bāo lǐ le.",
+      "english": "I have put my passport in the bag."
+    },
+    {
+      "no": 39,
+      "word": {
+        "no": 20,
+        "chinese": "画",
+        "pinyin": "huà",
+        "english": "painting; to paint"
+      },
+      "chinese": "墙上有一幅漂亮的画。",
+      "pinyin": "Qiáng shàng yǒu yì fú piàoliang de huà.",
+      "english": "There is a beautiful painting on the wall."
+    },
+    {
+      "no": 40,
+      "word": {
+        "no": 20,
+        "chinese": "画",
+        "pinyin": "huà",
+        "english": "painting; to paint"
+      },
+      "chinese": "他喜欢画山和水。",
+      "pinyin": "Tā xǐhuan huà shān hé shuǐ.",
+      "english": "He likes to paint mountains and water."
+    },
+    {
+      "no": 41,
+      "word": {
+        "no": 21,
+        "chinese": "坏",
+        "pinyin": "huài",
+        "english": "bad; broken"
+      },
+      "chinese": "我的手表坏了。",
+      "pinyin": "Wǒ de shǒubiǎo huài le.",
+      "english": "My watch is broken."
+    },
+    {
+      "no": 42,
+      "word": {
+        "no": 21,
+        "chinese": "坏",
+        "pinyin": "huài",
+        "english": "bad; broken"
+      },
+      "chinese": "别吃坏了的水果。",
+      "pinyin": "Bié chī huàile de shuǐguǒ.",
+      "english": "Do not eat fruit that has gone bad."
+    },
+    {
+      "no": 43,
+      "word": {
+        "no": 22,
+        "chinese": "欢迎",
+        "pinyin": "huānyíng",
+        "english": "to welcome"
+      },
+      "chinese": "欢迎你来我家。",
+      "pinyin": "Huānyíng nǐ lái wǒ jiā.",
+      "english": "Welcome to my home."
+    },
+    {
+      "no": 44,
+      "word": {
+        "no": 22,
+        "chinese": "欢迎",
+        "pinyin": "huānyíng",
+        "english": "to welcome"
+      },
+      "chinese": "老师欢迎大家提问题。",
+      "pinyin": "Lǎoshī huānyíng dàjiā tí wèntí.",
+      "english": "The teacher welcomes questions from everyone."
+    },
+    {
+      "no": 45,
+      "word": {
+        "no": 23,
+        "chinese": "环境",
+        "pinyin": "huánjìng",
+        "english": "environment"
+      },
+      "chinese": "这里的环境很安静。",
+      "pinyin": "Zhèlǐ de huánjìng hěn ānjìng.",
+      "english": "It is very quiet here."
+    },
+    {
+      "no": 46,
+      "word": {
+        "no": 23,
+        "chinese": "环境",
+        "pinyin": "huánjìng",
+        "english": "environment"
+      },
+      "chinese": "我们要保护环境。",
+      "pinyin": "Wǒmen yào bǎohù huánjìng.",
+      "english": "We should protect the environment."
+    },
+    {
+      "no": 47,
+      "word": {
+        "no": 24,
+        "chinese": "换",
+        "pinyin": "huàn",
+        "english": "to change"
+      },
+      "chinese": "我想换一个大一点儿的房子。",
+      "pinyin": "Wǒ xiǎng huàn yí ge dà yìdiǎnr de fángzi.",
+      "english": "I would like to move to a slightly bigger house."
+    },
+    {
+      "no": 48,
+      "word": {
+        "no": 24,
+        "chinese": "换",
+        "pinyin": "huàn",
+        "english": "to change"
+      },
+      "chinese": "请帮我换一下钱。",
+      "pinyin": "Qǐng bāng wǒ huàn yíxià qián.",
+      "english": "Please help me change some money."
+    },
+    {
+      "no": 49,
+      "word": {
+        "no": 25,
+        "chinese": "黄河",
+        "pinyin": "huánghé",
+        "english": "Yellow River"
+      },
+      "chinese": "黄河是中国第二长的河。",
+      "pinyin": "Huánghé shì Zhōngguó dì-èr cháng de hé.",
+      "english": "The Yellow River is China's second longest river."
+    },
+    {
+      "no": 50,
+      "word": {
+        "no": 25,
+        "chinese": "黄河",
+        "pinyin": "huánghé",
+        "english": "Yellow River"
+      },
+      "chinese": "我们去看了黄河。",
+      "pinyin": "Wǒmen qù kànle Huánghé.",
+      "english": "We went to see the Yellow River."
+    }
+  ]
+}
