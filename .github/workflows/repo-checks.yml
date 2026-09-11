@@ -70,9 +70,21 @@ jobs:
         with:
           python-version: '3.12'
 
-      # pytest is the ONLY third-party import across all nine — everything else
-      # is stdlib or a sibling module pytest puts on sys.path itself.
-      - run: pip install --quiet pytest
+      # The only third-party imports across the derived set. Everything else is
+      # stdlib or a sibling module pytest puts on sys.path itself.
+      #
+      # 🔴 This list is hand-maintained and was ALREADY WRONG ONCE: I derived it
+      # over the nine stranded files, then added a tenth (the workflow's own
+      # regression test) which imports `yaml`, and never re-ran the scan. The
+      # population changed under the measurement. CI caught it in 12s.
+      #
+      # ⚠️ Hand-maintaining it is nonetheless FINE, and the distinction is this
+      # PR's whole subject: a missing dependency fails LOUDLY at collection time
+      # (`ModuleNotFoundError`, exit 2, red step) — it does not silently skip the
+      # test. That is the opposite of the stranding this workflow exists to fix,
+      # where the failure mode was invisible. A reminder is only unsafe where
+      # forgetting it is silent.
+      - run: pip install --quiet pytest pyyaml
 
       - name: repo-root checkers
         shell: bash
