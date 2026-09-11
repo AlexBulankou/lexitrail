@@ -21,6 +21,17 @@
       box-sizing: border-box; background: #1a73e8; color: #fff; border-radius: 8px;
       text-decoration: none; }
 </style>
+<!-- Google tag (gtag.js). Async and external on purpose: this page's standalone rule
+     (see above) is about not depending on the APP booting. An async third-party tag cannot
+     block the render, and without it #408's blind spot stays - a 404 is the one page whose
+     traffic tells us which inbound links are broken. -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-910V8PX54C"></script>
+<script>
+window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+gtag('js', new Date());
+gtag('config', 'G-910V8PX54C');
+</script>
 </head>
 <body>
 <main>
