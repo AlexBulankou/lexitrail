@@ -1,0 +1,604 @@
+{
+  "sentences": [
+    {
+      "no": 1,
+      "word": {
+        "no": 1,
+        "chinese": "盘子",
+        "pinyin": "pánzi",
+        "english": "plate"
+      },
+      "chinese": "这个盘子很干净。",
+      "pinyin": "Zhège pánzi hěn gānjìng.",
+      "english": "This plate is very clean."
+    },
+    {
+      "no": 2,
+      "word": {
+        "no": 1,
+        "chinese": "盘子",
+        "pinyin": "pánzi",
+        "english": "plate"
+      },
+      "chinese": "请把盘子放在桌子上。",
+      "pinyin": "Qǐng bǎ pánzi fàng zài zhuōzi shàng.",
+      "english": "Please put the plate on the table."
+    },
+    {
+      "no": 3,
+      "word": {
+        "no": 2,
+        "chinese": "胖",
+        "pinyin": "pàng",
+        "english": "fat"
+      },
+      "chinese": "他最近胖了一点儿。",
+      "pinyin": "Tā zuìjìn pàng le yìdiǎnr.",
+      "english": "He has got a little fatter recently."
+    },
+    {
+      "no": 4,
+      "word": {
+        "no": 2,
+        "chinese": "胖",
+        "pinyin": "pàng",
+        "english": "fat"
+      },
+      "chinese": "这只猫又胖又可爱。",
+      "pinyin": "Zhè zhī māo yòu pàng yòu kě'ài.",
+      "english": "This cat is both chubby and cute."
+    },
+    {
+      "no": 5,
+      "word": {
+        "no": 3,
+        "chinese": "啤酒",
+        "pinyin": "píjiǔ",
+        "english": "Beer"
+      },
+      "chinese": "我想喝一杯啤酒。",
+      "pinyin": "Wǒ xiǎng hē yì bēi píjiǔ.",
+      "english": "I would like a glass of beer."
+    },
+    {
+      "no": 6,
+      "word": {
+        "no": 3,
+        "chinese": "啤酒",
+        "pinyin": "píjiǔ",
+        "english": "Beer"
+      },
+      "chinese": "冰箱里还有两瓶啤酒。",
+      "pinyin": "Bīngxiāng lǐ hái yǒu liǎng píng píjiǔ.",
+      "english": "There are still two bottles of beer in the fridge."
+    },
+    {
+      "no": 7,
+      "word": {
+        "no": 4,
+        "chinese": "皮鞋",
+        "pinyin": "píxié",
+        "english": "leather shoes"
+      },
+      "chinese": "他买了一双黑色的皮鞋。",
+      "pinyin": "Tā mǎi le yì shuāng hēisè de píxié.",
+      "english": "He bought a pair of black leather shoes."
+    },
+    {
+      "no": 8,
+      "word": {
+        "no": 4,
+        "chinese": "皮鞋",
+        "pinyin": "píxié",
+        "english": "leather shoes"
+      },
+      "chinese": "这双皮鞋不太贵。",
+      "pinyin": "Zhè shuāng píxié bú tài guì.",
+      "english": "These leather shoes are not too expensive."
+    },
+    {
+      "no": 9,
+      "word": {
+        "no": 5,
+        "chinese": "瓶子",
+        "pinyin": "píngzi",
+        "english": "bottle"
+      },
+      "chinese": "桌子上有一个空瓶子。",
+      "pinyin": "Zhuōzi shàng yǒu yí gè kōng píngzi.",
+      "english": "There is an empty bottle on the table."
+    },
+    {
+      "no": 10,
+      "word": {
+        "no": 5,
+        "chinese": "瓶子",
+        "pinyin": "píngzi",
+        "english": "bottle"
+      },
+      "chinese": "请把瓶子里的水喝完。",
+      "pinyin": "Qǐng bǎ píngzi lǐ de shuǐ hē wán.",
+      "english": "Please finish the water in the bottle."
+    },
+    {
+      "no": 11,
+      "word": {
+        "no": 6,
+        "chinese": "其实",
+        "pinyin": "qíshí",
+        "english": "actually"
+      },
+      "chinese": "其实我不太喜欢喝咖啡。",
+      "pinyin": "Qíshí wǒ bú tài xǐhuan hē kāfēi.",
+      "english": "Actually, I don't really like drinking coffee."
+    },
+    {
+      "no": 12,
+      "word": {
+        "no": 6,
+        "chinese": "其实",
+        "pinyin": "qíshí",
+        "english": "actually"
+      },
+      "chinese": "这个问题其实很简单。",
+      "pinyin": "Zhège wèntí qíshí hěn jiǎndān.",
+      "english": "This question is actually very simple."
+    },
+    {
+      "no": 13,
+      "word": {
+        "no": 7,
+        "chinese": "其他",
+        "pinyin": "qítā",
+        "english": "Other"
+      },
+      "chinese": "其他同学都已经回家了。",
+      "pinyin": "Qítā tóngxué dōu yǐjīng huí jiā le.",
+      "english": "The other classmates have all gone home."
+    },
+    {
+      "no": 14,
+      "word": {
+        "no": 7,
+        "chinese": "其他",
+        "pinyin": "qítā",
+        "english": "Other"
+      },
+      "chinese": "你还有其他的问题吗？",
+      "pinyin": "Nǐ hái yǒu qítā de wèntí ma?",
+      "english": "Do you have any other questions?"
+    },
+    {
+      "no": 15,
+      "word": {
+        "no": 8,
+        "chinese": "骑",
+        "pinyin": "qí",
+        "english": "ride"
+      },
+      "chinese": "我每天骑自行车上班。",
+      "pinyin": "Wǒ měitiān qí zìxíngchē shàngbān.",
+      "english": "I ride a bicycle to work every day."
+    },
+    {
+      "no": 16,
+      "word": {
+        "no": 8,
+        "chinese": "骑",
+        "pinyin": "qí",
+        "english": "ride"
+      },
+      "chinese": "他不会骑马。",
+      "pinyin": "Tā bú huì qí mǎ.",
+      "english": "He cannot ride a horse."
+    },
+    {
+      "no": 17,
+      "word": {
+        "no": 9,
+        "chinese": "奇怪",
+        "pinyin": "qíguài",
+        "english": "strange"
+      },
+      "chinese": "今天的天气很奇怪。",
+      "pinyin": "Jīntiān de tiānqì hěn qíguài.",
+      "english": "Today's weather is very strange."
+    },
+    {
+      "no": 18,
+      "word": {
+        "no": 9,
+        "chinese": "奇怪",
+        "pinyin": "qíguài",
+        "english": "strange"
+      },
+      "chinese": "他说的话让我觉得很奇怪。",
+      "pinyin": "Tā shuō de huà ràng wǒ juéde hěn qíguài.",
+      "english": "What he said struck me as very strange."
+    },
+    {
+      "no": 19,
+      "word": {
+        "no": 10,
+        "chinese": "起来",
+        "pinyin": "qǐlái",
+        "english": "get up"
+      },
+      "chinese": "我每天六点起来。",
+      "pinyin": "Wǒ měitiān liù diǎn qǐlái.",
+      "english": "I get up at six every day."
+    },
+    {
+      "no": 20,
+      "word": {
+        "no": 10,
+        "chinese": "起来",
+        "pinyin": "qǐlái",
+        "english": "get up"
+      },
+      "chinese": "天气热起来了。",
+      "pinyin": "Tiānqì rè qǐlái le.",
+      "english": "The weather has started to get hot."
+    },
+    {
+      "no": 21,
+      "word": {
+        "no": 11,
+        "chinese": "起飞",
+        "pinyin": "qǐfēi",
+        "english": "take off"
+      },
+      "chinese": "飞机马上就要起飞了。",
+      "pinyin": "Fēijī mǎshàng jiù yào qǐfēi le.",
+      "english": "The plane is about to take off."
+    },
+    {
+      "no": 22,
+      "word": {
+        "no": 11,
+        "chinese": "起飞",
+        "pinyin": "qǐfēi",
+        "english": "take off"
+      },
+      "chinese": "我们的飞机八点起飞。",
+      "pinyin": "Wǒmen de fēijī bā diǎn qǐfēi.",
+      "english": "Our plane takes off at eight."
+    },
+    {
+      "no": 23,
+      "word": {
+        "no": 12,
+        "chinese": "清楚",
+        "pinyin": "qīngchu",
+        "english": "clear"
+      },
+      "chinese": "请你说得清楚一点儿。",
+      "pinyin": "Qǐng nǐ shuō de qīngchu yìdiǎnr.",
+      "english": "Please speak a little more clearly."
+    },
+    {
+      "no": 24,
+      "word": {
+        "no": 12,
+        "chinese": "清楚",
+        "pinyin": "qīngchu",
+        "english": "clear"
+      },
+      "chinese": "我没听清楚他的名字。",
+      "pinyin": "Wǒ méi tīng qīngchu tā de míngzi.",
+      "english": "I didn't catch his name clearly."
+    },
+    {
+      "no": 25,
+      "word": {
+        "no": 13,
+        "chinese": "请假",
+        "pinyin": "qǐngjià",
+        "english": "ask for leave"
+      },
+      "chinese": "他今天生病请假了。",
+      "pinyin": "Tā jīntiān shēngbìng qǐngjià le.",
+      "english": "He was ill and took leave today."
+    },
+    {
+      "no": 26,
+      "word": {
+        "no": 13,
+        "chinese": "请假",
+        "pinyin": "qǐngjià",
+        "english": "ask for leave"
+      },
+      "chinese": "我想请假一天。",
+      "pinyin": "Wǒ xiǎng qǐngjià yì tiān.",
+      "english": "I would like to ask for one day off."
+    },
+    {
+      "no": 27,
+      "word": {
+        "no": 14,
+        "chinese": "秋",
+        "pinyin": "qiū",
+        "english": "autumn"
+      },
+      "chinese": "秋天的天气很舒服。",
+      "pinyin": "Qiūtiān de tiānqì hěn shūfu.",
+      "english": "Autumn weather is very pleasant."
+    },
+    {
+      "no": 28,
+      "word": {
+        "no": 14,
+        "chinese": "秋",
+        "pinyin": "qiū",
+        "english": "autumn"
+      },
+      "chinese": "我最喜欢秋天。",
+      "pinyin": "Wǒ zuì xǐhuan qiūtiān.",
+      "english": "Autumn is my favourite season."
+    },
+    {
+      "no": 29,
+      "word": {
+        "no": 15,
+        "chinese": "裙子",
+        "pinyin": "qúnzi",
+        "english": "skirt"
+      },
+      "chinese": "她穿了一条红色的裙子。",
+      "pinyin": "Tā chuān le yì tiáo hóngsè de qúnzi.",
+      "english": "She wore a red skirt."
+    },
+    {
+      "no": 30,
+      "word": {
+        "no": 15,
+        "chinese": "裙子",
+        "pinyin": "qúnzi",
+        "english": "skirt"
+      },
+      "chinese": "这条裙子太长了。",
+      "pinyin": "Zhè tiáo qúnzi tài cháng le.",
+      "english": "This skirt is too long."
+    },
+    {
+      "no": 31,
+      "word": {
+        "no": 16,
+        "chinese": "然后",
+        "pinyin": "ránhòu",
+        "english": "Then"
+      },
+      "chinese": "我先写作业，然后看电视。",
+      "pinyin": "Wǒ xiān xiě zuòyè, ránhòu kàn diànshì.",
+      "english": "I do my homework first, then watch TV."
+    },
+    {
+      "no": 32,
+      "word": {
+        "no": 16,
+        "chinese": "然后",
+        "pinyin": "ránhòu",
+        "english": "Then"
+      },
+      "chinese": "我们先吃饭，然后去公园。",
+      "pinyin": "Wǒmen xiān chīfàn, ránhòu qù gōngyuán.",
+      "english": "We eat first, then go to the park."
+    },
+    {
+      "no": 33,
+      "word": {
+        "no": 17,
+        "chinese": "热情",
+        "pinyin": "rèqíng",
+        "english": "Enthusiasm"
+      },
+      "chinese": "这里的服务员很热情。",
+      "pinyin": "Zhèlǐ de fúwùyuán hěn rèqíng.",
+      "english": "The waiters here are very warm."
+    },
+    {
+      "no": 34,
+      "word": {
+        "no": 17,
+        "chinese": "热情",
+        "pinyin": "rèqíng",
+        "english": "Enthusiasm"
+      },
+      "chinese": "他热情地欢迎我们。",
+      "pinyin": "Tā rèqíng de huānyíng wǒmen.",
+      "english": "He welcomed us warmly."
+    },
+    {
+      "no": 35,
+      "word": {
+        "no": 18,
+        "chinese": "认为",
+        "pinyin": "rènwéi",
+        "english": "think"
+      },
+      "chinese": "我认为这个办法很好。",
+      "pinyin": "Wǒ rènwéi zhège bànfǎ hěn hǎo.",
+      "english": "I think this method is very good."
+    },
+    {
+      "no": 36,
+      "word": {
+        "no": 18,
+        "chinese": "认为",
+        "pinyin": "rènwéi",
+        "english": "think"
+      },
+      "chinese": "大家都认为他是对的。",
+      "pinyin": "Dàjiā dōu rènwéi tā shì duì de.",
+      "english": "Everyone thinks he is right."
+    },
+    {
+      "no": 37,
+      "word": {
+        "no": 19,
+        "chinese": "认真",
+        "pinyin": "rènzhēn",
+        "english": "earnest"
+      },
+      "chinese": "她学习非常认真。",
+      "pinyin": "Tā xuéxí fēicháng rènzhēn.",
+      "english": "She studies very earnestly."
+    },
+    {
+      "no": 38,
+      "word": {
+        "no": 19,
+        "chinese": "认真",
+        "pinyin": "rènzhēn",
+        "english": "earnest"
+      },
+      "chinese": "请认真听老师讲课。",
+      "pinyin": "Qǐng rènzhēn tīng lǎoshī jiǎngkè.",
+      "english": "Please listen to the teacher carefully."
+    },
+    {
+      "no": 39,
+      "word": {
+        "no": 20,
+        "chinese": "容易",
+        "pinyin": "róngyì",
+        "english": "easily"
+      },
+      "chinese": "这个问题很容易。",
+      "pinyin": "Zhège wèntí hěn róngyì.",
+      "english": "This question is very easy."
+    },
+    {
+      "no": 40,
+      "word": {
+        "no": 20,
+        "chinese": "容易",
+        "pinyin": "róngyì",
+        "english": "easily"
+      },
+      "chinese": "学中文不容易。",
+      "pinyin": "Xué Zhōngwén bù róngyì.",
+      "english": "Learning Chinese is not easy."
+    },
+    {
+      "no": 41,
+      "word": {
+        "no": 21,
+        "chinese": "如果",
+        "pinyin": "rúguǒ",
+        "english": "If"
+      },
+      "chinese": "如果明天下雨，我们就不去了。",
+      "pinyin": "Rúguǒ míngtiān xià yǔ, wǒmen jiù bú qù le.",
+      "english": "If it rains tomorrow, we won't go."
+    },
+    {
+      "no": 42,
+      "word": {
+        "no": 21,
+        "chinese": "如果",
+        "pinyin": "rúguǒ",
+        "english": "If"
+      },
+      "chinese": "如果你有时间，请给我打电话。",
+      "pinyin": "Rúguǒ nǐ yǒu shíjiān, qǐng gěi wǒ dǎ diànhuà.",
+      "english": "If you have time, please give me a call."
+    },
+    {
+      "no": 43,
+      "word": {
+        "no": 22,
+        "chinese": "伞",
+        "pinyin": "sǎn",
+        "english": "umbrella"
+      },
+      "chinese": "外面下雨了，别忘了带伞。",
+      "pinyin": "Wàimiàn xià yǔ le, bié wàng le dài sǎn.",
+      "english": "It's raining outside, don't forget to take an umbrella."
+    },
+    {
+      "no": 44,
+      "word": {
+        "no": 22,
+        "chinese": "伞",
+        "pinyin": "sǎn",
+        "english": "umbrella"
+      },
+      "chinese": "这把伞是我的。",
+      "pinyin": "Zhè bǎ sǎn shì wǒ de.",
+      "english": "This umbrella is mine."
+    },
+    {
+      "no": 45,
+      "word": {
+        "no": 23,
+        "chinese": "上网",
+        "pinyin": "shàngwǎng",
+        "english": "Surf the Internet"
+      },
+      "chinese": "我每天晚上上网看新闻。",
+      "pinyin": "Wǒ měitiān wǎnshang shàngwǎng kàn xīnwén.",
+      "english": "I go online every evening to read the news."
+    },
+    {
+      "no": 46,
+      "word": {
+        "no": 23,
+        "chinese": "上网",
+        "pinyin": "shàngwǎng",
+        "english": "Surf the Internet"
+      },
+      "chinese": "这里可以上网吗？",
+      "pinyin": "Zhèlǐ kěyǐ shàngwǎng ma?",
+      "english": "Can I get online here?"
+    },
+    {
+      "no": 47,
+      "word": {
+        "no": 24,
+        "chinese": "生气",
+        "pinyin": "shēngqì",
+        "english": "get angry"
+      },
+      "chinese": "妈妈生气了。",
+      "pinyin": "Māma shēngqì le.",
+      "english": "Mum got angry."
+    },
+    {
+      "no": 48,
+      "word": {
+        "no": 24,
+        "chinese": "生气",
+        "pinyin": "shēngqì",
+        "english": "get angry"
+      },
+      "chinese": "你别生气，我不是故意的。",
+      "pinyin": "Nǐ bié shēngqì, wǒ bú shì gùyì de.",
+      "english": "Don't be angry, I didn't do it on purpose."
+    },
+    {
+      "no": 49,
+      "word": {
+        "no": 25,
+        "chinese": "声音",
+        "pinyin": "shēngyīn",
+        "english": "voice"
+      },
+      "chinese": "她的声音很好听。",
+      "pinyin": "Tā de shēngyīn hěn hǎotīng.",
+      "english": "Her voice is very pleasant."
+    },
+    {
+      "no": 50,
+      "word": {
+        "no": 25,
+        "chinese": "声音",
+        "pinyin": "shēngyīn",
+        "english": "voice"
+      },
+      "chinese": "请把电视的声音关小一点儿。",
+      "pinyin": "Qǐng bǎ diànshì de shēngyīn guān xiǎo yìdiǎnr.",
+      "english": "Please turn the TV volume down a little."
+    }
+  ]
+}
