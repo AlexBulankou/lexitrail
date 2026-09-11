@@ -230,9 +230,19 @@ describe('example sentences — #184 AC1', () => {
     const m = collectExamples(banks());
     const { words } = collectWords(rows());
     const covered = words.filter((w) => (m.get(w.word) || []).length);
-    expect(m.size).toBe(224);
-    expect(covered).toHaveLength(224);   // measured 2026-08-29: 224/224 bank words match, 0 misses
-    expect(covered.length).toBeGreaterThan(0);
+    // lexitrail#433: the load-bearing property is the INVARIANT, not the snapshot.
+    // `224/224` meant "every bank word matches a page, 0 misses" — so assert THAT,
+    // and it survives every legitimate coverage increase.
+    expect(covered).toHaveLength(m.size);      // 0 orphaned bank words — the join is total
+    expect(covered.length).toBeGreaterThan(0); // and not vacuous, which is this test's name
+
+    // A RATCHET, not a pin. A frozen equality reds on every batch of new sentences —
+    // i.e. on exactly the work this corpus exists to grow — and a check that cries wolf
+    // on legitimate work gets its number bumped without being read, which is the same as
+    // not having it. A floor still catches a silent REGRESSION (a bank file dropped, a
+    // key format change that unjoins half the corpus) and is silent on growth.
+    // Raise it when a batch lands; never lower it without saying why.
+    expect(m.size).toBeGreaterThanOrEqual(249);  // 2026-08-29: 224 · 2026-09-11 (#433 HSK1 b1): 249
   });
 });
 
