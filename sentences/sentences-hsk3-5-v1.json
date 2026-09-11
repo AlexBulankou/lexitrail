@@ -1,0 +1,604 @@
+{
+  "sentences": [
+    {
+      "no": 1,
+      "word": {
+        "no": 1,
+        "chinese": "聊天",
+        "pinyin": "liáotiān",
+        "english": "chat"
+      },
+      "chinese": "我们在咖啡店聊天。",
+      "pinyin": "Wǒmen zài kāfēidiàn liáotiān.",
+      "english": "We chat in the coffee shop."
+    },
+    {
+      "no": 2,
+      "word": {
+        "no": 1,
+        "chinese": "聊天",
+        "pinyin": "liáotiān",
+        "english": "chat"
+      },
+      "chinese": "她喜欢和朋友聊天。",
+      "pinyin": "Tā xǐhuan hé péngyou liáotiān.",
+      "english": "She likes chatting with friends."
+    },
+    {
+      "no": 3,
+      "word": {
+        "no": 2,
+        "chinese": "练习",
+        "pinyin": "liànxí",
+        "english": "Practice"
+      },
+      "chinese": "我每天练习写汉字。",
+      "pinyin": "Wǒ měitiān liànxí xiě Hànzì.",
+      "english": "I practise writing Chinese characters every day."
+    },
+    {
+      "no": 4,
+      "word": {
+        "no": 2,
+        "chinese": "练习",
+        "pinyin": "liànxí",
+        "english": "Practice"
+      },
+      "chinese": "这些练习很有用。",
+      "pinyin": "Zhèxiē liànxí hěn yǒuyòng.",
+      "english": "These exercises are very useful."
+    },
+    {
+      "no": 5,
+      "word": {
+        "no": 3,
+        "chinese": "辆",
+        "pinyin": "liàng",
+        "english": "Car"
+      },
+      "chinese": "门口停着一辆车。",
+      "pinyin": "Ménkǒu tíngzhe yí liàng chē.",
+      "english": "A car is parked at the entrance."
+    },
+    {
+      "no": 6,
+      "word": {
+        "no": 3,
+        "chinese": "辆",
+        "pinyin": "liàng",
+        "english": "Car"
+      },
+      "chinese": "他买了两辆自行车。",
+      "pinyin": "Tā mǎile liǎng liàng zìxíngchē.",
+      "english": "He bought two bicycles."
+    },
+    {
+      "no": 7,
+      "word": {
+        "no": 4,
+        "chinese": "了解",
+        "pinyin": "liǎojiě",
+        "english": "understand"
+      },
+      "chinese": "我很了解他。",
+      "pinyin": "Wǒ hěn liǎojiě tā.",
+      "english": "I know him very well."
+    },
+    {
+      "no": 8,
+      "word": {
+        "no": 4,
+        "chinese": "了解",
+        "pinyin": "liǎojiě",
+        "english": "understand"
+      },
+      "chinese": "请先了解一下情况。",
+      "pinyin": "Qǐng xiān liǎojiě yíxià qíngkuàng.",
+      "english": "Please find out about the situation first."
+    },
+    {
+      "no": 9,
+      "word": {
+        "no": 5,
+        "chinese": "邻居",
+        "pinyin": "línjū",
+        "english": "neighbor"
+      },
+      "chinese": "我的邻居很热情。",
+      "pinyin": "Wǒ de línjū hěn rèqíng.",
+      "english": "My neighbour is very warm."
+    },
+    {
+      "no": 10,
+      "word": {
+        "no": 5,
+        "chinese": "邻居",
+        "pinyin": "línjū",
+        "english": "neighbor"
+      },
+      "chinese": "楼上的邻居有一只狗。",
+      "pinyin": "Lóushàng de línjū yǒu yì zhī gǒu.",
+      "english": "The neighbour upstairs has a dog."
+    },
+    {
+      "no": 11,
+      "word": {
+        "no": 6,
+        "chinese": "留学",
+        "pinyin": "liúxué",
+        "english": "Overseas Study"
+      },
+      "chinese": "他想去法国留学。",
+      "pinyin": "Tā xiǎng qù Fǎguó liúxué.",
+      "english": "He wants to study abroad in France."
+    },
+    {
+      "no": 12,
+      "word": {
+        "no": 6,
+        "chinese": "留学",
+        "pinyin": "liúxué",
+        "english": "Overseas Study"
+      },
+      "chinese": "留学以后她的中文进步了。",
+      "pinyin": "Liúxué yǐhòu tā de Zhōngwén jìnbù le.",
+      "english": "After studying abroad her Chinese improved."
+    },
+    {
+      "no": 13,
+      "word": {
+        "no": 7,
+        "chinese": "楼",
+        "pinyin": "lóu",
+        "english": "floor"
+      },
+      "chinese": "我住在三楼。",
+      "pinyin": "Wǒ zhù zài sān lóu.",
+      "english": "I live on the third floor."
+    },
+    {
+      "no": 14,
+      "word": {
+        "no": 7,
+        "chinese": "楼",
+        "pinyin": "lóu",
+        "english": "floor"
+      },
+      "chinese": "那座楼很高。",
+      "pinyin": "Nà zuò lóu hěn gāo.",
+      "english": "That building is very tall."
+    },
+    {
+      "no": 15,
+      "word": {
+        "no": 8,
+        "chinese": "绿",
+        "pinyin": "lǜ",
+        "english": "green"
+      },
+      "chinese": "春天的树叶很绿。",
+      "pinyin": "Chūntiān de shùyè hěn lǜ.",
+      "english": "The leaves are very green in spring."
+    },
+    {
+      "no": 16,
+      "word": {
+        "no": 8,
+        "chinese": "绿",
+        "pinyin": "lǜ",
+        "english": "green"
+      },
+      "chinese": "她有一件绿色的裙子。",
+      "pinyin": "Tā yǒu yí jiàn lǜsè de qúnzi.",
+      "english": "She has a green skirt."
+    },
+    {
+      "no": 17,
+      "word": {
+        "no": 9,
+        "chinese": "马",
+        "pinyin": "mǎ",
+        "english": "Horse"
+      },
+      "chinese": "草原上有很多马。",
+      "pinyin": "Cǎoyuán shàng yǒu hěn duō mǎ.",
+      "english": "There are many horses on the grassland."
+    },
+    {
+      "no": 18,
+      "word": {
+        "no": 9,
+        "chinese": "马",
+        "pinyin": "mǎ",
+        "english": "Horse"
+      },
+      "chinese": "他骑马骑得很好。",
+      "pinyin": "Tā qí mǎ qí de hěn hǎo.",
+      "english": "He rides a horse very well."
+    },
+    {
+      "no": 19,
+      "word": {
+        "no": 10,
+        "chinese": "马上",
+        "pinyin": "mǎshàng",
+        "english": "Right off"
+      },
+      "chinese": "我马上就来。",
+      "pinyin": "Wǒ mǎshàng jiù lái.",
+      "english": "I will come right away."
+    },
+    {
+      "no": 20,
+      "word": {
+        "no": 10,
+        "chinese": "马上",
+        "pinyin": "mǎshàng",
+        "english": "Right off"
+      },
+      "chinese": "电影马上要开始了。",
+      "pinyin": "Diànyǐng mǎshàng yào kāishǐ le.",
+      "english": "The film is about to start."
+    },
+    {
+      "no": 21,
+      "word": {
+        "no": 11,
+        "chinese": "满意",
+        "pinyin": "mǎnyì",
+        "english": "Satisfied"
+      },
+      "chinese": "老师对我的作业很满意。",
+      "pinyin": "Lǎoshī duì wǒ de zuòyè hěn mǎnyì.",
+      "english": "The teacher is satisfied with my homework."
+    },
+    {
+      "no": 22,
+      "word": {
+        "no": 11,
+        "chinese": "满意",
+        "pinyin": "mǎnyì",
+        "english": "Satisfied"
+      },
+      "chinese": "他不太满意这个结果。",
+      "pinyin": "Tā bú tài mǎnyì zhège jiéguǒ.",
+      "english": "He is not very satisfied with this result."
+    },
+    {
+      "no": 23,
+      "word": {
+        "no": 12,
+        "chinese": "帽子",
+        "pinyin": "màozi",
+        "english": "Hat"
+      },
+      "chinese": "天冷了，请戴上帽子。",
+      "pinyin": "Tiān lěng le, qǐng dàishàng màozi.",
+      "english": "It is cold, please put on a hat."
+    },
+    {
+      "no": 24,
+      "word": {
+        "no": 12,
+        "chinese": "帽子",
+        "pinyin": "màozi",
+        "english": "Hat"
+      },
+      "chinese": "这顶帽子是红色的。",
+      "pinyin": "Zhè dǐng màozi shì hóngsè de.",
+      "english": "This hat is red."
+    },
+    {
+      "no": 25,
+      "word": {
+        "no": 13,
+        "chinese": "米",
+        "pinyin": "mǐ",
+        "english": "rice"
+      },
+      "chinese": "我们家每天吃米饭。",
+      "pinyin": "Wǒmen jiā měitiān chī mǐfàn.",
+      "english": "Our family eats rice every day."
+    },
+    {
+      "no": 26,
+      "word": {
+        "no": 13,
+        "chinese": "米",
+        "pinyin": "mǐ",
+        "english": "rice"
+      },
+      "chinese": "这条路有五百米长。",
+      "pinyin": "Zhè tiáo lù yǒu wǔ bǎi mǐ cháng.",
+      "english": "This road is five hundred metres long."
+    },
+    {
+      "no": 27,
+      "word": {
+        "no": 14,
+        "chinese": "面包",
+        "pinyin": "miànbāo",
+        "english": "Bread"
+      },
+      "chinese": "早上我吃了两片面包。",
+      "pinyin": "Zǎoshang wǒ chīle liǎng piàn miànbāo.",
+      "english": "I ate two slices of bread this morning."
+    },
+    {
+      "no": 28,
+      "word": {
+        "no": 14,
+        "chinese": "面包",
+        "pinyin": "miànbāo",
+        "english": "Bread"
+      },
+      "chinese": "这家店的面包很好吃。",
+      "pinyin": "Zhè jiā diàn de miànbāo hěn hǎochī.",
+      "english": "The bread at this shop is delicious."
+    },
+    {
+      "no": 29,
+      "word": {
+        "no": 15,
+        "chinese": "明白",
+        "pinyin": "míngbai",
+        "english": "clear"
+      },
+      "chinese": "我明白你的意思。",
+      "pinyin": "Wǒ míngbai nǐ de yìsi.",
+      "english": "I understand what you mean."
+    },
+    {
+      "no": 30,
+      "word": {
+        "no": 15,
+        "chinese": "明白",
+        "pinyin": "míngbai",
+        "english": "clear"
+      },
+      "chinese": "老师讲得很明白。",
+      "pinyin": "Lǎoshī jiǎng de hěn míngbai.",
+      "english": "The teacher explains very clearly."
+    },
+    {
+      "no": 31,
+      "word": {
+        "no": 16,
+        "chinese": "拿",
+        "pinyin": "ná",
+        "english": "take"
+      },
+      "chinese": "请把书拿给我。",
+      "pinyin": "Qǐng bǎ shū ná gěi wǒ.",
+      "english": "Please bring me the book."
+    },
+    {
+      "no": 32,
+      "word": {
+        "no": 16,
+        "chinese": "拿",
+        "pinyin": "ná",
+        "english": "take"
+      },
+      "chinese": "他拿着一把雨伞。",
+      "pinyin": "Tā názhe yì bǎ yǔsǎn.",
+      "english": "He is holding an umbrella."
+    },
+    {
+      "no": 33,
+      "word": {
+        "no": 17,
+        "chinese": "奶奶",
+        "pinyin": "nǎinai",
+        "english": "grandma"
+      },
+      "chinese": "奶奶今年八十岁了。",
+      "pinyin": "Nǎinai jīnnián bāshí suì le.",
+      "english": "Grandma is eighty years old this year."
+    },
+    {
+      "no": 34,
+      "word": {
+        "no": 17,
+        "chinese": "奶奶",
+        "pinyin": "nǎinai",
+        "english": "grandma"
+      },
+      "chinese": "我周末去看奶奶。",
+      "pinyin": "Wǒ zhōumò qù kàn nǎinai.",
+      "english": "I visit grandma at the weekend."
+    },
+    {
+      "no": 35,
+      "word": {
+        "no": 18,
+        "chinese": "南",
+        "pinyin": "nán",
+        "english": "south"
+      },
+      "chinese": "我家在城市的南边。",
+      "pinyin": "Wǒ jiā zài chéngshì de nánbian.",
+      "english": "My home is on the south side of the city."
+    },
+    {
+      "no": 36,
+      "word": {
+        "no": 18,
+        "chinese": "南",
+        "pinyin": "nán",
+        "english": "south"
+      },
+      "chinese": "冬天鸟往南飞。",
+      "pinyin": "Dōngtiān niǎo wǎng nán fēi.",
+      "english": "Birds fly south in winter."
+    },
+    {
+      "no": 37,
+      "word": {
+        "no": 19,
+        "chinese": "难",
+        "pinyin": "nán",
+        "english": "difficult"
+      },
+      "chinese": "这个问题很难。",
+      "pinyin": "Zhège wèntí hěn nán.",
+      "english": "This question is very difficult."
+    },
+    {
+      "no": 38,
+      "word": {
+        "no": 19,
+        "chinese": "难",
+        "pinyin": "nán",
+        "english": "difficult"
+      },
+      "chinese": "学好外语并不难。",
+      "pinyin": "Xuéhǎo wàiyǔ bìng bù nán.",
+      "english": "Learning a foreign language well is not difficult."
+    },
+    {
+      "no": 39,
+      "word": {
+        "no": 20,
+        "chinese": "难过",
+        "pinyin": "nánguò",
+        "english": "sad"
+      },
+      "chinese": "听到这个消息他很难过。",
+      "pinyin": "Tīngdào zhège xiāoxi tā hěn nánguò.",
+      "english": "He was very sad to hear this news."
+    },
+    {
+      "no": 40,
+      "word": {
+        "no": 20,
+        "chinese": "难过",
+        "pinyin": "nánguò",
+        "english": "sad"
+      },
+      "chinese": "别难过，明天会更好。",
+      "pinyin": "Bié nánguò, míngtiān huì gèng hǎo.",
+      "english": "Do not be sad, tomorrow will be better."
+    },
+    {
+      "no": 41,
+      "word": {
+        "no": 21,
+        "chinese": "年级",
+        "pinyin": "niánjí",
+        "english": "grade"
+      },
+      "chinese": "我妹妹上三年级。",
+      "pinyin": "Wǒ mèimei shàng sān niánjí.",
+      "english": "My younger sister is in the third grade."
+    },
+    {
+      "no": 42,
+      "word": {
+        "no": 21,
+        "chinese": "年级",
+        "pinyin": "niánjí",
+        "english": "grade"
+      },
+      "chinese": "他们是同一个年级的学生。",
+      "pinyin": "Tāmen shì tóng yí ge niánjí de xuésheng.",
+      "english": "They are students in the same grade."
+    },
+    {
+      "no": 43,
+      "word": {
+        "no": 22,
+        "chinese": "年轻",
+        "pinyin": "niánqīng",
+        "english": "Young"
+      },
+      "chinese": "他看起来很年轻。",
+      "pinyin": "Tā kàn qǐlái hěn niánqīng.",
+      "english": "He looks very young."
+    },
+    {
+      "no": 44,
+      "word": {
+        "no": 22,
+        "chinese": "年轻",
+        "pinyin": "niánqīng",
+        "english": "Young"
+      },
+      "chinese": "年轻人喜欢运动。",
+      "pinyin": "Niánqīngrén xǐhuan yùndòng.",
+      "english": "Young people like sport."
+    },
+    {
+      "no": 45,
+      "word": {
+        "no": 23,
+        "chinese": "鸟",
+        "pinyin": "niǎo",
+        "english": "bird"
+      },
+      "chinese": "树上有一只鸟。",
+      "pinyin": "Shù shàng yǒu yì zhī niǎo.",
+      "english": "There is a bird in the tree."
+    },
+    {
+      "no": 46,
+      "word": {
+        "no": 23,
+        "chinese": "鸟",
+        "pinyin": "niǎo",
+        "english": "bird"
+      },
+      "chinese": "早上鸟叫得很好听。",
+      "pinyin": "Zǎoshang niǎo jiào de hěn hǎotīng.",
+      "english": "The birds sing beautifully in the morning."
+    },
+    {
+      "no": 47,
+      "word": {
+        "no": 24,
+        "chinese": "努力",
+        "pinyin": "nǔlì",
+        "english": "Strive"
+      },
+      "chinese": "他学习很努力。",
+      "pinyin": "Tā xuéxí hěn nǔlì.",
+      "english": "He studies very hard."
+    },
+    {
+      "no": 48,
+      "word": {
+        "no": 24,
+        "chinese": "努力",
+        "pinyin": "nǔlì",
+        "english": "Strive"
+      },
+      "chinese": "只要努力就会成功。",
+      "pinyin": "Zhǐyào nǔlì jiù huì chénggōng.",
+      "english": "As long as you work hard you will succeed."
+    },
+    {
+      "no": 49,
+      "word": {
+        "no": 25,
+        "chinese": "爬山",
+        "pinyin": "páshān",
+        "english": "Mountain climbing"
+      },
+      "chinese": "周末我们去爬山。",
+      "pinyin": "Zhōumò wǒmen qù páshān.",
+      "english": "We go mountain climbing at the weekend."
+    },
+    {
+      "no": 50,
+      "word": {
+        "no": 25,
+        "chinese": "爬山",
+        "pinyin": "páshān",
+        "english": "Mountain climbing"
+      },
+      "chinese": "爬山对身体很好。",
+      "pinyin": "Páshān duì shēntǐ hěn hǎo.",
+      "english": "Climbing mountains is very good for your health."
+    }
+  ]
+}
