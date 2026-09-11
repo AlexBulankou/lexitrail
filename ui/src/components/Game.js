@@ -377,10 +377,30 @@ const Game = () => {
   const markAllAsMemorized = () => {
     const indicesToMark = [];
 
-    // Send Google Analytics event for bulk recall
+    // Send Google Analytics event for bulk recall.
+    //
+    // issue-447: the label is 'correct_bulk', NOT 'correct'. GA4 counts this
+    // event as ONE regardless of how many cards it ticks, and `cards_count`
+    // is not a registered custom metric, so a bulk mark of N cards is
+    // indistinguishable from a single correct answer. Only the CORRECT side
+    // is ever bulked, so every accuracy number computed from
+    // `event_label` reads LOW, and it reads lower the more this feature
+    // (#264, restored on Alex's ruling) succeeds.
+    //
+    // Splitting the label does not fix the undercount -- registering
+    // `cards_count` as a custom metric does, and that is Console-only. What
+    // it buys is that the two paths stay SEPARABLE in history from this
+    // change forward, without waiting on a registration that is not
+    // retroactive.
+    //
+    // 🔴 READING ACROSS THE CHANGE DATE: a query filtering
+    // `event_label == 'correct'` returns FEWER events after this ships than
+    // before, and that is not an accuracy regression -- the bulk rows moved
+    // to 'correct_bulk'. Sum the two for a like-for-like comparison with any
+    // pre-change number.
     window.gtag('event', 'recall', {
       'event_category': 'learning',
-      'event_label': 'correct',
+      'event_label': 'correct_bulk',
       'wordset_id': wordsetId,
       'mode': mode,
       'cards_count': visibleIndices.length
