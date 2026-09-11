@@ -104,6 +104,29 @@ def load_function_words(path: str | None = None) -> dict[str, str]:
         return {k: v["gloss"] for k, v in json.load(fh)["words"].items()}
 
 
+def headword_parts(word: str) -> list[str]:
+    """The strings a sentence must actually contain for this headword.
+
+    Normally one part — `bare_headword(word)`. For a CORRELATIVE headword the
+    CSV records both halves joined by an ellipsis (`因为……所以……`), and no
+    sentence contains that literal string: the halves appear separately, with
+    the clause between them. Requiring the joined form reported four correct
+    sentences as broken across three banks (#472).
+
+    🔴 Same shape as `bare_headword`'s POS tags, and fixed the same way: the
+    CSV's form is the CATALOGUE key, not a substring of prose. Splitting here
+    rather than loosening the check keeps it strict — **every** half must be
+    present, so a sentence using only `因为` still fails.
+
+    Returns `[bare_headword(word)]` unchanged for everything else, so no
+    existing behaviour moves.
+    """
+    parts = [p.strip() for p in re.split(r"…+", word) if p.strip()]
+    if len(parts) < 2:
+        return [bare_headword(word)]
+    return [bare_headword(p) for p in parts]
+
+
 def load_wordset(csv_path: str, wordset_id: str) -> dict[str, dict]:
     """CSV rows for ONE wordset, keyed by word.
 
@@ -163,7 +186,7 @@ def check(bank_path: str, csv_path: str, wordset_id: str,
            len(sentences) - len(bad), len(sentences), sorted(set(bad)))
 
     bad = [f"#{s['no']} {s['word']['chinese']}" for s in sentences
-           if bare_headword(s["word"]["chinese"]) not in s["chinese"]]
+           if not all(p in s["chinese"] for p in headword_parts(s["word"]["chinese"]))]
     record("every headword appears in its own sentence",
            len(sentences) - len(bad), len(sentences), bad)
 
