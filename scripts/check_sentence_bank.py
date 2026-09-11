@@ -37,6 +37,27 @@ EXIT CODES
 
 WHAT THIS DOES NOT CHECK
 ------------------------
+Sense AGREEMENT, and there is a convention for it because a machine cannot settle
+it. A headword with several grammatical functions -- the directional/resultative
+complements especially (`起来`, `出来`, `下去`) -- can be used correctly in a
+sentence that demonstrates a DIFFERENT sense from the one the CSV defines, and
+every check above still passes: the headword appears, the pinyin matches, the
+numbering is contiguous.
+
+    THE FIRST sentence MUST demonstrate the CSV's own sense.
+    THE SECOND may show breadth -- and if it does, SAY SO in the PR body.
+
+Why first-must-match rather than both-must-match: the card is drilled from the
+CSV definition, so the learner's first encounter has to agree with the gloss they
+were just shown. But `起来` genuinely means both "get up" and the inchoative "adj
++ 起来", and a bank that hid the second would teach a false narrowness. Breadth is
+worth having in the second slot; it is a defect only in the first.
+
+Found by hc2@ reviewing bank 6 (#468): `我每天六点起来。` (CSV sense, "get up") is
+paired with `天气热起来了。` (inchoative). Both correct Chinese, both pass this
+script, and a learner drilling the "get up" card meets the second one cold. ~125
+HSK3 headwords remain, so this recurs.
+
 Sentence QUALITY: whether the Chinese is idiomatic, whether the pinyin tones are
 correct for the characters used, or whether the English translates it. Those need
 a reader and are what the peer review is for. This checks only the properties a
