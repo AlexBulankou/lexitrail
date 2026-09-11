@@ -633,7 +633,7 @@
       },
       {
         "no": 45,
-        "word": {"no":23, "chinese":"就", "pinyin": "jiǜ", "english": "at once"},
+        "word": {"no":23, "chinese":"就", "pinyin": "jiǜ", "english": "then; right away"},
         "chinese": "我现在就去。",
         "pinyin": "Wǒ xiànzài jiù qù.",
         "english": "I will go right now.",
@@ -646,7 +646,7 @@
       },
       {
         "no": 46,
-        "word": {"no":23, "chinese":"就", "pinyin": "jiǜ", "english": "at once"},
+        "word": {"no":23, "chinese":"就", "pinyin": "jiǜ", "english": "then; right away"},
         "chinese": "他吃了就睡觉。",
         "pinyin": "Tā chī le jiù shuìjiào.",
         "english": "He sleeps as soon as he finishes eating.",
@@ -831,7 +831,7 @@
       },
       {
         "no": 59,
-        "word": {"no":30, "chinese":"得", "pinyin": "de", "english": ""},
+        "word": {"no":30, "chinese":"得", "pinyin": "de", "english": "links verb to degree"},
         "chinese": "你说得很好。",
         "pinyin": "Nǐ shuō de hěn hǎo.",
         "english": "You speak very well.",
@@ -845,7 +845,7 @@
       },
       {
         "no": 60,
-        "word": {"no":30, "chinese":"得", "pinyin": "de", "english": ""},
+        "word": {"no":30, "chinese":"得", "pinyin": "de", "english": "links verb to degree"},
         "chinese": "他跑得很快。",
         "pinyin": "Tā pǎo de hěn kuài.",
         "english": "He runs very fast.",
@@ -859,7 +859,7 @@
       },
       {
         "no": 61,
-        "word": {"no":31, "chinese":"着", "pinyin": "zhe", "english": ""},
+        "word": {"no":31, "chinese":"着", "pinyin": "zhe", "english": "marks ongoing action"},
         "chinese": "他看着书。",
         "pinyin": "Tā kàn zhe shū.",
         "english": "He is reading the book (in a continuous state).",
@@ -872,7 +872,7 @@
       },
       {
         "no": 62,
-        "word": {"no":31, "chinese":"着", "pinyin": "zhe", "english": ""},
+        "word": {"no":31, "chinese":"着", "pinyin": "zhe", "english": "marks ongoing action"},
         "chinese": "她笑着说你好。",
         "pinyin": "Tā xiào zhe shuō nǐ hǎo.",
         "english": "She smiles while saying hello to you.",
@@ -887,7 +887,7 @@
       },
       {
         "no": 63,
-        "word": {"no":32, "chinese":"过", "pinyin": "guò", "english": ""},
+        "word": {"no":32, "chinese":"过", "pinyin": "guò", "english": "marks past experience"},
         "chinese": "我来过这里。",
         "pinyin": "Wǒ lái guò zhèlǐ.",
         "english": "I have been here before.",
@@ -901,7 +901,7 @@
       },
       {
         "no": 64,
-        "word": {"no":32, "chinese":"过", "pinyin": "guò", "english": ""},
+        "word": {"no":32, "chinese":"过", "pinyin": "guò", "english": "marks past experience"},
         "chinese": "你吃过苹果吗？",
         "pinyin": "Nǐ chī guò píngguǒ ma?",
         "english": "Have you eaten apples before?",
@@ -915,7 +915,7 @@
       },
       {
         "no": 65,
-        "word": {"no":33, "chinese":"吧", "pinyin": "ba", "english": ""},
+        "word": {"no":33, "chinese":"吧", "pinyin": "ba", "english": "suggestion particle"},
         "chinese": "我们走吧。",
         "pinyin": "Wǒmen zǒu ba.",
         "english": "Let's go.",
@@ -927,7 +927,7 @@
       },
       {
         "no": 66,
-        "word": {"no":33, "chinese":"吧", "pinyin": "ba", "english": ""},
+        "word": {"no":33, "chinese":"吧", "pinyin": "ba", "english": "suggestion particle"},
         "chinese": "你喝茶吧。",
         "pinyin": "Nǐ hē chá ba.",
         "english": "You can have some tea.",
