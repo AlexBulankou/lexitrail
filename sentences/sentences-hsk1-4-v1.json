@@ -1,0 +1,1688 @@
+{
+  "sentences": [
+    {
+      "no": 1,
+      "word": {
+        "no": 76,
+        "chinese": "同学",
+        "pinyin": "tóngxué",
+        "english": "classmate"
+      },
+      "chinese": "他是我的同学。",
+      "pinyin": "Tā shì wǒ de tóngxué.",
+      "english": "He is my classmate.",
+      "origin": [
+        [
+          "他",
+          "hsk1"
+        ],
+        [
+          "是",
+          "hsk1"
+        ],
+        [
+          "我",
+          "hsk1"
+        ],
+        [
+          "的",
+          "hsk1"
+        ],
+        [
+          "同学",
+          "hsk1"
+        ]
+      ]
+    },
+    {
+      "no": 2,
+      "word": {
+        "no": 76,
+        "chinese": "同学",
+        "pinyin": "tóngxué",
+        "english": "classmate"
+      },
+      "chinese": "我同学都很高兴。",
+      "pinyin": "Wǒ tóngxué dōu hěn gāoxìng.",
+      "english": "My classmates are all very happy.",
+      "origin": [
+        [
+          "我",
+          "hsk1"
+        ],
+        [
+          "同学",
+          "hsk1"
+        ],
+        [
+          "都",
+          "hsk1"
+        ],
+        [
+          "很",
+          "hsk1"
+        ],
+        [
+          "高兴",
+          "hsk1"
+        ]
+      ]
+    },
+    {
+      "no": 3,
+      "word": {
+        "no": 77,
+        "chinese": "朋友",
+        "pinyin": "péngyǒu",
+        "english": "friend"
+      },
+      "chinese": "我有很多朋友。",
+      "pinyin": "Wǒ yǒu hěn duō péngyǒu.",
+      "english": "I have many friends.",
+      "origin": [
+        [
+          "我",
+          "hsk1"
+        ],
+        [
+          "有",
+          "hsk1"
+        ],
+        [
+          "很",
+          "hsk1"
+        ],
+        [
+          "多",
+          "hsk1"
+        ],
+        [
+          "朋友",
+          "hsk1"
+        ]
+      ]
+    },
+    {
+      "no": 4,
+      "word": {
+        "no": 77,
+        "chinese": "朋友",
+        "pinyin": "péngyǒu",
+        "english": "friend"
+      },
+      "chinese": "我朋友在北京工作。",
+      "pinyin": "Wǒ péngyǒu zài Běijīng gōngzuò.",
+      "english": "My friend works in Beijing.",
+      "origin": [
+        [
+          "我",
+          "hsk1"
+        ],
+        [
+          "朋友",
+          "hsk1"
+        ],
+        [
+          "在",
+          "hsk1"
+        ],
+        [
+          "北京",
+          "hsk1"
+        ],
+        [
+          "工作",
+          "hsk1"
+        ]
+      ]
+    },
+    {
+      "no": 5,
+      "word": {
+        "no": 78,
+        "chinese": "医生",
+        "pinyin": "yīshēng",
+        "english": "doctor"
+      },
+      "chinese": "他是一个好医生。",
+      "pinyin": "Tā shì yī ge hǎo yīshēng.",
+      "english": "He is a good doctor.",
+      "origin": [
+        [
+          "他",
+          "hsk1"
+        ],
+        [
+          "是",
+          "hsk1"
+        ],
+        [
+          "一",
+          "hsk1"
+        ],
+        [
+          "个",
+          "hsk1"
+        ],
+        [
+          "好",
+          "hsk1"
+        ],
+        [
+          "医生",
+          "hsk1"
+        ]
+      ]
+    },
+    {
+      "no": 6,
+      "word": {
+        "no": 78,
+        "chinese": "医生",
+        "pinyin": "yīshēng",
+        "english": "doctor"
+      },
+      "chinese": "医生在医院。",
+      "pinyin": "Yīshēng zài yīyuàn.",
+      "english": "The doctor is at the hospital.",
+      "origin": [
+        [
+          "医生",
+          "hsk1"
+        ],
+        [
+          "在",
+          "hsk1"
+        ],
+        [
+          "医院",
+          "hsk1"
+        ]
+      ]
+    },
+    {
+      "no": 7,
+      "word": {
+        "no": 79,
+        "chinese": "先生",
+        "pinyin": "xiānsheng",
+        "english": "sir"
+      },
+      "chinese": "先生是我的老师。",
+      "pinyin": "Xiānsheng shì wǒ de lǎoshī.",
+      "english": "The gentleman is my teacher.",
+      "origin": [
+        [
+          "先生",
+          "hsk1"
+        ],
+        [
+          "是",
+          "hsk1"
+        ],
+        [
+          "我",
+          "hsk1"
+        ],
+        [
+          "的",
+          "hsk1"
+        ],
+        [
+          "老师",
+          "hsk1"
+        ]
+      ]
+    },
+    {
+      "no": 8,
+      "word": {
+        "no": 79,
+        "chinese": "先生",
+        "pinyin": "xiānsheng",
+        "english": "sir"
+      },
+      "chinese": "先生，请坐。",
+      "pinyin": "Xiānsheng, qǐng zuò.",
+      "english": "Sir, please sit.",
+      "origin": [
+        [
+          "先生",
+          "hsk1"
+        ],
+        [
+          "请",
+          "hsk1"
+        ],
+        [
+          "坐",
+          "hsk1"
+        ]
+      ]
+    },
+    {
+      "no": 9,
+      "word": {
+        "no": 80,
+        "chinese": "小姐",
+        "pinyin": "xiǎojiě",
+        "english": "Miss"
+      },
+      "chinese": "小姐，请喝茶。",
+      "pinyin": "Xiǎojiě, qǐng hē chá.",
+      "english": "Miss, please drink tea.",
+      "origin": [
+        [
+          "小姐",
+          "hsk1"
+        ],
+        [
+          "请",
+          "hsk1"
+        ],
+        [
+          "喝",
+          "hsk1"
+        ],
+        [
+          "茶",
+          "hsk1"
+        ]
+      ]
+    },
+    {
+      "no": 10,
+      "word": {
+        "no": 80,
+        "chinese": "小姐",
+        "pinyin": "xiǎojiě",
+        "english": "Miss"
+      },
+      "chinese": "那个小姐很漂亮。",
+      "pinyin": "Nàge xiǎojiě hěn piàoliang.",
+      "english": "That young lady is very pretty.",
+      "origin": [
+        [
+          "那",
+          "hsk1"
+        ],
+        [
+          "个",
+          "hsk1"
+        ],
+        [
+          "小姐",
+          "hsk1"
+        ],
+        [
+          "很",
+          "hsk1"
+        ],
+        [
+          "漂亮",
+          "hsk1"
+        ]
+      ]
+    },
+    {
+      "no": 11,
+      "word": {
+        "no": 81,
+        "chinese": "衣服",
+        "pinyin": "yīfu",
+        "english": "cloth"
+      },
+      "chinese": "这个衣服太大了。",
+      "pinyin": "Zhège yīfu tài dà le.",
+      "english": "This piece of clothing is too big.",
+      "origin": [
+        [
+          "这",
+          "hsk1"
+        ],
+        [
+          "个",
+          "hsk1"
+        ],
+        [
+          "衣服",
+          "hsk1"
+        ],
+        [
+          "太",
+          "hsk1"
+        ],
+        [
+          "大",
+          "hsk1"
+        ],
+        [
+          "了",
+          "hsk1"
+        ]
+      ]
+    },
+    {
+      "no": 12,
+      "word": {
+        "no": 81,
+        "chinese": "衣服",
+        "pinyin": "yīfu",
+        "english": "cloth"
+      },
+      "chinese": "我想买衣服。",
+      "pinyin": "Wǒ xiǎng mǎi yīfu.",
+      "english": "I want to buy clothes.",
+      "origin": [
+        [
+          "我",
+          "hsk1"
+        ],
+        [
+          "想",
+          "hsk1"
+        ],
+        [
+          "买",
+          "hsk1"
+        ],
+        [
+          "衣服",
+          "hsk1"
+        ]
+      ]
+    },
+    {
+      "no": 13,
+      "word": {
+        "no": 82,
+        "chinese": "水",
+        "pinyin": "shuǐ",
+        "english": "water"
+      },
+      "chinese": "我想喝水。",
+      "pinyin": "Wǒ xiǎng hē shuǐ.",
+      "english": "I want to drink water.",
+      "origin": [
+        [
+          "我",
+          "hsk1"
+        ],
+        [
+          "想",
+          "hsk1"
+        ],
+        [
+          "喝",
+          "hsk1"
+        ],
+        [
+          "水",
+          "hsk1"
+        ]
+      ]
+    },
+    {
+      "no": 14,
+      "word": {
+        "no": 82,
+        "chinese": "水",
+        "pinyin": "shuǐ",
+        "english": "water"
+      },
+      "chinese": "杯子里没有水。",
+      "pinyin": "Bēizi lǐ méiyǒu shuǐ.",
+      "english": "There is no water in the cup.",
+      "origin": [
+        [
+          "杯子",
+          "hsk1"
+        ],
+        [
+          "里",
+          "hsk1"
+        ],
+        [
+          "没",
+          "hsk1"
+        ],
+        [
+          "有",
+          "hsk1"
+        ],
+        [
+          "水",
+          "hsk1"
+        ]
+      ]
+    },
+    {
+      "no": 15,
+      "word": {
+        "no": 83,
+        "chinese": "菜",
+        "pinyin": "cài",
+        "english": "dish"
+      },
+      "chinese": "这个菜很好吃。",
+      "pinyin": "Zhège cài hěn hǎo chī.",
+      "english": "This dish is delicious.",
+      "origin": [
+        [
+          "这",
+          "hsk1"
+        ],
+        [
+          "个",
+          "hsk1"
+        ],
+        [
+          "菜",
+          "hsk1"
+        ],
+        [
+          "很",
+          "hsk1"
+        ],
+        [
+          "好",
+          "hsk1"
+        ],
+        [
+          "吃",
+          "hsk1"
+        ]
+      ]
+    },
+    {
+      "no": 16,
+      "word": {
+        "no": 83,
+        "chinese": "菜",
+        "pinyin": "cài",
+        "english": "dish"
+      },
+      "chinese": "妈妈会做中国菜。",
+      "pinyin": "Māma huì zuò Zhōngguó cài.",
+      "english": "Mother can cook Chinese food.",
+      "origin": [
+        [
+          "妈妈",
+          "hsk1"
+        ],
+        [
+          "会",
+          "hsk1"
+        ],
+        [
+          "做",
+          "hsk1"
+        ],
+        [
+          "中国",
+          "hsk1"
+        ],
+        [
+          "菜",
+          "hsk1"
+        ]
+      ]
+    },
+    {
+      "no": 17,
+      "word": {
+        "no": 84,
+        "chinese": "米饭",
+        "pinyin": "mǐfàn",
+        "english": "rice"
+      },
+      "chinese": "我想吃米饭。",
+      "pinyin": "Wǒ xiǎng chī mǐfàn.",
+      "english": "I want to eat rice.",
+      "origin": [
+        [
+          "我",
+          "hsk1"
+        ],
+        [
+          "想",
+          "hsk1"
+        ],
+        [
+          "吃",
+          "hsk1"
+        ],
+        [
+          "米饭",
+          "hsk1"
+        ]
+      ]
+    },
+    {
+      "no": 18,
+      "word": {
+        "no": 84,
+        "chinese": "米饭",
+        "pinyin": "mǐfàn",
+        "english": "rice"
+      },
+      "chinese": "米饭和菜都很好。",
+      "pinyin": "Mǐfàn hé cài dōu hěn hǎo.",
+      "english": "The rice and the dishes are both good.",
+      "origin": [
+        [
+          "米饭",
+          "hsk1"
+        ],
+        [
+          "和",
+          "hsk1"
+        ],
+        [
+          "菜",
+          "hsk1"
+        ],
+        [
+          "都",
+          "hsk1"
+        ],
+        [
+          "很",
+          "hsk1"
+        ],
+        [
+          "好",
+          "hsk1"
+        ]
+      ]
+    },
+    {
+      "no": 19,
+      "word": {
+        "no": 85,
+        "chinese": "水果",
+        "pinyin": "shuǐguǒ",
+        "english": "fruit"
+      },
+      "chinese": "我很喜欢水果。",
+      "pinyin": "Wǒ hěn xǐhuān shuǐguǒ.",
+      "english": "I like fruit very much.",
+      "origin": [
+        [
+          "我",
+          "hsk1"
+        ],
+        [
+          "很",
+          "hsk1"
+        ],
+        [
+          "喜欢",
+          "hsk1"
+        ],
+        [
+          "水果",
+          "hsk1"
+        ]
+      ]
+    },
+    {
+      "no": 20,
+      "word": {
+        "no": 85,
+        "chinese": "水果",
+        "pinyin": "shuǐguǒ",
+        "english": "fruit"
+      },
+      "chinese": "商店有很多水果。",
+      "pinyin": "Shāngdiàn yǒu hěn duō shuǐguǒ.",
+      "english": "The store has a lot of fruit.",
+      "origin": [
+        [
+          "商店",
+          "hsk1"
+        ],
+        [
+          "有",
+          "hsk1"
+        ],
+        [
+          "很",
+          "hsk1"
+        ],
+        [
+          "多",
+          "hsk1"
+        ],
+        [
+          "水果",
+          "hsk1"
+        ]
+      ]
+    },
+    {
+      "no": 21,
+      "word": {
+        "no": 86,
+        "chinese": "苹果",
+        "pinyin": "píngguǒ",
+        "english": "apple"
+      },
+      "chinese": "这个苹果很大。",
+      "pinyin": "Zhège píngguǒ hěn dà.",
+      "english": "This apple is very big.",
+      "origin": [
+        [
+          "这",
+          "hsk1"
+        ],
+        [
+          "个",
+          "hsk1"
+        ],
+        [
+          "苹果",
+          "hsk1"
+        ],
+        [
+          "很",
+          "hsk1"
+        ],
+        [
+          "大",
+          "hsk1"
+        ]
+      ]
+    },
+    {
+      "no": 22,
+      "word": {
+        "no": 86,
+        "chinese": "苹果",
+        "pinyin": "píngguǒ",
+        "english": "apple"
+      },
+      "chinese": "我买了三个苹果。",
+      "pinyin": "Wǒ mǎi le sān ge píngguǒ.",
+      "english": "I bought three apples.",
+      "origin": [
+        [
+          "我",
+          "hsk1"
+        ],
+        [
+          "买",
+          "hsk1"
+        ],
+        [
+          "了",
+          "hsk1"
+        ],
+        [
+          "三",
+          "hsk1"
+        ],
+        [
+          "个",
+          "hsk1"
+        ],
+        [
+          "苹果",
+          "hsk1"
+        ]
+      ]
+    },
+    {
+      "no": 23,
+      "word": {
+        "no": 87,
+        "chinese": "茶",
+        "pinyin": "chá",
+        "english": "tea"
+      },
+      "chinese": "我不喝茶。",
+      "pinyin": "Wǒ bù hē chá.",
+      "english": "I do not drink tea.",
+      "origin": [
+        [
+          "我",
+          "hsk1"
+        ],
+        [
+          "不",
+          "hsk1"
+        ],
+        [
+          "喝",
+          "hsk1"
+        ],
+        [
+          "茶",
+          "hsk1"
+        ]
+      ]
+    },
+    {
+      "no": 24,
+      "word": {
+        "no": 87,
+        "chinese": "茶",
+        "pinyin": "chá",
+        "english": "tea"
+      },
+      "chinese": "请喝茶。",
+      "pinyin": "Qǐng hē chá.",
+      "english": "Please drink tea.",
+      "origin": [
+        [
+          "请",
+          "hsk1"
+        ],
+        [
+          "喝",
+          "hsk1"
+        ],
+        [
+          "茶",
+          "hsk1"
+        ]
+      ]
+    },
+    {
+      "no": 25,
+      "word": {
+        "no": 88,
+        "chinese": "杯子",
+        "pinyin": "bēizi",
+        "english": "cup"
+      },
+      "chinese": "桌子上有一个杯子。",
+      "pinyin": "Zhuōzi shàng yǒu yī ge bēizi.",
+      "english": "There is a cup on the table.",
+      "origin": [
+        [
+          "桌子",
+          "hsk1"
+        ],
+        [
+          "上",
+          "hsk1"
+        ],
+        [
+          "有",
+          "hsk1"
+        ],
+        [
+          "一",
+          "hsk1"
+        ],
+        [
+          "个",
+          "hsk1"
+        ],
+        [
+          "杯子",
+          "hsk1"
+        ]
+      ]
+    },
+    {
+      "no": 26,
+      "word": {
+        "no": 88,
+        "chinese": "杯子",
+        "pinyin": "bēizi",
+        "english": "cup"
+      },
+      "chinese": "这个杯子是我的。",
+      "pinyin": "Zhège bēizi shì wǒ de.",
+      "english": "This cup is mine.",
+      "origin": [
+        [
+          "这",
+          "hsk1"
+        ],
+        [
+          "个",
+          "hsk1"
+        ],
+        [
+          "杯子",
+          "hsk1"
+        ],
+        [
+          "是",
+          "hsk1"
+        ],
+        [
+          "我",
+          "hsk1"
+        ],
+        [
+          "的",
+          "hsk1"
+        ]
+      ]
+    },
+    {
+      "no": 27,
+      "word": {
+        "no": 89,
+        "chinese": "钱",
+        "pinyin": "qián",
+        "english": "money"
+      },
+      "chinese": "我没有钱。",
+      "pinyin": "Wǒ méiyǒu qián.",
+      "english": "I have no money.",
+      "origin": [
+        [
+          "我",
+          "hsk1"
+        ],
+        [
+          "没",
+          "hsk1"
+        ],
+        [
+          "有",
+          "hsk1"
+        ],
+        [
+          "钱",
+          "hsk1"
+        ]
+      ]
+    },
+    {
+      "no": 28,
+      "word": {
+        "no": 89,
+        "chinese": "钱",
+        "pinyin": "qián",
+        "english": "money"
+      },
+      "chinese": "我的钱不多。",
+      "pinyin": "Wǒ de qián bù duō.",
+      "english": "I do not have much money.",
+      "origin": [
+        [
+          "我",
+          "hsk1"
+        ],
+        [
+          "的",
+          "hsk1"
+        ],
+        [
+          "钱",
+          "hsk1"
+        ],
+        [
+          "不",
+          "hsk1"
+        ],
+        [
+          "多",
+          "hsk1"
+        ]
+      ]
+    },
+    {
+      "no": 29,
+      "word": {
+        "no": 90,
+        "chinese": "飞机",
+        "pinyin": "fēijī",
+        "english": "airplane"
+      },
+      "chinese": "他坐飞机去北京。",
+      "pinyin": "Tā zuò fēijī qù Běijīng.",
+      "english": "He goes to Beijing by plane.",
+      "origin": [
+        [
+          "他",
+          "hsk1"
+        ],
+        [
+          "坐",
+          "hsk1"
+        ],
+        [
+          "飞机",
+          "hsk1"
+        ],
+        [
+          "去",
+          "hsk1"
+        ],
+        [
+          "北京",
+          "hsk1"
+        ]
+      ]
+    },
+    {
+      "no": 30,
+      "word": {
+        "no": 90,
+        "chinese": "飞机",
+        "pinyin": "fēijī",
+        "english": "airplane"
+      },
+      "chinese": "飞机在上午九点。",
+      "pinyin": "Fēijī zài shàngwǔ jiǔ diǎn.",
+      "english": "The plane is at nine in the morning.",
+      "origin": [
+        [
+          "飞机",
+          "hsk1"
+        ],
+        [
+          "在",
+          "hsk1"
+        ],
+        [
+          "上午",
+          "hsk1"
+        ],
+        [
+          "九",
+          "hsk1"
+        ],
+        [
+          "点",
+          "hsk1"
+        ]
+      ]
+    },
+    {
+      "no": 31,
+      "word": {
+        "no": 91,
+        "chinese": "出租车",
+        "pinyin": "chūzūchē",
+        "english": "taxi"
+      },
+      "chinese": "我们坐出租车回家。",
+      "pinyin": "Wǒmen zuò chūzūchē huí jiā.",
+      "english": "We take a taxi home.",
+      "origin": [
+        [
+          "我们",
+          "hsk1"
+        ],
+        [
+          "坐",
+          "hsk1"
+        ],
+        [
+          "出租车",
+          "hsk1"
+        ],
+        [
+          "回",
+          "hsk1"
+        ],
+        [
+          "家",
+          "hsk1"
+        ]
+      ]
+    },
+    {
+      "no": 32,
+      "word": {
+        "no": 91,
+        "chinese": "出租车",
+        "pinyin": "chūzūchē",
+        "english": "taxi"
+      },
+      "chinese": "出租车在饭店前面。",
+      "pinyin": "Chūzūchē zài fàndiàn qiánmiàn.",
+      "english": "The taxi is in front of the restaurant.",
+      "origin": [
+        [
+          "出租车",
+          "hsk1"
+        ],
+        [
+          "在",
+          "hsk1"
+        ],
+        [
+          "饭店",
+          "hsk1"
+        ],
+        [
+          "前面",
+          "hsk1"
+        ]
+      ]
+    },
+    {
+      "no": 33,
+      "word": {
+        "no": 92,
+        "chinese": "电视",
+        "pinyin": "diànshì",
+        "english": "television"
+      },
+      "chinese": "爸爸在看电视。",
+      "pinyin": "Bàba zài kàn diànshì.",
+      "english": "Father is watching television.",
+      "origin": [
+        [
+          "爸爸",
+          "hsk1"
+        ],
+        [
+          "在",
+          "hsk1"
+        ],
+        [
+          "看",
+          "hsk1"
+        ],
+        [
+          "电视",
+          "hsk1"
+        ]
+      ]
+    },
+    {
+      "no": 34,
+      "word": {
+        "no": 92,
+        "chinese": "电视",
+        "pinyin": "diànshì",
+        "english": "television"
+      },
+      "chinese": "这个电视太小了。",
+      "pinyin": "Zhège diànshì tài xiǎo le.",
+      "english": "This television is too small.",
+      "origin": [
+        [
+          "这",
+          "hsk1"
+        ],
+        [
+          "个",
+          "hsk1"
+        ],
+        [
+          "电视",
+          "hsk1"
+        ],
+        [
+          "太",
+          "hsk1"
+        ],
+        [
+          "小",
+          "hsk1"
+        ],
+        [
+          "了",
+          "hsk1"
+        ]
+      ]
+    },
+    {
+      "no": 35,
+      "word": {
+        "no": 93,
+        "chinese": "电脑",
+        "pinyin": "diànnǎo",
+        "english": "computer"
+      },
+      "chinese": "我的电脑很大。",
+      "pinyin": "Wǒ de diànnǎo hěn dà.",
+      "english": "My computer is very big.",
+      "origin": [
+        [
+          "我",
+          "hsk1"
+        ],
+        [
+          "的",
+          "hsk1"
+        ],
+        [
+          "电脑",
+          "hsk1"
+        ],
+        [
+          "很",
+          "hsk1"
+        ],
+        [
+          "大",
+          "hsk1"
+        ]
+      ]
+    },
+    {
+      "no": 36,
+      "word": {
+        "no": 93,
+        "chinese": "电脑",
+        "pinyin": "diànnǎo",
+        "english": "computer"
+      },
+      "chinese": "他在电脑前面工作。",
+      "pinyin": "Tā zài diànnǎo qiánmiàn gōngzuò.",
+      "english": "He works in front of the computer.",
+      "origin": [
+        [
+          "他",
+          "hsk1"
+        ],
+        [
+          "在",
+          "hsk1"
+        ],
+        [
+          "电脑",
+          "hsk1"
+        ],
+        [
+          "前面",
+          "hsk1"
+        ],
+        [
+          "工作",
+          "hsk1"
+        ]
+      ]
+    },
+    {
+      "no": 37,
+      "word": {
+        "no": 94,
+        "chinese": "电影",
+        "pinyin": "diànyǐng",
+        "english": "movie"
+      },
+      "chinese": "我们去看电影。",
+      "pinyin": "Wǒmen qù kàn diànyǐng.",
+      "english": "We are going to watch a movie.",
+      "origin": [
+        [
+          "我们",
+          "hsk1"
+        ],
+        [
+          "去",
+          "hsk1"
+        ],
+        [
+          "看",
+          "hsk1"
+        ],
+        [
+          "电影",
+          "hsk1"
+        ]
+      ]
+    },
+    {
+      "no": 38,
+      "word": {
+        "no": 94,
+        "chinese": "电影",
+        "pinyin": "diànyǐng",
+        "english": "movie"
+      },
+      "chinese": "这个电影很好看。",
+      "pinyin": "Zhège diànyǐng hěn hǎo kàn.",
+      "english": "This movie is very good.",
+      "origin": [
+        [
+          "这",
+          "hsk1"
+        ],
+        [
+          "个",
+          "hsk1"
+        ],
+        [
+          "电影",
+          "hsk1"
+        ],
+        [
+          "很",
+          "hsk1"
+        ],
+        [
+          "好",
+          "hsk1"
+        ],
+        [
+          "看",
+          "hsk1"
+        ]
+      ]
+    },
+    {
+      "no": 39,
+      "word": {
+        "no": 95,
+        "chinese": "天气",
+        "pinyin": "tiānqì",
+        "english": "weather"
+      },
+      "chinese": "今天天气很好。",
+      "pinyin": "Jīntiān tiānqì hěn hǎo.",
+      "english": "The weather is very good today.",
+      "origin": [
+        [
+          "今天",
+          "hsk1"
+        ],
+        [
+          "天气",
+          "hsk1"
+        ],
+        [
+          "很",
+          "hsk1"
+        ],
+        [
+          "好",
+          "hsk1"
+        ]
+      ]
+    },
+    {
+      "no": 40,
+      "word": {
+        "no": 95,
+        "chinese": "天气",
+        "pinyin": "tiānqì",
+        "english": "weather"
+      },
+      "chinese": "明天天气太冷。",
+      "pinyin": "Míngtiān tiānqì tài lěng.",
+      "english": "Tomorrow the weather is too cold.",
+      "origin": [
+        [
+          "明天",
+          "hsk1"
+        ],
+        [
+          "天气",
+          "hsk1"
+        ],
+        [
+          "太",
+          "hsk1"
+        ],
+        [
+          "冷",
+          "hsk1"
+        ]
+      ]
+    },
+    {
+      "no": 41,
+      "word": {
+        "no": 96,
+        "chinese": "猫",
+        "pinyin": "māo",
+        "english": "cat"
+      },
+      "chinese": "我家有一个猫。",
+      "pinyin": "Wǒ jiā yǒu yī ge māo.",
+      "english": "There is a cat at my home.",
+      "origin": [
+        [
+          "我",
+          "hsk1"
+        ],
+        [
+          "家",
+          "hsk1"
+        ],
+        [
+          "有",
+          "hsk1"
+        ],
+        [
+          "一",
+          "hsk1"
+        ],
+        [
+          "个",
+          "hsk1"
+        ],
+        [
+          "猫",
+          "hsk1"
+        ]
+      ]
+    },
+    {
+      "no": 42,
+      "word": {
+        "no": 96,
+        "chinese": "猫",
+        "pinyin": "māo",
+        "english": "cat"
+      },
+      "chinese": "猫在椅子上睡觉。",
+      "pinyin": "Māo zài yǐzi shàng shuìjiào.",
+      "english": "The cat is sleeping on the chair.",
+      "origin": [
+        [
+          "猫",
+          "hsk1"
+        ],
+        [
+          "在",
+          "hsk1"
+        ],
+        [
+          "椅子",
+          "hsk1"
+        ],
+        [
+          "上",
+          "hsk1"
+        ],
+        [
+          "睡觉",
+          "hsk1"
+        ]
+      ]
+    },
+    {
+      "no": 43,
+      "word": {
+        "no": 97,
+        "chinese": "狗",
+        "pinyin": "gǒu",
+        "english": "dog"
+      },
+      "chinese": "他的狗很大。",
+      "pinyin": "Tā de gǒu hěn dà.",
+      "english": "His dog is very big.",
+      "origin": [
+        [
+          "他",
+          "hsk1"
+        ],
+        [
+          "的",
+          "hsk1"
+        ],
+        [
+          "狗",
+          "hsk1"
+        ],
+        [
+          "很",
+          "hsk1"
+        ],
+        [
+          "大",
+          "hsk1"
+        ]
+      ]
+    },
+    {
+      "no": 44,
+      "word": {
+        "no": 97,
+        "chinese": "狗",
+        "pinyin": "gǒu",
+        "english": "dog"
+      },
+      "chinese": "我很喜欢狗。",
+      "pinyin": "Wǒ hěn xǐhuān gǒu.",
+      "english": "I like dogs very much.",
+      "origin": [
+        [
+          "我",
+          "hsk1"
+        ],
+        [
+          "很",
+          "hsk1"
+        ],
+        [
+          "喜欢",
+          "hsk1"
+        ],
+        [
+          "狗",
+          "hsk1"
+        ]
+      ]
+    },
+    {
+      "no": 45,
+      "word": {
+        "no": 98,
+        "chinese": "东西",
+        "pinyin": "dōngxi",
+        "english": "thing"
+      },
+      "chinese": "我想买一些东西。",
+      "pinyin": "Wǒ xiǎng mǎi yīxiē dōngxi.",
+      "english": "I want to buy some things.",
+      "origin": [
+        [
+          "我",
+          "hsk1"
+        ],
+        [
+          "想",
+          "hsk1"
+        ],
+        [
+          "买",
+          "hsk1"
+        ],
+        [
+          "一",
+          "hsk1"
+        ],
+        [
+          "些",
+          "hsk1"
+        ],
+        [
+          "东西",
+          "hsk1"
+        ]
+      ]
+    },
+    {
+      "no": 46,
+      "word": {
+        "no": 98,
+        "chinese": "东西",
+        "pinyin": "dōngxi",
+        "english": "thing"
+      },
+      "chinese": "这些东西都是我的。",
+      "pinyin": "Zhèxiē dōngxi dōu shì wǒ de.",
+      "english": "These things are all mine.",
+      "origin": [
+        [
+          "这",
+          "hsk1"
+        ],
+        [
+          "些",
+          "hsk1"
+        ],
+        [
+          "东西",
+          "hsk1"
+        ],
+        [
+          "都",
+          "hsk1"
+        ],
+        [
+          "是",
+          "hsk1"
+        ],
+        [
+          "我",
+          "hsk1"
+        ],
+        [
+          "的",
+          "hsk1"
+        ]
+      ]
+    },
+    {
+      "no": 47,
+      "word": {
+        "no": 99,
+        "chinese": "人",
+        "pinyin": "rén",
+        "english": "person"
+      },
+      "chinese": "这个人是我朋友。",
+      "pinyin": "Zhège rén shì wǒ péngyǒu.",
+      "english": "This person is my friend.",
+      "origin": [
+        [
+          "这",
+          "hsk1"
+        ],
+        [
+          "个",
+          "hsk1"
+        ],
+        [
+          "人",
+          "hsk1"
+        ],
+        [
+          "是",
+          "hsk1"
+        ],
+        [
+          "我",
+          "hsk1"
+        ],
+        [
+          "朋友",
+          "hsk1"
+        ]
+      ]
+    },
+    {
+      "no": 48,
+      "word": {
+        "no": 99,
+        "chinese": "人",
+        "pinyin": "rén",
+        "english": "person"
+      },
+      "chinese": "商店里人很多。",
+      "pinyin": "Shāngdiàn lǐ rén hěn duō.",
+      "english": "There are many people in the store.",
+      "origin": [
+        [
+          "商店",
+          "hsk1"
+        ],
+        [
+          "里",
+          "hsk1"
+        ],
+        [
+          "人",
+          "hsk1"
+        ],
+        [
+          "很",
+          "hsk1"
+        ],
+        [
+          "多",
+          "hsk1"
+        ]
+      ]
+    },
+    {
+      "no": 49,
+      "word": {
+        "no": 100,
+        "chinese": "名字",
+        "pinyin": "míngzi",
+        "english": "name"
+      },
+      "chinese": "你的名字是什么",
+      "pinyin": "Nǐ de míngzi shì shénme?",
+      "english": "What is your name?",
+      "origin": [
+        [
+          "你",
+          "hsk1"
+        ],
+        [
+          "的",
+          "hsk1"
+        ],
+        [
+          "名字",
+          "hsk1"
+        ],
+        [
+          "是",
+          "hsk1"
+        ],
+        [
+          "什么",
+          "hsk1"
+        ]
+      ]
+    },
+    {
+      "no": 50,
+      "word": {
+        "no": 100,
+        "chinese": "名字",
+        "pinyin": "míngzi",
+        "english": "name"
+      },
+      "chinese": "我不认识他的名字。",
+      "pinyin": "Wǒ bù rènshi tā de míngzi.",
+      "english": "I do not know his name.",
+      "origin": [
+        [
+          "我",
+          "hsk1"
+        ],
+        [
+          "不",
+          "hsk1"
+        ],
+        [
+          "认识",
+          "hsk1"
+        ],
+        [
+          "他",
+          "hsk1"
+        ],
+        [
+          "的",
+          "hsk1"
+        ],
+        [
+          "名字",
+          "hsk1"
+        ]
+      ]
+    }
+  ]
+}
