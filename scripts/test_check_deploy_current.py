@@ -48,7 +48,12 @@ def test_the_fail_names_the_refused_vs_failed_discriminator():
     """The alarm is useless if the reader diagnoses it as a broken build --
     that misreading is the whole reason #273 cost 75 minutes."""
     _, msg = V("ui", "e0986fc", "fa8ffbc", True, "")
-    assert "used_before == used_after" in msg, msg
+    # #457: the old pin was `used_before == used_after`, which sent the reader to
+    # the gate's JSON. The step list is cheaper and decisive, and BOTH cases read
+    # FAILURE at the build level -- which is what made the misdiagnosis available.
+    assert "STEP LIST, not the build status" in msg, msg
+    assert "quota-gate" in msg, msg
+    assert "every later step QUEUED" in msg, msg
 
 
 def test_known_false_is_cannot_tell_not_pass():
@@ -135,7 +140,7 @@ def test_main_ahead_names_the_refusal_check(monkeypatch):
     monkeypatch.setattr(mod, "_is_ancestor", lambda older, newer: True)
     _, msg = V("ui", "b" * 40, "a" * 40, True, "")
     assert "main is AHEAD of production" in msg, msg
-    assert "used_before == used_after" in msg, msg
+    assert "STEP LIST, not the build status" in msg, msg
 
 
 def test_production_ahead_does_NOT_name_the_refusal_check(monkeypatch):

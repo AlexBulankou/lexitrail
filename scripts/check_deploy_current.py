@@ -238,9 +238,18 @@ def verdict_for(
         return FAIL, (
             f"FAIL [{name}]: main is AHEAD of production. live {live[:8]}, "
             f"newest commit for its path {expected[:8]}. A merge at "
-            f"build-budget margin 0 does not red main -- check whether the "
-            f"deploy trigger was REFUSED (used_before == used_after in the "
-            f"gate's JSON) rather than failed. See #273."
+            f"build-budget margin 0 does not red main, so this is usually a "
+            f"REFUSED deploy rather than a broken one. Discriminate on the "
+            f"STEP LIST, not the build status -- both read FAILURE:\n"
+            f"  gcloud builds describe <id> --project=lexitrail "
+            f"--region=us-central1 \\\n"
+            f"    --format=\"value[separator=' | '](steps[].id,steps[].status)\"\n"
+            f"  refused -> step 0 `quota-gate` FAILURE, every later step QUEUED, "
+            f"BUILD span ~6s\n"
+            f"  broken  -> quota-gate SUCCESS and a LATER step FAILURE\n"
+            f"If gcloud says PERMISSION_DENIED, that is your credential, not "
+            f"this project: retry with --account=ensemble-sa@yojowa-ensemble."
+            f"iam.gserviceaccount.com. See #273, #457."
         )
     return FAIL, (
         f"FAIL [{name}]: production is running something this ref does not "
