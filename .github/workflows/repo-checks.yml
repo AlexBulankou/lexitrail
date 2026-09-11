@@ -64,7 +64,14 @@ jobs:
   checkers:
     runs-on: ubuntu-latest
     steps:
+      # fetch-depth 0: `test_is_ancestor_still_answers_the_two_real_cases`
+      # needs real ancestry (HEAD~3). With the default depth-1 checkout it
+      # SKIPS — and a test that always skips in CI is back to being unrun,
+      # which is the defect this whole workflow exists to fix. The repo is
+      # small and Actions minutes are free here.
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - uses: actions/setup-python@v5
         with:
