@@ -228,8 +228,36 @@ def _is_ancestor(older: str, newer: str) -> bool:
     return True
 
 
+def _is_ancestor_confirmed(older: str, newer: str) -> bool:
+    """True ONLY on a confirmed rc==0. Ambiguity is False.
+
+    🔴 OPPOSITE POLARITY TO `_is_ancestor`, AND DELIBERATELY SO. Read them
+    together or neither makes sense.
+
+    `_is_ancestor` picks between two FAIL messages, so "could not tell" falls
+    to the harmless wording -- both outcomes alarm, only the advice differs.
+    This one decides a **PASS**, so "could not tell" must fall to NOT passing.
+    Reusing `_is_ancestor` here would make an unresolvable ancestry render as
+    "production is current", which is the one verdict that must never be
+    reachable by accident: a shallow clone (git 128, which that helper maps to
+    True) would silently certify a production it could not check.
+
+    Same three-state rule the rest of this file runs on, pointed the other way:
+    the state that is not a confirmed yes must not score as the good one.
+    """
+    try:
+        out = subprocess.run(
+            ["git", "merge-base", "--is-ancestor", older, newer],
+            capture_output=True, text=True, timeout=30,
+        )
+    except Exception:
+        return False
+    return out.returncode == 0
+
+
 def verdict_for(
     name: str, expected: str | None, sha: str | None, known: bool | None, why: str,
+    ref: str | None = None,
 ) -> tuple[int, str]:
     if expected is None:
         return CANNOT_TELL, (
@@ -279,6 +307,37 @@ def verdict_for(
             f"this project: retry with --account=ensemble-sa@yojowa-ensemble."
             f"iam.gserviceaccount.com. See #273, #457."
         )
+    # 🔴 PRODUCTION AHEAD IS NOT PRODUCTION WRONG (#490).
+    #
+    # `expected` is the newest commit touching THIS surface's path. The bp
+    # poller (#485) deploys with `BUILD_SHA=$(git rev-parse --short HEAD)` --
+    # the clone's HEAD, ANY path -- so a merge touching neither deploy path
+    # stamps its own sha onto production, and this check then red-lined until
+    # the next path commit. That is an alarm firing on its own baseline, which
+    # this repo already calls worse than no alarm.
+    #
+    # Currency is an ANCESTRY question, not an equality one: production is
+    # current iff it CONTAINS every commit that should have deployed it.
+    #
+    # 🔴 BOTH terms are load-bearing.
+    #   expected <= live : production has every commit for this path
+    #   live <= ref      : and is not running something off the ref -- without
+    #                      this, a deploy from an unmerged branch satisfies the
+    #                      first term and would pass.
+    # 🔴 ref=None is CANNOT-VERIFY, not permission. A caller that did not pass a
+    #    ref cannot have the second term checked, so it must not reach this
+    #    branch at all -- it falls through to the FAIL below, unchanged.
+    if (
+        ref is not None
+        and _is_ancestor_confirmed(expected, live)
+        and _is_ancestor_confirmed(live, ref)
+    ):
+        return PASS, (
+            f"PASS [{name}]: production is CURRENT. live {live[:8]} contains "
+            f"the newest commit for its path ({expected[:8]}) and is reachable "
+            f"from {ref}; it is ahead only by commits that do not touch this "
+            f"surface. Nothing to deploy."
+        )
     return FAIL, (
         f"FAIL [{name}]: production is running something this ref does not "
         f"know about. live {live[:8]}, newest commit for its path "
@@ -316,7 +375,7 @@ def main(argv: list[str] | None = None) -> int:
                 codes.append(CANNOT_TELL)
                 continue
             sha = full
-        code, msg = verdict_for(name, expected, sha, known, why)
+        code, msg = verdict_for(name, expected, sha, known, why, args.ref)
         print(msg)
         codes.append(code)
 
