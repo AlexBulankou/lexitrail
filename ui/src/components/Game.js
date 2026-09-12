@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import WordCard from './WordCard';
 import { markOnce, FIRST_CARD_MARK } from '../utils/perfMark';
 import MiniWordCard from './MiniWordCard';
+import CardErrorBoundary from './CardErrorBoundary';
 import Completed from './Completed';
 import {
   sessionRemaining, sessionProgress, sessionOutcome, resolveSessionBudget,
@@ -501,32 +502,41 @@ const Game = () => {
       <div className="cards-area">
         <div className="incorrect-cards-container">
           {Object.values(incorrectWords).map((word) => (
-            <MiniWordCard
-              mode={mode}
-              word={{ ...word, user_id: user.email, index: word.word_index }}
-            />
+            // issue-293: keyed on word_index (not array position) so a
+            // remount — and the error-boundary reset that comes with it —
+            // tracks the WORD, not the slot.
+            <CardErrorBoundary key={word.word_index}>
+              <MiniWordCard
+                mode={mode}
+                word={{ ...word, user_id: user.email, index: word.word_index }}
+              />
+            </CardErrorBoundary>
           ))}
         </div>
         <div className={`cards-container ${layoutClass}`}>
           {wordsToRender.map(({ word, wordIndex }, index) => (
-            <WordCard
-              mode={mode}
-              key={index}
-              word={{ ...word, user_id: user.email, index: word.word_index }} // Ensure user_id is passed correctly
-              isHintDisplayed={hintsDisplayed}
-              // issue-137: `index` is the SLOT (card-local UI state — flip,
-              // feedback, and the 0..N-1 loop in toggleFlipStates).
-              // `wordIndex` is the position in the loader's list, which is what
-              // every recall handler indexes. They coincided while the visible
-              // set was a prefix; they do not now.
-              isFlipped={flippedStates[index]} // The flipped state for this card
-              feedbackClass={feedbackClasses[index]}
-              handleMemorized={() => handleCardGuessed(wordIndex, true)}
-              handleNotMemorized={() => handleCardGuessed(wordIndex, false)}
-              toggleExclusion={() => handleCardInclusionStateChanged(wordIndex, word.is_included)}  // Pass toggleExclusion to WordCard
-              setFlippedState={(isFlipped) => setFlippedState(index, isFlipped)}
-              provideFeedback={(isSuccess, callback) => provideFeedback(index, isSuccess, callback)}
-            />
+            // issue-293: key includes word.word_index alongside the slot
+            // `index` so swapping a new word into the same slot remounts the
+            // boundary (clearing any prior hasError) instead of reusing it.
+            <CardErrorBoundary key={`${index}-${word.word_index}`}>
+              <WordCard
+                mode={mode}
+                word={{ ...word, user_id: user.email, index: word.word_index }} // Ensure user_id is passed correctly
+                isHintDisplayed={hintsDisplayed}
+                // issue-137: `index` is the SLOT (card-local UI state — flip,
+                // feedback, and the 0..N-1 loop in toggleFlipStates).
+                // `wordIndex` is the position in the loader's list, which is what
+                // every recall handler indexes. They coincided while the visible
+                // set was a prefix; they do not now.
+                isFlipped={flippedStates[index]} // The flipped state for this card
+                feedbackClass={feedbackClasses[index]}
+                handleMemorized={() => handleCardGuessed(wordIndex, true)}
+                handleNotMemorized={() => handleCardGuessed(wordIndex, false)}
+                toggleExclusion={() => handleCardInclusionStateChanged(wordIndex, word.is_included)}  // Pass toggleExclusion to WordCard
+                setFlippedState={(isFlipped) => setFlippedState(index, isFlipped)}
+                provideFeedback={(isSuccess, callback) => provideFeedback(index, isSuccess, callback)}
+              />
+            </CardErrorBoundary>
           ))}
         </div>
       </div>
