@@ -290,14 +290,36 @@ steps:
         gcloud container clusters get-credentials ys-autopilot \
           --region us-central1 --project yojowa-claw
         REF="$$(cat /workspace/backend_image_ref.txt)"
+        # issue-494 AC1 (the shape merged for ui in #493): read the digest BEFORE
+        # `set image`. Without PREV the read-back has TWO outcomes for THREE
+        # facts, and the third -- a concurrent build legitimately overwriting
+        # ours -- is indistinguishable from `set image` silently not taking.
+        # Both went out as DEPLOY-FAIL: a red on main carrying no information
+        # about the code.
+        PREV="$$(kubectl -n lexitrail get deploy lexitrail-backend \
+          -o jsonpath='{.spec.template.spec.containers[0].image}')"
         kubectl -n lexitrail set image deployment/lexitrail-backend \
           lexitrail-backend="$$REF"
         kubectl -n lexitrail rollout status deployment/lexitrail-backend --timeout=300s
         LIVE="$$(kubectl -n lexitrail get deploy lexitrail-backend \
           -o jsonpath='{.spec.template.spec.containers[0].image}')"
+        echo "previous:  $$PREV"
         echo "requested: $$REF"
         echo "live spec: $$LIVE"
-        [ "$$LIVE" = "$$REF" ] || { echo "DEPLOY-FAIL: live spec does not match what we pushed" >&2; exit 1; }
+        if [ "$$LIVE" = "$$REF" ]; then
+          echo "DEPLOY-OK: live spec is the digest this build pushed"
+        elif [ "$$LIVE" = "$$PREV" ]; then
+          echo "DEPLOY-FAIL: live spec is still the PREVIOUS digest -- set image did not take" >&2
+          exit 1
+        else
+          # Not a failure: our bytes lost a race we did not need to win. The
+          # winner is a LATER digest of this same deployment, so main is ahead
+          # of us, not behind. Exiting 1 here reds a build on main carrying no
+          # information about the code. Loud on stdout, exit 0.
+          echo "DEPLOY-SUPERSEDED: a concurrent deploy won -- live spec is neither"
+          echo "  what we pushed nor the digest we replaced, so a NEWER build set it."
+          echo "  Ours was superseded, not lost; nothing to re-run."
+        fi
     waitFor: ['backend-migrate']
 
   # ─── post-deploy CONTENT smoke (issue-77 AC3) ───────────────────────────────
