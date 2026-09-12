@@ -157,6 +157,33 @@
       <a href="/reputation-in-chinese.html">Reputation in Chinese</a>
       <a href="/decision-in-chinese.html">Decision in Chinese</a>
     </nav>
+    <!-- zz3 /lighthouse e6 (2026-09-11): the six HSK level lists were reachable from
+         NOWHERE a JS-blocked crawler can see. Measured at the wire: the live homepage's
+         entire href set was /, the 5 gloss landers, favicon, manifest and one CSS file.
+         hsk4.html has never been crawled at all ("Discovered - currently not indexed",
+         lastCrawlTime never), and hsk1/hsk3 sit at position 65.5 / 52.0.
+
+         These are the property's BEST-MATCHED assets for its largest measured demand
+         cluster -- ~20,000/mo aggregate at LOW competition ('hsk 1 vocabulary' 5,400/mo,
+         'hsk 3 vocabulary' 3,600/mo, 'hsk 1 vocabulary pdf' 2,400/mo) -- and their pages
+         are already good (correct title, meta, h1, 3,662 visible chars). They were
+         starved of internal links, not of quality.
+
+         A SEPARATE <nav> on purpose, not extra <a>s inside #lx-static-links: that block
+         is documented and test-pinned (staticGlossLinks.test.js) as a hand-copied mirror
+         of PHASE1_QUERIES, and widening it would blur the contract that tripwire exists
+         to protect. Same plain-<a>-to-static-.html rule applies here -- these are files
+         generated outside the SPA router, so <Link> would 404 against App.js. Sibling of
+         #lx-premount inside #root, so createRoot() strips it on mount: invisible to
+         users, visible to Googlebot. -->
+    <nav id="lx-static-hsk" aria-label="HSK vocabulary lists">
+      <a href="/hsk1.html">HSK 1 vocabulary list</a>
+      <a href="/hsk2.html">HSK 2 vocabulary list</a>
+      <a href="/hsk3.html">HSK 3 vocabulary list</a>
+      <a href="/hsk4.html">HSK 4 vocabulary list</a>
+      <a href="/hsk5.html">HSK 5 vocabulary list</a>
+      <a href="/hsk6.html">HSK 6 vocabulary list</a>
+    </nav>
   </div>
   <!--
       The root div is where our React app will be mounted.
