@@ -121,6 +121,7 @@ h2     1.15rem                    letter-spacing -.01em
 .hanzi-big   clamp(4.2rem, 26vw, 7.5rem)  line-height 1  letter-spacing .02em
 .pinyin      1.5rem, --accent, weight 500
 .translation 1.25rem, --ink
+.word-h1     font: inherit — a SEMANTIC wrapper with no typography of its own (see §3.1)
 ```
 
 **The serif/sans split is the system's strongest idea and should survive any redesign:** Latin text
@@ -186,7 +187,8 @@ entry. Some words carry parentheses — `这 (这儿).html` — which encode as 
 
 1. `<header class="site">` — the dot + wordmark, links to `/`.
 2. `.word-card` — the hero. Contains, centred:
-   - `<h1 class="hanzi-big" lang="zh-Hans">` — the hanzi itself is the H1. At `clamp(4.2rem,26vw,7.5rem)` it is 68–120px, dominating the fold.
+   - `<h1 class="word-h1">` — a **semantic wrapper with no appearance of its own**, holding the next three lines. It exists because the ranking queries are *"<gloss> in Chinese"* and an H1 of bare hanzi carries none of the words the searcher typed (#368 fixed the `<title>` on the same evidence and stopped at the title). `.word-h1 { font: inherit; letter-spacing: inherit; margin: 0 }` cancels the `h1` rule and the UA bold, and `.word-h1 > span { display: block }` restores the block layout the three `<p>`s had — the rendered card is pixel-identical to the pre-change version, verified at three viewports in both colour schemes. The lines are `<span>`s, not `<p>`s, because a `<p>` inside an `<h1>` is invalid and the parser would unnest it.
+   - `.hanzi-big` (`lang="zh-Hans"`, and the ONLY element in the H1 that carries that lang — the gloss must never sit inside a Chinese lang scope). At `clamp(4.2rem,26vw,7.5rem)` it is 68–120px, dominating the fold.
    - `.pinyin` — tone-marked, terracotta, 1.5rem.
    - `.translation` — the English gloss, 1.25rem.
    - `.hsk-badge` — a pill linking to that level's index page.
@@ -224,7 +226,9 @@ structural weakness in the static set.
 
 Five pages, shipped 2026-09-05: `tennis`, `clarify`, `vague`, `reputation`, `decision`. These
 target *"X in Chinese"* search intent, so the **English gloss is the `<h1>`** and the hanzi sits in
-the card below it — the inverse of the word pages.
+the card below it. This used to be the inverse of the word pages; since the `.word-h1` change in
+§3.1 both families put the gloss in the H1, and what still differs is the ORDER — here the gloss
+leads, there the hanzi does, which is right for each page's own subject.
 
 They carry two things the word pages do not:
 

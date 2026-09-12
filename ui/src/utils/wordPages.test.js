@@ -154,7 +154,10 @@ describe('renderWordPage', () => {
   test('a word with no pinyin/english still renders valid, non-empty prose', () => {
     // ~A CSV row can be missing def1/def2; the page must not emit "is pronounced  and means".
     const bare = renderWordPage({ level: 1, id: 1, word: '啊' });
-    expect(bare).toContain('<h1 class="hanzi-big" lang="zh-Hans">啊</h1>');
+    // The H1 markup moved (bare hanzi -> a wrapper H1 over hanzi/pinyin/gloss, see the describe
+    // below); this assertion is here for "a def-less row still renders a headed page", and it
+    // still is — updated to the new shape rather than dropped.
+    expect(bare).toContain('<h1 class="word-h1"><span class="hanzi-big" lang="zh-Hans">啊</span>');
     expect(bare).not.toContain('is pronounced  and');
     expect(bare).toContain('<!DOCTYPE html>');
   });
@@ -166,6 +169,53 @@ describe('renderWordPage', () => {
     expect(p).toContain('<style>');
     expect(p).toContain('class="word-card"');
     expect(p).toContain('class="cta"');
+  });
+});
+
+// The H1 must carry the ENGLISH GLOSS. #368 fixed the <title> on this evidence and stopped there:
+// the ranking queries are "<gloss> in chinese" ('tennis in chinese' 1,900/mo, 'clarify in chinese'
+// 720/mo, 'reputation in chinese' 590/mo) and the H1 — the strongest on-page signal after the
+// title — held none of those words on any of the 4,999 pages, median GSC position 10.7.
+//
+// The failure mode these pin is a "tidy-up" that puts `.hanzi-big` back on the H1 itself: the
+// pages still render, they look IDENTICAL (that is the whole design of the fix), the drift check
+// still passes once regenerated, and the only symptom is a ranking signal nobody reads for weeks.
+describe('the H1 carries the English gloss (not the bare hanzi)', () => {
+  const w = { level: 4, id: 1, word: '网球', pinyin: 'wǎngqiú', english: 'Tennis' };
+  const h1of = (html) => html.split('<h1')[1].split('</h1>')[0];
+
+  test('the gloss is INSIDE the h1, not only in the card below it', () => {
+    expect(h1of(renderWordPage(w))).toContain('Tennis');
+  });
+
+  test('the hanzi is still in the h1 and still lang-tagged zh-Hans', () => {
+    expect(h1of(renderWordPage(w))).toContain('<span class="hanzi-big" lang="zh-Hans">网球</span>');
+  });
+
+  test('🔴 the gloss is NOT inside a zh-Hans scope — the bug this fix must not create', () => {
+    // `lang` is INHERITED. A single wrapper `lang="zh-Hans"` on the h1 would be the obvious way to
+    // write this and would tell every crawler and screen reader that the English gloss is Chinese
+    // — worse than the problem being fixed, and invisible on screen.
+    const h1 = h1of(renderWordPage(w));
+    expect(h1).not.toMatch(/^[^>]*lang="zh-Hans"/);
+    expect(h1.split('Tennis')[0]).toContain('</span>');
+  });
+
+  test('the visual vocabulary is unchanged — same classes, same order, hanzi still dominant', () => {
+    // The card is unchanged for a human: `.hanzi-big` / `.pinyin` / `.translation` in that order,
+    // now as spans inside the h1 rather than siblings after it. `.word-h1` + `.word-h1>span` in
+    // PAGE_STYLE are what make that render identically; assert they ship, or the h1's own
+    // display-face/bold/margins would leak onto the pinyin and gloss lines.
+    const html = renderWordPage(w);
+    const h1 = h1of(html);
+    expect(h1.indexOf('hanzi-big')).toBeLessThan(h1.indexOf('class="pinyin"'));
+    expect(h1.indexOf('class="pinyin"')).toBeLessThan(h1.indexOf('class="translation"'));
+    expect(html).toContain('.word-h1{font:inherit;letter-spacing:inherit;margin:0}');
+    expect(html).toContain('.word-h1>span{display:block}');
+    // and no stray <p class="pinyin"> left outside the h1 — a <p> nested in an <h1> is invalid
+    // and the parser would unnest it, which WOULD move the layout.
+    expect(html).not.toContain('<p class="pinyin"');
+    expect(html).not.toContain('<p class="translation"');
   });
 });
 

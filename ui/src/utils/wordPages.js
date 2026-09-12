@@ -225,6 +225,23 @@ export const renderWordPage = (
   const title = w.english
     ? `${w.english} in Chinese — ${w.word}${w.pinyin ? ` (${w.pinyin})` : ''} | HSK ${w.level}`
     : `${w.word}${gloss ? ` (${gloss})` : ''} — HSK ${w.level} Chinese word`;
+  // The SAME evidence applied to the H1, which #368 left hanzi-only. The searcher types
+  // "tennis in chinese"; the title now answers that and the H1 — the strongest on-page signal
+  // after it — carried NONE of those words on all 4,999 pages (median GSC position 10.7).
+  //
+  // 🔴 The hanzi being big and bare was a VISUAL decision, not a semantic one: `.hanzi-big` is the
+  // shared card vocabulary (docs/design-system.md §3.1, "dominating the fold") and the gloss
+  // landers already prove the class is not tied to the H1 — there `.hanzi-big` is a <p> and the
+  // English gloss is the <h1> (glossPages.js). So the fix keeps the visual and moves only the
+  // semantics: the H1 WRAPS the three hero lines it used to sit above, as <span>s carrying the
+  // same classes, with `.word-h1` in PAGE_STYLE neutralising the h1 element's own typography and
+  // margins. Rendered result is unchanged — same order, same sizes, same collapsed margins; a <p>
+  // cannot be nested in an <h1> (invalid, and the parser would unnest it), which is why they are
+  // spans + `display:block` rather than the original elements.
+  //
+  // The hanzi keeps `lang="zh-Hans"` on ITS span only, so the gloss is never inside a Chinese
+  // lang scope — that would tell a crawler the English text is Chinese, which is the bug this
+  // change exists to avoid creating.
   const desc = `${w.word}${w.pinyin ? `, pinyin ${w.pinyin}` : ''}${w.english ? `, means "${w.english}"` : ''}. `
     + DESC_VARIANTS[variantIndex(w.word, DESC_VARIANTS.length)](w.level);
   const jsonLd = jsonSafe({
@@ -267,9 +284,9 @@ ${GA4_SNIPPET}
 ${SITE_HEADER}
 ${crumb}
 <div class="word-card">
-<h1 class="hanzi-big" lang="zh-Hans">${esc(w.word)}</h1>
-${w.pinyin ? `<p class="pinyin">${pinyinHtml(w.pinyin)}</p>` : ''}
-${w.english ? `<p class="translation">${esc(w.english)}</p>` : ''}
+<h1 class="word-h1"><span class="hanzi-big" lang="zh-Hans">${esc(w.word)}</span>
+${w.pinyin ? `<span class="pinyin">${pinyinHtml(w.pinyin)}</span>` : ''}
+${w.english ? `<span class="translation">${esc(w.english)}</span>` : ''}</h1>
 <p class="actions"><a class="hsk-badge" href="${levelUrl}">HSK ${w.level}</a><a class="cta" href="${origin}/game/${w.level}/PRACTICE">Practise with ${esc(w.word)} &rarr;</a></p>
 </div>${senses.length > 1 ? `
 <h2>Senses</h2>
