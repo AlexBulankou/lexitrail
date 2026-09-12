@@ -114,6 +114,17 @@ gtag('js', new Date());
 gtag('config', '${GA4_ID}');
 </script>`;
 
+/** The one stylesheet all three static families inline. No comments inside it on purpose — every
+ * byte ships on ~5,010 pages — so the one rule that is not self-explanatory is explained here:
+ *
+ * `.word-h1` is the word page's H1, which WRAPS the card's three hero lines (hanzi / pinyin /
+ * gloss) instead of being the hanzi alone — see wordPages.js for why. It is a semantic wrapper
+ * only, so it must render as if it were not there: `font:inherit` undoes the `h1` rule's display
+ * face, size, line-height AND the UA's bold (a `.translation` that inherited bold would be a
+ * visible change), `letter-spacing:inherit` undoes the -.02em, `margin:0` lets the children's own
+ * margins collapse through exactly as they did when they were siblings. `>span` restores the block
+ * layout the `<p>`s had; the direct-child selector leaves the tone `<span>`s inside `.pinyin` inline.
+ */
 export const PAGE_STYLE = `<style>
 ${PAGE_TOKENS}
 *{box-sizing:border-box}
@@ -135,6 +146,8 @@ h2{font-family:var(--font-display);font-size:1.05rem;letter-spacing:-.01em;margi
 p{margin:0 0 1em}
 .word-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-hero);
   padding:30px 24px 26px;text-align:center;box-shadow:var(--shadow);margin:8px 0 8px}
+.word-h1{font:inherit;letter-spacing:inherit;margin:0}
+.word-h1>span{display:block}
 .hanzi-big{font-size:clamp(4.2rem,26vw,7.5rem);line-height:1;margin:0 0 .12em;letter-spacing:.02em;font-weight:400}
 .pinyin{font-family:var(--font-display);font-size:1.5rem;color:var(--ink);margin:0 0 .1em;font-weight:500;white-space:nowrap}
 .t1{color:var(--t1);font-weight:700}.t2{color:var(--t2);font-weight:700}.t3{color:var(--t3);font-weight:700}.t4{color:var(--t4);font-weight:700}
