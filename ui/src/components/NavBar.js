@@ -140,7 +140,7 @@ const NavBar = () => {
             <button onClick={handleTryWithoutSignin} className="try-button">
               Try
             </button>
-            <button onClick={login} className="google-signin-compact">
+            <button onClick={handleLogin} className="google-signin-compact">
               <img src={googleGIcon} alt="" />
               Sign in
             </button>
