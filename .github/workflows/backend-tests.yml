@@ -87,12 +87,34 @@ on:
     paths:
       - 'backend/**'
       - 'terraform/schema-tables.sql'
+      # 🔴 #445: two more INPUTS, found by DERIVING what backend/tests actually
+      # reads rather than inspecting. Both are read via `parents[2]`, i.e. from
+      # outside `backend/**`, and neither was covered:
+      #   test_probe_wiring_301.py       -> terraform-ys/workloads.tf
+      #   test_srs_ladder_parity_384.py  -> ui/src/utils/srs.js
+      # The second is the sharp one: it asserts backend<->UI SRS parity, so the
+      # UI half could change and the parity test would not run.
+      # ⚠️ `terraform-ys/` is a DIFFERENT directory from `terraform/` -- the
+      # entry above does not cover it, which is easy to misread.
+      - 'terraform-ys/workloads.tf'
+      - 'ui/src/utils/srs.js'
       - '.github/workflows/backend-tests.yml'
   push:
     branches: [main]
     paths:
       - 'backend/**'
       - 'terraform/schema-tables.sql'
+      # 🔴 #445: two more INPUTS, found by DERIVING what backend/tests actually
+      # reads rather than inspecting. Both are read via `parents[2]`, i.e. from
+      # outside `backend/**`, and neither was covered:
+      #   test_probe_wiring_301.py       -> terraform-ys/workloads.tf
+      #   test_srs_ladder_parity_384.py  -> ui/src/utils/srs.js
+      # The second is the sharp one: it asserts backend<->UI SRS parity, so the
+      # UI half could change and the parity test would not run.
+      # ⚠️ `terraform-ys/` is a DIFFERENT directory from `terraform/` -- the
+      # entry above does not cover it, which is easy to misread.
+      - 'terraform-ys/workloads.tf'
+      - 'ui/src/utils/srs.js'
       - '.github/workflows/backend-tests.yml'
 
 # A second push to the same PR makes the first run irrelevant.

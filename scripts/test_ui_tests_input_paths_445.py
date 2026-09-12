@@ -123,3 +123,102 @@ def test_the_matcher_itself_discriminates():
     # 🔴 `sentences.md` must NOT be matched by `sentences/**` — a prefix test
     # without the slash would pass it, and that is the classic substring bug.
     assert _matches("sentences.md", "sentences/**") is False
+
+
+# --- the same question, asked of backend-tests.yml (AC3) ---------------------
+# 🔴 My first answer to AC3 was "already complete", reached by READING the two
+# inputs I happened to notice. hc2 asked whether I had run the derive-from-source
+# method backend-side instead, "the same way the words.csv hole was missed by
+# inspection here". I had not. It found two more:
+#
+#   test_probe_wiring_301.py       -> terraform-ys/workloads.tf
+#   test_srs_ladder_parity_384.py  -> ui/src/utils/srs.js
+#
+# The second asserts backend<->UI SRS parity, so the UI half could change and the
+# parity test would not run. Inspection missed both, in the PR whose whole finding
+# is that inspection misses things.
+
+BACKEND_WF = ROOT / ".github" / "workflows" / "backend-tests.yml"
+BACKEND = ROOT / "backend"
+
+# Runtime config, not a committed CI input: `Path('..') / '.env'` is read at
+# process start and `.env` is not in the repo. Named explicitly so the exclusion
+# is a decision on the record rather than a silent gap in the regex.
+_RUNTIME_ONLY = {".env"}
+
+
+def _derived_backend_inputs() -> set[str]:
+    """Repo-relative paths backend code reads from OUTSIDE backend/.
+
+    Derived from `parents[N]` escapes: for `backend/tests/x.py` the directory
+    depth inside backend/ is 1, so `parents[2]` and up leave the tree. The
+    literal path components joined onto it are the input.
+    """
+    out = set()
+    for f in sorted(BACKEND.rglob("*.py")):
+        if "__pycache__" in str(f):
+            continue
+        src = f.read_text(errors="ignore")
+        depth = len(f.relative_to(BACKEND).parts) - 1
+        for m in re.finditer(
+            r"parents\[(\d+)\]((?:\s*/\s*['\"][^'\"]+['\"])+)", src
+        ):
+            if int(m.group(1)) <= depth:
+                continue                      # stays inside backend/
+            parts = re.findall(r"['\"]([^'\"]+)['\"]", m.group(2))
+            rel = "/".join(parts)
+            if rel and rel not in _RUNTIME_ONLY:
+                out.add(rel)
+    assert out, (
+        "derived ZERO out-of-backend inputs -- the regex has drifted from the "
+        "source and every assertion below would be vacuous"
+    )
+    return out
+
+
+def test_backend_out_of_tree_inputs_are_in_its_path_filters():
+    """AC3, answered by DERIVATION rather than by reading.
+
+    🔴 This is the assertion that would have caught my own wrong answer. It is
+    written against backend-tests.yml for the same reason the ui one is written
+    against ui-tests.yml: the property is 'a filter lists what its job READS',
+    and it has to hold per workflow, not per author's attention."""
+    d = yaml.safe_load(BACKEND_WF.read_text())
+    on = d.get(True, d.get("on"))
+    assert isinstance(on, dict), f"could not read the trigger block: {on!r}"
+    inputs = _derived_backend_inputs()
+    for event in ("pull_request", "push"):
+        paths = on[event]["paths"]
+        for rel in sorted(inputs):
+            probe = _probe_for(rel)
+            assert any(_matches(probe, p) for p in paths), (
+                f"{event}: nothing in {paths} matches {probe!r}, which "
+                f"backend/tests READS from outside backend/"
+            )
+
+
+def test_the_two_holes_hc2_asked_about_are_named_concretely():
+    """Not synthetic: the exact files, so a filter edit that drops either reds."""
+    d = yaml.safe_load(BACKEND_WF.read_text())
+    on = d.get(True, d.get("on"))
+    for probe in ("terraform-ys/workloads.tf", "ui/src/utils/srs.js"):
+        for event in ("pull_request", "push"):
+            assert any(_matches(probe, p) for p in on[event]["paths"]), (
+                f"{event}: {probe!r} is read by a backend test and must trigger it"
+            )
+
+
+def test_backend_negative_control_still_holds():
+    """The backend filter must not have degraded into run-everything either.
+
+    ⚠️ `terraform-ys/` and `terraform/` are DIFFERENT directories, and the probe
+    below pins that distinction: adding `terraform-ys/workloads.tf` must not drag
+    in unrelated terraform-ys files."""
+    d = yaml.safe_load(BACKEND_WF.read_text())
+    on = d.get(True, d.get("on"))
+    for probe in ("README.md", "sentences/sentences-hsk1-6-v1.json",
+                  "terraform-ys/unrelated.tf", "ui/src/App.js"):
+        for event in ("pull_request", "push"):
+            assert not any(_matches(probe, p) for p in on[event]["paths"]), (
+                f"{event}: {probe!r} should NOT trigger the backend suite"
+            )
