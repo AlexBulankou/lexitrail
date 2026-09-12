@@ -48,11 +48,40 @@ pre-#273 image and get muted. It is a third thing and it says so.
 
 WHY NO CREDENTIALS
 ------------------
-Every credential on bp is `PERMISSION_DENIED` against lexitrail's Artifact
-Registry AND its Cloud Build list (#224) -- measured across hermes-automation,
-familylore-sa and ensemble-sa. So a detector built on "compare the deployed image
-tag to the newest build" is not implementable from any agent seat that exists.
-Two unauthenticated HTTP GETs are, from anywhere, CI included.
+Two unauthenticated HTTP GETs work from anywhere, CI included, and depend on no
+grant that can be revoked or drift. That is the reason, and it stands on its own.
+
+🔴 THE ORIGINAL REASON WAS HALF FALSE, AND IT IS CORRECTED HERE RATHER THAN IN
+#224 ALONE. This block used to read: *"Every credential on bp is
+`PERMISSION_DENIED` against lexitrail's Artifact Registry AND its Cloud Build
+list (#224) -- measured across hermes-automation, familylore-sa and
+ensemble-sa."* #224 retracted the Cloud Build half on 2026-09-03 and again on
+09-08, in its own body. This file kept citing #224 while asserting the claim
+#224 had withdrawn -- a correction that reached the issue and never reached the
+artifact that cites it. Re-measured 2026-09-12, identity asserted rather than
+requested, with a denial in the same run as the control:
+
+    ensemble-sa        artifacts repositories list  rc=1  PERMISSION_DENIED   <- still true
+    ensemble-sa        builds list                  rc=0  returns builds      <- NO LONGER TRUE
+    ensemble-sa        builds describe <id>         rc=0  gives the STEP LIST
+    hermes-automation  builds list                  rc=1  PERMISSION_DENIED   <- control: the
+                                                          probe separates identities, so the
+                                                          rc=0 above is not a blanket pass
+
+So the Artifact Registry half holds and the Cloud Build half does not, which
+makes the conjunction false. `list`/`describe` are Cloud Build API reads;
+`artifacts` and `builds log` sit behind different grants, which is why they
+disagree for one identity. A credential verdict is a (credential, OPERATION,
+resource) fact -- never a credential fact.
+
+⚠️ WHY THAT MATTERS TO A READER OF THIS FILE. It does not change the design:
+unauthenticated GETs are still the right substrate for the check itself. It
+changes what is available to BUILD ON. `builds describe` is reachable from the
+seat this script already runs under, which is what makes a red classifiable --
+step 0 `FAILURE` with the rest `QUEUED` is the quota gate declining, and it is a
+different fact from a broken build (#461, #459). A capability negative is the
+claim nobody re-runs, because it tells the reader not to try; this one sat here
+for nine days after it was retracted elsewhere.
 
 CONTROL
 -------
