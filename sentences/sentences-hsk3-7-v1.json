@@ -1,0 +1,604 @@
+{
+  "sentences": [
+    {
+      "no": 1,
+      "word": {
+        "no": 1,
+        "chinese": "试",
+        "pinyin": "shì",
+        "english": "try"
+      },
+      "chinese": "你可以试一下这件衣服。",
+      "pinyin": "Nǐ kěyǐ shì yíxià zhè jiàn yīfu.",
+      "english": "You can try on this piece of clothing."
+    },
+    {
+      "no": 2,
+      "word": {
+        "no": 1,
+        "chinese": "试",
+        "pinyin": "shì",
+        "english": "try"
+      },
+      "chinese": "我想试试这个新办法。",
+      "pinyin": "Wǒ xiǎng shìshi zhège xīn bànfǎ.",
+      "english": "I want to try this new method."
+    },
+    {
+      "no": 3,
+      "word": {
+        "no": 2,
+        "chinese": "世界",
+        "pinyin": "shìjiè",
+        "english": "world"
+      },
+      "chinese": "这是世界上最高的山。",
+      "pinyin": "Zhè shì shìjiè shàng zuì gāo de shān.",
+      "english": "This is the highest mountain in the world."
+    },
+    {
+      "no": 4,
+      "word": {
+        "no": 2,
+        "chinese": "世界",
+        "pinyin": "shìjiè",
+        "english": "world"
+      },
+      "chinese": "我希望去世界各地旅行。",
+      "pinyin": "Wǒ xīwàng qù shìjiè gèdì lǚxíng.",
+      "english": "I hope to travel all over the world."
+    },
+    {
+      "no": 5,
+      "word": {
+        "no": 3,
+        "chinese": "瘦",
+        "pinyin": "shòu",
+        "english": "thin"
+      },
+      "chinese": "他比去年瘦了很多。",
+      "pinyin": "Tā bǐ qùnián shòu le hěn duō.",
+      "english": "He is much thinner than last year."
+    },
+    {
+      "no": 6,
+      "word": {
+        "no": 3,
+        "chinese": "瘦",
+        "pinyin": "shòu",
+        "english": "thin"
+      },
+      "chinese": "这条裤子有点儿瘦。",
+      "pinyin": "Zhè tiáo kùzi yǒudiǎnr shòu.",
+      "english": "These trousers are a bit tight."
+    },
+    {
+      "no": 7,
+      "word": {
+        "no": 4,
+        "chinese": "舒服",
+        "pinyin": "shūfu",
+        "english": "comfortable"
+      },
+      "chinese": "这张床很舒服。",
+      "pinyin": "Zhè zhāng chuáng hěn shūfu.",
+      "english": "This bed is very comfortable."
+    },
+    {
+      "no": 8,
+      "word": {
+        "no": 4,
+        "chinese": "舒服",
+        "pinyin": "shūfu",
+        "english": "comfortable"
+      },
+      "chinese": "我今天有点儿不舒服。",
+      "pinyin": "Wǒ jīntiān yǒudiǎnr bù shūfu.",
+      "english": "I feel a bit unwell today."
+    },
+    {
+      "no": 9,
+      "word": {
+        "no": 5,
+        "chinese": "叔叔",
+        "pinyin": "shūshu",
+        "english": "uncle"
+      },
+      "chinese": "我叔叔是一名医生。",
+      "pinyin": "Wǒ shūshu shì yì míng yīshēng.",
+      "english": "My uncle is a doctor."
+    },
+    {
+      "no": 10,
+      "word": {
+        "no": 5,
+        "chinese": "叔叔",
+        "pinyin": "shūshu",
+        "english": "uncle"
+      },
+      "chinese": "叔叔明天来我家。",
+      "pinyin": "Shūshu míngtiān lái wǒ jiā.",
+      "english": "Uncle is coming to my home tomorrow."
+    },
+    {
+      "no": 11,
+      "word": {
+        "no": 6,
+        "chinese": "树",
+        "pinyin": "shù",
+        "english": "tree"
+      },
+      "chinese": "门口有一棵大树。",
+      "pinyin": "Ménkǒu yǒu yì kē dà shù.",
+      "english": "There is a big tree at the entrance."
+    },
+    {
+      "no": 12,
+      "word": {
+        "no": 6,
+        "chinese": "树",
+        "pinyin": "shù",
+        "english": "tree"
+      },
+      "chinese": "秋天树上的叶子都黄了。",
+      "pinyin": "Qiūtiān shù shàng de yèzi dōu huáng le.",
+      "english": "In autumn the leaves on the tree all turn yellow."
+    },
+    {
+      "no": 13,
+      "word": {
+        "no": 7,
+        "chinese": "数学",
+        "pinyin": "shùxué",
+        "english": "Mathematics"
+      },
+      "chinese": "我最喜欢的课是数学。",
+      "pinyin": "Wǒ zuì xǐhuan de kè shì shùxué.",
+      "english": "My favourite class is mathematics."
+    },
+    {
+      "no": 14,
+      "word": {
+        "no": 7,
+        "chinese": "数学",
+        "pinyin": "shùxué",
+        "english": "Mathematics"
+      },
+      "chinese": "他的数学成绩很好。",
+      "pinyin": "Tā de shùxué chéngjì hěn hǎo.",
+      "english": "His mathematics results are very good."
+    },
+    {
+      "no": 15,
+      "word": {
+        "no": 8,
+        "chinese": "刷牙",
+        "pinyin": "shuāyá",
+        "english": "Brush one’s teeth"
+      },
+      "chinese": "我每天早上刷牙。",
+      "pinyin": "Wǒ měitiān zǎoshang shuāyá.",
+      "english": "I brush my teeth every morning."
+    },
+    {
+      "no": 16,
+      "word": {
+        "no": 8,
+        "chinese": "刷牙",
+        "pinyin": "shuāyá",
+        "english": "Brush one’s teeth"
+      },
+      "chinese": "睡觉以前要刷牙。",
+      "pinyin": "Shuìjiào yǐqián yào shuāyá.",
+      "english": "You should brush your teeth before going to sleep."
+    },
+    {
+      "no": 17,
+      "word": {
+        "no": 9,
+        "chinese": "双",
+        "pinyin": "shuāng",
+        "english": "double, pair"
+      },
+      "chinese": "我买了一双新鞋。",
+      "pinyin": "Wǒ mǎi le yì shuāng xīn xié.",
+      "english": "I bought a new pair of shoes."
+    },
+    {
+      "no": 18,
+      "word": {
+        "no": 9,
+        "chinese": "双",
+        "pinyin": "shuāng",
+        "english": "double, pair"
+      },
+      "chinese": "这双袜子是谁的？",
+      "pinyin": "Zhè shuāng wàzi shì shéi de?",
+      "english": "Whose pair of socks is this?"
+    },
+    {
+      "no": 19,
+      "word": {
+        "no": 10,
+        "chinese": "水平",
+        "pinyin": "shuǐpíng",
+        "english": "level"
+      },
+      "chinese": "他的中文水平很高。",
+      "pinyin": "Tā de Zhōngwén shuǐpíng hěn gāo.",
+      "english": "His level of Chinese is very high."
+    },
+    {
+      "no": 20,
+      "word": {
+        "no": 10,
+        "chinese": "水平",
+        "pinyin": "shuǐpíng",
+        "english": "level"
+      },
+      "chinese": "我想提高自己的水平。",
+      "pinyin": "Wǒ xiǎng tígāo zìjǐ de shuǐpíng.",
+      "english": "I want to raise my own level."
+    },
+    {
+      "no": 21,
+      "word": {
+        "no": 11,
+        "chinese": "司机",
+        "pinyin": "sījī",
+        "english": "Driver"
+      },
+      "chinese": "出租车司机很热情。",
+      "pinyin": "Chūzūchē sījī hěn rèqíng.",
+      "english": "The taxi driver is very friendly."
+    },
+    {
+      "no": 22,
+      "word": {
+        "no": 11,
+        "chinese": "司机",
+        "pinyin": "sījī",
+        "english": "Driver"
+      },
+      "chinese": "他是一名公共汽车司机。",
+      "pinyin": "Tā shì yì míng gōnggòng qìchē sījī.",
+      "english": "He is a bus driver."
+    },
+    {
+      "no": 23,
+      "word": {
+        "no": 12,
+        "chinese": "太阳",
+        "pinyin": "tàiyáng",
+        "english": "sun"
+      },
+      "chinese": "今天太阳很大。",
+      "pinyin": "Jīntiān tàiyáng hěn dà.",
+      "english": "The sun is strong today."
+    },
+    {
+      "no": 24,
+      "word": {
+        "no": 12,
+        "chinese": "太阳",
+        "pinyin": "tàiyáng",
+        "english": "sun"
+      },
+      "chinese": "太阳从东边出来。",
+      "pinyin": "Tàiyáng cóng dōngbian chūlái.",
+      "english": "The sun rises from the east."
+    },
+    {
+      "no": 25,
+      "word": {
+        "no": 13,
+        "chinese": "特别",
+        "pinyin": "tèbié",
+        "english": "Especially"
+      },
+      "chinese": "我特别喜欢吃水果。",
+      "pinyin": "Wǒ tèbié xǐhuan chī shuǐguǒ.",
+      "english": "I especially like eating fruit."
+    },
+    {
+      "no": 26,
+      "word": {
+        "no": 13,
+        "chinese": "特别",
+        "pinyin": "tèbié",
+        "english": "Especially"
+      },
+      "chinese": "今天的天气特别热。",
+      "pinyin": "Jīntiān de tiānqì tèbié rè.",
+      "english": "Today's weather is especially hot."
+    },
+    {
+      "no": 27,
+      "word": {
+        "no": 14,
+        "chinese": "疼",
+        "pinyin": "téng",
+        "english": "hurt"
+      },
+      "chinese": "我的头很疼。",
+      "pinyin": "Wǒ de tóu hěn téng.",
+      "english": "My head hurts a lot."
+    },
+    {
+      "no": 28,
+      "word": {
+        "no": 14,
+        "chinese": "疼",
+        "pinyin": "téng",
+        "english": "hurt"
+      },
+      "chinese": "他的腿还疼吗？",
+      "pinyin": "Tā de tuǐ hái téng ma?",
+      "english": "Does his leg still hurt?"
+    },
+    {
+      "no": 29,
+      "word": {
+        "no": 15,
+        "chinese": "提高",
+        "pinyin": "tígāo",
+        "english": "increase"
+      },
+      "chinese": "他的成绩提高了。",
+      "pinyin": "Tā de chéngjì tígāo le.",
+      "english": "His results have improved."
+    },
+    {
+      "no": 30,
+      "word": {
+        "no": 15,
+        "chinese": "提高",
+        "pinyin": "tígāo",
+        "english": "increase"
+      },
+      "chinese": "多说话可以提高你的中文。",
+      "pinyin": "Duō shuōhuà kěyǐ tígāo nǐ de Zhōngwén.",
+      "english": "Speaking more can improve your Chinese."
+    },
+    {
+      "no": 31,
+      "word": {
+        "no": 16,
+        "chinese": "体育",
+        "pinyin": "tǐyù",
+        "english": "Sports"
+      },
+      "chinese": "我喜欢上体育课。",
+      "pinyin": "Wǒ xǐhuan shàng tǐyù kè.",
+      "english": "I like going to sports class."
+    },
+    {
+      "no": 32,
+      "word": {
+        "no": 16,
+        "chinese": "体育",
+        "pinyin": "tǐyù",
+        "english": "Sports"
+      },
+      "chinese": "他对体育很感兴趣。",
+      "pinyin": "Tā duì tǐyù hěn gǎn xìngqù.",
+      "english": "He is very interested in sports."
+    },
+    {
+      "no": 33,
+      "word": {
+        "no": 17,
+        "chinese": "甜",
+        "pinyin": "tián",
+        "english": "sweet"
+      },
+      "chinese": "这个西瓜很甜。",
+      "pinyin": "Zhège xīguā hěn tián.",
+      "english": "This watermelon is very sweet."
+    },
+    {
+      "no": 34,
+      "word": {
+        "no": 17,
+        "chinese": "甜",
+        "pinyin": "tián",
+        "english": "sweet"
+      },
+      "chinese": "我不喜欢太甜的咖啡。",
+      "pinyin": "Wǒ bù xǐhuan tài tián de kāfēi.",
+      "english": "I don't like coffee that is too sweet."
+    },
+    {
+      "no": 35,
+      "word": {
+        "no": 18,
+        "chinese": "条",
+        "pinyin": "tiáo",
+        "english": "strip"
+      },
+      "chinese": "桌子上有一条鱼。",
+      "pinyin": "Zhuōzi shàng yǒu yì tiáo yú.",
+      "english": "There is a fish on the table."
+    },
+    {
+      "no": 36,
+      "word": {
+        "no": 18,
+        "chinese": "条",
+        "pinyin": "tiáo",
+        "english": "strip"
+      },
+      "chinese": "这条路很长。",
+      "pinyin": "Zhè tiáo lù hěn cháng.",
+      "english": "This road is very long."
+    },
+    {
+      "no": 37,
+      "word": {
+        "no": 19,
+        "chinese": "同事",
+        "pinyin": "tóngshì",
+        "english": "Colleague"
+      },
+      "chinese": "他是我的新同事。",
+      "pinyin": "Tā shì wǒ de xīn tóngshì.",
+      "english": "He is my new colleague."
+    },
+    {
+      "no": 38,
+      "word": {
+        "no": 19,
+        "chinese": "同事",
+        "pinyin": "tóngshì",
+        "english": "Colleague"
+      },
+      "chinese": "我和同事一起吃午饭。",
+      "pinyin": "Wǒ hé tóngshì yìqǐ chī wǔfàn.",
+      "english": "I have lunch together with my colleagues."
+    },
+    {
+      "no": 39,
+      "word": {
+        "no": 20,
+        "chinese": "同意",
+        "pinyin": "tóngyì",
+        "english": "Agree"
+      },
+      "chinese": "我同意你的看法。",
+      "pinyin": "Wǒ tóngyì nǐ de kànfǎ.",
+      "english": "I agree with your view."
+    },
+    {
+      "no": 40,
+      "word": {
+        "no": 20,
+        "chinese": "同意",
+        "pinyin": "tóngyì",
+        "english": "Agree"
+      },
+      "chinese": "大家都同意这个办法。",
+      "pinyin": "Dàjiā dōu tóngyì zhège bànfǎ.",
+      "english": "Everyone agrees with this method."
+    },
+    {
+      "no": 41,
+      "word": {
+        "no": 21,
+        "chinese": "头发",
+        "pinyin": "tóufa",
+        "english": "Hair"
+      },
+      "chinese": "她的头发又长又黑。",
+      "pinyin": "Tā de tóufa yòu cháng yòu hēi.",
+      "english": "Her hair is long and black."
+    },
+    {
+      "no": 42,
+      "word": {
+        "no": 21,
+        "chinese": "头发",
+        "pinyin": "tóufa",
+        "english": "Hair"
+      },
+      "chinese": "我想去剪头发。",
+      "pinyin": "Wǒ xiǎng qù jiǎn tóufa.",
+      "english": "I want to go and get my hair cut."
+    },
+    {
+      "no": 43,
+      "word": {
+        "no": 22,
+        "chinese": "突然",
+        "pinyin": "tūrán",
+        "english": "suddenly"
+      },
+      "chinese": "天突然下雨了。",
+      "pinyin": "Tiān tūrán xià yǔ le.",
+      "english": "It suddenly started to rain."
+    },
+    {
+      "no": 44,
+      "word": {
+        "no": 22,
+        "chinese": "突然",
+        "pinyin": "tūrán",
+        "english": "suddenly"
+      },
+      "chinese": "他突然站了起来。",
+      "pinyin": "Tā tūrán zhàn le qǐlái.",
+      "english": "He suddenly stood up."
+    },
+    {
+      "no": 45,
+      "word": {
+        "no": 23,
+        "chinese": "图书馆",
+        "pinyin": "túshūguǎn",
+        "english": "Library"
+      },
+      "chinese": "我常常去图书馆看书。",
+      "pinyin": "Wǒ chángcháng qù túshūguǎn kàn shū.",
+      "english": "I often go to the library to read."
+    },
+    {
+      "no": 46,
+      "word": {
+        "no": 23,
+        "chinese": "图书馆",
+        "pinyin": "túshūguǎn",
+        "english": "Library"
+      },
+      "chinese": "图书馆里很安静。",
+      "pinyin": "Túshūguǎn lǐ hěn ānjìng.",
+      "english": "It is very quiet in the library."
+    },
+    {
+      "no": 47,
+      "word": {
+        "no": 24,
+        "chinese": "腿",
+        "pinyin": "tuǐ",
+        "english": "leg"
+      },
+      "chinese": "我的腿有点儿疼。",
+      "pinyin": "Wǒ de tuǐ yǒudiǎnr téng.",
+      "english": "My leg hurts a little."
+    },
+    {
+      "no": 48,
+      "word": {
+        "no": 24,
+        "chinese": "腿",
+        "pinyin": "tuǐ",
+        "english": "leg"
+      },
+      "chinese": "他的腿很长。",
+      "pinyin": "Tā de tuǐ hěn cháng.",
+      "english": "His legs are very long."
+    },
+    {
+      "no": 49,
+      "word": {
+        "no": 25,
+        "chinese": "完成",
+        "pinyin": "wánchéng",
+        "english": "complete"
+      },
+      "chinese": "我已经完成了作业。",
+      "pinyin": "Wǒ yǐjīng wánchéng le zuòyè.",
+      "english": "I have already completed my homework."
+    },
+    {
+      "no": 50,
+      "word": {
+        "no": 25,
+        "chinese": "完成",
+        "pinyin": "wánchéng",
+        "english": "complete"
+      },
+      "chinese": "这个工作明天可以完成。",
+      "pinyin": "Zhège gōngzuò míngtiān kěyǐ wánchéng.",
+      "english": "This work can be completed tomorrow."
+    }
+  ]
+}
