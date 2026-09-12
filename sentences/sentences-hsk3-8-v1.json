@@ -1,0 +1,604 @@
+{
+  "sentences": [
+    {
+      "no": 1,
+      "word": {
+        "no": 1,
+        "chinese": "碗",
+        "pinyin": "wǎn",
+        "english": "bowl"
+      },
+      "chinese": "我吃了一碗面条。",
+      "pinyin": "Wǒ chī le yì wǎn miàntiáo.",
+      "english": "I ate a bowl of noodles."
+    },
+    {
+      "no": 2,
+      "word": {
+        "no": 1,
+        "chinese": "碗",
+        "pinyin": "wǎn",
+        "english": "bowl"
+      },
+      "chinese": "这个碗很干净。",
+      "pinyin": "Zhège wǎn hěn gānjìng.",
+      "english": "This bowl is very clean."
+    },
+    {
+      "no": 3,
+      "word": {
+        "no": 2,
+        "chinese": "万",
+        "pinyin": "wàn",
+        "english": "ten thousand"
+      },
+      "chinese": "这个城市有一百万人。",
+      "pinyin": "Zhège chéngshì yǒu yì bǎi wàn rén.",
+      "english": "This city has a million people."
+    },
+    {
+      "no": 4,
+      "word": {
+        "no": 2,
+        "chinese": "万",
+        "pinyin": "wàn",
+        "english": "ten thousand"
+      },
+      "chinese": "他买房子花了三十万。",
+      "pinyin": "Tā mǎi fángzi huā le sānshí wàn.",
+      "english": "He spent three hundred thousand buying a house."
+    },
+    {
+      "no": 5,
+      "word": {
+        "no": 3,
+        "chinese": "忘记",
+        "pinyin": "wàngjì",
+        "english": "forget"
+      },
+      "chinese": "我忘记带钥匙了。",
+      "pinyin": "Wǒ wàngjì dài yàoshi le.",
+      "english": "I forgot to bring my keys."
+    },
+    {
+      "no": 6,
+      "word": {
+        "no": 3,
+        "chinese": "忘记",
+        "pinyin": "wàngjì",
+        "english": "forget"
+      },
+      "chinese": "别忘记明天的考试。",
+      "pinyin": "Bié wàngjì míngtiān de kǎoshì.",
+      "english": "Don't forget tomorrow's exam."
+    },
+    {
+      "no": 7,
+      "word": {
+        "no": 4,
+        "chinese": "为",
+        "pinyin": "wèi",
+        "english": "for"
+      },
+      "chinese": "这是为你准备的礼物。",
+      "pinyin": "Zhè shì wèi nǐ zhǔnbèi de lǐwù.",
+      "english": "This is a gift prepared for you."
+    },
+    {
+      "no": 8,
+      "word": {
+        "no": 4,
+        "chinese": "为",
+        "pinyin": "wèi",
+        "english": "for"
+      },
+      "chinese": "我们为他高兴。",
+      "pinyin": "Wǒmen wèi tā gāoxìng.",
+      "english": "We are happy for him."
+    },
+    {
+      "no": 9,
+      "word": {
+        "no": 5,
+        "chinese": "为了",
+        "pinyin": "wèile",
+        "english": "in order to"
+      },
+      "chinese": "为了学好中文，他每天练习。",
+      "pinyin": "Wèile xuéhǎo Zhōngwén, tā měitiān liànxí.",
+      "english": "In order to learn Chinese well, he practises every day."
+    },
+    {
+      "no": 10,
+      "word": {
+        "no": 5,
+        "chinese": "为了",
+        "pinyin": "wèile",
+        "english": "in order to"
+      },
+      "chinese": "为了身体健康，我每天跑步。",
+      "pinyin": "Wèile shēntǐ jiànkāng, wǒ měitiān pǎobù.",
+      "english": "For the sake of my health, I run every day."
+    },
+    {
+      "no": 11,
+      "word": {
+        "no": 6,
+        "chinese": "位",
+        "pinyin": "wèi",
+        "english": "position"
+      },
+      "chinese": "这位老师非常认真。",
+      "pinyin": "Zhè wèi lǎoshī fēicháng rènzhēn.",
+      "english": "This teacher is very earnest."
+    },
+    {
+      "no": 12,
+      "word": {
+        "no": 6,
+        "chinese": "位",
+        "pinyin": "wèi",
+        "english": "position"
+      },
+      "chinese": "会议室里有十位客人。",
+      "pinyin": "Huìyìshì lǐ yǒu shí wèi kèrén.",
+      "english": "There are ten guests in the meeting room."
+    },
+    {
+      "no": 13,
+      "word": {
+        "no": 7,
+        "chinese": "文化",
+        "pinyin": "wénhuà",
+        "english": "Culture"
+      },
+      "chinese": "我对中国文化很感兴趣。",
+      "pinyin": "Wǒ duì Zhōngguó wénhuà hěn gǎn xìngqù.",
+      "english": "I am very interested in Chinese culture."
+    },
+    {
+      "no": 14,
+      "word": {
+        "no": 7,
+        "chinese": "文化",
+        "pinyin": "wénhuà",
+        "english": "Culture"
+      },
+      "chinese": "每个国家都有自己的文化。",
+      "pinyin": "Měi gè guójiā dōu yǒu zìjǐ de wénhuà.",
+      "english": "Every country has its own culture."
+    },
+    {
+      "no": 15,
+      "word": {
+        "no": 8,
+        "chinese": "西",
+        "pinyin": "xī",
+        "english": "west"
+      },
+      "chinese": "太阳从西边下去。",
+      "pinyin": "Tàiyáng cóng xībian xiàqù.",
+      "english": "The sun goes down in the west."
+    },
+    {
+      "no": 16,
+      "word": {
+        "no": 8,
+        "chinese": "西",
+        "pinyin": "xī",
+        "english": "west"
+      },
+      "chinese": "我家在城市的西边。",
+      "pinyin": "Wǒ jiā zài chéngshì de xībian.",
+      "english": "My home is in the west of the city."
+    },
+    {
+      "no": 17,
+      "word": {
+        "no": 9,
+        "chinese": "习惯",
+        "pinyin": "xíguàn",
+        "english": "Habit"
+      },
+      "chinese": "早睡早起是好习惯。",
+      "pinyin": "Zǎo shuì zǎo qǐ shì hǎo xíguàn.",
+      "english": "Going to bed early and rising early is a good habit."
+    },
+    {
+      "no": 18,
+      "word": {
+        "no": 9,
+        "chinese": "习惯",
+        "pinyin": "xíguàn",
+        "english": "Habit"
+      },
+      "chinese": "我习惯了这里的生活。",
+      "pinyin": "Wǒ xíguàn le zhèlǐ de shēnghuó.",
+      "english": "I have got used to the life here."
+    },
+    {
+      "no": 19,
+      "word": {
+        "no": 10,
+        "chinese": "洗手间",
+        "pinyin": "xǐshǒujiān",
+        "english": "Restroom"
+      },
+      "chinese": "请问，洗手间在哪儿？",
+      "pinyin": "Qǐngwèn, xǐshǒujiān zài nǎr?",
+      "english": "Excuse me, where is the restroom?"
+    },
+    {
+      "no": 20,
+      "word": {
+        "no": 10,
+        "chinese": "洗手间",
+        "pinyin": "xǐshǒujiān",
+        "english": "Restroom"
+      },
+      "chinese": "洗手间在二楼。",
+      "pinyin": "Xǐshǒujiān zài èr lóu.",
+      "english": "The restroom is on the second floor."
+    },
+    {
+      "no": 21,
+      "word": {
+        "no": 11,
+        "chinese": "洗澡",
+        "pinyin": "xǐzǎo",
+        "english": "Take a shower"
+      },
+      "chinese": "我每天晚上洗澡。",
+      "pinyin": "Wǒ měitiān wǎnshang xǐzǎo.",
+      "english": "I take a shower every evening."
+    },
+    {
+      "no": 22,
+      "word": {
+        "no": 11,
+        "chinese": "洗澡",
+        "pinyin": "xǐzǎo",
+        "english": "Take a shower"
+      },
+      "chinese": "他洗澡以后就睡觉了。",
+      "pinyin": "Tā xǐzǎo yǐhòu jiù shuìjiào le.",
+      "english": "He went to sleep right after showering."
+    },
+    {
+      "no": 23,
+      "word": {
+        "no": 12,
+        "chinese": "夏",
+        "pinyin": "xià",
+        "english": "summer"
+      },
+      "chinese": "夏天的天气很热。",
+      "pinyin": "Xiàtiān de tiānqì hěn rè.",
+      "english": "Summer weather is very hot."
+    },
+    {
+      "no": 24,
+      "word": {
+        "no": 12,
+        "chinese": "夏",
+        "pinyin": "xià",
+        "english": "summer"
+      },
+      "chinese": "我喜欢在夏天游泳。",
+      "pinyin": "Wǒ xǐhuan zài xiàtiān yóuyǒng.",
+      "english": "I like swimming in summer."
+    },
+    {
+      "no": 25,
+      "word": {
+        "no": 13,
+        "chinese": "先",
+        "pinyin": "xiān",
+        "english": "first"
+      },
+      "chinese": "你先走，我等一下。",
+      "pinyin": "Nǐ xiān zǒu, wǒ děng yíxià.",
+      "english": "You go first, I will wait a moment."
+    },
+    {
+      "no": 26,
+      "word": {
+        "no": 13,
+        "chinese": "先",
+        "pinyin": "xiān",
+        "english": "first"
+      },
+      "chinese": "我们先吃饭吧。",
+      "pinyin": "Wǒmen xiān chīfàn ba.",
+      "english": "Let's eat first."
+    },
+    {
+      "no": 27,
+      "word": {
+        "no": 14,
+        "chinese": "香蕉",
+        "pinyin": "xiāngjiāo",
+        "english": "Banana"
+      },
+      "chinese": "我买了几个香蕉。",
+      "pinyin": "Wǒ mǎi le jǐ gè xiāngjiāo.",
+      "english": "I bought a few bananas."
+    },
+    {
+      "no": 28,
+      "word": {
+        "no": 14,
+        "chinese": "香蕉",
+        "pinyin": "xiāngjiāo",
+        "english": "Banana"
+      },
+      "chinese": "这个香蕉还没熟。",
+      "pinyin": "Zhège xiāngjiāo hái méi shú.",
+      "english": "This banana is not ripe yet."
+    },
+    {
+      "no": 29,
+      "word": {
+        "no": 15,
+        "chinese": "相信",
+        "pinyin": "xiāngxìn",
+        "english": "believe"
+      },
+      "chinese": "我相信他说的话。",
+      "pinyin": "Wǒ xiāngxìn tā shuō de huà.",
+      "english": "I believe what he says."
+    },
+    {
+      "no": 30,
+      "word": {
+        "no": 15,
+        "chinese": "相信",
+        "pinyin": "xiāngxìn",
+        "english": "believe"
+      },
+      "chinese": "你要相信自己。",
+      "pinyin": "Nǐ yào xiāngxìn zìjǐ.",
+      "english": "You should believe in yourself."
+    },
+    {
+      "no": 31,
+      "word": {
+        "no": 16,
+        "chinese": "向",
+        "pinyin": "xiàng",
+        "english": "towards"
+      },
+      "chinese": "请向前走五分钟。",
+      "pinyin": "Qǐng xiàng qián zǒu wǔ fēnzhōng.",
+      "english": "Please walk forward for five minutes."
+    },
+    {
+      "no": 32,
+      "word": {
+        "no": 16,
+        "chinese": "向",
+        "pinyin": "xiàng",
+        "english": "towards"
+      },
+      "chinese": "他向我笑了笑。",
+      "pinyin": "Tā xiàng wǒ xiào le xiào.",
+      "english": "He smiled at me."
+    },
+    {
+      "no": 33,
+      "word": {
+        "no": 17,
+        "chinese": "像",
+        "pinyin": "xiàng",
+        "english": "image"
+      },
+      "chinese": "墙上有一张他的像。",
+      "pinyin": "Qiáng shàng yǒu yì zhāng tā de xiàng.",
+      "english": "There is a portrait of him on the wall."
+    },
+    {
+      "no": 34,
+      "word": {
+        "no": 17,
+        "chinese": "像",
+        "pinyin": "xiàng",
+        "english": "image"
+      },
+      "chinese": "他很像他的爸爸。",
+      "pinyin": "Tā hěn xiàng tā de bàba.",
+      "english": "He looks very like his father."
+    },
+    {
+      "no": 35,
+      "word": {
+        "no": 18,
+        "chinese": "小心",
+        "pinyin": "xiǎoxīn",
+        "english": "watch out"
+      },
+      "chinese": "过马路的时候要小心。",
+      "pinyin": "Guò mǎlù de shíhou yào xiǎoxīn.",
+      "english": "Be careful when crossing the road."
+    },
+    {
+      "no": 36,
+      "word": {
+        "no": 18,
+        "chinese": "小心",
+        "pinyin": "xiǎoxīn",
+        "english": "watch out"
+      },
+      "chinese": "小心，地上有水。",
+      "pinyin": "Xiǎoxīn, dì shàng yǒu shuǐ.",
+      "english": "Watch out, there is water on the ground."
+    },
+    {
+      "no": 37,
+      "word": {
+        "no": 19,
+        "chinese": "校长",
+        "pinyin": "xiàozhǎng",
+        "english": "Principal"
+      },
+      "chinese": "我们的校长很热情。",
+      "pinyin": "Wǒmen de xiàozhǎng hěn rèqíng.",
+      "english": "Our principal is very warm."
+    },
+    {
+      "no": 38,
+      "word": {
+        "no": 19,
+        "chinese": "校长",
+        "pinyin": "xiàozhǎng",
+        "english": "Principal"
+      },
+      "chinese": "校长明天来我们班。",
+      "pinyin": "Xiàozhǎng míngtiān lái wǒmen bān.",
+      "english": "The principal is coming to our class tomorrow."
+    },
+    {
+      "no": 39,
+      "word": {
+        "no": 20,
+        "chinese": "新闻",
+        "pinyin": "xīnwén",
+        "english": "news"
+      },
+      "chinese": "我每天看新闻。",
+      "pinyin": "Wǒ měitiān kàn xīnwén.",
+      "english": "I watch the news every day."
+    },
+    {
+      "no": 40,
+      "word": {
+        "no": 20,
+        "chinese": "新闻",
+        "pinyin": "xīnwén",
+        "english": "news"
+      },
+      "chinese": "今天的新闻很有意思。",
+      "pinyin": "Jīntiān de xīnwén hěn yǒu yìsi.",
+      "english": "Today's news is very interesting."
+    },
+    {
+      "no": 41,
+      "word": {
+        "no": 21,
+        "chinese": "新鲜",
+        "pinyin": "xīnxiān",
+        "english": "fresh"
+      },
+      "chinese": "这些水果很新鲜。",
+      "pinyin": "Zhèxiē shuǐguǒ hěn xīnxiān.",
+      "english": "These fruits are very fresh."
+    },
+    {
+      "no": 42,
+      "word": {
+        "no": 21,
+        "chinese": "新鲜",
+        "pinyin": "xīnxiān",
+        "english": "fresh"
+      },
+      "chinese": "早上的空气很新鲜。",
+      "pinyin": "Zǎoshang de kōngqì hěn xīnxiān.",
+      "english": "The morning air is very fresh."
+    },
+    {
+      "no": 43,
+      "word": {
+        "no": 22,
+        "chinese": "信用卡",
+        "pinyin": "xìnyòngkǎ",
+        "english": "Credit card"
+      },
+      "chinese": "我可以用信用卡吗？",
+      "pinyin": "Wǒ kěyǐ yòng xìnyòngkǎ ma?",
+      "english": "Can I use a credit card?"
+    },
+    {
+      "no": 44,
+      "word": {
+        "no": 22,
+        "chinese": "信用卡",
+        "pinyin": "xìnyòngkǎ",
+        "english": "Credit card"
+      },
+      "chinese": "他忘记带信用卡了。",
+      "pinyin": "Tā wàngjì dài xìnyòngkǎ le.",
+      "english": "He forgot to bring his credit card."
+    },
+    {
+      "no": 45,
+      "word": {
+        "no": 23,
+        "chinese": "行李箱",
+        "pinyin": "xínglixiāng",
+        "english": "Trunk"
+      },
+      "chinese": "我的行李箱很重。",
+      "pinyin": "Wǒ de xínglixiāng hěn zhòng.",
+      "english": "My suitcase is very heavy."
+    },
+    {
+      "no": 46,
+      "word": {
+        "no": 23,
+        "chinese": "行李箱",
+        "pinyin": "xínglixiāng",
+        "english": "Trunk"
+      },
+      "chinese": "请把行李箱放在这儿。",
+      "pinyin": "Qǐng bǎ xínglixiāng fàng zài zhèr.",
+      "english": "Please put the suitcase here."
+    },
+    {
+      "no": 47,
+      "word": {
+        "no": 24,
+        "chinese": "熊猫",
+        "pinyin": "xióngmāo",
+        "english": "Panda"
+      },
+      "chinese": "熊猫是中国的国宝。",
+      "pinyin": "Xióngmāo shì Zhōngguó de guóbǎo.",
+      "english": "The panda is China's national treasure."
+    },
+    {
+      "no": 48,
+      "word": {
+        "no": 24,
+        "chinese": "熊猫",
+        "pinyin": "xióngmāo",
+        "english": "Panda"
+      },
+      "chinese": "我在动物园看见了熊猫。",
+      "pinyin": "Wǒ zài dòngwùyuán kànjiàn le xióngmāo.",
+      "english": "I saw a panda at the zoo."
+    },
+    {
+      "no": 49,
+      "word": {
+        "no": 25,
+        "chinese": "需要",
+        "pinyin": "xūyào",
+        "english": "Need"
+      },
+      "chinese": "我需要你的帮助。",
+      "pinyin": "Wǒ xūyào nǐ de bāngzhù.",
+      "english": "I need your help."
+    },
+    {
+      "no": 50,
+      "word": {
+        "no": 25,
+        "chinese": "需要",
+        "pinyin": "xūyào",
+        "english": "Need"
+      },
+      "chinese": "你需要买什么？",
+      "pinyin": "Nǐ xūyào mǎi shénme?",
+      "english": "What do you need to buy?"
+    }
+  ]
+}
