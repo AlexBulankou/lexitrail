@@ -87,6 +87,25 @@ URL_DEFAULT = "https://lexitrail.com"
 # the loader's own payloads had ZERO duplicates. Anchor on the wordset id.
 DATA_RE = re.compile(r"/wordsets/[^/]+/words|/userwords/")
 
+# issue-297: the wordset LIST endpoint, counted SEPARATELY and never folded into
+# DATA_RE.
+#
+# 🔴 NOT by widening DATA_RE, and the comment above says why: `/wordsets` alone
+# is refetched on every back-navigation, and counting it here swamped the
+# loader signal — 12 "redundant" requests on a build whose own payloads had
+# zero. Widening would trade one blind spot for a dead detector.
+#
+# But the green DATA_RE reports is not evidence about this endpoint: it is
+# excluded BY CONSTRUCTION, and a duplicate a detector never looks at is not a
+# duplicate it cleared. #297 measured THREE identical `GET /wordsets` inside one
+# FORWARD arrival, before any back-navigation exists to explain them, and this
+# harness reported PASS throughout.
+#
+# The negative lookahead is what keeps the two signals apart: `/wordsets/1/words`
+# must NOT count here, or this becomes the substring match the comment above
+# rejects.
+LIST_RE = re.compile(r"/wordsets(?:\?[^/]*)?$")
+
 MODES = ["PRACTICE", "DUE_TODAY", "SHOW_EXCLUDED", "TEST"]
 WORDSETS = [1, 2, 3]
 
@@ -112,6 +131,26 @@ def redundant(urls, keys=None):
         "redundant": len(data) - len(counts),
         "dupes": dupes,
     }
+
+
+def list_endpoint(urls):
+    """Pure core: how often was the wordset LIST endpoint fetched?
+
+    🔴 REPORT-ONLY, deliberately, and the reason is a threshold I do not have.
+    #297's finding is *three per FORWARD arrival*; this harness walks 12 views
+    WITH back-navigation, where refetching the list is expected and its rate has
+    never been measured. Gating on a number I invented would either fire on
+    correct behaviour — and a detector that fires on a legitimate path gets
+    muted, then is absent when it matters — or sit above the real value and
+    catch nothing.
+
+    So this makes the endpoint VISIBLE and says what it cannot conclude. The
+    threshold belongs in a per-journey check once the forward-arrival number is
+    measured; sister to `cleared_s`, which is report-only here for the same
+    kind of reason.
+    """
+    hits = [u for u in urls if LIST_RE.search(u)]
+    return {"list_total": len(hits), "list_distinct": len(set(hits))}
 
 
 def self_test():
@@ -145,6 +184,26 @@ def self_test():
     r = redundant(["https://api.x/static/js/main.abc.js"])
     if r["total"] != 0:
         print(f"SELF-TEST FAIL: expected zero data requests, got {r}")
+        ok = False
+
+    # (4) issue-297: LIST_RE sees the list endpoint and does NOT see the
+    #     per-wordset payload. Both arms, because a matcher that catches
+    #     everything is the widening this file rejects.
+    r = list_endpoint([
+        "https://api.x/wordsets",
+        "https://api.x/wordsets",
+        "https://api.x/wordsets?x=1",
+        "https://api.x/wordsets/1/words",          # must NOT count
+        "https://api.x/userwords/query?user_id=a", # must NOT count
+    ])
+    if r != {"list_total": 3, "list_distinct": 2}:
+        print(f"SELF-TEST FAIL: LIST_RE mismatch, got {r}")
+        ok = False
+    # (5) and the two matchers must not overlap — the whole point of keeping
+    #     them separate. `/wordsets/1/words` belongs to DATA_RE alone.
+    both = "https://api.x/wordsets/1/words"
+    if not DATA_RE.search(both) or LIST_RE.search(both):
+        print("SELF-TEST FAIL: DATA_RE and LIST_RE overlap on the words payload")
         ok = False
 
     print("SELF-TEST PASS: counter fires on duplicates and stays silent without them"
@@ -231,6 +290,7 @@ def measure(url, settle_ms, nav):
         ctx.close()
 
     report = redundant(seen)
+    report.update(list_endpoint(seen))   # issue-297
     report["cleared_s"] = cleared
     report["ga_blocked"] = len(blocked)
     report["ga_completed"] = completed
@@ -268,6 +328,13 @@ def main():
           (f"{report['cleared_s']:.1f}s" if report["cleared_s"] is not None
            else "NOT CLEARED in 90s")
           + "   (report-only, never gated -- see module docstring)")
+
+    # issue-297: report-only. See `list_endpoint`'s docstring for why there is
+    # no threshold here rather than a threshold nobody measured.
+    print(f"wordset LIST endpoint: {report['list_total']} fetch(es), "
+          f"{report['list_distinct']} distinct   (report-only, never gated -- "
+          f"#297; DATA_RE excludes this endpoint by construction, so the verdict "
+          f"below says nothing about it)")
 
     print(f"analytics beacons blocked: {report['ga_blocked']} | completed: "
           f"{len(report['ga_completed'])}")
