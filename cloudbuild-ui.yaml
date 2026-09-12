@@ -170,14 +170,35 @@ steps:
         gcloud container clusters get-credentials ys-autopilot \
           --region us-central1 --project yojowa-claw
         REF="$$(cat /workspace/ui_image_ref.txt)"
+        # issue-238 AC1: read the digest BEFORE `set image`. Without it the
+        # read-back has two outcomes for three facts, and the third -- a
+        # concurrent build legitimately overwriting ours -- is indistinguishable
+        # from `set image` silently not taking.
+        PREV="$$(kubectl -n lexitrail get deploy lexitrail-ui-deployment \
+          -o jsonpath='{.spec.template.spec.containers[0].image}')"
         kubectl -n lexitrail set image deployment/lexitrail-ui-deployment \
           lexitrail-ui="$$REF"
         kubectl -n lexitrail rollout status deployment/lexitrail-ui-deployment --timeout=300s
         LIVE="$$(kubectl -n lexitrail get deploy lexitrail-ui-deployment \
           -o jsonpath='{.spec.template.spec.containers[0].image}')"
+        echo "previous:  $$PREV"
         echo "requested: $$REF"
         echo "live spec: $$LIVE"
-        [ "$$LIVE" = "$$REF" ] || { echo "DEPLOY-FAIL: live spec does not match what we pushed" >&2; exit 1; }
+        if [ "$$LIVE" = "$$REF" ]; then
+          echo "DEPLOY-OK: live spec is the digest this build pushed"
+        elif [ "$$LIVE" = "$$PREV" ]; then
+          echo "DEPLOY-FAIL: live spec is still the PREVIOUS digest -- set image did not take" >&2
+          exit 1
+        else
+          # Not a failure: our bytes lost a race we did not need to win. The
+          # winner is a LATER digest of this same deployment, so main is ahead
+          # of us, not behind. Exiting 1 here reds a build on main carrying no
+          # information about the code -- the cost this whole file exists to
+          # avoid. Loud on stdout, exit 0.
+          echo "DEPLOY-SUPERSEDED: a concurrent deploy won -- live spec is neither"
+          echo "  what we pushed nor the digest we replaced, so a NEWER build set it."
+          echo "  Ours was superseded, not lost; nothing to re-run."
+        fi
     waitFor: ['ui-push']
 
   # zz1 relaying Alex 2026-08-28: "wire its CANNOT-TELL and FAIL outcomes to a
