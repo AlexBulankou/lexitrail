@@ -216,3 +216,125 @@ def test_is_ancestor_still_answers_the_two_real_cases():
     head, older = head_p.stdout.strip(), older_p.stdout.strip()
     assert mod._is_ancestor(older, head) is True
     assert mod._is_ancestor(head, older) is False
+
+
+# --- #490: production AHEAD is not production WRONG --------------------------
+# The bp poller (#485) stamps BUILD_SHA=$(git rev-parse --short HEAD) -- the
+# clone's HEAD, ANY path -- while `expected` is the newest commit touching THIS
+# surface's path. A merge touching neither deploy path therefore puts a non-path
+# sha on production, and before this change the check FAILed until the next path
+# commit. That is an alarm firing on its own baseline.
+
+_E = "e" * 40   # expected: newest commit for the surface's path
+_L = "l" * 40   # live: what production reports
+_REF = "origin/main"
+
+
+def _confirmed(pairs):
+    """Fake `_is_ancestor_confirmed` from an explicit {(older, newer): bool}.
+
+    Anything not named is False -- the helper's real polarity, so a test that
+    forgets an arm fails rather than silently taking the PASS branch.
+    """
+    return lambda older, newer: pairs.get((older, newer), False)
+
+
+def test_ahead_by_non_deploying_commits_is_a_PASS(monkeypatch):
+    """AC1. Production CONTAINS the newest path commit and is on the ref.
+
+    🔴 `_is_ancestor` must be patched False as well, and that is a statement
+    about ORDER, not test scaffolding. The PASS branch sits AFTER the
+    main-is-AHEAD check, and `_is_ancestor` fails toward True on an
+    unresolvable sha -- so an ambiguous ancestry alarms before it can ever
+    reach PASS. That ordering is deliberate: ambiguity must not be rescued by
+    the new branch. Patching it False models the real case, where
+    `merge-base --is-ancestor live expected` exits 1 -- a CONFIRMED
+    not-an-ancestor, which is what production-ahead actually produces.
+    """
+    monkeypatch.setattr(mod, "_is_ancestor", lambda older, newer: False)
+    monkeypatch.setattr(
+        mod, "_is_ancestor_confirmed", _confirmed({(_E, _L): True, (_L, _REF): True}),
+    )
+    code, msg = V("ui", _E, _L, True, "", _REF)
+    assert code == PASS, msg
+    assert "production is CURRENT" in msg, msg
+    assert "do not touch this surface" in msg, msg
+
+
+def test_main_ahead_of_production_is_still_a_FAIL(monkeypatch):
+    """AC2. The real drift case is untouched: nothing about it is an ancestor
+    relation in the passing direction, so it never reaches the new branch."""
+    monkeypatch.setattr(mod, "_is_ancestor_confirmed", _confirmed({}))
+    monkeypatch.setattr(mod, "_is_ancestor", lambda older, newer: True)
+    code, msg = V("ui", _E, _L, True, "", _REF)
+    assert code == FAIL, msg
+    assert "main is AHEAD of production" in msg, msg
+
+
+def test_live_unreachable_from_the_ref_does_NOT_pass(monkeypatch):
+    """AC3. 🔴 Both terms are load-bearing. A deploy from an unmerged branch
+    satisfies `expected <= live` and must still not pass -- otherwise this
+    change would certify an artifact built from code that is not on the ref.
+
+    🔴 `_is_ancestor` patched False for the same ordering reason as AC1 --
+    WITHOUT IT THIS TEST IS VACUOUS. The real helper fails toward True on these
+    fake shas, so the assertion was satisfied by the main-is-AHEAD branch and
+    the new code was never reached. Found by mutation: deleting the `live <= ref`
+    term reddened NOTHING until this line was added."""
+    monkeypatch.setattr(mod, "_is_ancestor", lambda older, newer: False)
+    monkeypatch.setattr(
+        mod, "_is_ancestor_confirmed", _confirmed({(_E, _L): True}),  # (L, REF) False
+    )
+    code, msg = V("ui", _E, _L, True, "", _REF)
+    assert code == FAIL, msg
+    assert "production is CURRENT" not in msg, msg
+
+
+def test_ref_None_is_CANNOT_VERIFY_and_must_not_pass(monkeypatch):
+    """🔴 A caller that passed no ref cannot have the second term checked, so it
+    must not reach the PASS branch at all -- even with both ancestries true.
+
+    This is the three-state rule: the state that is not a confirmed yes must not
+    score as the good one. Without this, every existing caller of the 5-arg form
+    would silently start passing on the first term alone."""
+    monkeypatch.setattr(
+        mod, "_is_ancestor_confirmed",
+        _confirmed({(_E, _L): True, (_L, _REF): True, (_L, None): True}),
+    )
+    monkeypatch.setattr(mod, "_is_ancestor", lambda older, newer: False)
+    code, msg = V("ui", _E, _L, True, "")          # no ref
+    assert code == FAIL, msg
+    assert "production is CURRENT" not in msg, msg
+
+
+def test_is_ancestor_confirmed_has_the_OPPOSITE_polarity_to_is_ancestor():
+    """🔴 The two helpers disagree on purpose, and that is the whole point.
+
+    `_is_ancestor` decides between two FAIL wordings, so ambiguity falls to True
+    (the harmless advice). `_is_ancestor_confirmed` decides a PASS, so ambiguity
+    must fall to False. Reusing the first here would let a shallow clone -- where
+    `merge-base` exits 128 -- certify a production it could not check.
+
+    Same input, opposite answers, is the assertion."""
+    bad = ("not-a-sha", "also-not-a-sha")
+    assert mod._is_ancestor(*bad) is True, "unchanged: ambiguity -> the safe wording"
+    assert mod._is_ancestor_confirmed(*bad) is False, (
+        "ambiguity must NOT certify currency"
+    )
+
+
+def test_is_ancestor_confirmed_answers_the_two_real_cases():
+    """Positive and negative control on real objects, so the assertion above is
+    about polarity rather than about a helper that always returns False."""
+    import subprocess
+    head = subprocess.run(
+        ["git", "rev-parse", "HEAD"], capture_output=True, text=True,
+    ).stdout.strip()
+    older = subprocess.run(
+        ["git", "rev-parse", "HEAD~3"], capture_output=True, text=True,
+    ).stdout.strip()
+    if not head or not older:
+        import pytest
+        pytest.skip("no git history here")
+    assert mod._is_ancestor_confirmed(older, head) is True
+    assert mod._is_ancestor_confirmed(head, older) is False
