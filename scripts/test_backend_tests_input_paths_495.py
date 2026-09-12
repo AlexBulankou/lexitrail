@@ -56,6 +56,18 @@ def _matches(path: str, pattern: str) -> bool:
     raise AssertionError(f"unhandled pattern shape: {pattern!r} -- extend the matcher")
 
 
+def _literal_parent_paths() -> set[str]:
+    """EVERY `'../...'` string literal in config.py, whatever names it.
+
+    Deliberately shape-blind: any quoted literal starting `../`, regardless of
+    assignment form. This is the broad net.
+    """
+    return {
+        v[len("../"):]
+        for v in re.findall(r"['\"](\.\./[^'\"]+)['\"]", CONFIG.read_text())
+    }
+
+
 def _derived_inputs() -> set[str]:
     """Repo-relative paths `backend/` reads from OUTSIDE backend/, from its source.
 
@@ -63,6 +75,20 @@ def _derived_inputs() -> set[str]:
     (`'../terraform/csv/words.csv'`), so the leading `../` is stripped to get a
     repo-relative path. Anything without `../` resolves inside `backend/` and is
     already covered by `backend/**`.
+
+    🔴 WHAT THIS CANNOT SEE, and why the guard below is not the one you would
+    expect (hc2@, reviewing #496): `assert out` proves the regex found SOMETHING,
+    never that it found EVERYTHING. A path introduced as a lowercase name, a class
+    attribute, or composed via `os.path.join`/an f-string would escape the
+    UPPERCASE-assignment pattern entirely -- and the vacuity guard would still
+    pass, because the two existing constants keep it non-empty. An "is it empty?"
+    check is structurally incapable of detecting a MISSED member.
+
+    So the real guard is `test_the_uppercase_regex_has_not_been_OUTGROWN_495`,
+    which cross-checks this narrow derivation against every `'../...'` literal in
+    the file by a second, shape-blind pattern. Composition (`os.path.join('..',
+    'terraform', ...)`) still escapes BOTH, and is called out there rather than
+    left implied.
     """
     src = CONFIG.read_text()
     out = set()
@@ -152,4 +178,38 @@ def test_the_coverage_this_filter_buys_actually_exists_495():
     assert "load_word_data" in src, (
         "issue-495: the coverage file no longer calls load_word_data, so the "
         "filter entries buy nothing."
+    )
+
+
+def test_the_uppercase_regex_has_not_been_OUTGROWN_495():
+    """🔴 A guard on the DERIVATION, not on the filter — hc2@'s review of #496.
+
+    `_derived_inputs()` matches only `UPPERCASE = '...'`. Its `assert out` is a
+    vacuity check and cannot see a MISSED member: two surviving constants keep it
+    non-empty no matter what else was added.
+
+    So compare it against a second, shape-blind pattern — every `'../...'` literal
+    in config.py, however it is named. If the file grows an out-of-backend path
+    the narrow pattern does not see, this reds and names it, instead of the hole
+    reopening behind a green test.
+
+    ⚠️ Still escapes BOTH patterns: a path COMPOSED rather than written literally
+    (`os.path.join('..', 'terraform', 'csv', 'x.csv')`, or an f-string). Stated
+    plainly rather than implied — that is a known blind spot of this file, not a
+    property of the repo, and it is why the negative control above pins concrete
+    filenames as well as derived ones.
+    """
+    narrow = _derived_inputs()
+    broad = _literal_parent_paths()
+    missed = broad - narrow
+    assert not missed, (
+        f"issue-495: config.py contains out-of-backend path literal(s) {sorted(missed)} "
+        "that `_derived_inputs()` does not match -- it only reads `UPPERCASE = '...'` "
+        "assignments. Either widen that pattern or add these to backend-tests.yml; "
+        "the vacuity guard cannot catch this because the existing constants keep it "
+        "non-empty."
+    )
+    assert narrow <= broad, (
+        f"issue-495: the shape-blind scan missed {sorted(narrow - broad)}, so it is "
+        "no longer a superset and cannot serve as a cross-check."
     )
