@@ -1,4 +1,5 @@
-import { loadDueToday } from './useDueToday';
+import { renderHook, waitFor } from '@testing-library/react';
+import { loadDueToday, useDueToday } from './useDueToday';
 import { getWordsets } from '../services/wordsService';
 import { getUserWordsByWordset, getDueCounts } from '../services/userService';
 import { userwordsKey } from '../utils/wordsetCache';
@@ -290,5 +291,66 @@ describe('loadDueToday — the due-counts fast path (issue-384)', () => {
     const { total, sets } = await loadDueToday('user-1');
     expect(total).toBe(0);
     expect(sets).toEqual([{ wordsetId: 1, description: 'HSK1', due: 0 }]);
+  });
+});
+
+// issue-297 AC2 — the hook half. The wordset LIST is user-INDEPENDENT, so a
+// `userId` change must not refetch it.
+//
+// These are the repo's first `renderHook` tests. The comment in the source that
+// said the hook could not be tested here was stale in three dimensions at once
+// (RTL installed, CI running it, 42 suites not ten) — measured before writing
+// this, and corrected in the same change.
+describe('useDueToday — the wordset LIST is fetched once per arrival (issue-297 AC2)', () => {
+  beforeEach(() => {
+    getWordsets.mockResolvedValue({ data: [{ wordset_id: 1, description: 'HSK1' }] });
+    getDueCounts.mockResolvedValue({ data: [{ wordset_id: 1, due: 3 }] });
+    getUserWordsByWordset.mockResolvedValue({ data: [] });
+  });
+
+  it('resolves to the due total for a signed-in user', async () => {
+    const { result } = renderHook(() => useDueToday('u1'));
+    await waitFor(() => expect(result.current.status).toBe('ready'));
+    expect(result.current.total).toBe(3);
+  });
+
+  // THE BINDING ARM. Before the split this was 2: the list rode along inside the
+  // `[userId]` effect, so guest -> signed-in refetched a list that cannot differ.
+  it('does NOT refetch the list when userId changes', async () => {
+    const { result, rerender } = renderHook(({ u }) => useDueToday(u), {
+      initialProps: { u: 'guest' },
+    });
+    await waitFor(() => expect(result.current.status).toBe('ready'));
+    expect(getWordsets).toHaveBeenCalledTimes(1);
+
+    rerender({ u: 'u1' });
+    // The user-DEPENDENT half must still re-run -- otherwise this passes by
+    // doing nothing at all, which is the same number for the opposite reason.
+    await waitFor(() => expect(getDueCounts).toHaveBeenCalledTimes(2));
+    expect(getWordsets).toHaveBeenCalledTimes(1);
+  });
+
+  it('still refetches the list on an explicit reload (a retry is a retry of both)', async () => {
+    const { result } = renderHook(() => useDueToday('u1'));
+    await waitFor(() => expect(result.current.status).toBe('ready'));
+    expect(getWordsets).toHaveBeenCalledTimes(1);
+
+    result.current.reload();
+    await waitFor(() => expect(getWordsets).toHaveBeenCalledTimes(2));
+  });
+
+  it('signed-out is idle, and never asks for a due count', async () => {
+    const { result } = renderHook(() => useDueToday(null));
+    await waitFor(() => expect(result.current.status).toBe('idle'));
+    expect(getDueCounts).not.toHaveBeenCalled();
+  });
+
+  // The list's OWN failure has to reach the error state. Before the split there
+  // was one try/catch; after it there are two paths, and this is the new one.
+  it('a failed LIST fetch surfaces as error, not as a silent 0', async () => {
+    getWordsets.mockRejectedValue(new Error('network'));
+    const { result } = renderHook(() => useDueToday('u1'));
+    await waitFor(() => expect(result.current.status).toBe('error'));
+    expect(result.current.total).toBe(0);
   });
 });

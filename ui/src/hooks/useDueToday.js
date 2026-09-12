@@ -21,12 +21,19 @@ import { userwordsKey } from '../utils/wordsetCache';
 // count needs no `getWordsByWordset` call. That halves the fan-out.
 // The fetch + aggregate, as a plain async function.
 //
-// Separated from the hook deliberately: this repo has no React testing library
-// (all ten existing suites are pure logic), and the part worth pinning is the
-// aggregation and the failure mode, not React's state plumbing. Adding
-// `@testing-library/react` to test a five-line `useEffect` would buy a
-// dependency I cannot exercise in CI — lexitrail has no Cloud Build trigger
-// (#77) — in exchange for coverage of the least interesting half.
+// Separated from the hook deliberately: the part worth pinning is the
+// aggregation and the failure mode, and keeping it a plain async function means
+// most of this file is testable without React at all.
+//
+// ⚠️ CORRECTED (issue-297 AC2). This comment used to say the repo "has no React
+// testing library (all ten existing suites are pure logic)" and that the
+// dependency "cannot be exercised in CI". Both were true when written and both
+// are now FALSE — measured 2026-09-12: `@testing-library/react@14.3.1` is
+// installed, `AuthContext.test.js` and `CardErrorBoundary.test.js` already mount
+// components with it, `.github/workflows/ui-tests.yml` runs the suite on `ui/**`,
+// and there are 42 suites, not ten. The hook IS testable; `useDueToday.test.js`
+// exercises it with `renderHook`. Left as a correction rather than deleted: the
+// stale version had already talked one reader (me) out of testing this hook.
 //
 // Same shape as `dueAcrossWordsets` taking already-fetched lists: keep the
 // logic pure and let the thin wrapper be obviously correct by inspection.
@@ -76,9 +83,16 @@ import { userwordsKey } from '../utils/wordsetCache';
 const isEndpointAbsent = (err) =>
   Boolean(err && err.response && err.response.status === 404);
 
-export const loadDueToday = async (userId, cache = null) => {
-  const wordsetsResponse = await getWordsets();
-  const wordsets = (wordsetsResponse && wordsetsResponse.data) || [];
+// issue-297 AC2: `wordsets` is an OPTIONAL pre-resolved list. Passing it lets a
+// caller that already holds the (user-INDEPENDENT) list skip a redundant GET —
+// see `useDueToday` below, where the list has its own effect. Omitted, the
+// behaviour is exactly as before, which is why every existing caller and all
+// 22 `loadDueToday` assertions in the sister test file are untouched.
+export const loadDueToday = async (userId, cache = null, wordsets = null) => {
+  if (wordsets === null) {
+    const wordsetsResponse = await getWordsets();
+    wordsets = (wordsetsResponse && wordsetsResponse.data) || [];
+  }
 
   try {
     const response = await getDueCounts(userId);
@@ -147,6 +161,37 @@ export const useDueToday = (userId) => {
   const [attempt, setAttempt] = useState(0);
   const reload = useCallback(() => setAttempt((n) => n + 1), []);
 
+  // issue-297 AC2: the wordset LIST does not depend on `userId`, so it gets its
+  // OWN effect. Folded into the effect below it was refetched on every identity
+  // change -- measured at two `GET /wordsets` per arrival where one suffices,
+  // the second being this hook re-running after guest entry.
+  //
+  // Keyed on [attempt] rather than []: `reload` is a retry of the whole screen,
+  // and a list fetch that failed must get a second chance too.
+  //
+  // Three states in one slot, and the third must not read as the first:
+  //   null            -- not resolved yet; the effect below must WAIT, not render 0
+  //   Error instance  -- the list fetch failed; that is this screen's error state
+  //   array           -- resolved
+  // A bare `[]` cannot express "not yet", and rendering 0 due while the list is
+  // still in flight is the one wrong answer this screen must never give.
+  const [wordsets, setWordsets] = useState(null);
+  useEffect(() => {
+    let cancelled = false;
+    getWordsets()
+      .then((res) => {
+        if (!cancelled) setWordsets((res && res.data) || []);
+      })
+      .catch((err) => {
+        if (!cancelled) {
+          setWordsets(err instanceof Error ? err : new Error('wordsets fetch failed'));
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [attempt]);
+
   useEffect(() => {
     // Signed out: there is no due set, and that is a real answer rather than a
     // failure — 'idle' so the caller can render a signed-out home instead of an
@@ -156,12 +201,22 @@ export const useDueToday = (userId) => {
       return undefined;
     }
 
+    // The list is still in flight. Stay in 'loading' -- returning here without
+    // touching state is deliberate: this effect re-runs when `wordsets` lands.
+    if (wordsets === null) return undefined;
+    // The list itself failed. Same error state as a failed fan-out, for the same
+    // reason: a silent 0 would read as "you are all caught up".
+    if (wordsets instanceof Error) {
+      setState({ status: 'error', total: 0, sets: [] });
+      return undefined;
+    }
+
     let cancelled = false;
     // Re-entering 'loading' on retry, so the retry has visible feedback rather
     // than looking like a dead button while the fan-out is in flight.
     setState((prev) => (prev.status === 'loading' ? prev : { ...prev, status: 'loading' }));
 
-    loadDueToday(userId, sharedWordsetCache())
+    loadDueToday(userId, sharedWordsetCache(), wordsets)
       .then(({ total, sets }) => {
         if (!cancelled) setState({ status: 'ready', total, sets });
       })
@@ -176,7 +231,7 @@ export const useDueToday = (userId) => {
     return () => {
       cancelled = true;
     };
-  }, [userId, attempt]);
+  }, [userId, attempt, wordsets]);
 
   return { ...state, reload };
 };
