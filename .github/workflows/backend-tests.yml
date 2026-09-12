@@ -98,6 +98,8 @@ on:
       # entry above does not cover it, which is easy to misread.
       - 'terraform-ys/workloads.tf'
       - 'ui/src/utils/srs.js'
+      - 'terraform/csv/words.csv'
+      - 'terraform/csv/wordsets.csv'
       - '.github/workflows/backend-tests.yml'
   push:
     branches: [main]
@@ -115,6 +117,8 @@ on:
       # entry above does not cover it, which is easy to misread.
       - 'terraform-ys/workloads.tf'
       - 'ui/src/utils/srs.js'
+      - 'terraform/csv/words.csv'
+      - 'terraform/csv/wordsets.csv'
       - '.github/workflows/backend-tests.yml'
 
 # A second push to the same PR makes the first run irrelevant.
