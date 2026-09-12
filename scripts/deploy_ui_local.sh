@@ -64,16 +64,38 @@ CTX="gke_${CLUSTER_PROJECT}_${CLUSTER_REGION}_${CLUSTER}"
 kubectl config get-contexts -o name 2>/dev/null | grep -qx "$CTX" || \
   gcloud container clusters get-credentials "$CLUSTER" --region "$CLUSTER_REGION" \
     --project "$CLUSTER_PROJECT" >/dev/null 2>&1 || die "no kube context $CTX and get-credentials failed"
+# issue-494 AC3: capture the digest BEFORE `set image`, same as cloudbuild-ui.yaml (#493) and
+# cloudbuild.yaml (#494). #494 proposed leaving this file alone on the grounds that it is "a
+# hand-run operator path, so the concurrency race is far less likely". BOTH HALVES OF THAT PREMISE
+# ARE FALSE, measured:
+#
+#   1. It is not hand-run. `p/local-ci/lt-deploy-poller.sh:103` invokes it, on every merge (#486).
+#   2. It is not the only writer of this deployment. `lexitrail-ui-deploy-main` is ENABLED and
+#      fires on `ui/**` + `cloudbuild-ui.yaml`, and it also `set image`s lexitrail-ui-deployment.
+#
+# The poller's own `flock -n 9` serialises poller-vs-poller and does nothing about poller-vs-Cloud
+# Build. So a `ui/**` merge fires BOTH writers and the race is live here exactly as it was there.
+PREV="$(kubectl --context="$CTX" -n "$NS" get deploy "$DEPLOY" \
+        -o jsonpath='{.spec.template.spec.containers[0].image}')"
 kubectl --context="$CTX" -n "$NS" set image "deployment/$DEPLOY" "$CONTAINER=$REF" || die "set image failed"
 kubectl --context="$CTX" -n "$NS" rollout status "deployment/$DEPLOY" --timeout=300s || \
   die "rollout did not complete"
 
-# Assert the cluster ended up with EXACTLY what we pushed. cloudbuild-ui.yaml checks this and it is
-# the difference between "the command succeeded" and "the right thing is running".
+# Three facts, three outcomes. The old two-outcome form reported a concurrent build legitimately
+# overwriting us as DEPLOY-FAIL, which is a false alarm on a path the poller runs unattended.
 LIVE="$(kubectl --context="$CTX" -n "$NS" get deploy "$DEPLOY" \
         -o jsonpath='{.spec.template.spec.containers[0].image}')"
-[ "$LIVE" = "$REF" ] || die "DEPLOY-FAIL: live spec is $LIVE, we pushed $REF"
-echo "   live spec matches"
+if [ "$LIVE" = "$REF" ]; then
+  echo "   live spec matches"
+elif [ "$LIVE" = "$PREV" ]; then
+  die "DEPLOY-FAIL: live spec is still the PREVIOUS digest ($PREV) -- set image did not take"
+else
+  # Ours lost a race we did not need to win: the winner is a LATER digest of this same
+  # deployment, so main is AHEAD of us, not behind. Dying here would fail an unattended poller
+  # run carrying no information about the code.
+  echo "   DEPLOY-SUPERSEDED: live spec is $LIVE -- neither what we pushed ($REF) nor the digest"
+  echo "   we replaced ($PREV), so a NEWER deploy set it. Superseded, not lost; nothing to re-run."
+fi
 
 step "smoke (served content, 3 attempts)"
 for i in 1 2 3; do
