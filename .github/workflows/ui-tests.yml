@@ -107,11 +107,41 @@ on:
   pull_request:
     paths:
       - 'ui/**'
+      # 🔴 `sentences/**` IS AN INPUT, NOT A SIBLING (#445). A path-filtered job
+      # must list the paths of what it READS, not just where its code lives.
+      # `generate-word-pages.js` resolves `path.resolve(UI, '..', 'sentences')`,
+      # and `wordPages.test.js` asserts the committed pages still match what that
+      # generator produces -- so a bank-only PR changes the generator's input and
+      # ran ZERO checks. #443 did exactly that and broke main; the reviewer saw a
+      # PR with no failing checks, because zero check-runs renders as "nothing to
+      # run" rather than as "unverified".
+      - 'sentences/**'
+      # Second input, found by DERIVING the generator's reads rather than
+      # hardcoding the one #445 was filed about: line 24 resolves
+      # `terraform/csv/words.csv`. Listed as the exact file, not `terraform/**`
+      # -- a filter widened past the real input is how it gets deleted later for
+      # cost. Sister precedent: backend-tests.yml lists `terraform/schema-tables.sql`.
+      - 'terraform/csv/words.csv'
       - '.github/workflows/ui-tests.yml'
   push:
     branches: [main]
     paths:
       - 'ui/**'
+      # 🔴 `sentences/**` IS AN INPUT, NOT A SIBLING (#445). A path-filtered job
+      # must list the paths of what it READS, not just where its code lives.
+      # `generate-word-pages.js` resolves `path.resolve(UI, '..', 'sentences')`,
+      # and `wordPages.test.js` asserts the committed pages still match what that
+      # generator produces -- so a bank-only PR changes the generator's input and
+      # ran ZERO checks. #443 did exactly that and broke main; the reviewer saw a
+      # PR with no failing checks, because zero check-runs renders as "nothing to
+      # run" rather than as "unverified".
+      - 'sentences/**'
+      # Second input, found by DERIVING the generator's reads rather than
+      # hardcoding the one #445 was filed about: line 24 resolves
+      # `terraform/csv/words.csv`. Listed as the exact file, not `terraform/**`
+      # -- a filter widened past the real input is how it gets deleted later for
+      # cost. Sister precedent: backend-tests.yml lists `terraform/schema-tables.sql`.
+      - 'terraform/csv/words.csv'
       - '.github/workflows/ui-tests.yml'
 
 # A second push to the same PR makes the first run irrelevant.
