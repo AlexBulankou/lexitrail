@@ -70,7 +70,22 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 # BLIND on every run -- the #85 failure `enter_guest`'s own docstring describes
 # and `enter_wordsets` fixes. The fix landed in the shared module and never
 # reached the copy. Importing it means the next such fix cannot miss this file.
-from lt_routes import enter_wordsets  # noqa: E402  (sys.path shim above)
+# 🔴 DEFERRED into `measure()` (issue-297, hc2@'s review of #480), NOT removed.
+# `lt_routes` imports playwright at module scope, so importing THIS module for
+# its pure cores — `redundant`, `list_endpoint`, `DATA_RE`, `LIST_RE` — used to
+# drag playwright in transitively. CI installs `pytest pyyaml` only
+# (`.github/workflows/repo-checks.yml`), so the first `scripts/test_*.py` to
+# import from here went red with `ModuleNotFoundError: No module named
+# 'playwright'` while passing on a dev host where it happens to be installed.
+#
+# The paragraph this replaces still holds and is why the import survives at all:
+# a local copy of the entry sequence went BLIND on every run when the shared
+# fix landed and never reached it (#85/#335). Importing the shared helper is
+# what stops that recurring — deferring only changes WHEN, not WHETHER.
+#
+# It is used in exactly one place, inside `measure()`, which cannot run without
+# playwright anyway. So nothing that needs it loses it, and the pure core
+# becomes importable without a browser.
 
 URL_DEFAULT = "https://lexitrail.com"
 
@@ -245,6 +260,7 @@ def measure(url, settle_ms, nav):
         # RuntimeError -> BLIND is the contract `enter_guest` documents: "a route
         # we could not enter must never be reported as a clean measurement".
         try:
+            from lt_routes import enter_wordsets  # noqa: PLC0415 — see the module-top note
             enter_wordsets(page)
         except Exception as exc:  # noqa: BLE001 - reported, never swallowed
             ctx.close()

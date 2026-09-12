@@ -79,3 +79,53 @@ def test_the_live_shape_that_motivated_this_reproduces():
     trace = [LIST, LIST, LIST, WORDS, USERWORDS]
     assert redundant(trace)["redundant"] == 0, "DATA_RE must still report clean"
     assert list_endpoint(trace)["list_total"] == 3, "and the list count must see it"
+
+
+def test_the_pure_cores_import_WITHOUT_playwright():
+    """🔴 The arm that would have caught this PR's own first version.
+
+    CI installs `pytest pyyaml` only (`.github/workflows/repo-checks.yml`) and
+    no workflow installs playwright — but a dev host has it, so importing
+    `redundant_fetches` for its pure cores passed locally and went red in CI
+    with `ModuleNotFoundError: No module named 'playwright'`. The module
+    imported `lt_routes` (which imports playwright) at module scope; it is
+    deferred into `measure()` now.
+
+    This arm reproduces the CI shape rather than trusting it: it BLOCKS
+    playwright, asserts the block actually took (a blocker that silently fails
+    makes the arm vacuous — the first version of this control used the legacy
+    `find_module` API that 3.12 ignores and reported itself broken), then
+    imports the cores.
+    """
+    import importlib
+    import sys as _sys
+
+    class _Block:
+        def find_spec(self, name, path=None, target=None):
+            if name == "playwright" or name.startswith("playwright."):
+                raise ImportError(f"No module named {name!r}")
+            return None
+
+    blocker = _Block()
+    saved = {k: v for k, v in _sys.modules.items()
+             if k == "playwright" or k.startswith("playwright.")
+             or k in ("redundant_fetches", "lt_routes")}
+    for k in saved:
+        _sys.modules.pop(k, None)
+    _sys.meta_path.insert(0, blocker)
+    try:
+        try:
+            importlib.import_module("playwright")
+            raise AssertionError(
+                "CONTROL FAILED: playwright still importable, so this arm "
+                "proves nothing about the CI environment")
+        except ImportError:
+            pass
+        mod = importlib.import_module("redundant_fetches")
+        assert mod.list_endpoint([LIST, LIST]) == {"list_total": 2, "list_distinct": 1}
+    finally:
+        _sys.meta_path.remove(blocker)
+        for k in list(_sys.modules):
+            if k in ("redundant_fetches", "lt_routes"):
+                _sys.modules.pop(k, None)
+        _sys.modules.update(saved)
