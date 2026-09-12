@@ -88,10 +88,27 @@ schedules:
   # read this number as the answer.
   #
   # ⚠️ A RED HERE MAY BE A DEPLOY IN FLIGHT. Re-run the command before chasing it:
-  # if it clears, it was transient. If it persists, read the deploy trigger's most
-  # recent build and check whether `quota-gate` DECLINED it (`used_before ==
-  # used_after` in the gate's JSON) rather than the build failing -- a refusal
-  # carries no information about the code.
+  # if it clears, it was transient. If it persists, the question is whether the
+  # deploy was REFUSED by the budget gate or genuinely BROKE -- both read FAILURE,
+  # and a refusal carries no information about the code.
+  #
+  # 🔴 DISCRIMINATE ON THE STEP LIST. This used to say "check `used_before ==
+  # used_after` in the gate's JSON", which is in the build LOG -- and `builds log`
+  # is PERMISSION_DENIED for `ensemble-sa`, the identity this cron runs as. The
+  # documented recipe could not be run by the reader it was written for. Measured
+  # 2026-09-12, same account, same build: `builds list` rc=0, `builds describe`
+  # rc=0, `builds log` rc=1 "Permission denied for all log views". `list`/
+  # `describe` are Cloud Build API reads; `log` is a Cloud Logging read behind a
+  # different grant, which is why exactly one of the three fails.
+  #
+  #   gcloud builds describe <id> --project=lexitrail --region=us-central1 \
+  #     --format="value[separator=' | '](steps[].id,steps[].status)"
+  #     refused -> step 0 `quota-gate` FAILURE, every later step QUEUED
+  #     broken  -> quota-gate SUCCESS and a LATER step FAILURE
+  #
+  # A step-0 refusal is POLICY, not a defect: the build budget declined to spend a
+  # unit. It means production is behind until quota refills or someone merges
+  # again -- it does not mean the code is broken and there is nothing to debug.
   #
   # ⚠️ `on_failure: log` for the same reason its sibling below gives: `page` and
   # `alert` are parsed but not consumer-wired, so a non-zero exit surfaces on the
