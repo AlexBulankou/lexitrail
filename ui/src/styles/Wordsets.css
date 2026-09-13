@@ -203,3 +203,30 @@
   cursor: pointer;
 }
 .wordsets-retry:hover { filter: brightness(1.05); }
+
+/* lexitrail#406: loading-state skeleton. `.skeleton-block` is applied
+   ALONGSIDE the real tile's own classes (.wordset-button-due etc.) rather
+   than replacing them, so it inherits their box model (grid row, padding,
+   --min-tap-target min-height) unchanged and only overrides the visual
+   treatment -- the reserved height is therefore never able to drift from
+   what the loaded tile actually occupies. `.wordset-header-text` collapses
+   to zero height with no text content, so it's the one element that needs
+   an explicit height here. */
+.skeleton-block {
+  background: var(--line);
+  opacity: .6;
+  pointer-events: none;
+}
+.wordset-header-text.skeleton-block {
+  height: 1.2em;
+  width: 60%;
+  border-radius: 4px;
+  margin-bottom: 4px;
+}
+/* .wordset-button-excluded has no fixed width and no text in skeleton form
+   to give it one, so it collapses to a near-zero-width box instead of the
+   pill shape the real (labelled) button renders as. Purely cosmetic --
+   height (the CLS-relevant dimension) is unaffected either way. */
+.wordset-button-excluded.skeleton-block {
+  width: 90px;
+}

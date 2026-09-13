@@ -14,6 +14,36 @@ import { resolveWordsetsView } from '../utils/wordsetsView';
 const wordsetsCache = (window.__lexitrailWordsetsCache =
   window.__lexitrailWordsetsCache || { data: null });
 
+// lexitrail#406: the signed-out home's loading state used to render a single
+// line of text ("Loading wordsets…") with no reserved layout space, so the
+// real grid arriving caused a large post-first-paint reflow (CLS 0.168 ->
+// 0.228, attributed to this exact container). A small, FIXED skeleton count
+// (not tied to the real wordset total, which lex#427 already changed by one)
+// reserves roughly the right amount of above-the-fold space without needing
+// to track the live count.
+const WORDSET_SKELETON_COUNT = 6;
+
+// Reuses the REAL tile's classes (.wordset-tile / .wordset-button-group /
+// .wordset-button-*) so the reserved box model is derived from the actual
+// CSS rules (grid rows, padding, --min-tap-target floors) rather than a
+// hand-computed pixel guess that silently drifts the moment that CSS
+// changes. Plain `div`s, not `button`s -- nothing here is interactive, and
+// `aria-hidden` + the wrapping `role="status"` keep it invisible to
+// assistive tech instead of announcing placeholder content.
+const WordsetSkeletonTile = () => (
+  <div className="wordset-tile" aria-hidden="true">
+    <div className="wordset-button-group">
+      <div className="wordset-header">
+        <div className="wordset-header-text skeleton-block skeleton-text" />
+      </div>
+      <div className="wordset-button wordset-button-due skeleton-block" />
+      <div className="wordset-button wordset-button-practice skeleton-block" />
+      <div className="wordset-button wordset-button-test skeleton-block" />
+      <div className="wordset-button wordset-button-excluded skeleton-block" />
+    </div>
+  </div>
+);
+
 const Wordsets = ({ profileDetails, login }) => {
   const [wordsets, setWordsets] = useState(wordsetsCache.data || []);
   // 'loading' | 'loaded' | 'error'. Start 'loaded' if we have a cached list so
@@ -74,7 +104,11 @@ const Wordsets = ({ profileDetails, login }) => {
   return (
     <div className="wordsets-container">
       {view === 'loading' ? (
-        <div className="wordsets-status" role="status">Loading wordsets…</div>
+        <div className="wordsets-grid" role="status" aria-label="Loading wordsets…">
+          {Array.from({ length: WORDSET_SKELETON_COUNT }).map((_, i) => (
+            <WordsetSkeletonTile key={i} />
+          ))}
+        </div>
       ) : view === 'error' ? (
         <div className="wordsets-status wordsets-error" role="alert">
           <p>Couldn't load your wordsets.</p>
