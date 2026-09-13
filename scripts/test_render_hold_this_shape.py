@@ -250,3 +250,48 @@ def test_no_cjk_font_RAISES_rather_than_returning_a_latin_one(monkeypatch):
                         lambda *a, **k: (_ for _ in ()).throw(OSError("no fc-match")))
     with pytest.raises(RuntimeError, match="no CJK font"):
         m.resolve_cjk_font()
+
+
+# ── the JOIN: the timeline promises beats; the pixels must deliver them ───────
+
+def test_every_text_cue_CHANGES_THE_PIXELS():
+    """🔴 The test that was missing when the payoff never rendered.
+
+    31 tests passed over a renderer that drew only the character and the arc:
+    `build_timeline` was asserted to place pinyin at 4.0s, `render_frames` was
+    asserted for the hard cut and the arc, and NOTHING asked whether the thing
+    the timeline promises appears in the frames. Both halves correct, product
+    wrong. Content-free by design — it asserts that something changed, never
+    what — so it cannot be satisfied by a still and needs no fixture text."""
+    import numpy as np
+    ep = Episode("爱", "ài", "love", "我爱你。")
+    fr = render_frames(ep, duration_s=10.0)
+    hold = fr[int(3.0 * FPS)].astype("int16")
+    deltas = {}
+    for cue in build_timeline(ep):
+        if cue.kind in ("pinyin", "meaning", "sentence"):
+            after = fr[int((cue.t + 0.5) * FPS)].astype("int16")
+            deltas[cue.kind] = float(np.abs(after - hold).mean())
+            assert deltas[cue.kind] > 0, f"{cue.kind} cue at {cue.t}s draws nothing"
+
+    # Each beat must ADD to the frame, so no two may be identical — the exact
+    # signature of the bug: all three read 1.326, the arc and nothing else.
+    vals = list(deltas.values())
+    assert len(set(round(v, 3) for v in vals)) == len(vals), (
+        f"beats are indistinguishable {deltas} — the frames are changing for some "
+        f"other reason (the arc) and the cues are not being drawn"
+    )
+    assert deltas["pinyin"] < deltas["meaning"] < deltas["sentence"], (
+        f"each reveal should add ink to the previous state, got {deltas}"
+    )
+
+
+def test_the_payoff_is_NOT_drawn_during_the_hold():
+    """The other arm. 'Never show the answer early' — so the join test above
+    must not be satisfiable by drawing everything from t=0."""
+    import numpy as np
+    ep = Episode("爱", "ài", "love", "我爱你。")
+    fr = render_frames(ep, duration_s=10.0, arc_width=0)   # arc off: isolate the text
+    a = fr[int(1.0 * FPS)].astype("int16")
+    b = fr[int(3.9 * FPS)].astype("int16")
+    assert float(np.abs(b - a).mean()) == 0.0, "something changed during the hold"

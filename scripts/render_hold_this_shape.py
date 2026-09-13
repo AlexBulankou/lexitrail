@@ -262,16 +262,38 @@ def character_font_for_frame_height(fraction: float = CHAR_FRAME_HEIGHT_FRACTION
     return _glyph_font(max(size, 1))
 
 
+def _text_font(size_px: int):
+    """Noto CJK carries Latin too, so pinyin/meaning and the Chinese sentence use
+    one face and cannot disagree about metrics."""
+    from PIL import ImageFont
+    return ImageFont.truetype(resolve_cjk_font(), size_px)
+
+
 def render_frames(ep: Episode, duration_s: float = 10.0, arc_width: int = 8):
     """The frames. Frame 0 is PURE BLACK — the hard cut is the first transition,
-    and it is the largest one in the piece."""
+    and it is the largest one in the piece.
+
+    🔴 The reveal beats are drawn here. The first version of this function drew
+    ONLY the character and the arc, so `build_timeline()` emitted pinyin/meaning/
+    sentence cues that nothing consumed and the output was ~10s of a character
+    and a ring — the hold without the payoff. 31 tests passed, because they
+    checked the timeline and the pixels separately and nothing joined them.
+    `test_every_text_cue_CHANGES_THE_PIXELS` is that join."""
     import numpy as np
     from PIL import Image, ImageDraw
 
     f = character_font_for_frame_height(char=ep.character)
     bb = f.getbbox(ep.character)
-    x = (W - (bb[2] - bb[0])) // 2 - bb[0]
-    y = (H - (bb[3] - bb[1])) // 2 - bb[1]
+    cx = (W - (bb[2] - bb[0])) // 2 - bb[0]
+    # the hold sits slightly high, leaving the lower band for the answer
+    cy = int(H * 0.30) - bb[1]
+    char_bottom = cy + bb[3]
+
+    pin_f, mean_f, sent_f = _text_font(96), _text_font(84), _text_font(64)
+
+    def centred(d, text, font, y):
+        b = d.textbbox((0, 0), text, font=font)
+        d.text(((W - (b[2] - b[0])) // 2 - b[0], y), text, fill=255, font=font)
 
     out = []
     for i in range(int(duration_s * FPS)):
@@ -279,12 +301,19 @@ def render_frames(ep: Episode, duration_s: float = 10.0, arc_width: int = 8):
         im = Image.new("L", (W, H), 0)
         d = ImageDraw.Draw(im)
         if t > 0:                      # frame 0 stays pure black
-            d.text((x, y), ep.character, fill=255, font=f)
+            d.text((cx, cy), ep.character, fill=255, font=f)
             if t >= ARC_START_S:
                 frac = min((t - ARC_START_S) / (PINYIN_S - ARC_START_S), 1.0)
                 m = arc_width + 8
                 d.arc([m, m, W - m, H - m], start=-90, end=-90 + 360 * frac,
                       fill=255, width=arc_width)
+            # ── the payoff. Never before PINYIN_S: the hold IS the format. ──
+            if t >= PINYIN_S:
+                centred(d, ep.pinyin, pin_f, char_bottom + 80)
+            if t >= MEANING_S:
+                centred(d, ep.meaning, mean_f, char_bottom + 210)
+            if t >= SENTENCE_S:
+                centred(d, ep.sentence, sent_f, char_bottom + 340)
         out.append(np.asarray(im, dtype="uint8"))
     return out
 
