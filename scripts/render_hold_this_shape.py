@@ -46,7 +46,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 W, H = 1080, 1920           # 9:16, the Reel cut
-PIN_W, PIN_H = 1080, 1620   # 2:3, the Pinterest cut (the bible's PRIMARY surface)
+# The 2:3 Pinterest cut lives in `render_hold_this_shape_pins.py` (PIN_W/PIN_H there).
 PIN_W, PIN_H = 1080, 1620   # 2:3, the Pinterest cut (static-safe)
 FPS = 30
 
@@ -320,7 +320,18 @@ def render_frames(ep: Episode, duration_s: float = 10.0, arc_width: int = 8,
     # and the property is worth more than the bytes, but the claim had to be right.
     glyph_h = bb[3] - bb[1]
     need = SENTENCE_DY + _line_h(_text_font(64)) + BAND_BOTTOM_MARGIN_PX
-    cy = min(int(fh * 0.30), fh - need - glyph_h) - bb[1]
+    glyph_top = min(int(fh * 0.30), fh - need - glyph_h)
+    # 🔴 The clamp needs a FLOOR, and finding out why is the reason the refuse
+    # test exists. Without this, a frame too short for glyph+answer drags the
+    # glyph off the TOP (measured: cy=-564 on 1080x700) until the answer fits —
+    # so the band check below passes and the CHARACTER is silently sacrificed
+    # instead. Same failure the layout fix was for, moved to the other edge.
+    if glyph_top < 0:
+        raise ValueError(
+            f"a {fw}x{fh} frame cannot hold a {glyph_h}px glyph AND the "
+            f"{need}px answer band — refuse rather than push the character "
+            "off the top of the frame")
+    cy = glyph_top - bb[1]
     char_bottom = cy + bb[3]
 
     pin_f, mean_f, sent_f = _text_font(96), _text_font(84), _text_font(64)
@@ -379,68 +390,6 @@ def render_frames(ep: Episode, duration_s: float = 10.0, arc_width: int = 8,
     return out
 
 
-def pin_beats(timeline: list[Cue], duration_s: float = 10.0,
-              settle_s: float = 0.5) -> list[tuple[str, float]]:
-    """The instants a pin sequence is cut at, DERIVED from the timeline.
-
-    Not hardcoded: if the bible moves a beat, `build_timeline` moves with it and
-    so do the pins. A second copy of 4.0/5.0/6.0 here would be a contract in two
-    places that agree until someone edits one.
-
-    `settle_s` after each cue, because a cue at exactly `t` is the frame the text
-    APPEARS on and sampling the boundary is how you get a still that may or may
-    not contain it depending on rounding.
-
-    The first pin is the HOLD — character and arc, no words. That is the hook and
-    it is the one that must not be dropped for looking empty: the bible's whole
-    claim is that a held image with a timer is a question, and a pin sequence
-    that opens on the answer has thrown the format away.
-    """
-    hold_t = max(min(c.t for c in timeline if c.kind in ("pinyin", "meaning",
-                                                         "sentence")) - 1.0, 0.0)
-    beats = [("1-hold", hold_t)]
-    for c in sorted((c for c in timeline if c.kind in ("pinyin", "meaning", "sentence")),
-                    key=lambda c: c.t):
-        t = c.t + settle_s
-        if t < duration_s:
-            beats.append((f"{len(beats) + 1}-{c.kind}", t))
-    return beats
-
-
-def pin_sequence(ep: Episode, duration_s: float = 10.0, arc_width: int = 8):
-    """The Pinterest cut: 2:3, static-safe, the SAME frames as the Reel.
-
-    "Static-safe" is the bible's word and it is a constraint on the ARTEFACT, not
-    a different render: Pinterest is an evergreen search surface, so it gets real
-    stills rather than a video thumbnail. Same timeline, same drawing, 2:3 frame,
-    sampled at the beats.
-
-    🔴 2:3 is why `character_font_for_frame_height` takes the BINDING AXIS. At
-    1080x1620, 88% of height is 1425px in a 1080px-wide frame — the same
-    impossibility that function documents for 9:16, and it would silently draw a
-    glyph wider than the pin. Width binds here too; the function already handles
-    it, which is the whole reason this cut is a parameter and not a fork.
-    """
-    frames = render_frames(ep, duration_s, arc_width, frame=(PIN_W, PIN_H))
-    out = []
-    for label, t in pin_beats(build_timeline(ep, duration_s), duration_s):
-        i = min(int(round(t * FPS)), len(frames) - 1)
-        out.append((label, frames[i]))
-    return out
-
-
-def write_pins(pins, outdir: Path) -> list[Path]:
-    """PNG per beat. Returns the paths in sequence order."""
-    from PIL import Image
-    outdir.mkdir(parents=True, exist_ok=True)
-    written = []
-    for label, arr in pins:
-        dest = outdir / f"{label}.png"
-        Image.fromarray(arr, mode="L").save(dest)
-        written.append(dest)
-    return written
-
-
 def encode(frames, dest: Path) -> Path:
     """One ffmpeg pass, per the bible's recipe."""
     dest = Path(dest)
@@ -487,6 +436,7 @@ def main(argv=None) -> int:
     print(f"rendered {ep.character} ({ep.pinyin}, {ep.meaning}) -> {dest} "
           f"[{dest.stat().st_size} bytes]")
     if a.pins:
+        from render_hold_this_shape_pins import PIN_H, PIN_W, pin_sequence, write_pins
         paths = write_pins(pin_sequence(ep, a.duration), a.pins)
         print(f"pinterest cut ({PIN_W}x{PIN_H}, 2:3): "
               + ", ".join(p.name for p in paths))
