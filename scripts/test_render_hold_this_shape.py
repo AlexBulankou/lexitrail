@@ -14,7 +14,7 @@ import pytest
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from render_hold_this_shape import (  # noqa: E402
-    ARC_START_S, CHAR_FRAME_HEIGHT_FRACTION, FPS, H, MAX_DURATION_S,
+    TEXT_MARGIN_PX, ARC_START_S, CHAR_FRAME_HEIGHT_FRACTION, FPS, H, MAX_DURATION_S,
     MEANING_S, MIN_DURATION_S, PINYIN_S, W, WORD_CEILING_UNTIL_S, Episode,
     answer_revealed_at, build_timeline, character_font_for_frame_height,
     from_sentence_bank, m1_mean_delta_pct, render_frames,
@@ -295,3 +295,66 @@ def test_the_payoff_is_NOT_drawn_during_the_hold():
     a = fr[int(1.0 * FPS)].astype("int16")
     b = fr[int(3.9 * FPS)].astype("int16")
     assert float(np.abs(b - a).mean()) == 0.0, "something changed during the hold"
+
+
+# ── lex#519: the TEXT beats must fit the frame, not just the character glyph ──
+
+def _drawn_width(text, font):
+    from PIL import Image, ImageDraw
+    d = ImageDraw.Draw(Image.new("L", (W, H), 0))
+    b = d.textbbox((0, 0), text, font=font)
+    return b[2] - b[0]
+
+
+def test_an_over_wide_sentence_is_SHRUNK_to_fit_not_drawn_off_frame():
+    """The naive `(W - text_width) // 2` gives a NEGATIVE x for anything wider
+    than the frame and draws off the left edge with no error. Pins that a long
+    sentence is rendered smaller instead."""
+    import numpy as np
+    long_sentence = "爱" * 19 + "。"   # 1281px at 64px, 561px at the 28px floor
+    ep = Episode("爱", "ài", "love", long_sentence)
+    # arc OFF and the SENTENCE BAND only: the arc spans the frame edge-to-edge and
+    # the held character is ~950px wide, so a whole-frame column span measures
+    # those, not the sentence.
+    fr = render_frames(ep, duration_s=10.0, arc_width=0)
+    band_before = fr[int(5.5 * FPS)]          # meaning drawn, sentence not yet
+    band_after = fr[int(9.0 * FPS)]           # sentence drawn
+    rows = np.where((band_after.astype("int16") - band_before.astype("int16")).any(axis=1))[0]
+    assert rows.size, "the sentence beat drew nothing"
+    strip = band_after[rows.min():rows.max() + 1]
+    cols = np.where(strip.max(axis=0) > 0)[0]
+    # 🔴 NOT "is the ink inside the frame" — PIL CLIPS at the boundary, so that is
+    # true even at a negative x and the assertion can never fail. Mutation caught
+    # it: the naive form reds this test 0 times. The discriminator is the ink's
+    # WIDTH — clipped full-bleed spans ~W, a shrunk line spans far less.
+    span = int(cols.max() - cols.min())
+    assert span <= W - TEXT_MARGIN_PX, (
+        f"the sentence spans {span}px of a {W}px frame — it was clipped, not shrunk"
+    )
+
+
+def test_CONTROL_the_over_wide_sentence_really_would_NOT_fit_unshrunk():
+    """Without this, the test above passes on a sentence that was never too wide
+    — i.e. on a guard that never engaged."""
+    from render_hold_this_shape import _text_font
+    long_sentence = "爱" * 19 + "。"   # 1281px at 64px, 561px at the 28px floor
+    assert _drawn_width(long_sentence, _text_font(64)) > W, (
+        "the fixture fits at the default size — it cannot exercise the guard"
+    )
+
+
+def test_CONTROL_a_normal_sentence_is_NOT_shrunk():
+    """The other arm: a guard that shrinks everything would satisfy the fit test
+    while quietly making every real episode smaller than designed."""
+    from render_hold_this_shape import _text_font
+    assert _drawn_width("我爱你。", _text_font(64)) <= W - 80
+
+
+def test_a_sentence_too_long_even_at_the_floor_RAISES(monkeypatch):
+    """Loud beats illegible: below the floor the text would be unreadable, so it
+    is an error rather than a rendered smudge."""
+    import render_hold_this_shape as m
+    monkeypatch.setattr(m, "TEXT_MIN_PX", 60)     # raise the floor so the fixture cannot fit
+    ep = Episode("爱", "ài", "love", "我" + "爱这个非常非常长的句子" * 12)
+    with pytest.raises(ValueError, match="does not fit"):
+        m.render_frames(ep, duration_s=10.0)
