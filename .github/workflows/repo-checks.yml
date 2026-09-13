@@ -91,7 +91,19 @@ jobs:
       # test. That is the opposite of the stranding this workflow exists to fix,
       # where the failure mode was invisible. A reminder is only unsafe where
       # forgetting it is silent.
-      - run: pip install --quiet pytest pyyaml
+      # numpy + Pillow are for scripts/render_hold_this_shape.py (lex#504,
+      # LexiTrail's first renderer). They are REAL deps of that checker, not
+      # test scaffolding: without them its 7 frame/geometry tests error out.
+      # Deliberately NOT solved by skipping those tests when the imports fail
+      # — a test that goes quiet in CI is the vacuous-green shape this repo's
+      # floor guards exist to refuse.
+      - run: pip install --quiet pytest pyyaml numpy Pillow
+
+      # A CJK font, for the same renderer. `ubuntu-latest` ships none, and
+      # PIL cannot rasterise a Chinese glyph without one. resolve_cjk_font()
+      # falls back to fc-match and RAISES if nothing is found, so a missing
+      # font is a red step naming the fix rather than a skipped test.
+      - run: sudo apt-get install -y --no-install-recommends fonts-noto-cjk
 
       - name: repo-root checkers
         shell: bash
