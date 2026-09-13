@@ -28,6 +28,20 @@ a two-state check would print the second while the first is true.
     sum  > eventCount   MET         the undercount was real and is now visible
     sum == eventCount   NOT MET     registered, but bulk recall is not firing
     sum == 0            UNDECIDED   no populated days in the window yet
+    0 < sum < eventCount UNDECIDED  the window STRADDLES the 2026-09-11
+                                    registration date -- some events predate the
+                                    metric, so they contribute 0 to the sum.
+                                    Every populated event adds >= 1, so a sum
+                                    below the count cannot mean "all single-card".
+
+🔴 That fourth row was missing until #447's gate was run in anger on 2026-09-13,
+five days before its own next-gate. Live GA4 returned sum 26 / eventCount 122 and
+the function reported `NOT MET: ... sum 26 == eventCount 122` -- a confident,
+specific verdict about the bulk path, printed with an equality that is FALSE on
+its own numbers. The cause was shape, not arithmetic: NOT_MET was the trailing
+`else`, so it silently adopted every value nobody had anticipated. Each branch is
+now a POSITIVE test and the unrecognised case returns ERROR rather than the
+reassuring verdict.
 
 CREDENTIAL NOTE (#447, zz1's correction 2026-09-11): scope is chosen when you
 MINT the token, not fixed on the service account. This reads, so it mints
@@ -107,17 +121,38 @@ def verdict(events: int, cards: int) -> tuple[int, str]:
             f"custom metrics are NOT retroactive, so this is 'no populated "
             f"days yet', which is NOT the same as 'the bulk path is not "
             f"firing'. Re-run on or after 2026-09-18.")
+    if events <= 0 < cards:
+        return ERROR, (
+            f"ERROR: cards_count sum {cards} with eventCount {events}. Both come "
+            f"from the SAME runReport row, so a positive sum with no events is "
+            f"incoherent rather than a strong MET. Refusing to return a verdict "
+            f"on data this function cannot explain.")
     if cards > events:
         return MET, (
             f"MET: cards_count sum {cards} > recall eventCount {events} "
             f"(undercount was {cards - events} cards, "
             f"{(cards - events) / cards:.0%} of volume). Report BOTH numbers "
             f"on close, as #447 asks.")
-    return NOT_MET, (
-        f"NOT MET: cards_count sum {cards} == eventCount {events}. The metric "
-        f"is registered and populating, but every recall is single-card -- the "
-        f"bulk path is not being exercised. That is a finding about the app, "
-        f"not about the metric.")
+    if cards == events:
+        return NOT_MET, (
+            f"NOT MET: cards_count sum {cards} == eventCount {events}. The metric "
+            f"is registered and populating, but every recall is single-card -- the "
+            f"bulk path is not being exercised. That is a finding about the app, "
+            f"not about the metric.")
+    if 0 < cards < events:
+        return UNDECIDED, (
+            f"UNDECIDED: cards_count sum {cards} is BELOW eventCount {events}. "
+            f"Every event carrying the metric contributes at least 1, so a sum "
+            f"under the count means {events - cards} event(s) in this window "
+            f"carry no `cards_count` at all -- i.e. the window still straddles "
+            f"the 2026-09-11 registration date, because GA4 custom metrics are "
+            f"NOT retroactive. This is 'the window is not clean yet', NOT a "
+            f"verdict about the bulk path. Re-run once the whole window sits "
+            f"after 2026-09-11.")
+    return ERROR, (
+        f"ERROR: cards_count sum {cards} and eventCount {events} match none of "
+        f"the four expected shapes. Refusing to guess -- a state this function "
+        f"does not recognise must not be reported as one it does.")
 
 
 def main() -> int:
