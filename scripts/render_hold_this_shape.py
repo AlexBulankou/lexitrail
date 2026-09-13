@@ -24,10 +24,17 @@ supplier drops in beside it without touching the renderer.
 🔴 M1 IS SUSPENDED as a blocking criterion (zz1, 2026-09-13, dec#3480): there is
 no implementation of it anywhere, so it has never machine-checked an asset. This
 renderer therefore does NOT try to satisfy M1, and `m1_mean_delta_pct()` is
-provided for measurement only. Measured for this hook: the hard cut is 40.51% in
-one frame, M1's mean over 30 frames dilutes it to 1.40%, and sweeping the arc
-0->64px moves that by 0.023 points — so the bible's claim that "the progress arc
-is what carries this" is false. Do not build toward it.
+provided for measurement only. Measured for this hook at the corrected sizing:
+the hard cut is 14.19% in ONE frame, M1's mean over 30 frames dilutes it to
+0.489%, and sweeping the arc 0->64px moves that by 0.046 points — so the bible's
+claim that "the progress arc is what carries this" is false. Do not build toward
+it.
+
+⚠️ An earlier figure of 40.51% / 1.40% is on lex#504, dec#3480 and this PR. It
+was measured before the sizing fix, when the glyph overflowed the frame by 1.67x
+and therefore carried far more ink. The conclusion is unchanged — still a wide
+FAIL, arc still contributing ~nothing — but the numbers are not, and a stale
+number in a durable place is the thing that gets quoted later.
 """
 from __future__ import annotations
 
