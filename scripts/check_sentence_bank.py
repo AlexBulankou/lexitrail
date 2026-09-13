@@ -75,6 +75,17 @@ import re
 import sys
 
 TONE_MARKS = set("āáǎàēéěèīíǐìōóǒòūúǔùǖǘǚǜ")
+
+# issue-433, 2026-09-13. An author-generated bank shipped `毕业以后我想work。` --
+# the English word left inside the Chinese sentence while the pinyin beside it
+# correctly read `gōngzuò`. EVERY existing check passed it: the headword 毕业 is
+# present, the pinyin is capitalised and tone-marked, the gloss is non-empty, the
+# numbering is contiguous. The defect is only visible in the script of the
+# sentence itself, which nothing here was looking at.
+#
+# 🔴 It would have rendered on a public word page as Chinese. Caught by an ad-hoc
+# grep the author happened to run, which is not a gate -- hence this one.
+LATIN_RE = re.compile(r"[A-Za-z]")
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # #467 -- the headwords whose gloss slot must name a STRUCTURE rather than a
 # content word. See sentences/function-words.json for why, and for the rule that
@@ -188,6 +199,11 @@ def check(bank_path: str, csv_path: str, wordset_id: str,
     bad = [f"#{s['no']} {s['word']['chinese']}" for s in sentences
            if not all(p in s["chinese"] for p in headword_parts(s["word"]["chinese"]))]
     record("every headword appears in its own sentence",
+           len(sentences) - len(bad), len(sentences), bad)
+
+    bad = [f"#{s['no']} {s['word']['chinese']}" for s in sentences
+           if LATIN_RE.search(s["chinese"])]
+    record("no Latin letters in the Chinese sentence",
            len(sentences) - len(bad), len(sentences), bad)
 
     bad = [w for w in sorted(heads) if w in covered]
