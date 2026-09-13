@@ -40,10 +40,14 @@ const evalModule = (file, exportNames, injected = {}) => {
 
 const hsk = evalModule('hskPages.js',
   ['HSK_LEVELS', 'ORIGIN', 'isHskWordset', 'PAGE_STYLE', 'GA4_SNIPPET', 'SITE_HEADER', 'SITE_FOOTER', 'pinyinHtml']);
+// glossPages.js now imports glossCardUrl (the per-word og:image). evalModule strips imports, so
+// the binding is injected here — an import nobody wires fails loudly as "not defined" at eval time.
+const card = evalModule('glossCard.js', ['glossCardUrl', 'glossCardPath']);
 const gp = evalModule('glossPages.js',
   ['PHASE1_QUERIES', 'collectGlossGroup', 'renderGlossPage', 'renderGlossSitemap',
    'GLOSS_PAGES_LASTMOD', 'glossUrl'],
   { HSK_LEVELS: hsk.HSK_LEVELS, ORIGIN: hsk.ORIGIN, isHskWordset: hsk.isHskWordset,
+    glossCardUrl: card.glossCardUrl,
     PAGE_STYLE: hsk.PAGE_STYLE, GA4_SNIPPET: hsk.GA4_SNIPPET, SITE_HEADER: hsk.SITE_HEADER, SITE_FOOTER: hsk.SITE_FOOTER,
     // revamp-2026-09: tone-coloured example pinyin, same renderer as word pages.
     pinyinHtml: hsk.pinyinHtml });
