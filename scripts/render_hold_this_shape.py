@@ -51,7 +51,70 @@ MIN_DURATION_S, MAX_DURATION_S = 8.0, 14.0
 WORD_CEILING_UNTIL_S = 4.0   # "0 words on screen before 4.0s"
 CHAR_FRAME_HEIGHT_FRACTION = 0.88
 
-CJK_FONT = "/usr/share/fonts/opentype/noto/NotoSerifCJK-Bold.ttc"
+_CJK_FONT_CANDIDATES = (
+    "/usr/share/fonts/opentype/noto/NotoSerifCJK-Bold.ttc",
+    "/usr/share/fonts/opentype/noto/NotoSansCJK-Bold.ttc",
+    "/usr/share/fonts/truetype/wqy/wqy-zenhei.ttc",
+)
+
+
+def _can_render_cjk(path: str, probe: str = "爱") -> bool:
+    """Does this font actually put ink on the page for a Chinese glyph?
+
+    Existence is not capability, and neither is INK. 🔴 A Latin font opens fine
+    and renders 爱 as a TOFU BOX — .notdef — which is ink, so an "is anything
+    drawn?" check returns True for a font that cannot render Chinese at all.
+    Measured: NotoSans-Regular.ttf passed exactly that check.
+
+    The discriminator is rendering the probe against a codepoint the font is
+    guaranteed NOT to have (U+E000, private use). If the two rasters are
+    IDENTICAL the font is drawing .notdef for both and has no CJK coverage."""
+    try:
+        from PIL import Image, ImageDraw, ImageFont
+        f = ImageFont.truetype(path, 64)
+
+        def raster(ch):
+            im = Image.new("L", (96, 96), 0)
+            ImageDraw.Draw(im).text((8, 8), ch, fill=255, font=f)
+            return im.tobytes()
+
+        got, notdef = raster(probe), raster("\ue000")
+        return got != notdef and Image.frombytes("L", (96, 96), got).getbbox() is not None
+    except Exception:
+        return False
+
+
+def resolve_cjk_font() -> str:
+    """A CJK font path on THIS host.
+
+    Hardcoding one path is a portability defect: the first version of this module
+    carried bp's Noto Serif path, which does not exist on `ubuntu-latest`, so the
+    geometry tests would have failed in CI for a reason unrelated to geometry.
+    Candidates first, then fontconfig, then a loud error naming the fix — never a
+    silent skip, because a geometry test that goes quiet is a geometry test that
+    is not checking geometry."""
+    for c in _CJK_FONT_CANDIDATES:
+        if Path(c).exists() and _can_render_cjk(c):
+            return c
+    try:
+        out = subprocess.run(["fc-match", "-f", "%{file}", ":lang=zh"],
+                             capture_output=True, text=True, timeout=10)
+        cand = out.stdout.strip()
+        # 🔴 fc-match ALWAYS returns something. Asked for `:lang=zh` on a host
+        # with no CJK font it returns the Latin default — measured, it handed
+        # back NotoSans-Regular.ttf — which rasterises 爱 as an empty box with
+        # no error. So the path must be VERIFIED, not trusted.
+        if out.returncode == 0 and cand and Path(cand).exists() and _can_render_cjk(cand):
+            return cand
+    except (OSError, subprocess.SubprocessError):
+        pass
+    raise RuntimeError(
+        "no CJK font found — install one (e.g. `apt-get install fonts-noto-cjk`). "
+        f"Tried: {', '.join(_CJK_FONT_CANDIDATES)}, then fc-match :lang=zh"
+    )
+
+
+CJK_FONT = None  # resolved lazily by _glyph_font; see resolve_cjk_font()
 
 
 @dataclass(frozen=True)
@@ -159,7 +222,7 @@ def m1_mean_delta_pct(frames) -> float:
 
 def _glyph_font(size_px: int):
     from PIL import ImageFont
-    return ImageFont.truetype(CJK_FONT, size_px)
+    return ImageFont.truetype(resolve_cjk_font(), size_px)
 
 
 def character_font_for_frame_height(fraction: float = CHAR_FRAME_HEIGHT_FRACTION,

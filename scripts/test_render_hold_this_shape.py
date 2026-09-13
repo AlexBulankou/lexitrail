@@ -85,11 +85,11 @@ def test_CONTROL_the_literal_88_percent_of_HEIGHT_reading_really_does_overflow()
     """Pins the geometric fact the correction rests on. If this ever fails, the
     bible's literal wording has become implementable and the note above is stale."""
     from PIL import ImageFont
-    from render_hold_this_shape import CJK_FONT
+    from render_hold_this_shape import resolve_cjk_font
     target = int(H * CHAR_FRAME_HEIGHT_FRACTION)
-    f = ImageFont.truetype(CJK_FONT, target)
+    f = ImageFont.truetype(resolve_cjk_font(), target)
     bb = f.getbbox("爱")
-    scaled = ImageFont.truetype(CJK_FONT, int(target * target / max(bb[3] - bb[1], 1)))
+    scaled = ImageFont.truetype(resolve_cjk_font(), int(target * target / max(bb[3] - bb[1], 1)))
     bb2 = scaled.getbbox("爱")
     assert bb2[2] - bb2[0] > W, (
         "a glyph at 88% of frame HEIGHT now fits the frame width — re-check the bible note"
@@ -219,3 +219,34 @@ def test_selftest_exits_zero():
                        capture_output=True, text=True)
     assert r.returncode == 0, r.stderr
     assert "selftest OK" in r.stdout
+
+
+# ── font resolution: existence is not capability, and INK is not capability ───
+
+def test_a_latin_font_is_REJECTED_as_a_cjk_font():
+    """🔴 A Latin font renders 爱 as a TOFU box, which is ink — so an
+    "is anything drawn?" check passes it. Measured: fc-match ':lang=zh' on a
+    host with no CJK font returns NotoSans-Regular.ttf, and the first version of
+    _can_render_cjk accepted it. The renderer would then have produced boxes
+    with no error at all."""
+    from render_hold_this_shape import _can_render_cjk
+    latin = Path("/usr/share/fonts/truetype/noto/NotoSans-Regular.ttf")
+    if not latin.exists():
+        pytest.skip("no Latin Noto to test against")
+    assert _can_render_cjk(str(latin)) is False
+
+
+def test_a_real_cjk_font_is_ACCEPTED():
+    """The other arm — without it, the test above is satisfied by a predicate
+    that rejects everything."""
+    from render_hold_this_shape import _can_render_cjk, resolve_cjk_font
+    assert _can_render_cjk(resolve_cjk_font()) is True
+
+
+def test_no_cjk_font_RAISES_rather_than_returning_a_latin_one(monkeypatch):
+    import render_hold_this_shape as m
+    monkeypatch.setattr(m, "_CJK_FONT_CANDIDATES", ())
+    monkeypatch.setattr(m.subprocess, "run",
+                        lambda *a, **k: (_ for _ in ()).throw(OSError("no fc-match")))
+    with pytest.raises(RuntimeError, match="no CJK font"):
+        m.resolve_cjk_font()
