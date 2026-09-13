@@ -46,6 +46,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 W, H = 1080, 1920           # 9:16, the Reel cut
+PIN_W, PIN_H = 1080, 1620   # 2:3, the Pinterest cut (the bible's PRIMARY surface)
 PIN_W, PIN_H = 1080, 1620   # 2:3, the Pinterest cut (static-safe)
 FPS = 30
 
@@ -125,6 +126,12 @@ CJK_FONT = None  # resolved lazily by _glyph_font; see resolve_cjk_font()
 
 # lex#519: the text beats shrink to fit rather than drawing off-frame, down to a
 # floor below which "too long" is raised instead of rendered illegibly.
+# The answer bands, as offsets below the glyph. Named because the 2:3 cut proved
+# they are a CONTRACT with the frame height, not decoration: at 1080x1620 the
+# sentence band landed at y=1720 in a 1620px frame and the still was
+# byte-identical to the one before it. Two payoff beats, silently absent.
+PINYIN_DY, MEANING_DY, SENTENCE_DY = 80, 210, 340
+BAND_BOTTOM_MARGIN_PX = 20
 TEXT_MIN_PX = 28
 TEXT_MARGIN_PX = 40
 
@@ -267,6 +274,14 @@ def character_font_for_frame_height(fraction: float = CHAR_FRAME_HEIGHT_FRACTION
     return _glyph_font(max(size, 1))
 
 
+def _line_h(font) -> int:
+    """Ascent + descent, not a sample string's bbox. A string-derived height is a
+    fact about the characters that happened to be in it -- 'test' has no descender
+    and would under-measure the band by the depth of a comma."""
+    a, d = font.getmetrics()
+    return a + d
+
+
 def _text_font(size_px: int):
     """Noto CJK carries Latin too, so pinyin/meaning and the Chinese sentence use
     one face and cannot disagree about metrics."""
@@ -274,7 +289,8 @@ def _text_font(size_px: int):
     return ImageFont.truetype(resolve_cjk_font(), size_px)
 
 
-def render_frames(ep: Episode, duration_s: float = 10.0, arc_width: int = 8):
+def render_frames(ep: Episode, duration_s: float = 10.0, arc_width: int = 8,
+                  frame: tuple[int, int] = (W, H)):
     """The frames. Frame 0 is PURE BLACK — the hard cut is the first transition,
     and it is the largest one in the piece.
 
@@ -287,14 +303,31 @@ def render_frames(ep: Episode, duration_s: float = 10.0, arc_width: int = 8):
     import numpy as np
     from PIL import Image, ImageDraw
 
-    f = character_font_for_frame_height(char=ep.character)
+    fw, fh = frame
+    f = character_font_for_frame_height(char=ep.character, frame_h=fh, frame_w=fw)
     bb = f.getbbox(ep.character)
-    cx = (W - (bb[2] - bb[0])) // 2 - bb[0]
+    cx = (fw - (bb[2] - bb[0])) // 2 - bb[0]
     # the hold sits slightly high, leaving the lower band for the answer
-    cy = int(H * 0.30) - bb[1]
+    # 🔴 The glyph sits as high as 0.30 OR as high as the answer needs, whichever
+    # is higher. A bare 0.30 is a fact about 9:16 masquerading as a layout rule:
+    # it leaves 184px below the glyph at 1620 where the answer needs ~453, so the
+    # sentence band landed at y=1720 in a 1620px frame and the still came out
+    # BYTE-IDENTICAL to the one before it.
+    #
+    # ⚠️ This moves 9:16 by 3px (glyph top 576 -> 573) -- NOT pixel-identical, which
+    # an earlier draft of this comment claimed. 9:16 was 28px inside the frame by
+    # luck of the numbers; it is now inside by a derived margin. 3px is invisible
+    # and the property is worth more than the bytes, but the claim had to be right.
+    glyph_h = bb[3] - bb[1]
+    need = SENTENCE_DY + _line_h(_text_font(64)) + BAND_BOTTOM_MARGIN_PX
+    cy = min(int(fh * 0.30), fh - need - glyph_h) - bb[1]
     char_bottom = cy + bb[3]
 
     pin_f, mean_f, sent_f = _text_font(96), _text_font(84), _text_font(64)
+    if char_bottom + SENTENCE_DY + _line_h(sent_f) > fh:
+        raise ValueError(
+            f"the sentence band would fall outside a {fw}x{fh} frame — refuse "
+            "rather than draw a still that is byte-identical to the one before it")
 
     def centred(d, text, font, y):
         """Draw `text` centred, SHRINKING it until it fits the frame.
@@ -313,27 +346,27 @@ def render_frames(ep: Episode, duration_s: float = 10.0, arc_width: int = 8):
         f, size = font, font.size
         while size >= TEXT_MIN_PX:
             b = d.textbbox((0, 0), text, font=f)
-            if (b[2] - b[0]) <= W - 2 * TEXT_MARGIN_PX:
-                d.text(((W - (b[2] - b[0])) // 2 - b[0], y), text, fill=255, font=f)
+            if (b[2] - b[0]) <= fw - 2 * TEXT_MARGIN_PX:
+                d.text(((fw - (b[2] - b[0])) // 2 - b[0], y), text, fill=255, font=f)
                 return size
             size -= 4
             f = _text_font(size)
         raise ValueError(
-            f"{text!r} does not fit {W}px even at the {TEXT_MIN_PX}px floor — "
+            f"{text!r} does not fit {fw}px even at the {TEXT_MIN_PX}px floor — "
             f"it would be drawn off-frame or unreadable"
         )
 
     out = []
     for i in range(int(duration_s * FPS)):
         t = i / FPS
-        im = Image.new("L", (W, H), 0)
+        im = Image.new("L", (fw, fh), 0)
         d = ImageDraw.Draw(im)
         if t > 0:                      # frame 0 stays pure black
             d.text((cx, cy), ep.character, fill=255, font=f)
             if t >= ARC_START_S:
                 frac = min((t - ARC_START_S) / (PINYIN_S - ARC_START_S), 1.0)
                 m = arc_width + 8
-                d.arc([m, m, W - m, H - m], start=-90, end=-90 + 360 * frac,
+                d.arc([m, m, fw - m, fh - m], start=-90, end=-90 + 360 * frac,
                       fill=255, width=arc_width)
             # ── the payoff. Never before PINYIN_S: the hold IS the format. ──
             if t >= PINYIN_S:
@@ -344,6 +377,68 @@ def render_frames(ep: Episode, duration_s: float = 10.0, arc_width: int = 8):
                 centred(d, ep.sentence, sent_f, char_bottom + 340)
         out.append(np.asarray(im, dtype="uint8"))
     return out
+
+
+def pin_beats(timeline: list[Cue], duration_s: float = 10.0,
+              settle_s: float = 0.5) -> list[tuple[str, float]]:
+    """The instants a pin sequence is cut at, DERIVED from the timeline.
+
+    Not hardcoded: if the bible moves a beat, `build_timeline` moves with it and
+    so do the pins. A second copy of 4.0/5.0/6.0 here would be a contract in two
+    places that agree until someone edits one.
+
+    `settle_s` after each cue, because a cue at exactly `t` is the frame the text
+    APPEARS on and sampling the boundary is how you get a still that may or may
+    not contain it depending on rounding.
+
+    The first pin is the HOLD — character and arc, no words. That is the hook and
+    it is the one that must not be dropped for looking empty: the bible's whole
+    claim is that a held image with a timer is a question, and a pin sequence
+    that opens on the answer has thrown the format away.
+    """
+    hold_t = max(min(c.t for c in timeline if c.kind in ("pinyin", "meaning",
+                                                         "sentence")) - 1.0, 0.0)
+    beats = [("1-hold", hold_t)]
+    for c in sorted((c for c in timeline if c.kind in ("pinyin", "meaning", "sentence")),
+                    key=lambda c: c.t):
+        t = c.t + settle_s
+        if t < duration_s:
+            beats.append((f"{len(beats) + 1}-{c.kind}", t))
+    return beats
+
+
+def pin_sequence(ep: Episode, duration_s: float = 10.0, arc_width: int = 8):
+    """The Pinterest cut: 2:3, static-safe, the SAME frames as the Reel.
+
+    "Static-safe" is the bible's word and it is a constraint on the ARTEFACT, not
+    a different render: Pinterest is an evergreen search surface, so it gets real
+    stills rather than a video thumbnail. Same timeline, same drawing, 2:3 frame,
+    sampled at the beats.
+
+    🔴 2:3 is why `character_font_for_frame_height` takes the BINDING AXIS. At
+    1080x1620, 88% of height is 1425px in a 1080px-wide frame — the same
+    impossibility that function documents for 9:16, and it would silently draw a
+    glyph wider than the pin. Width binds here too; the function already handles
+    it, which is the whole reason this cut is a parameter and not a fork.
+    """
+    frames = render_frames(ep, duration_s, arc_width, frame=(PIN_W, PIN_H))
+    out = []
+    for label, t in pin_beats(build_timeline(ep, duration_s), duration_s):
+        i = min(int(round(t * FPS)), len(frames) - 1)
+        out.append((label, frames[i]))
+    return out
+
+
+def write_pins(pins, outdir: Path) -> list[Path]:
+    """PNG per beat. Returns the paths in sequence order."""
+    from PIL import Image
+    outdir.mkdir(parents=True, exist_ok=True)
+    written = []
+    for label, arr in pins:
+        dest = outdir / f"{label}.png"
+        Image.fromarray(arr, mode="L").save(dest)
+        written.append(dest)
+    return written
 
 
 def encode(frames, dest: Path) -> Path:
@@ -368,6 +463,8 @@ def main(argv=None) -> int:
     p.add_argument("--bank", type=Path, help="sentence bank JSON to select from")
     p.add_argument("--headword", help="specific headword; default = first entry")
     p.add_argument("--out", type=Path, default=Path("hold-this-shape.mp4"))
+    p.add_argument("--pins", type=Path,
+                   help="ALSO write the 2:3 Pinterest still sequence into this dir")
     p.add_argument("--duration", type=float, default=10.0)
     p.add_argument("--selftest", action="store_true",
                    help="assert the bible's clauses against the timeline and exit")
@@ -389,6 +486,10 @@ def main(argv=None) -> int:
     dest = encode(render_frames(ep, a.duration), a.out)
     print(f"rendered {ep.character} ({ep.pinyin}, {ep.meaning}) -> {dest} "
           f"[{dest.stat().st_size} bytes]")
+    if a.pins:
+        paths = write_pins(pin_sequence(ep, a.duration), a.pins)
+        print(f"pinterest cut ({PIN_W}x{PIN_H}, 2:3): "
+              + ", ".join(p.name for p in paths))
     return 0
 
 
