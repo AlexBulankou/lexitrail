@@ -358,3 +358,145 @@ def test_a_sentence_too_long_even_at_the_floor_RAISES(monkeypatch):
     ep = Episode("爱", "ài", "love", "我" + "爱这个非常非常长的句子" * 12)
     with pytest.raises(ValueError, match="does not fit"):
         m.render_frames(ep, duration_s=10.0)
+
+
+# ── the Pinterest cut (lex#504) ────────────────────────────────────────────────
+#
+# The bible makes Pinterest the PRIMARY surface and the Reel the cut-down, so
+# these are not "extra" tests for a variant. They also exist because building
+# this cut REPRODUCED the defect #504 was reopened for: the payoff drawn at
+# fixed pixel offsets below the glyph fell OFF a shorter frame, and two of the
+# four pins came out byte-identical to the one before them. The Reel's join
+# test could not have caught it — it only ever renders 1080x1920.
+
+
+def _pins(ep=None, duration_s=10.0):
+    import render_hold_this_shape_pins as p
+    return p.pin_sequence(ep or Episode("棒", "bàng", "excellent", "他很棒。"), duration_s)
+
+
+def test_the_pin_cut_is_2_3_not_the_reel_reshaped():
+    import numpy as np, render_hold_this_shape_pins as m
+    for _, arr in _pins():
+        h, w = np.asarray(arr).shape[:2]
+        assert (w, h) == (m.PIN_W, m.PIN_H)
+        assert abs(w / h - 2 / 3) < 1e-6, f"{w}x{h} is not 2:3"
+
+
+def test_EVERY_pin_beat_CHANGES_THE_PIXELS():
+    """The join between the timeline and the stills, for the 2:3 frame.
+
+    🔴 This is the test that catches the real defect, and it is the one whose
+    absence let it through. Before the layout fix: meaning->sentence delta was
+    0.0000 and the two PNGs were byte-identical, because the sentence band was
+    drawn at y=1720 in a 1620px frame. Every other assertion still passed — the
+    files existed, were 2:3, were valid PNGs, and had plausible sizes. A pin
+    sequence whose last two pins are the same image is half a format.
+    """
+    import numpy as np
+    pins = _pins()
+    assert len(pins) >= 4, f"expected hold + 3 payoff beats, got {[l for l, _ in pins]}"
+    for (la, a), (lb, b) in zip(pins, pins[1:]):
+        d = np.abs(np.asarray(a, dtype=float) - np.asarray(b, dtype=float)).mean()
+        assert d > 0.05, f"{la} -> {lb} is visually identical (mean delta {d:.4f})"
+
+
+def test_the_answer_BANDS_FIT_both_cuts_not_just_the_one_we_render_most():
+    """The geometry invariant, stated once for every frame the module ships.
+
+    A fixed offset below the glyph is a CONTRACT with the frame height. 9:16
+    satisfied it by 28px of luck; 2:3 missed it by 100px. Asserting it per-cut
+    is what stops the next aspect ratio rediscovering this.
+    """
+    import render_hold_this_shape as m
+    import render_hold_this_shape_pins as p
+    for fw, fh in ((m.W, m.H), (p.PIN_W, p.PIN_H)):
+        f = m.character_font_for_frame_height(char="棒", frame_h=fh, frame_w=fw)
+        bb = f.getbbox("棒")
+        need = m.SENTENCE_DY + m._line_h(m._text_font(64)) + m.BAND_BOTTOM_MARGIN_PX
+        cy = min(int(fh * 0.30), fh - need - (bb[3] - bb[1])) - bb[1]
+        bottom = cy + bb[3] + m.SENTENCE_DY + m._line_h(m._text_font(64))
+        assert bottom <= fh, f"{fw}x{fh}: sentence band ends at {bottom}, past {fh}"
+
+
+def test_a_frame_TOO_SHORT_for_the_answer_RAISES_rather_than_dropping_it():
+    """CONTROL, and the direction matters: the failure this replaces was SILENT.
+
+    Refusing is the whole point — a renderer that quietly omits the payoff
+    produces a valid MP4 of the wrong content, which passes every artifact check
+    anyone runs. Without this the fix above is a layout tweak with nothing
+    stopping the next frame size from reintroducing the silent version.
+    """
+    import render_hold_this_shape as m
+    with pytest.raises(ValueError, match="cannot hold"):
+        m.render_frames(Episode("棒", "bàng", "excellent", "他很棒。"),
+                        duration_s=1.0, frame=(1080, 700))
+
+
+def test_pin_beats_are_DERIVED_from_the_timeline_not_a_second_copy_of_it():
+    """Move a beat in `build_timeline` and the pins must move with it.
+
+    A hardcoded 4.0/5.0/6.0 here would be the same contract in two places, and
+    two copies of a contract agree right up until someone edits one.
+    """
+    import render_hold_this_shape as m
+    import render_hold_this_shape_pins as p
+    ep = Episode("棒", "bàng", "excellent", "他很棒。")
+    base = dict(p.pin_beats(m.build_timeline(ep), 10.0))
+    shifted = m.build_timeline(ep)
+    for c in shifted:
+        if c.kind == "sentence":
+            shifted[shifted.index(c)] = m.Cue(c.t + 1.5, c.kind, c.text, c.words)
+    moved = dict(p.pin_beats(shifted, 10.0))
+    assert moved["4-sentence"] == base["4-sentence"] + 1.5
+    assert moved["2-pinyin"] == base["2-pinyin"], "unrelated beats must not move"
+
+
+def test_the_FIRST_pin_is_the_hold_with_no_words_on_it():
+    """The hook. A pin sequence that opens on the answer has thrown the format
+    away, and 'looks empty' is the reason someone would drop it."""
+    import render_hold_this_shape as m
+    import render_hold_this_shape_pins as p
+    label, _ = _pins()[0]
+    assert label == "1-hold"
+    t = dict(p.pin_beats(m.build_timeline(Episode("棒", "bàng", "excellent", "他很棒。")), 10.0))
+    assert t["1-hold"] < m.PINYIN_S, "the hold pin must precede the first reveal"
+
+
+def test_the_hold_pin_is_never_the_PURE_BLACK_frame_0(tmp_path):
+    """hc2@ on lex#521: if the first payoff beat lands before 1.0s, `hold_t`
+    used to clamp to 0.0 — and frame 0 is pure black by design, so the hero pin
+    became a blank image.
+
+    None of the other tests caught it: a black frame still DIFFERS from the
+    pinyin frame (so the join test passes) and 0.0 < PINYIN_S (so the
+    first-pin test passes). It was unreachable on today's constants, which is
+    the shape worth pinning — it held by a property of PINYIN_S, not of the code.
+    """
+    import numpy as np
+    import render_hold_this_shape as m
+    import render_hold_this_shape_pins as p
+    ep = Episode("棒", "bàng", "excellent", "他很棒。")
+    early = [m.Cue(0.5, "pinyin", ep.pinyin, 0),
+             m.Cue(0.7, "meaning", ep.meaning, 1),
+             m.Cue(0.9, "sentence", ep.sentence, 0)]
+
+    hold_t = dict(p.pin_beats(early, 10.0))["1-hold"]
+    assert hold_t > 0.0, "the hold pin would be frame 0, which is pure black"
+    assert hold_t < 0.5, "the hold must still precede the first payoff"
+
+    frames = m.render_frames(ep, 10.0, frame=(p.PIN_W, p.PIN_H))
+    arr = np.asarray(frames[min(int(round(hold_t * m.FPS)), len(frames) - 1)])
+    assert arr.max() > 0, "CONTROL: the hold frame must actually contain the glyph"
+
+
+def test_a_timeline_with_NO_ROOM_for_a_hold_refuses(tmp_path):
+    """The degenerate end of the same edge: a payoff inside the first frame.
+
+    Refuse rather than emit a sequence that opens on the answer — the bible's
+    'never show the answer early' is the format, not a preference."""
+    import render_hold_this_shape as m
+    import render_hold_this_shape_pins as p
+    ep = Episode("棒", "bàng", "excellent", "他很棒。")
+    with pytest.raises(ValueError, match="no room for a hold"):
+        p.pin_beats([m.Cue(0.01, "pinyin", ep.pinyin, 0)], 10.0)
