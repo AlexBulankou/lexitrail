@@ -1,0 +1,1204 @@
+{
+  "sentences": [
+    {
+      "no": 1,
+      "word": {
+        "no": 1,
+        "chinese": "爱情",
+        "pinyin": "àiqíng",
+        "english": "Love"
+      },
+      "chinese": "这是一个爱情故事。",
+      "pinyin": "Zhè shì yí ge àiqíng gùshi.",
+      "english": "This is a love story."
+    },
+    {
+      "no": 2,
+      "word": {
+        "no": 1,
+        "chinese": "爱情",
+        "pinyin": "àiqíng",
+        "english": "Love"
+      },
+      "chinese": "他们的爱情很美。",
+      "pinyin": "Tāmen de àiqíng hěn měi.",
+      "english": "Their love is beautiful."
+    },
+    {
+      "no": 3,
+      "word": {
+        "no": 2,
+        "chinese": "安排",
+        "pinyin": "ānpái",
+        "english": "arrange"
+      },
+      "chinese": "老师安排了考试时间。",
+      "pinyin": "Lǎoshī ānpái le kǎoshì shíjiān.",
+      "english": "The teacher arranged the exam time."
+    },
+    {
+      "no": 4,
+      "word": {
+        "no": 2,
+        "chinese": "安排",
+        "pinyin": "ānpái",
+        "english": "arrange"
+      },
+      "chinese": "今天的安排很满。",
+      "pinyin": "Jīntiān de ānpái hěn mǎn.",
+      "english": "Today's schedule is very full."
+    },
+    {
+      "no": 5,
+      "word": {
+        "no": 3,
+        "chinese": "安全",
+        "pinyin": "ānquán",
+        "english": "security"
+      },
+      "chinese": "过马路要注意安全。",
+      "pinyin": "Guò mǎlù yào zhùyì ānquán.",
+      "english": "Be careful when crossing the road."
+    },
+    {
+      "no": 6,
+      "word": {
+        "no": 3,
+        "chinese": "安全",
+        "pinyin": "ānquán",
+        "english": "security"
+      },
+      "chinese": "这个地方很安全。",
+      "pinyin": "Zhège dìfang hěn ānquán.",
+      "english": "This place is very safe."
+    },
+    {
+      "no": 7,
+      "word": {
+        "no": 4,
+        "chinese": "按时",
+        "pinyin": "ànshí",
+        "english": "on time"
+      },
+      "chinese": "请按时来上课。",
+      "pinyin": "Qǐng ànshí lái shàngkè.",
+      "english": "Please come to class on time."
+    },
+    {
+      "no": 8,
+      "word": {
+        "no": 4,
+        "chinese": "按时",
+        "pinyin": "ànshí",
+        "english": "on time"
+      },
+      "chinese": "他每天按时吃药。",
+      "pinyin": "Tā měitiān ànshí chī yào.",
+      "english": "He takes his medicine on time every day."
+    },
+    {
+      "no": 9,
+      "word": {
+        "no": 5,
+        "chinese": "按照",
+        "pinyin": "ànzhào",
+        "english": "according to"
+      },
+      "chinese": "按照老师说的做。",
+      "pinyin": "Ànzhào lǎoshī shuō de zuò.",
+      "english": "Do it the way the teacher said."
+    },
+    {
+      "no": 10,
+      "word": {
+        "no": 5,
+        "chinese": "按照",
+        "pinyin": "ànzhào",
+        "english": "according to"
+      },
+      "chinese": "我们按照计划旅游。",
+      "pinyin": "Wǒmen ànzhào jìhuà lǚyóu.",
+      "english": "We travel according to the plan."
+    },
+    {
+      "no": 11,
+      "word": {
+        "no": 6,
+        "chinese": "百分之",
+        "pinyin": "bǎifēnzhī",
+        "english": "percent"
+      },
+      "chinese": "百分之八十的人同意。",
+      "pinyin": "Bǎifēnzhī bāshí de rén tóngyì.",
+      "english": "Eighty percent of people agree."
+    },
+    {
+      "no": 12,
+      "word": {
+        "no": 6,
+        "chinese": "百分之",
+        "pinyin": "bǎifēnzhī",
+        "english": "percent"
+      },
+      "chinese": "这次只有百分之十的学生没通过。",
+      "pinyin": "Zhè cì zhǐ yǒu bǎifēnzhī shí de xuésheng méi tōngguò.",
+      "english": "Only ten percent of students did not pass this time."
+    },
+    {
+      "no": 13,
+      "word": {
+        "no": 7,
+        "chinese": "棒",
+        "pinyin": "bàng",
+        "english": "stick; excellent"
+      },
+      "chinese": "你唱得真棒！",
+      "pinyin": "Nǐ chàng de zhēn bàng!",
+      "english": "You sing really well!"
+    },
+    {
+      "no": 14,
+      "word": {
+        "no": 7,
+        "chinese": "棒",
+        "pinyin": "bàng",
+        "english": "stick; excellent"
+      },
+      "chinese": "这个孩子很棒。",
+      "pinyin": "Zhège háizi hěn bàng.",
+      "english": "This child is great."
+    },
+    {
+      "no": 15,
+      "word": {
+        "no": 8,
+        "chinese": "包子",
+        "pinyin": "bāozi",
+        "english": "Steamed stuffed bun"
+      },
+      "chinese": "我早上吃了两个包子。",
+      "pinyin": "Wǒ zǎoshang chī le liǎng ge bāozi.",
+      "english": "I ate two buns this morning."
+    },
+    {
+      "no": 16,
+      "word": {
+        "no": 8,
+        "chinese": "包子",
+        "pinyin": "bāozi",
+        "english": "Steamed stuffed bun"
+      },
+      "chinese": "这家店的包子很好吃。",
+      "pinyin": "Zhè jiā diàn de bāozi hěn hǎochī.",
+      "english": "The buns at this shop are delicious."
+    },
+    {
+      "no": 17,
+      "word": {
+        "no": 9,
+        "chinese": "保护",
+        "pinyin": "bǎohù",
+        "english": "protect"
+      },
+      "chinese": "我们应该保护环境。",
+      "pinyin": "Wǒmen yīnggāi bǎohù huánjìng.",
+      "english": "We should protect the environment."
+    },
+    {
+      "no": 18,
+      "word": {
+        "no": 9,
+        "chinese": "保护",
+        "pinyin": "bǎohù",
+        "english": "protect"
+      },
+      "chinese": "妈妈一直保护着孩子。",
+      "pinyin": "Māma yìzhí bǎohù zhe háizi.",
+      "english": "The mother is always protecting her child."
+    },
+    {
+      "no": 19,
+      "word": {
+        "no": 10,
+        "chinese": "保证",
+        "pinyin": "bǎozhèng",
+        "english": "ensure"
+      },
+      "chinese": "我保证明天来。",
+      "pinyin": "Wǒ bǎozhèng míngtiān lái.",
+      "english": "I promise to come tomorrow."
+    },
+    {
+      "no": 20,
+      "word": {
+        "no": 10,
+        "chinese": "保证",
+        "pinyin": "bǎozhèng",
+        "english": "ensure"
+      },
+      "chinese": "他保证不再迟到。",
+      "pinyin": "Tā bǎozhèng bú zài chídào.",
+      "english": "He promises not to be late again."
+    },
+    {
+      "no": 21,
+      "word": {
+        "no": 11,
+        "chinese": "抱",
+        "pinyin": "bào",
+        "english": "Hold"
+      },
+      "chinese": "她抱着一个孩子。",
+      "pinyin": "Tā bào zhe yí ge háizi.",
+      "english": "She is holding a child."
+    },
+    {
+      "no": 22,
+      "word": {
+        "no": 11,
+        "chinese": "抱",
+        "pinyin": "bào",
+        "english": "Hold"
+      },
+      "chinese": "请抱一下这些书。",
+      "pinyin": "Qǐng bào yíxià zhèxiē shū.",
+      "english": "Please hold these books for a moment."
+    },
+    {
+      "no": 23,
+      "word": {
+        "no": 12,
+        "chinese": "抱歉",
+        "pinyin": "bàoqiàn",
+        "english": "feel sorry"
+      },
+      "chinese": "很抱歉，我来晚了。",
+      "pinyin": "Hěn bàoqiàn, wǒ lái wǎn le.",
+      "english": "I am very sorry, I came late."
+    },
+    {
+      "no": 24,
+      "word": {
+        "no": 12,
+        "chinese": "抱歉",
+        "pinyin": "bàoqiàn",
+        "english": "feel sorry"
+      },
+      "chinese": "他对这件事很抱歉。",
+      "pinyin": "Tā duì zhè jiàn shì hěn bàoqiàn.",
+      "english": "He feels very sorry about this matter."
+    },
+    {
+      "no": 25,
+      "word": {
+        "no": 13,
+        "chinese": "报名",
+        "pinyin": "bàomíng",
+        "english": "sign up"
+      },
+      "chinese": "我想报名学中文。",
+      "pinyin": "Wǒ xiǎng bàomíng xué Zhōngwén.",
+      "english": "I want to sign up to learn Chinese."
+    },
+    {
+      "no": 26,
+      "word": {
+        "no": 13,
+        "chinese": "报名",
+        "pinyin": "bàomíng",
+        "english": "sign up"
+      },
+      "chinese": "报名的人越来越多。",
+      "pinyin": "Bàomíng de rén yuè lái yuè duō.",
+      "english": "More and more people are signing up."
+    },
+    {
+      "no": 27,
+      "word": {
+        "no": 14,
+        "chinese": "倍",
+        "pinyin": "bèi",
+        "english": "times"
+      },
+      "chinese": "这个比那个大两倍。",
+      "pinyin": "Zhège bǐ nàge dà liǎng bèi.",
+      "english": "This is twice as big as that one."
+    },
+    {
+      "no": 28,
+      "word": {
+        "no": 14,
+        "chinese": "倍",
+        "pinyin": "bèi",
+        "english": "times"
+      },
+      "chinese": "今年的学生是去年的三倍。",
+      "pinyin": "Jīnnián de xuésheng shì qùnián de sān bèi.",
+      "english": "This year's students are three times last year's."
+    },
+    {
+      "no": 29,
+      "word": {
+        "no": 15,
+        "chinese": "本来",
+        "pinyin": "běnlái",
+        "english": "originally"
+      },
+      "chinese": "我本来想去，后来没去。",
+      "pinyin": "Wǒ běnlái xiǎng qù, hòulái méi qù.",
+      "english": "I originally wanted to go, but then I did not."
+    },
+    {
+      "no": 30,
+      "word": {
+        "no": 15,
+        "chinese": "本来",
+        "pinyin": "běnlái",
+        "english": "originally"
+      },
+      "chinese": "这本来是他的书。",
+      "pinyin": "Zhè běnlái shì tā de shū.",
+      "english": "This was originally his book."
+    },
+    {
+      "no": 31,
+      "word": {
+        "no": 16,
+        "chinese": "笨",
+        "pinyin": "bèn",
+        "english": "stupid"
+      },
+      "chinese": "我不笨，只是太累了。",
+      "pinyin": "Wǒ bú bèn, zhǐshì tài lèi le.",
+      "english": "I am not stupid, I am just too tired."
+    },
+    {
+      "no": 32,
+      "word": {
+        "no": 16,
+        "chinese": "笨",
+        "pinyin": "bèn",
+        "english": "stupid"
+      },
+      "chinese": "这个办法有点笨。",
+      "pinyin": "Zhège bànfǎ yǒudiǎn bèn.",
+      "english": "This method is a bit clumsy."
+    },
+    {
+      "no": 33,
+      "word": {
+        "no": 17,
+        "chinese": "比如",
+        "pinyin": "bǐrú",
+        "english": "such as"
+      },
+      "chinese": "我喜欢水果，比如苹果。",
+      "pinyin": "Wǒ xǐhuan shuǐguǒ, bǐrú píngguǒ.",
+      "english": "I like fruit, such as apples."
+    },
+    {
+      "no": 34,
+      "word": {
+        "no": 17,
+        "chinese": "比如",
+        "pinyin": "bǐrú",
+        "english": "such as"
+      },
+      "chinese": "比如说，你可以早点起床。",
+      "pinyin": "Bǐrú shuō, nǐ kěyǐ zǎodiǎn qǐchuáng.",
+      "english": "For example, you could get up earlier."
+    },
+    {
+      "no": 35,
+      "word": {
+        "no": 18,
+        "chinese": "毕业",
+        "pinyin": "bìyè",
+        "english": "graduation"
+      },
+      "chinese": "他去年大学毕业了。",
+      "pinyin": "Tā qùnián dàxué bìyè le.",
+      "english": "He graduated from university last year."
+    },
+    {
+      "no": 36,
+      "word": {
+        "no": 18,
+        "chinese": "毕业",
+        "pinyin": "bìyè",
+        "english": "graduation"
+      },
+      "chinese": "毕业以后我想工作。",
+      "pinyin": "Bìyè yǐhòu wǒ xiǎng gōngzuò.",
+      "english": "After graduating I want to work."
+    },
+    {
+      "no": 37,
+      "word": {
+        "no": 19,
+        "chinese": "遍",
+        "pinyin": "biàn",
+        "english": "Times"
+      },
+      "chinese": "这本书我看了两遍。",
+      "pinyin": "Zhè běn shū wǒ kàn le liǎng biàn.",
+      "english": "I have read this book twice."
+    },
+    {
+      "no": 38,
+      "word": {
+        "no": 19,
+        "chinese": "遍",
+        "pinyin": "biàn",
+        "english": "Times"
+      },
+      "chinese": "请再说一遍。",
+      "pinyin": "Qǐng zài shuō yí biàn.",
+      "english": "Please say it once more."
+    },
+    {
+      "no": 39,
+      "word": {
+        "no": 20,
+        "chinese": "标准",
+        "pinyin": "biāozhǔn",
+        "english": "standard"
+      },
+      "chinese": "他的中文很标准。",
+      "pinyin": "Tā de Zhōngwén hěn biāozhǔn.",
+      "english": "His Chinese is very standard."
+    },
+    {
+      "no": 40,
+      "word": {
+        "no": 20,
+        "chinese": "标准",
+        "pinyin": "biāozhǔn",
+        "english": "standard"
+      },
+      "chinese": "这是我们的标准。",
+      "pinyin": "Zhè shì wǒmen de biāozhǔn.",
+      "english": "This is our standard."
+    },
+    {
+      "no": 41,
+      "word": {
+        "no": 21,
+        "chinese": "表格",
+        "pinyin": "biǎogé",
+        "english": "form"
+      },
+      "chinese": "请填这张表格。",
+      "pinyin": "Qǐng tián zhè zhāng biǎogé.",
+      "english": "Please fill in this form."
+    },
+    {
+      "no": 42,
+      "word": {
+        "no": 21,
+        "chinese": "表格",
+        "pinyin": "biǎogé",
+        "english": "form"
+      },
+      "chinese": "表格上要写名字。",
+      "pinyin": "Biǎogé shang yào xiě míngzi.",
+      "english": "You must write your name on the form."
+    },
+    {
+      "no": 43,
+      "word": {
+        "no": 22,
+        "chinese": "表示",
+        "pinyin": "biǎoshì",
+        "english": "Express"
+      },
+      "chinese": "他表示同意。",
+      "pinyin": "Tā biǎoshì tóngyì.",
+      "english": "He expressed agreement."
+    },
+    {
+      "no": 44,
+      "word": {
+        "no": 22,
+        "chinese": "表示",
+        "pinyin": "biǎoshì",
+        "english": "Express"
+      },
+      "chinese": "这个词表示什么意思？",
+      "pinyin": "Zhège cí biǎoshì shénme yìsi?",
+      "english": "What does this word mean?"
+    },
+    {
+      "no": 45,
+      "word": {
+        "no": 23,
+        "chinese": "表演",
+        "pinyin": "biǎoyǎn",
+        "english": "perform"
+      },
+      "chinese": "孩子们在表演节目。",
+      "pinyin": "Háizimen zài biǎoyǎn jiémù.",
+      "english": "The children are performing a show."
+    },
+    {
+      "no": 46,
+      "word": {
+        "no": 23,
+        "chinese": "表演",
+        "pinyin": "biǎoyǎn",
+        "english": "perform"
+      },
+      "chinese": "昨天的表演很成功。",
+      "pinyin": "Zuótiān de biǎoyǎn hěn chénggōng.",
+      "english": "Yesterday's performance was very successful."
+    },
+    {
+      "no": 47,
+      "word": {
+        "no": 24,
+        "chinese": "表扬",
+        "pinyin": "biǎoyáng",
+        "english": "Praise"
+      },
+      "chinese": "老师表扬了他。",
+      "pinyin": "Lǎoshī biǎoyáng le tā.",
+      "english": "The teacher praised him."
+    },
+    {
+      "no": 48,
+      "word": {
+        "no": 24,
+        "chinese": "表扬",
+        "pinyin": "biǎoyáng",
+        "english": "Praise"
+      },
+      "chinese": "孩子需要表扬。",
+      "pinyin": "Háizi xūyào biǎoyáng.",
+      "english": "Children need praise."
+    },
+    {
+      "no": 49,
+      "word": {
+        "no": 25,
+        "chinese": "饼干",
+        "pinyin": "bǐnggān",
+        "english": "Biscuits"
+      },
+      "chinese": "桌子上有一些饼干。",
+      "pinyin": "Zhuōzi shang yǒu yìxiē bǐnggān.",
+      "english": "There are some biscuits on the table."
+    },
+    {
+      "no": 50,
+      "word": {
+        "no": 25,
+        "chinese": "饼干",
+        "pinyin": "bǐnggān",
+        "english": "Biscuits"
+      },
+      "chinese": "这种饼干不太甜。",
+      "pinyin": "Zhè zhǒng bǐnggān bú tài tián.",
+      "english": "This kind of biscuit is not very sweet."
+    },
+    {
+      "no": 51,
+      "word": {
+        "no": 26,
+        "chinese": "并且",
+        "pinyin": "bìngqiě",
+        "english": "also"
+      },
+      "chinese": "他会中文，并且说得很好。",
+      "pinyin": "Tā huì Zhōngwén, bìngqiě shuō de hěn hǎo.",
+      "english": "He knows Chinese, and speaks it very well."
+    },
+    {
+      "no": 52,
+      "word": {
+        "no": 26,
+        "chinese": "并且",
+        "pinyin": "bìngqiě",
+        "english": "also"
+      },
+      "chinese": "这个房间大并且干净。",
+      "pinyin": "Zhège fángjiān dà bìngqiě gānjìng.",
+      "english": "This room is big and clean."
+    },
+    {
+      "no": 53,
+      "word": {
+        "no": 27,
+        "chinese": "博士",
+        "pinyin": "bóshì",
+        "english": "doctor"
+      },
+      "chinese": "他是一位博士。",
+      "pinyin": "Tā shì yí wèi bóshì.",
+      "english": "He is a doctor (PhD)."
+    },
+    {
+      "no": 54,
+      "word": {
+        "no": 27,
+        "chinese": "博士",
+        "pinyin": "bóshì",
+        "english": "doctor"
+      },
+      "chinese": "我姐姐在读博士。",
+      "pinyin": "Wǒ jiějie zài dú bóshì.",
+      "english": "My older sister is studying for a doctorate."
+    },
+    {
+      "no": 55,
+      "word": {
+        "no": 28,
+        "chinese": "不过",
+        "pinyin": "búguò",
+        "english": "However"
+      },
+      "chinese": "这个菜很好吃，不过有点贵。",
+      "pinyin": "Zhège cài hěn hǎochī, búguò yǒudiǎn guì.",
+      "english": "This dish is tasty, but a bit expensive."
+    },
+    {
+      "no": 56,
+      "word": {
+        "no": 28,
+        "chinese": "不过",
+        "pinyin": "búguò",
+        "english": "However"
+      },
+      "chinese": "他想去，不过没时间。",
+      "pinyin": "Tā xiǎng qù, búguò méi shíjiān.",
+      "english": "He wants to go, but has no time."
+    },
+    {
+      "no": 57,
+      "word": {
+        "no": 29,
+        "chinese": "不得不",
+        "pinyin": "bùdébù",
+        "english": "have to"
+      },
+      "chinese": "下雨了，我们不得不回家。",
+      "pinyin": "Xià yǔ le, wǒmen bùdébù huí jiā.",
+      "english": "It rained, so we had to go home."
+    },
+    {
+      "no": 58,
+      "word": {
+        "no": 29,
+        "chinese": "不得不",
+        "pinyin": "bùdébù",
+        "english": "have to"
+      },
+      "chinese": "他不得不重新做一次。",
+      "pinyin": "Tā bùdébù chóngxīn zuò yí cì.",
+      "english": "He had to do it over again."
+    },
+    {
+      "no": 59,
+      "word": {
+        "no": 30,
+        "chinese": "不管",
+        "pinyin": "bùguǎn",
+        "english": "no matter"
+      },
+      "chinese": "不管下不下雨，我都去。",
+      "pinyin": "Bùguǎn xià bu xià yǔ, wǒ dōu qù.",
+      "english": "No matter whether it rains, I will go."
+    },
+    {
+      "no": 60,
+      "word": {
+        "no": 30,
+        "chinese": "不管",
+        "pinyin": "bùguǎn",
+        "english": "no matter"
+      },
+      "chinese": "不管多难，他都不放弃。",
+      "pinyin": "Bùguǎn duō nán, tā dōu bú fàngqì.",
+      "english": "No matter how hard it is, he does not give up."
+    },
+    {
+      "no": 61,
+      "word": {
+        "no": 31,
+        "chinese": "不仅",
+        "pinyin": "bùjǐn",
+        "english": "not only"
+      },
+      "chinese": "他不仅会唱歌，还会跳舞。",
+      "pinyin": "Tā bùjǐn huì chànggē, hái huì tiàowǔ.",
+      "english": "He can not only sing but also dance."
+    },
+    {
+      "no": 62,
+      "word": {
+        "no": 31,
+        "chinese": "不仅",
+        "pinyin": "bùjǐn",
+        "english": "not only"
+      },
+      "chinese": "这里不仅干净，而且安静。",
+      "pinyin": "Zhèlǐ bùjǐn gānjìng, érqiě ānjìng.",
+      "english": "It is not only clean here, but also quiet."
+    },
+    {
+      "no": 63,
+      "word": {
+        "no": 32,
+        "chinese": "部分",
+        "pinyin": "bùfen",
+        "english": "Part"
+      },
+      "chinese": "这部分我没看懂。",
+      "pinyin": "Zhè bùfen wǒ méi kàn dǒng.",
+      "english": "I did not understand this part."
+    },
+    {
+      "no": 64,
+      "word": {
+        "no": 32,
+        "chinese": "部分",
+        "pinyin": "bùfen",
+        "english": "Part"
+      },
+      "chinese": "大部分学生都来了。",
+      "pinyin": "Dà bùfen xuésheng dōu lái le.",
+      "english": "Most of the students came."
+    },
+    {
+      "no": 65,
+      "word": {
+        "no": 33,
+        "chinese": "擦",
+        "pinyin": "cā",
+        "english": "wipe"
+      },
+      "chinese": "请擦一下桌子。",
+      "pinyin": "Qǐng cā yíxià zhuōzi.",
+      "english": "Please wipe the table."
+    },
+    {
+      "no": 66,
+      "word": {
+        "no": 33,
+        "chinese": "擦",
+        "pinyin": "cā",
+        "english": "wipe"
+      },
+      "chinese": "他擦干净了窗户。",
+      "pinyin": "Tā cā gānjìng le chuānghu.",
+      "english": "He wiped the window clean."
+    },
+    {
+      "no": 67,
+      "word": {
+        "no": 34,
+        "chinese": "猜",
+        "pinyin": "cāi",
+        "english": "guess"
+      },
+      "chinese": "你猜他多大了？",
+      "pinyin": "Nǐ cāi tā duō dà le?",
+      "english": "Guess how old he is."
+    },
+    {
+      "no": 68,
+      "word": {
+        "no": 34,
+        "chinese": "猜",
+        "pinyin": "cāi",
+        "english": "guess"
+      },
+      "chinese": "我猜今天会下雨。",
+      "pinyin": "Wǒ cāi jīntiān huì xià yǔ.",
+      "english": "I guess it will rain today."
+    },
+    {
+      "no": 69,
+      "word": {
+        "no": 35,
+        "chinese": "材料",
+        "pinyin": "cáiliào",
+        "english": "material"
+      },
+      "chinese": "做这个菜需要什么材料？",
+      "pinyin": "Zuò zhège cài xūyào shénme cáiliào?",
+      "english": "What ingredients does this dish need?"
+    },
+    {
+      "no": 70,
+      "word": {
+        "no": 35,
+        "chinese": "材料",
+        "pinyin": "cáiliào",
+        "english": "material"
+      },
+      "chinese": "他在看会议的材料。",
+      "pinyin": "Tā zài kàn huìyì de cáiliào.",
+      "english": "He is reading the materials for the meeting."
+    },
+    {
+      "no": 71,
+      "word": {
+        "no": 36,
+        "chinese": "参观",
+        "pinyin": "cānguān",
+        "english": "visit"
+      },
+      "chinese": "我们去参观了博物馆。",
+      "pinyin": "Wǒmen qù cānguān le bówùguǎn.",
+      "english": "We visited the museum."
+    },
+    {
+      "no": 72,
+      "word": {
+        "no": 36,
+        "chinese": "参观",
+        "pinyin": "cānguān",
+        "english": "visit"
+      },
+      "chinese": "明天可以参观学校。",
+      "pinyin": "Míngtiān kěyǐ cānguān xuéxiào.",
+      "english": "You can visit the school tomorrow."
+    },
+    {
+      "no": 73,
+      "word": {
+        "no": 37,
+        "chinese": "餐厅",
+        "pinyin": "cāntīng",
+        "english": "Restaurant"
+      },
+      "chinese": "这家餐厅的菜很好吃。",
+      "pinyin": "Zhè jiā cāntīng de cài hěn hǎochī.",
+      "english": "The food at this restaurant is delicious."
+    },
+    {
+      "no": 74,
+      "word": {
+        "no": 37,
+        "chinese": "餐厅",
+        "pinyin": "cāntīng",
+        "english": "Restaurant"
+      },
+      "chinese": "我们在餐厅等你。",
+      "pinyin": "Wǒmen zài cāntīng děng nǐ.",
+      "english": "We are waiting for you in the restaurant."
+    },
+    {
+      "no": 75,
+      "word": {
+        "no": 38,
+        "chinese": "差不多",
+        "pinyin": "chàbuduō",
+        "english": "Almost"
+      },
+      "chinese": "我们差不多到了。",
+      "pinyin": "Wǒmen chàbuduō dào le.",
+      "english": "We have almost arrived."
+    },
+    {
+      "no": 76,
+      "word": {
+        "no": 38,
+        "chinese": "差不多",
+        "pinyin": "chàbuduō",
+        "english": "Almost"
+      },
+      "chinese": "这两个差不多一样。",
+      "pinyin": "Zhè liǎng ge chàbuduō yíyàng.",
+      "english": "These two are almost the same."
+    },
+    {
+      "no": 77,
+      "word": {
+        "no": 39,
+        "chinese": "尝",
+        "pinyin": "cháng",
+        "english": "taste"
+      },
+      "chinese": "你尝尝这个菜。",
+      "pinyin": "Nǐ chángchang zhège cài.",
+      "english": "Have a taste of this dish."
+    },
+    {
+      "no": 78,
+      "word": {
+        "no": 39,
+        "chinese": "尝",
+        "pinyin": "cháng",
+        "english": "taste"
+      },
+      "chinese": "我尝了一口，很甜。",
+      "pinyin": "Wǒ cháng le yì kǒu, hěn tián.",
+      "english": "I took a taste; it is very sweet."
+    },
+    {
+      "no": 79,
+      "word": {
+        "no": 40,
+        "chinese": "长城",
+        "pinyin": "chángchéng",
+        "english": "The Great Wall"
+      },
+      "chinese": "我们明天去长城。",
+      "pinyin": "Wǒmen míngtiān qù Chángchéng.",
+      "english": "We are going to the Great Wall tomorrow."
+    },
+    {
+      "no": 80,
+      "word": {
+        "no": 40,
+        "chinese": "长城",
+        "pinyin": "chángchéng",
+        "english": "The Great Wall"
+      },
+      "chinese": "长城非常有名。",
+      "pinyin": "Chángchéng fēicháng yǒumíng.",
+      "english": "The Great Wall is very famous."
+    },
+    {
+      "no": 81,
+      "word": {
+        "no": 41,
+        "chinese": "长江",
+        "pinyin": "chángjiāng",
+        "english": "The Yangtze River"
+      },
+      "chinese": "长江很长。",
+      "pinyin": "Chángjiāng hěn cháng.",
+      "english": "The Yangtze River is very long."
+    },
+    {
+      "no": 82,
+      "word": {
+        "no": 41,
+        "chinese": "长江",
+        "pinyin": "chángjiāng",
+        "english": "The Yangtze River"
+      },
+      "chinese": "他住在长江旁边。",
+      "pinyin": "Tā zhù zài Chángjiāng pángbiān.",
+      "english": "He lives beside the Yangtze River."
+    },
+    {
+      "no": 83,
+      "word": {
+        "no": 42,
+        "chinese": "场",
+        "pinyin": "chǎng",
+        "english": "site"
+      },
+      "chinese": "我们看了一场电影。",
+      "pinyin": "Wǒmen kàn le yì chǎng diànyǐng.",
+      "english": "We watched a film."
+    },
+    {
+      "no": 84,
+      "word": {
+        "no": 42,
+        "chinese": "场",
+        "pinyin": "chǎng",
+        "english": "site"
+      },
+      "chinese": "昨天下了一场大雨。",
+      "pinyin": "Zuótiān xià le yì chǎng dà yǔ.",
+      "english": "There was a heavy rain yesterday."
+    },
+    {
+      "no": 85,
+      "word": {
+        "no": 43,
+        "chinese": "超过",
+        "pinyin": "chāoguò",
+        "english": "Exceed"
+      },
+      "chinese": "他的成绩超过了我。",
+      "pinyin": "Tā de chéngjì chāoguò le wǒ.",
+      "english": "His grades surpassed mine."
+    },
+    {
+      "no": 86,
+      "word": {
+        "no": 43,
+        "chinese": "超过",
+        "pinyin": "chāoguò",
+        "english": "Exceed"
+      },
+      "chinese": "这里的人超过一千。",
+      "pinyin": "Zhèlǐ de rén chāoguò yì qiān.",
+      "english": "There are more than a thousand people here."
+    },
+    {
+      "no": 87,
+      "word": {
+        "no": 44,
+        "chinese": "厕所",
+        "pinyin": "cèsuǒ",
+        "english": "Toilet"
+      },
+      "chinese": "请问厕所在哪儿？",
+      "pinyin": "Qǐngwèn cèsuǒ zài nǎr?",
+      "english": "Excuse me, where is the toilet?"
+    },
+    {
+      "no": 88,
+      "word": {
+        "no": 44,
+        "chinese": "厕所",
+        "pinyin": "cèsuǒ",
+        "english": "Toilet"
+      },
+      "chinese": "厕所在二楼。",
+      "pinyin": "Cèsuǒ zài èr lóu.",
+      "english": "The toilet is on the second floor."
+    },
+    {
+      "no": 89,
+      "word": {
+        "no": 45,
+        "chinese": "成功",
+        "pinyin": "chénggōng",
+        "english": "Success"
+      },
+      "chinese": "他终于成功了。",
+      "pinyin": "Tā zhōngyú chénggōng le.",
+      "english": "He finally succeeded."
+    },
+    {
+      "no": 90,
+      "word": {
+        "no": 45,
+        "chinese": "成功",
+        "pinyin": "chénggōng",
+        "english": "Success"
+      },
+      "chinese": "这次考试很成功。",
+      "pinyin": "Zhè cì kǎoshì hěn chénggōng.",
+      "english": "This exam went very well."
+    },
+    {
+      "no": 91,
+      "word": {
+        "no": 46,
+        "chinese": "成为",
+        "pinyin": "chéngwéi",
+        "english": "Become"
+      },
+      "chinese": "他成为了一名老师。",
+      "pinyin": "Tā chéngwéi le yì míng lǎoshī.",
+      "english": "He became a teacher."
+    },
+    {
+      "no": 92,
+      "word": {
+        "no": 46,
+        "chinese": "成为",
+        "pinyin": "chéngwéi",
+        "english": "Become"
+      },
+      "chinese": "我想成为医生。",
+      "pinyin": "Wǒ xiǎng chéngwéi yīshēng.",
+      "english": "I want to become a doctor."
+    },
+    {
+      "no": 93,
+      "word": {
+        "no": 47,
+        "chinese": "诚实",
+        "pinyin": "chéngshí",
+        "english": "honest"
+      },
+      "chinese": "他是一个诚实的人。",
+      "pinyin": "Tā shì yí ge chéngshí de rén.",
+      "english": "He is an honest person."
+    },
+    {
+      "no": 94,
+      "word": {
+        "no": 47,
+        "chinese": "诚实",
+        "pinyin": "chéngshí",
+        "english": "honest"
+      },
+      "chinese": "诚实比什么都重要。",
+      "pinyin": "Chéngshí bǐ shénme dōu zhòngyào.",
+      "english": "Honesty is more important than anything."
+    },
+    {
+      "no": 95,
+      "word": {
+        "no": 48,
+        "chinese": "乘坐",
+        "pinyin": "chéngzuò",
+        "english": "ride"
+      },
+      "chinese": "我们乘坐火车去北京。",
+      "pinyin": "Wǒmen chéngzuò huǒchē qù Běijīng.",
+      "english": "We take the train to Beijing."
+    },
+    {
+      "no": 96,
+      "word": {
+        "no": 48,
+        "chinese": "乘坐",
+        "pinyin": "chéngzuò",
+        "english": "ride"
+      },
+      "chinese": "请乘坐这班车。",
+      "pinyin": "Qǐng chéngzuò zhè bān chē.",
+      "english": "Please take this bus."
+    },
+    {
+      "no": 97,
+      "word": {
+        "no": 49,
+        "chinese": "吃惊",
+        "pinyin": "chījīng",
+        "english": "Be amazed"
+      },
+      "chinese": "听到这个消息我很吃惊。",
+      "pinyin": "Tīngdào zhège xiāoxi wǒ hěn chījīng.",
+      "english": "I was very surprised to hear this news."
+    },
+    {
+      "no": 98,
+      "word": {
+        "no": 49,
+        "chinese": "吃惊",
+        "pinyin": "chījīng",
+        "english": "Be amazed"
+      },
+      "chinese": "他吃惊地看着我。",
+      "pinyin": "Tā chījīng de kàn zhe wǒ.",
+      "english": "He looked at me in surprise."
+    },
+    {
+      "no": 99,
+      "word": {
+        "no": 50,
+        "chinese": "重新",
+        "pinyin": "chóngxīn",
+        "english": "again"
+      },
+      "chinese": "请重新写一遍。",
+      "pinyin": "Qǐng chóngxīn xiě yí biàn.",
+      "english": "Please write it again."
+    },
+    {
+      "no": 100,
+      "word": {
+        "no": 50,
+        "chinese": "重新",
+        "pinyin": "chóngxīn",
+        "english": "again"
+      },
+      "chinese": "我们重新开始吧。",
+      "pinyin": "Wǒmen chóngxīn kāishǐ ba.",
+      "english": "Let us start over."
+    }
+  ]
+}
