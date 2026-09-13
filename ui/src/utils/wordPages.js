@@ -210,7 +210,8 @@ const markWord = (sentence, word) => {
  */
 export const renderWordPage = (
   w,
-  { prev = null, next = null, examples = [], position = null, count = null, related = null } = {},
+  { prev = null, next = null, examples = [], position = null, count = null, related = null,
+    glossLink = null } = {},
   origin = ORIGIN,
 ) => {
   const url = wordUrl(w.level, w.word, origin);
@@ -299,7 +300,8 @@ ${examples.map((x) => `<li><span lang="zh-Hans">${markWord(x.chinese, w.word)}</
     + `${x.pinyin ? `<em>${pinyinHtml(x.pinyin)}</em>` : ''}`
     + `${x.english ? `${esc(x.english)}` : ''}</li>`).join('\n')}
 </ul>` : ''}
-<p><span lang="zh-Hans">${esc(w.word)}</span>${w.pinyin ? ` is pronounced <em>${pinyinHtml(w.pinyin)}</em>` : ''}${w.english ? ` and means ${senses.length > 1 ? `&ldquo;${esc(senses[0].english)}&rdquo; (and ${senses.length - 1} further sense${senses.length > 2 ? 's' : ''} above)` : `&ldquo;${esc(w.english)}&rdquo;`}` : ''}. ${CLOSING_VARIANTS[variantIndex(w.word, CLOSING_VARIANTS.length)](`<span lang="zh-Hans">${esc(w.word)}</span>`, w.level)}</p>${chips ? `
+<p><span lang="zh-Hans">${esc(w.word)}</span>${w.pinyin ? ` is pronounced <em>${pinyinHtml(w.pinyin)}</em>` : ''}${w.english ? ` and means ${senses.length > 1 ? `&ldquo;${esc(senses[0].english)}&rdquo; (and ${senses.length - 1} further sense${senses.length > 2 ? 's' : ''} above)` : `&ldquo;${esc(w.english)}&rdquo;`}` : ''}. ${CLOSING_VARIANTS[variantIndex(w.word, CLOSING_VARIANTS.length)](`<span lang="zh-Hans">${esc(w.word)}</span>`, w.level)}</p>${glossLink ? `
+<p class="gloss-link">Searching in English? <a href="${glossLink.url}">${esc(glossLink.gloss)} in Chinese</a> covers this word and the other ways to say it.</p>` : ''}${chips ? `
 <h2>Related words</h2>
 <ul class="related">
 ${chips}

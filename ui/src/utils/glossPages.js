@@ -197,6 +197,8 @@ export const collectGlossGroup = (rows, gloss) => {
   return { primary, alternates };
 };
 
+import { glossCardUrl } from './glossCard';
+
 // ---------------------------------------------------------------------------------------------
 // Rendering.
 
@@ -248,6 +250,9 @@ export const renderGlossPage = (query, group, { examples = [], origin = ORIGIN }
   const { slug, gloss } = query;
   const { primary, alternates } = group;
   const url = glossUrl(slug, origin);
+  // The per-word card (glossCard.js). Every gloss page used to point og:image at ONE site-wide
+  // PNG, so all five shared a preview and a search engine had no per-page image to thumbnail.
+  const cardUrl = glossCardUrl(slug, origin);
   const numbered = toNumberedPinyin(primary.pinyin, [...primary.word].length);
   const levelUrl = `${origin}/hsk${primary.level}.html`;
   const title = `${gloss[0].toUpperCase()}${gloss.slice(1)} in Chinese`;
@@ -258,6 +263,7 @@ export const renderGlossPage = (query, group, { examples = [], origin = ORIGIN }
     '@type': 'DefinedTerm',
     name: primary.word,
     url,
+    image: cardUrl,
     description: [primary.pinyin, primary.english].filter(Boolean).join(' — '),
     inDefinedTermSet: { '@type': 'DefinedTermSet', name: `HSK ${primary.level}`, url: levelUrl },
   });
@@ -275,9 +281,13 @@ export const renderGlossPage = (query, group, { examples = [], origin = ORIGIN }
 <meta property="og:url" content="${url}">
 <meta property="og:title" content="${esc(title)}">
 <meta property="og:description" content="${esc(desc)}">
-<meta property="og:image" content="${origin}/images/og/generated/og-landscape.png">
+<meta property="og:image" content="${cardUrl}">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="${esc(primary.word)} — ${esc(primary.pinyin)} — ${esc(gloss)} in Chinese, HSK ${primary.level}">
 <meta property="twitter:card" content="summary_large_image">
 <meta property="twitter:url" content="${url}">
+<meta property="twitter:image" content="${cardUrl}">
 <meta property="twitter:title" content="${esc(title)}">
 <meta property="twitter:description" content="${esc(desc)}">
 <script type="application/ld+json">${jsonLd}</script>

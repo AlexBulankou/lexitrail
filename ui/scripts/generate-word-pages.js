@@ -64,10 +64,33 @@ const wp = evalModule('wordPages.js',
     // revamp-2026-09: wordPages' tone-coloured pinyin comes from hskPages' shared renderer.
     pinyinHtml: hsk.pinyinHtml });
 
+// lighthouse e8 (zz3, 2026-09-13): the gloss pages are indexed and LOSE to these hanzi pages by up
+// to 24 positions, and the measured mechanism is that they are ORPHANS — present in
+// sitemap-gloss.xml and linked from nowhere in the site. An indexed orphan is weak regardless of
+// how readable its URL is, which is also why e6/e7's URL-readability theory read as falsified: the
+// experiment shipped with a defect that was never part of the theory.
+//
+// So the authority flows from the page that HAS it. Exactly the 5 words with a gloss page gain one
+// inbound link; the other ~4,994 render byte-identically and do not appear in the diff.
+const gp = evalModule('glossPages.js', ['PHASE1_QUERIES', 'collectGlossGroup', 'glossUrl'],
+  { HSK_LEVELS: hsk.HSK_LEVELS, ORIGIN: hsk.ORIGIN, isHskWordset: hsk.isHskWordset,
+    PAGE_STYLE: hsk.PAGE_STYLE, GA4_SNIPPET: hsk.GA4_SNIPPET, SITE_HEADER: hsk.SITE_HEADER,
+    SITE_FOOTER: hsk.SITE_FOOTER, pinyinHtml: hsk.pinyinHtml,
+    glossCardUrl: () => '' });
+
 function main() {
   const check = process.argv.includes('--check');
   const rows = Papa.parse(fs.readFileSync(CSV, 'utf8'), { header: true, skipEmptyLines: true }).data;
   const { words, sensesMerged } = wp.collectWords(rows);
+
+  // word -> its gloss page, derived from the gloss generator's own source of truth so the two
+  // cannot disagree about which word a query resolves to.
+  const glossByWord = new Map();
+  for (const q of gp.PHASE1_QUERIES) {
+    const group = gp.collectGlossGroup(rows, q.gloss);
+    if (group) glossByWord.set(group.primary.word, { gloss: q.gloss, url: gp.glossUrl(q.slug) });
+  }
+  console.log(`note: ${glossByWord.size} word(s) get an inbound link to their gloss page`);
 
   // Filenames sorted so the bank ORDER is stable across machines: readdir order is not
   // guaranteed, and an unstable order would rewrite pages on every run and make --check
@@ -116,6 +139,7 @@ function main() {
         // revamp-2026-09: lights up the "HSK N › i of N" breadcrumb.
         position: i + 1,
         count: lvl.length,
+        glossLink: glossByWord.get(lvl[i].word) || null,
       });
       const file = path.join(dir, wp.wordFilename(lvl[i].word));
       if (check) {
