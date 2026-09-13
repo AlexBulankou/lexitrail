@@ -123,6 +123,11 @@ def resolve_cjk_font() -> str:
 
 CJK_FONT = None  # resolved lazily by _glyph_font; see resolve_cjk_font()
 
+# lex#519: the text beats shrink to fit rather than drawing off-frame, down to a
+# floor below which "too long" is raised instead of rendered illegibly.
+TEXT_MIN_PX = 28
+TEXT_MARGIN_PX = 40
+
 
 @dataclass(frozen=True)
 class Episode:
@@ -292,8 +297,31 @@ def render_frames(ep: Episode, duration_s: float = 10.0, arc_width: int = 8):
     pin_f, mean_f, sent_f = _text_font(96), _text_font(84), _text_font(64)
 
     def centred(d, text, font, y):
-        b = d.textbbox((0, 0), text, font=font)
-        d.text(((W - (b[2] - b[0])) // 2 - b[0], y), text, fill=255, font=font)
+        """Draw `text` centred, SHRINKING it until it fits the frame.
+
+        🔴 lex#519 (hc2@): the naive form is `(W - text_width) // 2`, which yields
+        a NEGATIVE x for anything wider than the frame and draws off the left edge
+        — silently, no error, no wrap. It does not fire on today's data (0 of 542
+        bank entries overflow; widest 832px of 1080), but that margin is a property
+        of the DATA, not the code: `single_char_only=False` is a supported mode,
+        `from_recall_history()` will select from a different population, and the
+        banks' `english` field is free text with no bound.
+
+        Shrink rather than refuse, because a renderer that dies on a long sentence
+        is worse than one that sets it smaller — but shrink toward a FLOOR and
+        raise below it, so "too long to read" is loud instead of illegible."""
+        f, size = font, font.size
+        while size >= TEXT_MIN_PX:
+            b = d.textbbox((0, 0), text, font=f)
+            if (b[2] - b[0]) <= W - 2 * TEXT_MARGIN_PX:
+                d.text(((W - (b[2] - b[0])) // 2 - b[0], y), text, fill=255, font=f)
+                return size
+            size -= 4
+            f = _text_font(size)
+        raise ValueError(
+            f"{text!r} does not fit {W}px even at the {TEXT_MIN_PX}px floor — "
+            f"it would be drawn off-frame or unreadable"
+        )
 
     out = []
     for i in range(int(duration_s * FPS)):
