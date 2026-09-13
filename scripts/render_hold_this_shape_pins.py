@@ -41,8 +41,23 @@ def pin_beats(timeline: list[Cue], duration_s: float = 10.0,
     claim is that a held image with a timer is a question, and a pin sequence
     that opens on the answer has thrown the format away.
     """
-    hold_t = max(min(c.t for c in timeline if c.kind in ("pinyin", "meaning",
-                                                         "sentence")) - 1.0, 0.0)
+    first_payoff = min(c.t for c in timeline
+                       if c.kind in ("pinyin", "meaning", "sentence"))
+    # 🔴 NOT `max(..., 0.0)`. Frame 0 is PURE BLACK by design (the hard cut), so
+    # clamping the hold to 0.0 makes the hero pin a blank image -- silently, and
+    # none of the other assertions here would notice: a black frame still DIFFERS
+    # from the pinyin frame, so the join test passes, and `hold_t < PINYIN_S`
+    # passes too. Found by hc2@ reviewing lex#521 by asking what happens if the
+    # first payoff beat lands before 1.0s; reproduced (mean pixel 0.0000).
+    #
+    # Unreachable on today's constants -- PINYIN_S is 4.0 -- which is exactly the
+    # shape worth guarding: it holds by a property of the CONSTANTS, not the code.
+    hold_t = max(first_payoff - 1.0, 1.0 / FPS)
+    if hold_t >= first_payoff:
+        raise ValueError(
+            f"no room for a hold: the first payoff beat is at {first_payoff}s and "
+            f"the earliest non-black frame is {1.0 / FPS:.3f}s. The hold IS the "
+            "format -- refuse rather than ship a pin sequence that opens on the answer")
     beats = [("1-hold", hold_t)]
     for c in sorted((c for c in timeline if c.kind in ("pinyin", "meaning", "sentence")),
                     key=lambda c: c.t):

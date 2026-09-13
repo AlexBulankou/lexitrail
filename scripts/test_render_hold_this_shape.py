@@ -461,3 +461,42 @@ def test_the_FIRST_pin_is_the_hold_with_no_words_on_it():
     assert label == "1-hold"
     t = dict(p.pin_beats(m.build_timeline(Episode("棒", "bàng", "excellent", "他很棒。")), 10.0))
     assert t["1-hold"] < m.PINYIN_S, "the hold pin must precede the first reveal"
+
+
+def test_the_hold_pin_is_never_the_PURE_BLACK_frame_0(tmp_path):
+    """hc2@ on lex#521: if the first payoff beat lands before 1.0s, `hold_t`
+    used to clamp to 0.0 — and frame 0 is pure black by design, so the hero pin
+    became a blank image.
+
+    None of the other tests caught it: a black frame still DIFFERS from the
+    pinyin frame (so the join test passes) and 0.0 < PINYIN_S (so the
+    first-pin test passes). It was unreachable on today's constants, which is
+    the shape worth pinning — it held by a property of PINYIN_S, not of the code.
+    """
+    import numpy as np
+    import render_hold_this_shape as m
+    import render_hold_this_shape_pins as p
+    ep = Episode("棒", "bàng", "excellent", "他很棒。")
+    early = [m.Cue(0.5, "pinyin", ep.pinyin, 0),
+             m.Cue(0.7, "meaning", ep.meaning, 1),
+             m.Cue(0.9, "sentence", ep.sentence, 0)]
+
+    hold_t = dict(p.pin_beats(early, 10.0))["1-hold"]
+    assert hold_t > 0.0, "the hold pin would be frame 0, which is pure black"
+    assert hold_t < 0.5, "the hold must still precede the first payoff"
+
+    frames = m.render_frames(ep, 10.0, frame=(p.PIN_W, p.PIN_H))
+    arr = np.asarray(frames[min(int(round(hold_t * m.FPS)), len(frames) - 1)])
+    assert arr.max() > 0, "CONTROL: the hold frame must actually contain the glyph"
+
+
+def test_a_timeline_with_NO_ROOM_for_a_hold_refuses(tmp_path):
+    """The degenerate end of the same edge: a payoff inside the first frame.
+
+    Refuse rather than emit a sequence that opens on the answer — the bible's
+    'never show the answer early' is the format, not a preference."""
+    import render_hold_this_shape as m
+    import render_hold_this_shape_pins as p
+    ep = Episode("棒", "bàng", "excellent", "他很棒。")
+    with pytest.raises(ValueError, match="no room for a hold"):
+        p.pin_beats([m.Cue(0.01, "pinyin", ep.pinyin, 0)], 10.0)
