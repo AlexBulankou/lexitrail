@@ -37,6 +37,7 @@ stated precondition and the dangerous case is executable rather than a paragraph
 from __future__ import annotations
 
 import csv
+import re
 import shutil
 import subprocess
 import sys
@@ -111,7 +112,18 @@ def test_the_generator_does_not_know_about_every_committed_WORDSET():
     generator has never heard of, which is why 'just regenerate' looks safe."""
     with (CSV_DIR / "words.csv").open(encoding="utf-8", newline="") as fh:
         committed_sets = {r["wordset_id"] for r in csv.DictReader(fh)}
-    known = {str(i) for i in range(1, len(list(CSV_DIR.glob("HSK*.csv"))) + 1)}
+    # PARSE the number out of each filename rather than counting files and
+    # assuming 1..N. hc2@ on lex#522: with a non-contiguous set (HSK1,2,3,5 —
+    # four files) the count form derives {1,2,3,4}, silently calling wordset 5
+    # unknown while claiming 4 is known. Measured:
+    #     count form  -> ['1','2','3','4']   <- wrong on both ends
+    #     parse form  -> ['1','2','3','5']
+    # It is right today only because the files are HSK1-6 with no gaps — a
+    # property of the DIRECTORY, not of this test, which is the exact shape the
+    # rest of this file is about.
+    known = {m.group(1) for m in
+             (re.match(r"HSK(\d+)", p.name) for p in CSV_DIR.glob("HSK*.csv")) if m}
+    assert known, "CONTROL: parsed no HSK numbers — the assertion below would be vacuous"
     assert committed_sets - known, (
         "every committed wordset has an HSK source — the drop-on-regen hazard "
         "may be gone; re-measure before deleting this test")
