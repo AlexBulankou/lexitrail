@@ -20,6 +20,17 @@ import threading
 bp = Blueprint('wordsets', __name__, url_prefix='/wordsets')
 logger = logging.getLogger(__name__)
 
+# lexitrail#427: a testing-artifact row (description == 'test', case-
+# insensitive) leaked into the public GET /wordsets response and rendered
+# as a homepage product tile on the signed-out marketing surface. Excluded
+# here by exact-match denylist rather than deleted from the DB -- there is
+# no data-migration path wired up in this repo, and hiding it at the API
+# layer is the reversible, code-reviewable fix. Deliberately an EXACT
+# match, not a substring: the test suite's own fixtures create wordsets
+# named "Test Wordset" (TestUtils.create_test_wordset's default) and must
+# not be swept up by this.
+_EXCLUDED_WORDSET_DESCRIPTIONS = {"test"}
+
 # Replace TTLCache with a regular dictionary
 cache = {}  # Indefinite in-memory cache
 cache_lock = Lock()
@@ -198,9 +209,17 @@ def get_cache_status():
 
 @bp.route('', methods=['GET'])
 def get_all_wordsets():
-    """Fetch all wordsets."""
+    """Fetch all wordsets, excluding testing-artifact rows (lexitrail#427).
+
+    This route has no auth check -- signed-out and signed-in callers hit the
+    identical query -- so excluding here covers the anonymous homepage tile
+    list the issue was filed about without needing to invent a per-caller
+    distinction that doesn't otherwise exist in this route.
+    """
     try:
-        wordsets = Wordset.query.all()
+        wordsets = Wordset.query.filter(
+            db.func.lower(Wordset.description).notin_(_EXCLUDED_WORDSET_DESCRIPTIONS)
+        ).all()
         wordsets_data = [to_dict(ws) for ws in wordsets]
         return success_response(wordsets_data)
     except Exception as e:
