@@ -84,9 +84,51 @@ describe('issue-NNN: internal traffic is marked by tag, and ONLY internal traffi
   });
 
   it('a visitor arriving with ordinary query params is NOT marked', () => {
-    // The opt-in is a substring test (`indexOf('internal=1')`), so this is the case
-    // that would catch it firing on a campaign URL that merely contains the word.
+    // Keep this case, but note what it does NOT establish: `q=internal` does not
+    // contain the string `internal=1`, so it passes under a substring predicate too.
+    // The cases below are the ones that discriminate.
     expect(isMarked(visit({ search: '?utm_source=google&utm_campaign=hsk1&q=internal' }))).toBe(false);
+  });
+
+  // ---- the predicate is ANCHORED, not a substring test ------------------------
+  //
+  // Each of these CONTAINS the literal `internal=1` and must still NOT mark. Under
+  // the original `location.search.indexOf('internal=1') !== -1` every one of them
+  // marks a real visitor -- and marking is unrecoverable once the console filter is
+  // Active, because GA4 strips non-retroactively. Measured: all four fail on the
+  // substring form and pass on `/[?&]internal=1(&|$)/`.
+
+  it.each([
+    ['?internal=10', 'a longer VALUE beginning with the opt-in value'],
+    ['?is_internal=1', 'a longer NAME ending with the opt-in name'],
+    ['?x=internal=1', 'the pair appearing inside another param\'s value'],
+    ['?utm_campaign=internal=1&q=hsk', 'the same, mid-query'],
+  ])('%s is NOT marked (%s)', (search) => {
+    expect(isMarked(visit({ search }))).toBe(false);
+  });
+
+  it('CONTROL: each of those really does contain the substring', () => {
+    // Without this the four cases above pass vacuously if someone edits the URLs
+    // into ones that no longer exercise the class -- at which point they assert
+    // nothing while still reading as coverage of it.
+    ['?internal=10', '?is_internal=1', '?x=internal=1', '?utm_campaign=internal=1&q=hsk']
+      .forEach((s) => expect(s.indexOf('internal=1')).not.toBe(-1));
+  });
+
+  it('the opt-in still works at either end of the query string', () => {
+    // The anchor must not be so tight that the real opt-in stops working -- the
+    // failure direction nobody would notice, since an unmarked agent is silent.
+    expect(isMarked(visit({ search: '?internal=1' }))).toBe(true);
+    expect(isMarked(visit({ search: '?internal=1&utm_source=x' }))).toBe(true);
+    expect(isMarked(visit({ search: '?utm_source=x&internal=1' }))).toBe(true);
+  });
+
+  it('?internal=01 does NOT clear an existing opt-in', () => {
+    // Same anchoring bug on the unmark path. Benign in direction (it only loses
+    // filtering, not customer data) and fixed for symmetry -- an asymmetric pair
+    // is the version a later reader "tidies" back into a substring test.
+    const out = visit({ search: '?internal=01', store: { 'lexitrail.internal': '1' } });
+    expect(isMarked(out)).toBe(true);
   });
 
   it('a visitor with storage disabled (private mode) is NOT marked', () => {

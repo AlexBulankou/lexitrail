@@ -28,8 +28,13 @@
     // be told to type, and a flag no human browser sets.
     var ltInternal = false;
     try {
-      if (location.search.indexOf('internal=1') !== -1) localStorage.setItem('lexitrail.internal', '1');
-      if (location.search.indexOf('internal=0') !== -1) localStorage.removeItem('lexitrail.internal');
+      // ANCHORED, not a substring test. `indexOf('internal=1')` also matches
+      // `?internal=10` and `?is_internal=1` -- i.e. it marks a REAL visitor, and
+      // once the console filter is Active that visitor's data is stripped
+      // non-retroactively. `[?&]` requires a parameter boundary before the name and
+      // `(&|$)` requires one after the value, so only the exact param can opt in.
+      if (/[?&]internal=1(&|$)/.test(location.search)) localStorage.setItem('lexitrail.internal', '1');
+      if (/[?&]internal=0(&|$)/.test(location.search)) localStorage.removeItem('lexitrail.internal');
       ltInternal = localStorage.getItem('lexitrail.internal') === '1';
     } catch (e) { /* private mode / storage disabled: stays false, fall through */ }
     // Automation never carries a human's opt-in, so catch it without anyone having
