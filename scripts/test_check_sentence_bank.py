@@ -205,3 +205,48 @@ def test_wordset_with_no_rows_is_CANNOT_TELL_not_a_clean_fail(tmp_path):
     headword missing -- otherwise a typo'd --wordset-id reads as a broken bank."""
     b, c, g = _write(tmp_path, _good())
     assert m.check(b, c, "99", g)[0] == 3
+
+
+# --- Latin letters in the Chinese sentence (issue-433, 2026-09-13) -----------
+# The real defect: an author-generated HSK4 bank shipped `毕业以后我想work。` with
+# the pinyin beside it correctly reading `gōngzuò`. EVERY other check passed it —
+# headword present, pinyin capitalised and tone-marked, gloss non-empty,
+# numbering contiguous — because none of them looks at the SCRIPT of the
+# sentence. It would have rendered on a public word page as Chinese.
+
+def test_latin_in_the_chinese_sentence_FAILS(tmp_path):
+    s = _good()
+    # 🔴 MUST contain the headword 好, or this test passes on the
+    # headword-absent check instead and says nothing about Latin.
+    s[0]["chinese"] = "今天work很好。"
+    code, lines = _run(tmp_path, s)
+    assert code == 1, f"a Latin word inside the Chinese sentence must FAIL: {lines}"
+    assert any("Latin" in ln for ln in lines), lines
+
+
+def test_the_exact_shipped_defect_FAILS(tmp_path):
+    """The literal shape that got past every other check.
+
+    🔴 The first version of this test was VACUOUS and the mutation arm is what
+    found it: it used `毕业以后我想work。`, which does not contain the fixture's
+    headword `好`, so it failed the headword-absent check and returned 1 with
+    the Latin guard REMOVED. It proved nothing. The sentence must satisfy every
+    other check so that Latin is the only thing left to fail on.
+    """
+    s = _good()
+    s[0]["chinese"] = "毕业以后我想work，这样很好。"
+    code, lines = _run(tmp_path, s)
+    assert code == 1
+    assert any("Latin" in ln for ln in lines), lines
+
+
+def test_a_clean_chinese_sentence_PASSES(tmp_path):
+    """NEGATIVE ARM — the check must not fire on ordinary Chinese.
+
+    Without this the guard could be a constant `FAIL` and the positive arm
+    above would still be green.
+    """
+    code, lines = _run(tmp_path, _good())
+    assert code == 0, lines
+    assert any("no Latin letters" in ln and ln.strip().endswith(("/1", "/2", "/3"))
+               for ln in lines), lines
