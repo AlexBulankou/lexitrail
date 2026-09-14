@@ -1,3 +1,7 @@
+// lexitrail#403 verification commit: this file only, no source path touched.
+// If lexitrail-ui-deploy-main's new ignoredFiles (ui/src/**/*.test.js) works,
+// merging this to main must NOT trigger a UI deploy — checked via the
+// Cloud Build build list for this trigger before/after the merge.
 import {
   sessionVisibleIndices,
   SESSION_BUDGET, SESSION_MODES, isSessionMode, wordKey,
