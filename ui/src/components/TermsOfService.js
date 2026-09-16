@@ -4,8 +4,8 @@ import '../styles/Policy.css';
 
 const TermsOfService = () => {
     return (
-        <div className="page-wrapper">
-            <div className="page-container">
+        <div className="policy-wrapper">
+            <div className="policy-container">
                 <div className="text-content">
                     <h1>Terms of Service</h1>
                     <p className="last-updated">Last updated: January 19, 2025</p>
