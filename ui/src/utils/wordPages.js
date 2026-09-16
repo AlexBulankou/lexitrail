@@ -18,7 +18,10 @@
 // Not added, and why: audio (needs a TTS decision — the SPA uses speechSynthesis; a static page
 // can too, but that is a product call), character breakdown and stroke order (no data source in
 // the repo). The prototypes show where they go.
-import { HSK_LEVELS, ORIGIN, isHskWordset, PAGE_STYLE, GA4_SNIPPET, SITE_HEADER, SITE_FOOTER, pinyinHtml } from './hskPages';
+// 🔴 ONE LINE, and it must stay one line. ui/scripts/generate-word-pages.js evaluates this module
+// with `.replace(/^import .*?;$/gm, '')` — `.` does not match a newline, so a prettily-wrapped
+// multi-line import is NOT stripped and the generator throws on the bare `import` keyword.
+import { HSK_LEVELS, ORIGIN, isHskWordset, PAGE_STYLE, GA4_SNIPPET, SITE_HEADER, SITE_FOOTER, pinyinHtml, SOCIAL_META, OG_IMAGE_PATH, OG_IMAGE_WIDTH, OG_IMAGE_HEIGHT } from './hskPages';
 
 const esc = (s) => String(s ?? '')
   .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
@@ -105,6 +108,22 @@ export const wordFilename = (word) => `${word}.html`;
  * `/` too, which a hanzi never contains but a malformed row might. */
 export const wordUrl = (level, word, origin = ORIGIN) =>
   `${origin}/hsk${level}/${encodeURIComponent(word)}.html`;
+
+/** og:image:alt for a word page — built from the SAME three fields the title and H1 already use, so
+ * it cannot drift from the page it describes and needs no new data.
+ *
+ * 🔴 Deliberately says what the SHARE IS ABOUT, not what the picture depicts. Today og:image is the
+ * one generic landscape asset (there is no per-word artwork in the repo — lexitrail#373 is the open
+ * issue for that), so alt text promising "a card showing 名誉" would describe artwork that does not
+ * exist — the exact failure alt text exists to prevent, and a lie told to a screen reader. Phrased
+ * as a description of the word instead, it is true of the generic asset today and STILL true the
+ * day #373 points this tag at a real per-word card.
+ *
+ * Falls back cleanly when a row has no pinyin or gloss: `filter(Boolean)` drops the empty parts
+ * rather than rendering "名誉 —  — . An HSK 6 …". */
+export const wordImageAlt = (w) =>
+  `${[w.word, w.pinyin, w.english].filter(Boolean).join(' — ')}. `
+  + `An HSK ${w.level} Chinese vocabulary word on LexiTrail.`;
 
 /** Rows -> [{level, id, word, pinyin, english}], sorted by (level, word_id).
  *
@@ -268,14 +287,19 @@ export const renderWordPage = (
 <meta name="description" content="${esc(desc)}">
 <link rel="canonical" href="${url}">
 ${prev ? `<link rel="prev" href="${wordUrl(prev.level, prev.word, origin)}">\n` : ''}${next ? `<link rel="next" href="${wordUrl(next.level, next.word, origin)}">\n` : ''}<meta property="og:type" content="article">
+${SOCIAL_META}
 <meta property="og:url" content="${url}">
 <meta property="og:title" content="${esc(title)}">
 <meta property="og:description" content="${esc(desc)}">
-<meta property="og:image" content="${origin}/images/og/generated/og-landscape.png">
+<meta property="og:image" content="${origin}${OG_IMAGE_PATH}">
+<meta property="og:image:width" content="${OG_IMAGE_WIDTH}">
+<meta property="og:image:height" content="${OG_IMAGE_HEIGHT}">
+<meta property="og:image:alt" content="${esc(wordImageAlt(w))}">
 <meta property="twitter:card" content="summary_large_image">
 <meta property="twitter:url" content="${url}">
 <meta property="twitter:title" content="${esc(title)}">
 <meta property="twitter:description" content="${esc(desc)}">
+<meta property="twitter:image" content="${origin}${OG_IMAGE_PATH}">
 <script type="application/ld+json">${jsonLd}</script>
 ${PAGE_STYLE}
 ${GA4_SNIPPET}

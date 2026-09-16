@@ -212,6 +212,42 @@ export const SITE_HEADER = `<header class="site"><a href="${ORIGIN}/"><span clas
  * shows the support address prominently (pigeon 2026-09-07). */
 export const SITE_FOOTER = `<footer class="site-footer"><a href="mailto:support@lexitrail.com">Support: support@lexitrail.com</a><span>&copy; LexiTrail</span></footer>`;
 
+/** The one canonical share asset for the pages that have no artwork of their own (the six level
+ * pages and all 4,999 word pages; the gloss landers render a per-word card instead — glossCard.js).
+ *
+ * 🔴 The DIMENSIONS live next to the path on purpose. og:image:width/height are a promise about
+ * THIS file, and a promise made in three renderers about an asset named in three renderers is one
+ * that drifts the first time the asset is re-cut at a different size. `hskPages.test.js` reads the
+ * committed PNG's IHDR and asserts these two numbers match it, so a re-cut asset fails a test
+ * instead of silently making every page lie to Facebook's scraper.
+ *
+ * Measured 2026-09-16 from ui/public/images/og/generated/og-landscape.png: 1200x630. The SPA shell
+ * (public/index.html) already declared the same pair for the same file, so this is not a new claim
+ * — it is the same claim, finally made where the 5,005 generated pages can use it. */
+export const OG_IMAGE_PATH = '/images/og/generated/og-landscape.png';
+export const OG_IMAGE_WIDTH = 1200;
+export const OG_IMAGE_HEIGHT = 630;
+
+/** Link-preview tags that are true of EVERY static page, shared here for the same one-source-of-
+ * truth reason as PAGE_STYLE and SITE_HEADER.
+ *
+ * `max-image-preview:large` is a CEILING, not a trigger. It is Google's documented prerequisite for
+ * a large-image treatment in Discover, web search and Google Images — without it the default cap is
+ * a thumbnail — but declaring it does not make Google show a large image, and it has no effect on
+ * ranking whatsoever. It removes a limit we were imposing on ourselves; what Google does under that
+ * raised ceiling is still Google's call. Do not let this line get re-described as an SEO win.
+ *
+ * og:site_name and og:locale are what let a scraper label the card "LexiTrail" and pick the right
+ * locale rather than guessing from the URL. Both were absent on all 5,009 generated pages.
+ *
+ * 🔴 Emitted as one block rather than three interpolations because the three renderers each own
+ * their own <head> — there is NO shared head template in this repo, despite the shared PAGE_STYLE /
+ * SITE_HEADER / GA4_SNIPPET next door. A block keeps the three heads from drifting apart one tag at
+ * a time, which is exactly how they came to disagree about twitter:image (see renderWordPage). */
+export const SOCIAL_META = `<meta name="robots" content="max-image-preview:large">
+<meta property="og:site_name" content="LexiTrail">
+<meta property="og:locale" content="en_US">`;
+
 /** `wordset_id` in words.csv is 1..6 for HSK1..6; 7 is the internal `test` set. */
 export const isHskWordset = (id) => HSK_LEVELS.includes(Number(id));
 
@@ -310,15 +346,19 @@ export const renderPage = (level, words, origin = ORIGIN) => {
 <meta name="description" content="${esc(desc)}">
 <link rel="canonical" href="${url}">
 <meta property="og:type" content="website">
+${SOCIAL_META}
 <meta property="og:url" content="${url}">
 <meta property="og:title" content="${esc(title)}">
 <meta property="og:description" content="${esc(desc)}">
-<meta property="og:image" content="${origin}/images/og/generated/og-landscape.png">
+<meta property="og:image" content="${origin}${OG_IMAGE_PATH}">
+<meta property="og:image:width" content="${OG_IMAGE_WIDTH}">
+<meta property="og:image:height" content="${OG_IMAGE_HEIGHT}">
+<meta property="og:image:alt" content="${esc(`LexiTrail — the HSK ${level} vocabulary list: all ${words.length} words with pinyin and English.`)}">
 <meta property="twitter:card" content="summary_large_image">
 <meta property="twitter:url" content="${url}">
 <meta property="twitter:title" content="${esc(title)}">
 <meta property="twitter:description" content="${esc(desc)}">
-<meta property="twitter:image" content="${origin}/images/og/generated/og-landscape.png">
+<meta property="twitter:image" content="${origin}${OG_IMAGE_PATH}">
 <script type="application/ld+json">${jsonLd}</script>
 ${PAGE_STYLE}
 ${GA4_SNIPPET}

@@ -55,14 +55,18 @@ const evalModule = (file, exportNames, injected = {}) => {
 const hsk = evalModule('hskPages.js', [
   'HSK_LEVELS', 'ORIGIN', 'isHskWordset', 'groupByLevel',
   'pageFilename', 'pageUrl', 'renderPage', 'renderSitemapEntries', 'PAGE_STYLE', 'GA4_SNIPPET', 'SITE_HEADER',
-  'SITE_FOOTER', 'pinyinHtml']);
+  'SITE_FOOTER', 'pinyinHtml',
+  // The shared link-preview tags and the canonical share asset's path + measured dimensions.
+  'SOCIAL_META', 'OG_IMAGE_PATH', 'OG_IMAGE_WIDTH', 'OG_IMAGE_HEIGHT']);
 const wp = evalModule('wordPages.js',
   ['wordFilename', 'wordUrl', 'collectWords', 'renderWordPage', 'renderWordSitemapEntries',
-   'renderWordSitemap', 'WORD_PAGES_LASTMOD', 'collectExamples'],
+   'renderWordSitemap', 'WORD_PAGES_LASTMOD', 'collectExamples', 'wordImageAlt'],
   { HSK_LEVELS: hsk.HSK_LEVELS, ORIGIN: hsk.ORIGIN, isHskWordset: hsk.isHskWordset,
     PAGE_STYLE: hsk.PAGE_STYLE, GA4_SNIPPET: hsk.GA4_SNIPPET, SITE_HEADER: hsk.SITE_HEADER, SITE_FOOTER: hsk.SITE_FOOTER,
     // revamp-2026-09: wordPages' tone-coloured pinyin comes from hskPages' shared renderer.
-    pinyinHtml: hsk.pinyinHtml });
+    pinyinHtml: hsk.pinyinHtml,
+    SOCIAL_META: hsk.SOCIAL_META, OG_IMAGE_PATH: hsk.OG_IMAGE_PATH,
+    OG_IMAGE_WIDTH: hsk.OG_IMAGE_WIDTH, OG_IMAGE_HEIGHT: hsk.OG_IMAGE_HEIGHT });
 
 // lighthouse e8 (zz3, 2026-09-13): the gloss pages are indexed and LOSE to these hanzi pages by up
 // to 24 positions, and the measured mechanism is that they are ORPHANS — present in
@@ -75,7 +79,7 @@ const wp = evalModule('wordPages.js',
 const gp = evalModule('glossPages.js', ['PHASE1_QUERIES', 'collectGlossGroup', 'glossUrl'],
   { HSK_LEVELS: hsk.HSK_LEVELS, ORIGIN: hsk.ORIGIN, isHskWordset: hsk.isHskWordset,
     PAGE_STYLE: hsk.PAGE_STYLE, GA4_SNIPPET: hsk.GA4_SNIPPET, SITE_HEADER: hsk.SITE_HEADER,
-    SITE_FOOTER: hsk.SITE_FOOTER, pinyinHtml: hsk.pinyinHtml,
+    SITE_FOOTER: hsk.SITE_FOOTER, pinyinHtml: hsk.pinyinHtml, SOCIAL_META: hsk.SOCIAL_META,
     glossCardUrl: () => '' });
 
 function main() {
