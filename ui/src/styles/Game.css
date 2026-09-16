@@ -412,6 +412,26 @@ body, html {
   margin-top: 20%;
 }
 
+/* uibug 2026-09: SHOW_EXCLUDED with nothing excluded. Was a bare, classless
+   <div> whose box landed at y:0 — fully occluded by the fixed 48px navbar
+   (z-index 1000) — so the route looked like a blank page. Same centered-column
+   language as .loading-container, offset to clear the navbar (60px matches
+   .container's own navbar clearance above). */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 12px;
+  width: 100%;
+  margin-top: 60px;
+  padding: 32px 16px;
+  box-sizing: border-box;
+  color: var(--muted);
+  font-size: 1rem;
+}
+
 /* lexitrail#266: the IN-APP half of the loading indicator. The pre-mount
    placeholder in `public/index.html` covers the window before React exists;
    this covers the window after it mounts but before the wordset resolves
