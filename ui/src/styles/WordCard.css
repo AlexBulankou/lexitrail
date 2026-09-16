@@ -199,6 +199,22 @@
   /* Ensures text stays within button height */
   text-overflow: ellipsis;
   /* Shows ellipsis for overflow */
+  /* uibug 2026-09-16 — tone-colored pinyin vowels were invisible on these accent-red
+     buttons: --t1..--t4 (Global.css) are tuned for cream surfaces, and every pair
+     measured 1.02–1.25:1 against var(--accent) #b23b2e on live prod (harness floor
+     3:1) — the tone-marked vowel is exactly the character that differentiates the
+     four choices, so 'sān' read 's n'. PinyinText.js applies the tone color as an
+     INLINE `color: var(--tN)`, so a class-level color override cannot win here;
+     redefining the tokens in this scope is the one move both the inline style and
+     Global.css's .t1–.t4 rules resolve through. `currentColor` (= the button's own
+     ink) rather than a literal, so the vowels track `color: var(--surface)` here AND
+     `color: var(--ok)` on .quiz-option-correct's pale-green reveal (issue-344's
+     readability trap). Tone identity stays carried by the diacritics (ā á ǎ à);
+     color redundancy is deliberately dropped on this one surface. */
+  --t1: currentColor;
+  --t2: currentColor;
+  --t3: currentColor;
+  --t4: currentColor;
 }
 
 .test-buttons button:hover {
