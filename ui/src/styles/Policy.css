@@ -1,6 +1,6 @@
 .policy-wrapper {
   position: fixed;
-  top: 60px; /* Height of navbar */
+  top: 48px; /* Height of navbar (NavBar.css) */
   left: 0;
   right: 0;
   bottom: 0;
