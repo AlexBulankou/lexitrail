@@ -22,7 +22,9 @@
 // generator. Flagged to hcl@ on the issue rather than silently treated as "done" -- #365's own
 // quality-gate #3 says a scope change comes back to zz1, and this is the honest size of what
 // shipped, not a decision to widen or shrink it.
-import { HSK_LEVELS, ORIGIN, isHskWordset, PAGE_STYLE, GA4_SNIPPET, SITE_HEADER, SITE_FOOTER, pinyinHtml } from './hskPages';
+// 🔴 ONE LINE, and it must stay one line — ui/scripts/generate-gloss-pages.js strips imports with
+// `/^import .*?;$/gm`, which cannot match across a newline. See wordPages.js for the same note.
+import { HSK_LEVELS, ORIGIN, isHskWordset, PAGE_STYLE, GA4_SNIPPET, SITE_HEADER, SITE_FOOTER, pinyinHtml, SOCIAL_META } from './hskPages';
 
 const esc = (s) => String(s ?? '')
   .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
@@ -278,6 +280,7 @@ export const renderGlossPage = (query, group, { examples = [], origin = ORIGIN }
 <meta name="description" content="${esc(desc)}">
 <link rel="canonical" href="${url}">
 <meta property="og:type" content="article">
+${SOCIAL_META}
 <meta property="og:url" content="${url}">
 <meta property="og:title" content="${esc(title)}">
 <meta property="og:description" content="${esc(desc)}">
