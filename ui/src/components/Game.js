@@ -249,16 +249,32 @@ const Game = () => {
     const cardHeight = mode === GameMode.TEST ? 345 : 280;
 
     // TODO: 115 is the width of the incorrect cards container, not sure why 80 and 120 were added
-    const extraHorizontalSpaceNeeded = 200 ; //mode === (GameMode.TEST ? 80 : 120) + 115; 
-    const extraVerticalSpaceNeeded = 100;
+    const extraHorizontalSpaceNeeded = 200 ; //mode === (GameMode.TEST ? 80 : 120) + 115;
 
-    // issue-338: floored at 1x1 inside `gridDimensions`. This previously read
-    // `Math.floor((390 - 200) / 280)` = 0 in phone LANDSCAPE, which emptied the
-    // option list below and left `layoutClass` at its initial `layout1c1r` —
-    // one card, indistinguishable from having chosen one.
+    // WIDTH path, measured (uibug 2026-09-16). The page's real horizontal
+    // chrome is 12px each side — the game `.container`'s 10px padding + 2px
+    // border (box-sizing: border-box) — and `.cards-container` puts a 10px
+    // gap BETWEEN columns (styles/Game.css). N columns therefore fit when
+    //   N*cardWidth + (N-1)*gridGap <= width - 2*pageMargin
+    // which rearranges to a per-COLUMN footprint of (cardWidth + gridGap)
+    // against an allowance of (2*pageMargin - gridGap) — that pair is what
+    // `gridDimensions` divides by / subtracts below.
+    //
+    // This replaces `extraVerticalSpaceNeeded = 100` (the width-path half of
+    // the TODO above): floor((390-100)/160) = 1 column on a phone, half the
+    // cards per page that fit. Now floor((390-14)/170) = 2 (need 354 <= 390)
+    // and desktop floor((1440-14)/170) = 8, unchanged. No FLAT allowance can
+    // replace 100 correctly: 2 columns at 390 needs a <= 70, while not
+    // overclaiming 8 at a 1366px laptop (8 cols really need 1374px) needs
+    // a > 86 — only footprint+gap accounting satisfies both.
+    const gridGap = 10;    // .cards-container { gap: 10px }
+    const pageMargin = 12; // .container padding + border, each side
+    // issue-338: `gridDimensions` floors at 1x1 — the HEIGHT path used to read
+    // floor((390-200)/280) = 0 in phone landscape, empty the option list, and
+    // strand `layoutClass` on its initial `layout1c1r`.
     const { maxColumns, maxRows } = gridDimensions(
-      width, height, cardWidth, cardHeight,
-      extraVerticalSpaceNeeded, extraHorizontalSpaceNeeded);
+      width, height, cardWidth + gridGap, cardHeight,
+      2 * pageMargin - gridGap, extraHorizontalSpaceNeeded);
 
     // Check if dimensions or displayWords length changed
     if (
