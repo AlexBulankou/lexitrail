@@ -445,7 +445,17 @@ const Game = () => {
   if ((displayWords.length === 0 || sessionOver) && loading.status === 'loaded') {
 
     if (mode === GameMode.SHOW_EXCLUDED) {
-      return <div>No excluded words in this wordset.</div>;
+      // uibug 2026-09: this returned a bare, classless <div>, which the
+      // body/html flex centering collapsed to a 22px strip at y:0 — entirely
+      // under the fixed 48px navbar (z-index 1000) — so the route rendered as
+      // navbar + blank page. Same container language as the sibling
+      // loading/error states: a styled column that clears the navbar.
+      return (
+        <div className="empty-state" role="status">
+          <Logo size="small" />
+          <div>No excluded words in this wordset.</div>
+        </div>
+      );
     }
 
 
