@@ -69,3 +69,49 @@ describe('lexitrail#406 — loading-state skeleton reserves layout space', () =>
     expect(document.querySelectorAll('.skeleton-block')).toHaveLength(0);
   });
 });
+
+describe('uibug 2026-09-16 — SiteFooter placement (footer-in-wordsets-flex)', () => {
+  // .wordsets-container is display:flex (row, centered — Wordsets.css). A
+  // footer INSIDE it becomes a flex item beside the tile grid: measured live
+  // on mobile /wordsets the footer sat at x=240.8 w=148.4 (0.8px from the
+  // right screen edge) and squeezed the grid to x=0.8 w=240, destroying the
+  // 20px gutter. jsdom can't see boxes, but it CAN see the parent/child
+  // structure that produces them — these pin the structural cause.
+
+  test('standalone: the footer renders as a SIBLING of .wordsets-container, never inside the flex row', async () => {
+    getWordsets.mockResolvedValue({
+      data: [{ wordset_id: 1, description: 'HSK1' }],
+    });
+
+    renderWordsets();
+    await screen.findByText('HSK1');
+
+    const footer = document.querySelector('footer.site-footer');
+    expect(footer).toBeInTheDocument();
+    // The exact regression: a footer inside the flex container lays out
+    // beside the grid instead of below the page content.
+    expect(document.querySelector('.wordsets-container .site-footer')).toBeNull();
+    // And it must come AFTER the container in document order (below, not above).
+    const container = document.querySelector('.wordsets-container');
+    expect(
+      container.compareDocumentPosition(footer) & Node.DOCUMENT_POSITION_FOLLOWING
+    ).toBeTruthy();
+  });
+
+  test('embedded (Home): no footer at all — Home mounts its own page-bottom SiteFooter', async () => {
+    getWordsets.mockResolvedValue({
+      data: [{ wordset_id: 1, description: 'HSK1' }],
+    });
+
+    render(
+      <MemoryRouter>
+        <Wordsets profileDetails={null} login={jest.fn()} embedded />
+      </MemoryRouter>
+    );
+    await screen.findByText('HSK1');
+
+    // Without this, home showed the footer TWICE: mid-page beside the tiles
+    // (mobile y=695.7) plus the real page-bottom one (y=4022).
+    expect(document.querySelector('footer.site-footer')).toBeNull();
+  });
+});

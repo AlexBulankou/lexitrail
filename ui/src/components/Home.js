@@ -84,8 +84,12 @@ const Home = () => {
                 <Link to="/wordsets" className="cta-button" data-cta="hero">Start Learning Chinese</Link>
               </div>
             </div>
-            <WordSets />
-            
+            {/* uibug 2026-09-16: `embedded` suppresses the wordset picker's own
+                SiteFooter — this page mounts the real page-bottom one below the
+                CTA section, and without the flag the footer appeared TWICE
+                (mid-page beside the tiles + at the bottom). */}
+            <WordSets embedded />
+
             <div className="features-section">
               <div className="features-grid">
                 <div className="feature-card">

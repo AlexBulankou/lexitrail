@@ -44,7 +44,11 @@ const WordsetSkeletonTile = () => (
   </div>
 );
 
-const Wordsets = ({ profileDetails, login }) => {
+// uibug 2026-09-16 (footer-in-wordsets-flex): `embedded` is passed by Home,
+// which mounts its OWN page-bottom <SiteFooter /> after the features/CTA
+// sections — without it the home page showed the footer twice (once mid-page
+// beside the tiles, once at the bottom). Standalone /wordsets keeps its own.
+const Wordsets = ({ profileDetails, login, embedded = false }) => {
   const [wordsets, setWordsets] = useState(wordsetsCache.data || []);
   // 'loading' | 'loaded' | 'error'. Start 'loaded' if we have a cached list so
   // the picker never shows a spinner on a revisit.
@@ -102,6 +106,7 @@ const Wordsets = ({ profileDetails, login }) => {
   };
 
   return (
+    <>
     <div className="wordsets-container">
       {view === 'loading' ? (
         <div className="wordsets-grid" role="status" aria-label="Loading wordsets…">
@@ -169,8 +174,17 @@ const Wordsets = ({ profileDetails, login }) => {
           ))}
         </div>
       )}
-      <SiteFooter />
     </div>
+    {/* uibug 2026-09-16: the footer must be a SIBLING of .wordsets-container,
+        never a child — the container is `display: flex` (row, centered,
+        Wordsets.css), so a footer inside it lays out BESIDE the tile grid:
+        on a 390px viewport the two children's min-widths (240px grid floor +
+        148px footer) overflowed the 350px content box, squeezing the grid to
+        x=0.8 (killing the 20px gutter) and pinning "Support: support@..."
+        0.8px from the right screen edge. Below the container it stacks in
+        normal flow, full-width, after the grid. */}
+    {!embedded && <SiteFooter />}
+    </>
   );
 };
 

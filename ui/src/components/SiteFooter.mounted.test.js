@@ -35,4 +35,17 @@ describe('SiteFooter is USED (JSX), not merely imported', () => {
     const src = stripComments(fs.readFileSync(C(f), 'utf8'));
     expect(src).not.toMatch(/<SiteFooter\s*\/?>/);
   });
+
+  // uibug 2026-09-16 (footer-in-wordsets-flex): Home mounts its OWN
+  // page-bottom SiteFooter AND embeds WordSets, which also renders one when
+  // standalone — so the embed must pass `embedded` or home shows the footer
+  // twice (measured live: mid-page beside the tiles at y=695.7 on mobile,
+  // plus the correct page-bottom one at y=4022). Wordsets stays in MOUNTED
+  // above (its <SiteFooter is real, for standalone /wordsets); this pins the
+  // suppression on the Home side. Wordsets.test.js pins the behavior
+  // (embedded ⇒ no footer) at render time.
+  test('Home.js embeds WordSets with `embedded` so the footer is not double-mounted', () => {
+    const src = stripComments(fs.readFileSync(C('Home.js'), 'utf8'));
+    expect(src).toMatch(/<WordSets\s+embedded\b/);
+  });
 });
