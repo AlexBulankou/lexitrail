@@ -221,6 +221,41 @@
   background-color: var(--accent);
 }
 
+/* uibug 2026-09-16 — long pinyin options clipped at BOTH ends. The label is a
+   nowrap PinyinText token (#190, load-bearing: a tone mark stays on its vowel)
+   inside this overflow:hidden flex-centered ~67px square, so a token wider
+   than the button loses both ends with no ellipsis (`text-overflow` above is
+   inert on a flex container): live, 'zěnmeyàng' rendered 'nmeyà'.
+
+   ⚠️ CALIBRATION TRAP: on a flex-CENTERED box, scrollWidth only reports the
+   END-side half of the overflow (the start side is unreachable), so the live
+   sweep's "scrollWidth 95 vs clientWidth 67" understates the problem — the
+   real 'zěnmeyàng' text run measures 124px at 1.5rem (95 = 67 + 57/2 ✓,
+   verified in-page). Sizes below are calibrated against the TRUE text-run
+   widths so every step fits the 63px client box a revealed
+   .quiz-option-correct button keeps after its 2px border. The length→class
+   mapping lives in utils/quizOptionSize.js; short options (≤4 chars) carry no
+   class and keep the 1.5rem above exactly. */
+.test-buttons button.test-option-md {
+  /* 5-6 chars: 'shénme' 85px @1.5rem → ~57px */
+  font-size: 1rem;
+}
+
+.test-buttons button.test-option-sm {
+  /* 7-8 chars: 'xuéshēng' 104px @1.5rem → ~59px */
+  font-size: 0.85rem;
+}
+
+.test-buttons button.test-option-xs {
+  /* 9-10 chars: 'zěnmeyàng' 124px @1.5rem → ~58px */
+  font-size: 0.7rem;
+}
+
+.test-buttons button.test-option-xxs {
+  /* 11+ chars: headroom for longer wordsets (12 chars @ ~13px/char fits) */
+  font-size: 0.6rem;
+}
+
 /* Metadata Section */
 .metadata {
   display: flex;

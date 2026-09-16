@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { getHint, regenerateHint } from '../services/hintService';
 import { correctOption, shouldReveal, REVEAL_MS } from '../utils/quizReveal';
+import { quizOptionSizeClass } from '../utils/quizOptionSize';
 import { GameMode } from './Game';
 import PinyinText from './PinyinText';
 import SpeakButton from './SpeakButton';
@@ -440,7 +441,15 @@ const WordCard = ({ mode, word, isFlipped, isHintDisplayed, handleMemorized, han
                      the learner can SEE which one it was. Keyed on the option's
                      own `correct` flag rather than on identity, so it cannot
                      highlight a different button than the one that was scored. */
-                  className={revealed && option && option.correct ? 'quiz-option-correct' : undefined}
+                  /* uibug 2026-09-16: the size step comes from the option's own
+                     length (quizOptionSize.js) so a long pinyin fits the ~67px
+                     square instead of losing both ends to overflow:hidden —
+                     PinyinText is (correctly) nowrap, so sizing is the only
+                     lever. Short options keep the original 1.5rem untouched. */
+                  className={[
+                    quizOptionSizeClass(option && option.pinyin),
+                    revealed && option && option.correct ? 'quiz-option-correct' : ''
+                  ].filter(Boolean).join(' ') || undefined}
                   onClick={() => onQuizOptionClicked(option.correct)}
                   disabled={loadingWord || revealed !== null}
                 >
