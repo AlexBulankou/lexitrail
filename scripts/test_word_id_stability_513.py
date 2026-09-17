@@ -41,6 +41,7 @@ import re
 import shutil
 import subprocess
 import sys
+from collections import Counter
 from pathlib import Path
 
 CSV_DIR = Path(__file__).resolve().parents[1] / "terraform" / "csv"
@@ -85,26 +86,75 @@ def _mutate_hsk1(fn):
     return apply
 
 
-def test_REGENERATING_words_csv_WOULD_RENUMBER_PRODUCTION(tmp_path):
-    """🔴 A guard against a helpful-looking action, not a description of health.
+def test_REGENERATING_words_csv_PRESERVES_every_shared_id(tmp_path):
+    """Replaces `test_REGENERATING_words_csv_WOULD_RENUMBER_PRODUCTION` (lex#513).
 
-    `generate_words_wordsets.py` sits in `terraform/csv/` and is the only
-    generator there, so it reads as the source of truth for `words.csv`. It is
-    not, and running it is destructive: it renumbers contiguously from 1 while
-    the committed ids are gapped, and it knows only HSK1-6.
+    That test asserted the hazard: the generator renumbered contiguously from 1,
+    so 4,893 of 4,998 shared ids (98%) named a DIFFERENT word than the committed
+    file. It was a guard against a helpful-looking action, and its own text said
+    to REPLACE it rather than delete it once the generator became
+    content-addressed — because the precondition it guarded would then be free,
+    and a deleted test cannot notice it stopping being free.
 
-    If this test ever FAILS because the two now agree, somebody has regenerated
-    the file — check what happened to `recall_history` before assuming that was
-    a cleanup.
+    This is that replacement, asserting the same property in the other
+    direction. It is NOT a description of health either: it is the precondition
+    for dropping the two user-table truncates, and it must keep holding.
     """
     gen, com = _regen(tmp_path), _idmap(CSV_DIR / "words.csv")
     shared = set(gen) & set(com)
+    assert shared, "CONTROL: no shared ids — the assertions below would be vacuous"
     moved = [i for i in shared if gen[i] != com[i]]
+    assert not moved, (
+        f"{len(moved)} of {len(shared)} committed ids now name a DIFFERENT word. "
+        "This is the 98% re-pointing hazard returning; user history keyed on "
+        "those ids would silently attach to the wrong words.")
+    assert not set(gen) - set(com), (
+        "the generator invented ids the committed file does not have — it must "
+        "reuse or extend, never renumber")
+
+
+def test_a_regen_still_DROPS_words_the_generator_cannot_see(tmp_path):
+    """🔴 The half of the precondition that is NOT satisfied. Do not delete this.
+
+    Id stability is fixed; COVERAGE is not. The generator knows only HSK1-6, so
+    regenerating still drops the committed words belonging to wordsets it has
+    never heard of — 615 of them as measured 2026-09-17.
+
+    ⇒ `schema-data.sql`'s truncates cannot be dropped on the strength of
+    `test_REGENERATING_words_csv_PRESERVES_every_shared_id` alone. Those 615
+    words would vanish from `words`, and user rows referencing them would fail
+    their foreign key (or cascade away) — a smaller version of exactly the data
+    loss lex#513 is about.
+    """
+    gen, com = _regen(tmp_path), _idmap(CSV_DIR / "words.csv")
     dropped = set(com) - set(gen)
-    assert moved, ("the generator's ids now MATCH the committed file — see the "
-                   "docstring: verify a regen has not just happened")
-    assert len(moved) > 0.9 * len(shared), f"only {len(moved)} of {len(shared)} ids moved"
-    assert dropped, "the generator now covers every committed word — re-read this file's premise"
+    assert dropped, (
+        "the generator now covers every committed word — if a source for the "
+        "remaining wordsets was added, this precondition is finally met: "
+        "re-read lex#513 before removing any truncate.")
+
+
+def test_the_generator_EMITS_NO_DUPLICATE_word_id(tmp_path):
+    """🔴 Regression, lex#542. `word_id` is the PRIMARY KEY; a repeat is corrupt.
+
+    `(word, wordset_id)` is the DB's own UNIQUE constraint, which is why the
+    generator keys identity on it — but the committed data VIOLATES that
+    constraint (`对` twice in HSK2, ids 301 and 302). A one-id-per-key lookup
+    therefore answered both source rows with the same id and emitted
+    `302, 302`, turning a pre-existing UNIQUE violation into a new PRIMARY KEY
+    violation on the reseed path.
+
+    Asserted on the emitted ROWS, not on a dict built from them — keying a dict
+    by `word_id` is what hid this: it silently collapses the duplicate to one
+    entry, so `_idmap` above cannot see it and neither could any test built on
+    it.
+    """
+    _regen(tmp_path)
+    with (tmp_path / "words.csv").open(encoding="utf-8", newline="") as fh:
+        ids = [r["word_id"] for r in csv.DictReader(fh)]
+    assert ids, "CONTROL: generator emitted no rows"
+    dupes = {i: n for i, n in Counter(ids).items() if n > 1}
+    assert not dupes, f"duplicate word_id in generated words.csv: {dupes}"
 
 
 def test_the_generator_does_not_know_about_every_committed_WORDSET():
@@ -143,25 +193,55 @@ def test_a_CONTENT_edit_does_not_move_any_word_id(tmp_path):
     assert not moved, f"a content-only edit moved {len(moved)} word_ids"
 
 
-def test_an_INSERTION_SHIFTS_ids_onto_different_words(tmp_path):
-    """🔴 The hazard, executable — and the positive control for the test above.
+def test_an_INSERTION_does_not_move_any_EXISTING_id(tmp_path):
+    """Replaces `test_an_INSERTION_SHIFTS_ids_onto_different_words` (lex#513).
 
-    Without it, that test passing would read as "ids are stable" full stop, and
-    the fix would ship without its precondition. Ids are stable under content
-    edits ONLY, because the counter is positional.
+    A head insertion was the hazard made executable: under a positional counter
+    it shifted >90% of ids onto different words, which is why a content-only
+    edit being safe did NOT mean ids were stable. Now the inserted word takes a
+    fresh id and every existing word keeps its own.
     """
     def insert(rows):
         new = dict(rows[0])
-        new["Chinese"] = "〇"
+        new["Chinese"] = "\u3007"
         rows.insert(0, new)
 
     base = _regen(tmp_path / "a")
     after = _regen(tmp_path / "b", _mutate_hsk1(insert))
+    assert base, "CONTROL: empty baseline"
     moved = [i for i in set(base) & set(after) if base[i] != after[i]]
-    assert len(moved) > 0.9 * len(base), (
-        f"a head insertion shifted only {len(moved)} of {len(base)} ids — if the "
-        "generator became content-addressed, REPLACE this test rather than "
-        "deleting it: the precondition it guards would then be free")
+    assert not moved, f"a head insertion moved {len(moved)} of {len(base)} word_ids"
+    assert set(after) - set(base), "the inserted word did not receive a new id"
+
+
+def test_CONTROL_the_harness_still_DETECTS_movement_when_history_is_absent(tmp_path):
+    """🔴 THE POSITIVE CONTROL. Without it the two tests above are unfalsifiable.
+
+    The deleted `..._SHIFTS_ids_onto_different_words` was not only a hazard
+    description — it was the control for
+    `test_a_CONTENT_edit_does_not_move_any_word_id`, whose own docstring says
+    so. Inverting both stability tests leaves every assertion in this file
+    pointing the same way ("nothing moved"), which is also what a harness that
+    can no longer SEE movement reports. A comparison that cannot fail proves
+    nothing about the property it is named for.
+
+    So exercise the real generator down a path where ids legitimately DO move:
+    delete `words.csv` in the copy, which is its documented no-history path, and
+    it numbers contiguously from 1. Measured 2026-09-17: 4,892 of 4,997 shared
+    ids move (97.9%), reproducing the historical 4,893/98% almost exactly.
+
+    ⚠️ This asserts the INSTRUMENT, not the product. If it ever fails, the two
+    tests above are the ones that have stopped meaning anything — fix this first.
+    """
+    base = _regen(tmp_path / "a")
+    nohist = _regen(tmp_path / "b", lambda d: (d / "words.csv").unlink())
+    shared = set(base) & set(nohist)
+    assert shared, "CONTROL: no shared ids"
+    moved = [i for i in shared if base[i] != nohist[i]]
+    assert len(moved) > 0.9 * len(shared), (
+        f"the no-history path moved only {len(moved)} of {len(shared)} ids. The "
+        "harness may no longer detect movement, which would make the stability "
+        "tests in this file vacuous.")
 
 
 def test_user_tables_have_NO_csv_so_their_truncate_cannot_be_a_reload():
