@@ -283,6 +283,7 @@ ${GA4_SNIPPET}
 <body>
 <main class="wrap">
 ${SITE_HEADER}
+<img src="/images/og/generated/serp-square.png" alt="${esc(desc)}" width="1200" height="1200" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)">
 ${crumb}
 <div class="word-card">
 <h1 class="word-h1"><span class="hanzi-big" lang="zh-Hans">${esc(w.word)}</span>

@@ -326,6 +326,7 @@ ${GA4_SNIPPET}
 <body>
 <main class="wrap-wide">
 ${SITE_HEADER}
+<img src="/images/og/generated/serp-square.png" alt="${esc(desc)}" width="1200" height="1200" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)">
 <h1>HSK ${level} vocabulary list</h1>
 <p>All ${words.length} words with pinyin and English. HSK ${level} is one of the six levels of the
 Hanyu Shuiping Kaoshi, China's standardised Chinese proficiency test. Reading a list is not the
