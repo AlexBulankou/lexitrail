@@ -59,6 +59,11 @@ export const PRESETS = [
     use: "Instagram feed 1:1",
   },
   {
+    name: "serp-square",
+    width: 1200, height: 1200, layout: "stack", cards: 4,
+    use: "Google Search SERP thumbnail — 1:1 square, ≥1200px for Discover",
+  },
+  {
     name: "ig-portrait",
     width: 1080, height: 1350, layout: "stack", cards: 6,
     use: "Instagram feed 4:5 — the largest slice of feed real estate IG allows",

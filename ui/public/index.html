@@ -131,6 +131,12 @@
 
 <body>
   <noscript>You need to enable JavaScript to run this app.</noscript>
+  <!-- lexitrail#266: this SERP thumbnail lives OUTSIDE #root deliberately.
+       The pre-mount indicator inside #root is styled inline because the CSS bundle
+       has not loaded in that window, and its test asserts the region contains no
+       <img> at all. The crawler only needs the tag present in the served HTML, so
+       hoisting it above #root satisfies both. -->
+<img src="/images/og/generated/serp-square.png" alt="Master Chinese vocabulary with AI-powered learning tools, interactive flashcards, and personalized study paths. Perfect for beginners to advanced learners." width="1200" height="1200" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)">
   <div id="root">
     <!-- lexitrail#266: the PRE-MOUNT indicator. Alex's ruling (09-02, relayed by zz1)
          set the bar at 5s time-to-first-card AND asked for a visual indicator while
