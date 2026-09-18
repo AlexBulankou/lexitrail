@@ -13,6 +13,21 @@ They go on agreeing with each other, cleanly, forever.
 
 This one asks production.
 
+🔴 AND SINCE #547, IT ASKS THE RIGHT SERVER -- WHICH IT PREVIOUSLY DID NOT
+--------------------------------------------------------------------------
+Until 2026-09-18 this script exec'd `mysql-0` and queried `mysql-0`. That was
+correct until the Cloud SQL cutover repointed `svc/mysql` at `app=cloudsql-proxy`
+and left the pod running with a full, valid `lexitraildb` that nothing reads.
+
+It did not error. It returned **30 columns and PASS** -- byte-identical in shape
+to the verdict it returns from Cloud SQL, which also has 30 columns. That is why
+it went unnoticed: the wrong answer and the right answer look the same.
+
+So the guard is on the SERVER THAT ANSWERED (`@@version`), never on the host we
+dialled. #547 was caused by a Service selector moving; no host string changed,
+and no host-based assertion could have seen it.
+
+
 🔴 WHY IT IS A SCRIPT RATHER THAN THE PROSE RECIPE IT REPLACES
 --------------------------------------------------------------
 `backend/migrations/README.md` already carries this query, correctly, with a
@@ -73,7 +88,31 @@ ROOT = Path(__file__).resolve().parents[1]
 BASELINE = ROOT / "backend" / "migrations" / "000_baseline.sql"
 
 NAMESPACE = "lexitrail"
+# 🔴 `POD` is only the machine the mysql CLIENT runs on -- it is NOT the database.
+# Before the Cloud SQL cutover those were the same thing and this script exec'd
+# `mysql-0` and queried `mysql-0`. They are now different servers (#547):
+#
+#     svc/mysql  selector app=cloudsql-proxy  -> the proxies -> Cloud SQL  (PRODUCTION)
+#     pod mysql-0  label  app=mysql           -> still Running, full valid
+#                                                lexitraildb, read by nothing
+#
+# So the pod is a vehicle and `HOST` is the target. Querying mysql-0 locally
+# succeeds, returns real columns, and compares them cleanly -- against a database
+# no application has used since the cutover.
 POD = "mysql-0"
+# Reached from inside the cluster; this is the name the backend itself dials.
+HOST = f"mysql.{NAMESPACE}.svc.cluster.local"
+# Cloud SQL's root password lives in a different secret than mysql-0's.
+SECRET, SECRET_KEY = "backend-secret", "DB_ROOT_PASSWORD"
+
+# Measured 2026-09-18, both reachable from the same pod:
+#     via svc/mysql   @@version 8.0.45-google   @@server_id 441002752
+#     mysql-0 local   @@version 8.0.46          @@server_id 1
+# Cloud SQL suffixes its version; the in-cluster MySQL does not. If Google ever
+# drops the suffix this check degrades to CANNOT-TELL, never to a silent PASS --
+# which is the direction a schema check is allowed to fail in.
+PRODUCTION_VERSION_MARKER = "-google"
+_IDENT = "##IDENT##"
 # 🔴 The SCHEMA is `lexitraildb`; the NAMESPACE is `lexitrail`. They differ by
 # three characters and only one of them is the one you type all day.
 SCHEMA = "lexitraildb"
@@ -213,49 +252,105 @@ def cols_from_migrations(dirpath: Path | None = None
     return cols, unparsed
 
 
-def _live_cols(namespace: str, pod: str, schema: str) -> tuple[set[str] | None, str]:
-    """(columns, why_not). Never raises; an unreadable cluster is not an empty one."""
+def is_production_server(ident: str | None) -> tuple[bool, str]:
+    """Pure: does this server identity belong to PRODUCTION? (#547 AC2)
+
+    Kept separate and pure so the wrong-server arm is testable without a cluster
+    -- the arm the script lacked is exactly the one that needs a test, because
+    a wrong server returns a populated, comparable, entirely wrong answer.
+
+    Deliberately NOT a host-string check. The host is what we asked for; this is
+    what answered. A Service selector can be repointed (which is how #547
+    happened) without any string in this file changing.
+    """
+    if not ident:
+        return False, "the server did not report @@version/@@server_id"
+    if PRODUCTION_VERSION_MARKER not in ident:
+        return False, (
+            f"the server that answered reports {ident!r}, which lacks "
+            f"{PRODUCTION_VERSION_MARKER!r} -- that is the in-cluster MySQL "
+            f"(pre-cutover mysql-0), not Cloud SQL"
+        )
+    return True, ""
+
+
+def _live_cols(namespace: str, pod: str, schema: str,
+               host: str = HOST) -> tuple[set[str] | None, str, str | None]:
+    """(columns, why_not, server_ident). Never raises; an unreadable cluster is not an empty one.
+
+    Identity and columns come back from ONE mysql invocation on purpose: asking
+    twice would permit the two answers to come from different servers (svc/mysql
+    load-balances across two proxy pods), and an identity check that does not
+    cover the measurement it vouches for is decoration.
+    """
     try:
         pw = subprocess.run(
-            ["kubectl", "-n", namespace, "get", "secret", "mysql-root",
-             "-o", "jsonpath={.data.MYSQL_ROOT_PASSWORD}"],
+            ["kubectl", "-n", namespace, "get", "secret", SECRET,
+             "-o", f"jsonpath={{.data.{SECRET_KEY}}}"],
             capture_output=True, text=True, timeout=60,
         )
     except (OSError, subprocess.SubprocessError) as exc:
-        return None, f"kubectl could not be run ({exc})"
+        return None, f"kubectl could not be run ({exc})", None
     if pw.returncode != 0 or not pw.stdout.strip():
-        return None, f"could not read the mysql-root secret ({pw.stderr.strip()[:160]})"
+        return None, f"could not read the {SECRET} secret ({pw.stderr.strip()[:160]})", None
     import base64
     try:
         password = base64.b64decode(pw.stdout.strip()).decode()
     except Exception as exc:  # noqa: BLE001
-        return None, f"the mysql-root secret did not decode ({exc})"
+        return None, f"the {SECRET} secret did not decode ({exc})", None
 
     excl = " ".join(f"AND TABLE_NAME<>'{t}'" for t in EXCLUDED_TABLES)
+    # Identity first, in the SAME -e batch as the columns (see docstring).
     sql = (
+        f"SELECT CONCAT('{_IDENT}',@@version,'|',@@server_id); "
         f"SELECT CONCAT(TABLE_NAME,'.',COLUMN_NAME) FROM information_schema.COLUMNS "
         f"WHERE TABLE_SCHEMA='{schema}' {excl}"
     )
     try:
         out = subprocess.run(
             ["kubectl", "-n", namespace, "exec", pod, "--",
-             "sh", "-c", f"mysql -uroot -p'{password}' -N -B -e \"{sql}\""],
+             "sh", "-c",
+             f"mysql -h {host} -uroot -p'{password}' -N -B -e \"{sql}\""],
             capture_output=True, text=True, timeout=120,
         )
     except (OSError, subprocess.SubprocessError) as exc:
-        return None, f"kubectl exec failed ({exc})"
+        return None, f"kubectl exec failed ({exc})", None
     if out.returncode != 0:
-        return None, f"the query did not run ({out.stderr.strip()[:200]})"
+        return None, f"the query did not run ({out.stderr.strip()[:200]})", None
     # stderr carries mysql's password-on-the-command-line warning; that is
     # expected and is NOT suppressed at the call site, so a real error above
     # still reaches the reason string.
-    return {ln.strip() for ln in out.stdout.splitlines() if ln.strip()}, ""
+    ident = None
+    cols = set()
+    for ln in out.stdout.splitlines():
+        ln = ln.strip()
+        if not ln:
+            continue
+        if ln.startswith(_IDENT):
+            ident = ln[len(_IDENT):]
+        else:
+            cols.add(ln)
+    return cols, "", ident
 
 
-def verdict(live: set[str] | None, expected: set[str], why: str = "") -> tuple[int, str]:
+def verdict(live: set[str] | None, expected: set[str], why: str = "",
+            ident: str | None = None) -> tuple[int, str]:
     """The whole decision, pure, so every arm is testable without a cluster."""
     if live is None:
         return CANNOT_TELL, f"CANNOT-TELL: {why or 'the cluster did not answer'}."
+    # 🔴 #547: BEFORE any comparison. The pre-cutover mysql-0 answers with a
+    # populated, well-formed, entirely comparable column set -- so every arm
+    # below would produce a confident verdict about the wrong database. This is
+    # the one failure the empty-set guard cannot catch, because nothing is empty.
+    ok, why_not = is_production_server(ident)
+    if not ok:
+        return CANNOT_TELL, (
+            f"CANNOT-TELL: refusing to compare -- {why_not}. Got "
+            f"{len(live)} columns, and they may well be internally consistent; "
+            f"that is precisely the problem. Since the Cloud SQL cutover, "
+            f"`kubectl exec mysql-0 -- mysql` reaches a live, valid, "
+            f"DECOMMISSIONED database (#547)."
+        )
     if not live:
         return CANNOT_TELL, (
             "CANNOT-TELL: the query succeeded and returned ZERO columns. That is "
@@ -288,16 +383,20 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--namespace", default=NAMESPACE)
     ap.add_argument("--pod", default=POD)
     ap.add_argument("--schema", default=SCHEMA)
+    ap.add_argument("--host", default=HOST,
+                    help="what the mysql client CONNECTS TO (not where it runs)")
     args = ap.parse_args(argv)
 
-    live, why = _live_cols(args.namespace, args.pod, args.schema)
+    live, why, ident = _live_cols(args.namespace, args.pod, args.schema, args.host)
     added, unparsed = cols_from_migrations()
     if unparsed:
         print("CANNOT-TELL: these migrations contain DDL this script cannot "
               f"account for, so the repo's expected schema is unknown: {unparsed}. "
               "Teach cols_from_migrations that statement rather than comparing.")
         return CANNOT_TELL
-    code, msg = verdict(live, cols_from_baseline() | added, why)
+    code, msg = verdict(live, cols_from_baseline() | added, why, ident)
+    if ident:
+        print(f"[server] {ident}")
     print(msg)
     return code
 

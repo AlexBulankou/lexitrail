@@ -34,17 +34,24 @@ sys.modules["check_schema_drift"] = mod
 _SPEC.loader.exec_module(mod)
 
 PASS, FAIL, CANNOT_TELL = mod.PASS, mod.FAIL, mod.CANNOT_TELL
+# #547: verdict() now refuses to compare unless the server that ANSWERED
+# identifies as Cloud SQL. These tests exercise the comparison arms, so they
+# must state which server they are simulating -- that is the new contract,
+# not boilerplate. The wrong-server arm has its own tests in
+# test_drift_check_targets_production_547.py.
+PROD_IDENT = "8.0.45-google|441002752"
+
 BASE = {"users.user_id", "users.email", "words.word_id"}
 
 
 def test_matching_sets_pass():
-    code, msg = mod.verdict(set(BASE), set(BASE))
+    code, msg = mod.verdict(set(BASE), set(BASE), ident=PROD_IDENT)
     assert code == PASS, msg
 
 
 def test_an_empty_live_set_refuses_to_be_compared():
     """🔴 The wrong-schema case. NOT pass, and NOT drift."""
-    code, msg = mod.verdict(set(), set(BASE))
+    code, msg = mod.verdict(set(), set(BASE), ident=PROD_IDENT)
     assert code == CANNOT_TELL, msg
     assert "lexitraildb" in msg and "namespace" in msg, (
         "the message must name the cause -- a bare CANNOT-TELL sends the reader "
@@ -60,7 +67,7 @@ def test_none_is_cannot_tell_and_carries_the_reason():
 
 def test_a_column_present_live_and_absent_from_the_repo_is_a_fail():
     """The hand-run ALTER this check exists for."""
-    code, msg = mod.verdict(BASE | {"users.created_at"}, set(BASE))
+    code, msg = mod.verdict(BASE | {"users.created_at"}, set(BASE), ident=PROD_IDENT)
     assert code == FAIL, msg
     assert "users.created_at" in msg, msg
     assert "hand-run ALTER" in msg, msg
@@ -68,21 +75,21 @@ def test_a_column_present_live_and_absent_from_the_repo_is_a_fail():
 
 def test_a_column_in_the_repo_and_absent_live_is_also_a_fail():
     """The other direction: a migration that has not reached production."""
-    code, msg = mod.verdict(BASE - {"words.word_id"}, set(BASE))
+    code, msg = mod.verdict(BASE - {"words.word_id"}, set(BASE), ident=PROD_IDENT)
     assert code == FAIL, msg
     assert "words.word_id" in msg, msg
 
 
 def test_both_directions_are_reported_not_just_the_first():
     live = (BASE - {"words.word_id"}) | {"users.created_at"}
-    _, msg = mod.verdict(live, set(BASE))
+    _, msg = mod.verdict(live, set(BASE), ident=PROD_IDENT)
     assert "users.created_at" in msg and "words.word_id" in msg, msg
 
 
 def test_an_unparseable_baseline_blames_the_parser_not_the_database():
     """An empty EXPECTED set is our bug. Saying 'production has 28 extra
     columns' would send someone to the cluster to fix a regex."""
-    code, msg = mod.verdict(set(BASE), set())
+    code, msg = mod.verdict(set(BASE), set(), ident=PROD_IDENT)
     assert code == CANNOT_TELL, msg
     assert "parser" in msg, msg
 
@@ -241,7 +248,7 @@ def test_main_ADDS_migration_columns_to_expected(monkeypatch, capsys):
     monkeypatch.setattr(mod, "cols_from_migrations",
                         lambda *a, **k: ({"users.timezone"}, []))
     monkeypatch.setattr(mod, "_live_cols",
-                        lambda *a, **k: ({"users.email", "users.timezone"}, ""))
+                        lambda *a, **k: ({"users.email", "users.timezone"}, "", PROD_IDENT))
     assert mod.main([]) == PASS, capsys.readouterr().out
 
 
@@ -251,7 +258,7 @@ def test_main_still_FAILS_on_a_column_no_migration_explains(monkeypatch, capsys)
     monkeypatch.setattr(mod, "cols_from_baseline", lambda *a, **k: {"users.email"})
     monkeypatch.setattr(mod, "cols_from_migrations", lambda *a, **k: (set(), []))
     monkeypatch.setattr(mod, "_live_cols",
-                        lambda *a, **k: ({"users.email", "users.sneaked_in"}, ""))
+                        lambda *a, **k: ({"users.email", "users.sneaked_in"}, "", PROD_IDENT))
     assert mod.main([]) == FAIL, capsys.readouterr().out
 
 
@@ -261,7 +268,7 @@ def test_main_REFUSES_when_a_migration_could_not_be_parsed(monkeypatch, capsys):
     monkeypatch.setattr(mod, "cols_from_baseline", lambda *a, **k: {"users.email"})
     monkeypatch.setattr(mod, "cols_from_migrations",
                         lambda *a, **k: (set(), ["002_rename.sql"]))
-    monkeypatch.setattr(mod, "_live_cols", lambda *a, **k: ({"users.email"}, ""))
+    monkeypatch.setattr(mod, "_live_cols", lambda *a, **k: ({"users.email"}, "", PROD_IDENT))
     code = mod.main([])
     out = capsys.readouterr().out
     assert code == CANNOT_TELL, out
