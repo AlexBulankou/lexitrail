@@ -1,0 +1,183 @@
+<!doctype html>
+<!--
+  Per-word SERP thumbnail template (1200×1200).
+
+  Each of 4,999 word pages gets its own square image with the Chinese character
+  displayed in a 田字格 (tianzige / field-character grid). The grid is the
+  iconic Chinese handwriting practice format — four quadrants divided by dashed
+  cross-lines inside a solid border. Placing the character inside it is both
+  culturally appropriate and visually distinctive at Google's ~92px thumbnail.
+
+  The generator (generate-word-serp.mjs) injects: hanzi, pinyin, gloss, level.
+-->
+<html lang="zh-Hans">
+<head>
+<meta charset="utf-8">
+<style>
+  :root {
+    --crimson: #c70039;
+    --crimson-deep: #a30030;
+    --paper: #fffdfa;
+    --ink: #1c1c1e;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html, body { width: 1200px; height: 1200px; }
+
+  body {
+    font-family: "Inter", "Helvetica Neue", Arial, sans-serif;
+    background: var(--crimson);
+    background-image:
+      radial-gradient(circle at 78% 18%, rgba(255,255,255,0.10), transparent 45%),
+      linear-gradient(160deg, var(--crimson) 0%, var(--crimson-deep) 100%);
+    color: #fff;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* ── 田字格 (tianzige) grid ── */
+
+  .tianzige {
+    width: 680px;
+    height: 680px;
+    background: var(--paper);
+    border: 6px solid var(--ink);
+    border-radius: 18px;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.30);
+    margin-bottom: 48px;
+  }
+
+  /* Dashed cross-lines — the defining feature of 田字格 */
+  .tianzige::before {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 16px;
+    right: 16px;
+    height: 0;
+    border-top: 2px dashed rgba(180, 0, 50, 0.25);
+  }
+  .tianzige::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: 16px;
+    bottom: 16px;
+    width: 0;
+    border-left: 2px dashed rgba(180, 0, 50, 0.25);
+  }
+
+  .hanzi {
+    font-family: "Noto Serif CJK SC", "Noto Serif SC", "Songti SC", "STSong",
+                 "Source Han Serif SC", "WenQuanYi Zen Hei", serif;
+    font-size: 420px;
+    line-height: 1;
+    color: var(--ink);
+    z-index: 1;
+    text-align: center;
+  }
+
+  /* Multi-character words need smaller type to fit the grid */
+  .hanzi.chars-2 { font-size: 280px; }
+  .hanzi.chars-3 { font-size: 200px; }
+  .hanzi.chars-4 { font-size: 160px; }
+
+  /* ── text beneath the grid ── */
+
+  .pinyin {
+    font-size: 64px;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 12px;
+    text-align: center;
+  }
+
+  .gloss {
+    font-size: 44px;
+    color: rgba(255, 255, 255, 0.85);
+    text-align: center;
+    max-width: 900px;
+    line-height: 1.3;
+  }
+
+  .badge {
+    position: absolute;
+    top: 40px;
+    right: 44px;
+    background: #fff;
+    color: var(--crimson);
+    font-weight: 800;
+    font-size: 32px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    border-radius: 100px;
+    padding: 12px 28px;
+  }
+
+  /* Brand mark — bottom left */
+  .brand {
+    position: absolute;
+    bottom: 36px;
+    left: 44px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+
+  .brand .mark {
+    width: 52px;
+    height: 44px;
+    background: #fff;
+    border-radius: 11px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+  }
+  .brand .mark span {
+    color: var(--crimson);
+    font-weight: 800;
+    font-size: 22px;
+    letter-spacing: 0.02em;
+  }
+  .brand .mark::after {
+    content: "";
+    position: absolute;
+    bottom: -8px;
+    left: 12px;
+    width: 0; height: 0;
+    border-left: 9px solid #fff;
+    border-right: 9px solid transparent;
+    border-top: 10px solid #fff;
+    border-bottom: 0;
+  }
+
+  .brand .wordmark {
+    font-size: 36px;
+    font-weight: 800;
+    letter-spacing: -0.01em;
+    color: rgba(255, 255, 255, 0.9);
+  }
+</style>
+</head>
+<body>
+  <div class="badge" id="badge">HSK 1</div>
+  <div class="tianzige">
+    <div class="hanzi" id="hanzi">我</div>
+  </div>
+  <div class="pinyin" id="pinyin">wǒ</div>
+  <div class="gloss" id="gloss">I, me</div>
+  <div class="brand">
+    <div class="mark" aria-hidden="true"><span>ZH</span></div>
+    <div class="wordmark">LexiTrail</div>
+  </div>
+</body>
+</html>
