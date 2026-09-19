@@ -78,6 +78,9 @@ from __future__ import annotations
 
 import argparse
 import re
+import glob
+import os
+import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -274,6 +277,80 @@ def is_production_server(ident: str | None) -> tuple[bool, str]:
     return True, ""
 
 
+
+# --- kubectl resolution (#547 follow-up) -----------------------------------
+#
+# 🔴 The scheduled environment is not the operator's shell. This script hand-ran
+# green and returned CANNOT-TELL on its very first SCHEDULED run:
+#
+#     CANNOT-TELL: kubectl could not be run ([Errno 2] ... 'kubectl').
+#
+# ⚠️ I do NOT know why, and this comment deliberately does not pretend to. On
+# this host `kubectl` is at /usr/bin/kubectl (a symlink into google-cloud-sdk),
+# so a PATH containing /usr/bin would have found it -- which means the runner's
+# environment is narrower than any shell I can open, or is not this host at all.
+# My first diagnosis was "snap dirs are off the cron PATH"; that was WRONG, and
+# a stripped-PATH reproduction passed on the UNFIXED code, so it proved nothing.
+#
+# So this resolver does two separable things, and only the second is certain:
+#   1. It tries the locations kubectl plausibly lives in, which FIXES the case
+#      where the runner is this host with a narrow PATH.
+#   2. It reports every location it tried, which makes the NEXT failure name the
+#      environment instead of repeating an error that fits several causes.
+#
+# ⚠️ The snap path carries a VERSION (`/snap/google-cloud-cli/499/bin`). Pinning
+# that literal would work today and break at the next snap refresh -- a recorded
+# property of a changing thing -- so it is globbed and the newest is taken.
+_KUBECTL_CANDIDATES = (
+    "/usr/bin/kubectl",
+    "/usr/local/bin/kubectl",
+    "/snap/bin/kubectl",
+)
+_KUBECTL_SNAP_GLOB = "/snap/google-cloud-cli/*/bin/kubectl"
+
+
+def _snap_revision(path: str) -> int:
+    """Snap revision from a path, for ordering. Unparseable sorts oldest.
+
+    🔴 Sorting these as STRINGS is wrong and looks right: reverse-sorted,
+    '/snap/google-cloud-cli/499/...' beats '/snap/google-cloud-cli/1002/...'
+    because '4' > '1' -- so the resolver would pick an OLD revision, and only
+    once two revisions are installed, which is exactly when it matters and not
+    when anyone is testing. Caught by the test, not by reading this.
+    """
+    parts = [p for p in path.split("/") if p.isdigit()]
+    return int(parts[-1]) if parts else -1
+
+
+def resolve_kubectl() -> str | None:
+    """Absolute path to a runnable kubectl, or None. Never raises.
+
+    None is a CANNOT-TELL input, never a FAIL: "I could not find the tool" and
+    "the schema has drifted" are different facts, and keeping them apart is this
+    script's whole three-state discipline. A missing tool reported as drift
+    would send someone hunting for schema damage that does not exist.
+    """
+    found = shutil.which("kubectl")
+    if found:
+        return found
+    for cand in _KUBECTL_CANDIDATES:
+        if os.access(cand, os.X_OK):
+            return cand
+    for cand in sorted(glob.glob(_KUBECTL_SNAP_GLOB),
+                       key=_snap_revision, reverse=True):
+        if os.access(cand, os.X_OK):
+            return cand
+    return None
+
+
+def _kubectl_not_found_msg() -> str:
+    """Name what was tried. An error that fits several causes is not evidence."""
+    tried = ", ".join(("PATH",) + _KUBECTL_CANDIDATES + (_KUBECTL_SNAP_GLOB,))
+    return (f"kubectl was not found (tried: {tried}). This is a MISSING TOOL in "
+            "the environment this ran in, NOT a schema finding -- the comparison "
+            "did not happen.")
+
+
 def _live_cols(namespace: str, pod: str, schema: str,
                host: str = HOST) -> tuple[set[str] | None, str, str | None]:
     """(columns, why_not, server_ident). Never raises; an unreadable cluster is not an empty one.
@@ -283,9 +360,12 @@ def _live_cols(namespace: str, pod: str, schema: str,
     load-balances across two proxy pods), and an identity check that does not
     cover the measurement it vouches for is decoration.
     """
+    kubectl = resolve_kubectl()
+    if kubectl is None:
+        return None, _kubectl_not_found_msg(), None
     try:
         pw = subprocess.run(
-            ["kubectl", "-n", namespace, "get", "secret", SECRET,
+            [kubectl, "-n", namespace, "get", "secret", SECRET,
              "-o", f"jsonpath={{.data.{SECRET_KEY}}}"],
             capture_output=True, text=True, timeout=60,
         )
@@ -308,7 +388,7 @@ def _live_cols(namespace: str, pod: str, schema: str,
     )
     try:
         out = subprocess.run(
-            ["kubectl", "-n", namespace, "exec", pod, "--",
+            [kubectl, "-n", namespace, "exec", pod, "--",
              "sh", "-c",
              f"mysql -h {host} -uroot -p'{password}' -N -B -e \"{sql}\""],
             capture_output=True, text=True, timeout=120,
