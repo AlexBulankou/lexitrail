@@ -130,6 +130,42 @@ schedules:
       the merge succeeds, the PR closes, the checks are green, and the artifact
       never moves. A red may be a deploy in flight; re-run before acting.
 
+  # issue-547 follow-up. #547 repointed this script from `mysql-0` (the
+  # decommissioned pre-cutover server) at the production Cloud SQL instance, and
+  # that fix was correct and is well tested -- the refusal paths, the three exit
+  # codes and the wrong-server guard all have tests. It just ran NOWHERE.
+  #
+  # 🔴 A drift check that is correct and uninvoked is the failure mode its own
+  # docstring warns about, one level up: it reports nothing rather than reporting
+  # clean, and the two are indistinguishable from outside. Measured 2026-09-19:
+  # `check_schema_drift` appeared in the tree ONLY in its own two test files,
+  # against a control (`check_deploy_current`, scheduled below) that the same
+  # grep found here. This entry is the reader.
+  #
+  # ⚠️ THREE exit codes, not two -- 0 PASS, 1 FAIL (real drift), 3 CANNOT-TELL
+  # (unreadable cluster, or a migration whose DDL the parser cannot account for).
+  # A non-zero here is NOT automatically drift, and 3 in particular means the
+  # comparison did not happen. Read the output before acting on the number.
+  #
+  # ⚠️ `on_failure: log` for the same unverified reason its two siblings state:
+  # `page`/`alert` are parsed but not consumer-wired. Not verified here either.
+  - name: lexitrail-schema-drift-audit
+    cron: "40 7 * * *"
+    timezone: UTC
+    type: script
+    workspace: /home/alexb/src/github.com/lexitrail
+    command: python3 scripts/check_schema_drift.py
+    max_runtime: 180
+    capture_output: true
+    on_failure: log
+    description: >-
+      issue-308 / issue-547. Daily, assert PRODUCTION's schema matches the repo's
+      baseline plus its applied migrations, and prove WHICH SERVER answered
+      (@@version/@@server_id) before believing the comparison -- the row count
+      alone cannot tell Cloud SQL from the retired in-cluster mysql-0, which is
+      how a healthy database read as a data-loss incident in lexitrail#539.
+      Exit 3 is CANNOT-TELL, not a pass and not drift.
+
   - name: lexitrail-backend-content-smoke
     cron: "*/15 * * * *"
     timezone: UTC
